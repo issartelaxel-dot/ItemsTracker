@@ -18,6 +18,7 @@ const CLIENT_ORIGINS = (process.env.CLIENT_ORIGINS || '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean)
+const DB_PATH = process.env.DB_PATH || 'server/data.db'
 const JWT_SECRET = process.env.JWT_SECRET || ''
 const NODE_ENV = process.env.NODE_ENV || 'development'
 const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || 'lax').toLowerCase()
@@ -32,7 +33,7 @@ if (!JWT_SECRET || JWT_SECRET.length < 32) {
   process.exit(1)
 }
 
-const db = new Database('server/data.db')
+const db = new Database(DB_PATH)
 db.pragma('journal_mode = WAL')
 
 db.exec(`
