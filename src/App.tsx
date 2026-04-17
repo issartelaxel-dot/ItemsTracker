@@ -426,6 +426,46 @@ function getDefaultProfile(): ProfileState {
   }
 }
 
+function getProfileFromAuthUser(authUser: AuthUser | null): ProfileState {
+  const base = getDefaultProfile()
+  if (!authUser) {
+    return base
+  }
+
+  const parts = authUser.displayName.trim().split(/\s+/).filter(Boolean)
+  const firstName = parts[0] ?? ''
+  const lastName = parts.slice(1).join(' ')
+
+  return {
+    ...base,
+    firstName,
+    lastName,
+    email: authUser.email,
+  }
+}
+
+function normalizeProfileInput(rawProfile: unknown, authUser: AuthUser | null): ProfileState {
+  const base = getProfileFromAuthUser(authUser)
+
+  if (!rawProfile || typeof rawProfile !== 'object') {
+    return base
+  }
+
+  const profile = rawProfile as Partial<ProfileState>
+  const photoUrl = typeof profile.photoUrl === 'string' ? profile.photoUrl.trim() : ''
+
+  return {
+    ...base,
+    firstName: typeof profile.firstName === 'string' && profile.firstName.trim() ? profile.firstName.trim() : base.firstName,
+    lastName: typeof profile.lastName === 'string' && profile.lastName.trim() ? profile.lastName.trim() : base.lastName,
+    email: typeof profile.email === 'string' && profile.email.trim() ? profile.email.trim() : base.email,
+    photoUrl: /^https?:\/\//i.test(photoUrl) ? photoUrl : '',
+    password: typeof profile.password === 'string' ? profile.password : '',
+    avatarGradient:
+      typeof profile.avatarGradient === 'string' && profile.avatarGradient ? profile.avatarGradient : base.avatarGradient,
+  }
+}
+
 function App() {
   const [trackingState, setTrackingState] = useState<TrackerState>(getInitialTrackingState())
   const [theme, setTheme] = useState<Theme>('light')
@@ -453,6 +493,7 @@ function App() {
   const [resetCodeInput, setResetCodeInput] = useState('')
   const [resetPasswordInput, setResetPasswordInput] = useState('')
   const [profile, setProfile] = useState<ProfileState>(getDefaultProfile())
+  const savingStateRef = useRef(false)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -503,28 +544,19 @@ function App() {
           setTheme(remoteState.theme === 'dark' ? 'dark' : 'light')
           setFocusMode(Boolean(remoteState.focusMode))
 
-          if (remoteState.profile && typeof remoteState.profile === 'object') {
-            const parsed = remoteState.profile as Partial<ProfileState>
-            setProfile({
-              ...getDefaultProfile(),
-              ...parsed,
-              avatarGradient: parsed.avatarGradient ?? AVATAR_GRADIENTS[0],
-            })
-          } else {
-            setProfile(getDefaultProfile())
-          }
+          setProfile(normalizeProfileInput(remoteState.profile, authUser))
         } else {
           setTrackingState(getInitialTrackingState())
           setTheme('light')
           setFocusMode(false)
-          setProfile(getDefaultProfile())
+          setProfile(getProfileFromAuthUser(authUser))
         }
       } catch {
         if (!cancelled) {
           setTrackingState(getInitialTrackingState())
           setTheme('light')
           setFocusMode(false)
-          setProfile(getDefaultProfile())
+          setProfile(getProfileFromAuthUser(authUser))
         }
       } finally {
         if (!cancelled) {
@@ -545,18 +577,52 @@ function App() {
     }
 
     const timer = window.setTimeout(() => {
-      void apiRequest('/api/state', {
-        method: 'PUT',
-        body: JSON.stringify({
-          trackingState,
-          theme,
-          focusMode,
-          profile,
-        }),
-      }).catch(() => undefined)
+      void persistUserState()
     }, 600)
 
     return () => window.clearTimeout(timer)
+  }, [authStatus, authUser?.id, trackingState, theme, focusMode, profile])
+
+  useEffect(() => {
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteStateRef.current) {
+      return
+    }
+
+    const payload = JSON.stringify({
+      trackingState,
+      theme,
+      focusMode,
+      profile,
+    })
+
+    const flushWithKeepalive = () => {
+      const candidates = resolveApiCandidates('/api/state')
+      const target = candidates[0]
+      if (!target) {
+        return
+      }
+      void fetch(target, {
+        method: 'PUT',
+        credentials: 'include',
+        keepalive: true,
+        headers: { 'Content-Type': 'application/json' },
+        body: payload,
+      }).catch(() => undefined)
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        flushWithKeepalive()
+      }
+    }
+
+    window.addEventListener('beforeunload', flushWithKeepalive)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      window.removeEventListener('beforeunload', flushWithKeepalive)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
   }, [authStatus, authUser?.id, trackingState, theme, focusMode, profile])
 
   async function apiRequest(url: string, init?: RequestInit) {
@@ -601,6 +667,29 @@ function App() {
       throw new Error(apiError || `Erreur API (${response.status})`)
     }
     return payload
+  }
+
+  async function persistUserState() {
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteStateRef.current || savingStateRef.current) {
+      return
+    }
+
+    savingStateRef.current = true
+    try {
+      await apiRequest('/api/state', {
+        method: 'PUT',
+        body: JSON.stringify({
+          trackingState,
+          theme,
+          focusMode,
+          profile,
+        }),
+      })
+    } catch {
+      // ignore and retry later via autosave/next action
+    } finally {
+      savingStateRef.current = false
+    }
   }
 
   async function refreshAuth() {
@@ -753,6 +842,7 @@ function App() {
   }
 
   async function handleLogout() {
+    await persistUserState()
     await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
     hasLoadedRemoteStateRef.current = false
     setAuthUser(null)
