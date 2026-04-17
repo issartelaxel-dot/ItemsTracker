@@ -83,6 +83,7 @@ type ItemComputed = ItemBase & {
 }
 
 type AuthStatus = 'loading' | 'guest' | 'authed'
+type AuthView = 'login' | 'register'
 type AuthUser = {
   id: number
   email: string
@@ -446,6 +447,7 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const backupInputRef = useRef<HTMLInputElement | null>(null)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
+  const [authView, setAuthView] = useState<AuthView>('login')
   const [authUser, setAuthUser] = useState<AuthUser | null>(null)
   const [authMessage, setAuthMessage] = useState('')
   const [authError, setAuthError] = useState('')
@@ -511,6 +513,11 @@ function App() {
   useEffect(() => {
     void refreshAuth()
   }, [])
+
+  useEffect(() => {
+    setAuthError('')
+    setAuthMessage('')
+  }, [authView])
 
   async function apiRequest(url: string, init?: RequestInit) {
     let response: Response | null = null
@@ -1196,49 +1203,97 @@ function App() {
     return (
       <div className="auth-shell">
         <div className="auth-card">
-          <h1>Connexion / Création de compte</h1>
-          <p className="auth-sub">Création de compte: code 8 chiffres envoyé à l’administrateur.</p>
-          <p className="auth-sub">Mot de passe oublié: demande un code envoyé à ton email puis valide avec le nouveau mot de passe.</p>
-          <p className="auth-sub">Mot de passe requis: 12+ caractères, 1 chiffre, 1 caractère spécial.</p>
-          <div className="auth-grid">
-            <input placeholder="Prénom" value={firstNameInput} onChange={(event) => setFirstNameInput(event.target.value)} />
-            <input placeholder="Nom" value={lastNameInput} onChange={(event) => setLastNameInput(event.target.value)} />
-            <input
-              type="email"
-              placeholder="Email"
-              value={emailInput}
-              onChange={(event) => setEmailInput(event.target.value)}
-            />
-            <input
-              type="password"
-              placeholder="Mot de passe"
-              value={passwordInput}
-              onChange={(event) => setPasswordInput(event.target.value)}
-            />
-            <input
-              placeholder="Code 8 chiffres"
-              value={codeInput}
-              onChange={(event) => setCodeInput(event.target.value)}
-              maxLength={8}
-            />
-          </div>
-          <div className="auth-actions">
-            <button className="ghost-btn" onClick={() => void handleRequestCode()}>
-              Demander code admin
+          <h1>Authentification</h1>
+          <div className="auth-switch">
+            <button
+              className={`ghost-btn auth-switch-btn ${authView === 'login' ? 'active' : ''}`}
+              onClick={() => setAuthView('login')}
+            >
+              Connexion
             </button>
-            <button className="ghost-btn" onClick={() => void handleVerifyCode()}>
-              Valider code et créer compte
-            </button>
-            <button className="ghost-btn" onClick={() => void handleLogin()}>
-              Se connecter
-            </button>
-            <button className="ghost-btn" onClick={() => void handleRequestPasswordReset()}>
-              Mot de passe oublié: recevoir un code
-            </button>
-            <button className="ghost-btn" onClick={() => void handleConfirmPasswordReset()}>
-              Réinitialiser le mot de passe avec code
+            <button
+              className={`ghost-btn auth-switch-btn ${authView === 'register' ? 'active' : ''}`}
+              onClick={() => setAuthView('register')}
+            >
+              Inscription
             </button>
           </div>
+          {authView === 'login' ? (
+            <>
+              <p className="auth-sub">Connecte-toi avec ton email et ton mot de passe.</p>
+              <p className="auth-sub">Mot de passe oublié: demande un code puis valide le nouveau mot de passe.</p>
+              <div className="auth-grid">
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={emailInput}
+                  onChange={(event) => setEmailInput(event.target.value)}
+                />
+                <input
+                  type="password"
+                  placeholder="Mot de passe"
+                  value={passwordInput}
+                  onChange={(event) => setPasswordInput(event.target.value)}
+                />
+                <input
+                  placeholder="Code reset (8 chiffres)"
+                  value={codeInput}
+                  onChange={(event) => setCodeInput(event.target.value)}
+                  maxLength={8}
+                />
+              </div>
+              <div className="auth-actions">
+                <button className="ghost-btn" onClick={() => void handleLogin()}>
+                  Se connecter
+                </button>
+                <button className="ghost-btn" onClick={() => void handleRequestPasswordReset()}>
+                  Recevoir un code reset
+                </button>
+                <button className="ghost-btn" onClick={() => void handleConfirmPasswordReset()}>
+                  Valider reset mot de passe
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="auth-sub">Inscription validée par code 8 chiffres envoyé à l’administrateur.</p>
+              <p className="auth-sub">Mot de passe requis: 12+ caractères, 1 chiffre, 1 caractère spécial.</p>
+              <div className="auth-grid">
+                <input
+                  placeholder="Prénom"
+                  value={firstNameInput}
+                  onChange={(event) => setFirstNameInput(event.target.value)}
+                />
+                <input placeholder="Nom" value={lastNameInput} onChange={(event) => setLastNameInput(event.target.value)} />
+                <input
+                  type="email"
+                  placeholder="Email"
+                  value={emailInput}
+                  onChange={(event) => setEmailInput(event.target.value)}
+                />
+                <input
+                  type="password"
+                  placeholder="Mot de passe"
+                  value={passwordInput}
+                  onChange={(event) => setPasswordInput(event.target.value)}
+                />
+                <input
+                  placeholder="Code admin (8 chiffres)"
+                  value={codeInput}
+                  onChange={(event) => setCodeInput(event.target.value)}
+                  maxLength={8}
+                />
+              </div>
+              <div className="auth-actions">
+                <button className="ghost-btn" onClick={() => void handleRequestCode()}>
+                  Demander code admin
+                </button>
+                <button className="ghost-btn" onClick={() => void handleVerifyCode()}>
+                  Valider code et créer compte
+                </button>
+              </div>
+            </>
+          )}
           {authMessage ? <p className="auth-success">{authMessage}</p> : null}
           {authError ? <p className="auth-error">{authError}</p> : null}
           {authStatus === 'loading' ? <p className="auth-sub">Chargement...</p> : null}
