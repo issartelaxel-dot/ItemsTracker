@@ -456,6 +456,9 @@ function App() {
   const [emailInput, setEmailInput] = useState('')
   const [passwordInput, setPasswordInput] = useState('')
   const [codeInput, setCodeInput] = useState('')
+  const [resetMode, setResetMode] = useState(false)
+  const [resetCodeInput, setResetCodeInput] = useState('')
+  const [resetPasswordInput, setResetPasswordInput] = useState('')
   const [profile, setProfile] = useState<ProfileState>(() => {
     const persisted = localStorage.getItem(PROFILE_KEY)
     if (!persisted) {
@@ -517,6 +520,7 @@ function App() {
   useEffect(() => {
     setAuthError('')
     setAuthMessage('')
+    setResetMode(false)
   }, [authView])
 
   async function apiRequest(url: string, init?: RequestInit) {
@@ -667,12 +671,12 @@ function App() {
   async function handleConfirmPasswordReset() {
     setAuthError('')
     setAuthMessage('')
-    const passwordError = getPasswordStrengthError(passwordInput)
+    const passwordError = getPasswordStrengthError(resetPasswordInput)
     if (passwordError) {
       setAuthError(passwordError)
       return
     }
-    if (!codeInput.trim()) {
+    if (!resetCodeInput.trim()) {
       setAuthError('Saisis le code à 8 chiffres reçu par email.')
       return
     }
@@ -682,11 +686,14 @@ function App() {
         method: 'POST',
         body: JSON.stringify({
           email: emailInput,
-          code: codeInput,
-          newPassword: passwordInput,
+          code: resetCodeInput,
+          newPassword: resetPasswordInput,
         }),
       })
       setAuthMessage(String(payload.message ?? 'Mot de passe mis à jour.'))
+      setResetMode(false)
+      setResetCodeInput('')
+      setResetPasswordInput('')
       await refreshAuth()
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Erreur lors de la réinitialisation du mot de passe.')
@@ -1235,24 +1242,42 @@ function App() {
                   value={passwordInput}
                   onChange={(event) => setPasswordInput(event.target.value)}
                 />
-                <input
-                  placeholder="Code reset (8 chiffres)"
-                  value={codeInput}
-                  onChange={(event) => setCodeInput(event.target.value)}
-                  maxLength={8}
-                />
               </div>
               <div className="auth-actions">
                 <button className="ghost-btn" onClick={() => void handleLogin()}>
                   Se connecter
                 </button>
-                <button className="ghost-btn" onClick={() => void handleRequestPasswordReset()}>
-                  Recevoir un code reset
-                </button>
-                <button className="ghost-btn" onClick={() => void handleConfirmPasswordReset()}>
-                  Valider reset mot de passe
+                <button className="ghost-btn" onClick={() => setResetMode((value) => !value)}>
+                  {resetMode ? 'Annuler reset' : 'Mot de passe oublié'}
                 </button>
               </div>
+              {resetMode ? (
+                <>
+                  <p className="auth-sub">Réinitialisation: saisis le code reçu par email et un nouveau mot de passe.</p>
+                  <div className="auth-grid">
+                    <input
+                      placeholder="Code reset (8 chiffres)"
+                      value={resetCodeInput}
+                      onChange={(event) => setResetCodeInput(event.target.value)}
+                      maxLength={8}
+                    />
+                    <input
+                      type="password"
+                      placeholder="Nouveau mot de passe"
+                      value={resetPasswordInput}
+                      onChange={(event) => setResetPasswordInput(event.target.value)}
+                    />
+                  </div>
+                  <div className="auth-actions">
+                    <button className="ghost-btn" onClick={() => void handleRequestPasswordReset()}>
+                      Recevoir un code reset
+                    </button>
+                    <button className="ghost-btn" onClick={() => void handleConfirmPasswordReset()}>
+                      Valider reset mot de passe
+                    </button>
+                  </div>
+                </>
+              ) : null}
             </>
           ) : (
             <>
