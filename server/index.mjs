@@ -14,6 +14,10 @@ import { z } from 'zod'
 
 const PORT = Number(process.env.PORT || 8787)
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
+const CLIENT_ORIGINS = (process.env.CLIENT_ORIGINS || '')
+  .split(',')
+  .map((value) => value.trim())
+  .filter(Boolean)
 const JWT_SECRET = process.env.JWT_SECRET || ''
 const NODE_ENV = process.env.NODE_ENV || 'development'
 const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || 'lax').toLowerCase()
@@ -60,12 +64,21 @@ CREATE TABLE IF NOT EXISTS password_resets (
 `)
 
 const app = express()
+const allowedOrigins = new Set(
+  CLIENT_ORIGINS.length > 0 ? CLIENT_ORIGINS : [CLIENT_ORIGIN, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+)
 
 app.set('trust proxy', 1)
 app.use(helmet())
 app.use(
   cors({
-    origin: CLIENT_ORIGIN,
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.has(origin)) {
+        callback(null, true)
+        return
+      }
+      callback(new Error('Origin not allowed by CORS'))
+    },
     credentials: true,
   }),
 )
