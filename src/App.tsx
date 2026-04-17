@@ -1,0 +1,2139 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import itemsData from './data/items.json'
+import './App.css'
+
+type Mastery = 'Mauvais' | 'Moyen' | 'Bon' | 'Très bon' | 'Parfait'
+type Theme = 'light' | 'dark'
+type SortKey = 'reviews' | 'progress'
+type SheetColor = 'jaune' | 'rouge' | 'vert' | 'vertfonce'
+type SheetKind = 'lisaSheets' | 'platformSheets'
+
+type ItemBase = {
+  itemNumber: number
+  shortDescription: string
+  tagCodes: string[]
+  tagLabels: string[]
+}
+
+type ReviewEvent = {
+  date: string
+  delta: number
+}
+
+type CollegeTracking = {
+  favorite: boolean
+  reviews: number
+  mastery: Mastery
+  comments: string
+  lastReviewedAt: string | null
+  reviewHistory: ReviewEvent[]
+}
+
+type ReferenceSheet = {
+  id: string
+  name: string
+  url: string
+  color: SheetColor
+  tracking: CollegeTracking
+}
+
+type ItemTracking = {
+  assignedColleges: string[]
+  byCollege: Record<string, CollegeTracking>
+  lisaSheets: ReferenceSheet[]
+  platformSheets: ReferenceSheet[]
+  noLisaSheets: boolean
+  noPlatformSheets: boolean
+  itemComment: string
+  itemIcon: string
+  itemColor: string
+  itemLabel: string
+}
+
+type TrackerState = {
+  items: Record<number, ItemTracking>
+}
+
+type ProfileState = {
+  firstName: string
+  lastName: string
+  email: string
+  photoUrl: string
+  password: string
+  avatarGradient: string
+}
+
+type BackupPayload = {
+  app: 'med-learning-tracker'
+  version: 1
+  exportedAt: string
+  data: {
+    trackingState: TrackerState
+    theme: Theme
+    focusMode: boolean
+    profile?: ProfileState
+  }
+}
+
+type ItemComputed = ItemBase & {
+  tracking: ItemTracking
+  totalReviews: number
+  progress: number
+  lastReviewDate: string | null
+}
+
+type AuthStatus = 'loading' | 'guest' | 'authed'
+type AuthUser = {
+  id: number
+  email: string
+  displayName: string
+}
+
+const STORAGE_KEY = 'med-item-dashboard-state-v1'
+const THEME_KEY = 'med-item-dashboard-theme-v1'
+const FOCUS_KEY = 'med-item-dashboard-focus-v1'
+const PROFILE_KEY = 'med-item-dashboard-profile-v1'
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '')
+const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
+const HABIT_TRACKER_YEAR = 2026
+const AVATAR_GRADIENTS = [
+  'linear-gradient(135deg, #f90021 0%, #ff8f00 58%, #ffe400 100%)',
+  'linear-gradient(135deg, #1d976c 0%, #93f9b9 100%)',
+  'linear-gradient(135deg, #4776e6 0%, #8e54e9 100%)',
+  'linear-gradient(135deg, #f857a6 0%, #ff5858 100%)',
+  'linear-gradient(135deg, #00c6ff 0%, #0072ff 100%)',
+  'linear-gradient(135deg, #f7971e 0%, #ffd200 100%)',
+  'linear-gradient(135deg, #8e2de2 0%, #4a00e0 100%)',
+  'linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%)',
+  'linear-gradient(135deg, #11998e 0%, #38ef7d 100%)',
+] as const
+const SHEET_COLORS: Array<{ value: SheetColor; label: string; emoji: string }> = [
+  { value: 'jaune', label: 'Jaune', emoji: '🟡' },
+  { value: 'rouge', label: 'Rouge', emoji: '🔴' },
+  { value: 'vert', label: 'Vert', emoji: '🟢' },
+  { value: 'vertfonce', label: 'Vert fonce', emoji: '🟢' },
+]
+
+const MASTERY_LEVELS: Mastery[] = ['Mauvais', 'Moyen', 'Bon', 'Très bon', 'Parfait']
+const MASTERY_SCORE: Record<Mastery, number> = {
+  Mauvais: 0,
+  Moyen: 1,
+  Bon: 2,
+  'Très bon': 3,
+  Parfait: 4,
+}
+
+const COLLEGES = [
+  'ANATOMIE ET CYTOLOGIE PATHOLOGIQUES',
+  'ANESTHÉSIE - RÉANIMATION',
+  'CANCÉROLOGIE',
+  'CHIRURGIE DIGESTIVE',
+  'CHIRURGIE MAXILLO-FACIALE',
+  'DERMATOLOGIE',
+  'DOULEUR - SOINS PALLIATIFS',
+  'ENDOCRINOLOGIE',
+  'GÉNÉTIQUE',
+  'GÉRIATRIE',
+  'GYNÉCOLOGIE MÉDICALE',
+  'GYNÉCOLOGIE OBSTÉTRIQUE',
+  'HÉMATOLOGIE',
+  'HÉPATO-GASTRO-ENTÉROLOGIE',
+  'IMAGERIE MÉDICALE',
+  'IMMUNOPATHOLOGIE',
+  'INFECTIOLOGIE',
+  'MÉDECINE CARDIOVASCULAIRE',
+  'MÉDECINE GÉNÉRALE',
+  'MÉDECINE INTENSIVE - RÉANIMATION - URGENCES',
+  'MÉDECINE INTERNE',
+  'MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL',
+  'MÉDECINE MOLÉCULAIRE',
+  'MÉDECINE PHYSIQUE ET RÉADAPTATION',
+  'MÉDECINE VASCULAIRE',
+  'NÉPHROLOGIE',
+  'NEUROCHIRURGIE',
+  'NEUROLOGIE',
+  'NUTRITION',
+  'OPHTALMOLOGIE',
+  'ORL',
+  'ORTHOPÉDIE - TRAUMATOLOGIE',
+  'PARASITOLOGIE',
+  'PÉDIATRIE',
+  'PNEUMOLOGIE',
+  'PSYCHIATRIE - ADDICTOLOGIE',
+  'RHUMATOLOGIE',
+  'SANTÉ PUBLIQUE',
+  'THÉRAPEUTIQUE',
+  'UROLOGIE',
+] as const
+
+const rawItems = itemsData as ItemBase[]
+
+function normalizeText(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-zA-Z0-9 ]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase()
+}
+
+function resolveApiCandidates(path: string) {
+  if (/^https?:\/\//i.test(path)) {
+    return [path]
+  }
+
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`
+  const candidates = new Set<string>()
+
+  if (API_BASE_URL) {
+    candidates.add(`${API_BASE_URL}${normalizedPath}`)
+  } else {
+    candidates.add(normalizedPath)
+  }
+
+  if (typeof window !== 'undefined') {
+    candidates.add(`${window.location.origin}${normalizedPath}`)
+    if (APP_BASE_URL && APP_BASE_URL !== '/') {
+      candidates.add(`${window.location.origin}${APP_BASE_URL}${normalizedPath}`)
+    }
+  }
+
+  return Array.from(candidates)
+}
+
+function getDefaultCollegeTracking(): CollegeTracking {
+  return {
+    favorite: false,
+    reviews: 0,
+    mastery: 'Mauvais',
+    comments: '',
+    lastReviewedAt: null,
+    reviewHistory: [],
+  }
+}
+
+function getDefaultItemTracking(): ItemTracking {
+  return {
+    assignedColleges: [],
+    byCollege: {},
+    lisaSheets: [],
+    platformSheets: [],
+    noLisaSheets: false,
+    noPlatformSheets: false,
+    itemComment: '',
+    itemIcon: '',
+    itemColor: '',
+    itemLabel: '',
+  }
+}
+
+function makeReferenceSheet(): ReferenceSheet {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name: '',
+    url: '',
+    color: 'jaune',
+    tracking: getDefaultCollegeTracking(),
+  }
+}
+
+function normalizeItemTracking(tracking?: Partial<ItemTracking>): ItemTracking {
+  const normalizeSheet = (sheet: Partial<ReferenceSheet>) => ({
+    id: sheet.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    name: sheet.name ?? '',
+    url: sheet.url ?? '',
+    color: (sheet.color ?? 'jaune') as SheetColor,
+    tracking: {
+      ...getDefaultCollegeTracking(),
+      ...(sheet.tracking ?? {}),
+    },
+  })
+
+  return {
+    assignedColleges: tracking?.assignedColleges ?? [],
+    byCollege: tracking?.byCollege ?? {},
+    lisaSheets: (tracking?.lisaSheets ?? []).map((sheet) => normalizeSheet(sheet)),
+    platformSheets: (tracking?.platformSheets ?? []).map((sheet) => normalizeSheet(sheet)),
+    noLisaSheets: tracking?.noLisaSheets ?? false,
+    noPlatformSheets: tracking?.noPlatformSheets ?? false,
+    itemComment: tracking?.itemComment ?? '',
+    itemIcon: tracking?.itemIcon ?? '',
+    itemColor: tracking?.itemColor ?? '',
+    itemLabel: tracking?.itemLabel ?? '',
+  }
+}
+
+function getNextSheetColor(current: SheetColor): SheetColor {
+  const idx = SHEET_COLORS.findIndex((sheetColor) => sheetColor.value === current)
+  if (idx === -1) {
+    return SHEET_COLORS[0].value
+  }
+  return SHEET_COLORS[(idx + 1) % SHEET_COLORS.length].value
+}
+
+function getProfileInitials(profile: ProfileState): string {
+  const first = (profile.firstName ?? '').trim()
+  const last = (profile.lastName ?? '').trim()
+  if (first || last) {
+    return `${(first[0] ?? '').toUpperCase()}${(last[0] ?? '').toUpperCase()}` || 'ME'
+  }
+
+  const emailPart = (profile.email ?? '').split('@')[0].replace(/[^a-zA-Z0-9]/g, '')
+  if (emailPart.length >= 2) {
+    return emailPart.slice(0, 2).toUpperCase()
+  }
+  if (emailPart.length === 1) {
+    return emailPart.toUpperCase()
+  }
+  return 'ME'
+}
+
+function computeItemProgress(itemTracking: ItemTracking): number {
+  const excludeLisaAxis = itemTracking.noLisaSheets && itemTracking.lisaSheets.length === 0
+  const excludePlatformAxis = itemTracking.noPlatformSheets && itemTracking.platformSheets.length === 0
+
+  const hasPerfectCollege = itemTracking.assignedColleges.some((college) => {
+    const tracking = itemTracking.byCollege[college]
+    return tracking?.mastery === 'Parfait'
+  })
+  const hasPerfectLisa =
+    excludeLisaAxis || itemTracking.lisaSheets.some((sheet) => sheet.tracking.mastery === 'Parfait')
+  const hasPerfectPlatform =
+    excludePlatformAxis || itemTracking.platformSheets.some((sheet) => sheet.tracking.mastery === 'Parfait')
+
+  // If all required axes have at least one "Parfait", item is fully completed.
+  if (hasPerfectCollege && hasPerfectLisa && hasPerfectPlatform) {
+    return 1
+  }
+
+  const normalizeMastery = (mastery: Mastery) => MASTERY_SCORE[mastery] / MASTERY_SCORE.Parfait
+
+  const collegeValues = itemTracking.assignedColleges
+    .map((college) => itemTracking.byCollege[college])
+    .filter(Boolean)
+    .map((tracking) => normalizeMastery(tracking.mastery))
+
+  const lisaValues = itemTracking.lisaSheets.map((sheet) => normalizeMastery(sheet.tracking.mastery))
+  const platformValues = itemTracking.platformSheets.map((sheet) => normalizeMastery(sheet.tracking.mastery))
+
+  const average = (values: number[]) => {
+    if (values.length === 0) {
+      return 0
+    }
+    return values.reduce((sum, value) => sum + value, 0) / values.length
+  }
+
+  const collegeProgress = average(collegeValues)
+  const lisaProgress = average(lisaValues)
+  const platformProgress = average(platformValues)
+
+  const axes = [collegeProgress]
+  if (!excludeLisaAxis) {
+    axes.push(lisaProgress)
+  }
+  if (!excludePlatformAxis) {
+    axes.push(platformProgress)
+  }
+
+  return average(axes)
+}
+
+function formatDate(dateString: string | null) {
+  if (!dateString) {
+    return 'Jamais'
+  }
+  return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' }).format(new Date(dateString))
+}
+
+function startOfWeek(date: Date) {
+  const day = date.getDay()
+  const shift = day === 0 ? -6 : 1 - day
+  const result = new Date(date)
+  result.setDate(result.getDate() + shift)
+  result.setHours(0, 0, 0, 0)
+  return result
+}
+
+function toDayKey(date: Date) {
+  const day = new Date(date)
+  day.setHours(0, 0, 0, 0)
+  const year = day.getFullYear()
+  const month = String(day.getMonth() + 1).padStart(2, '0')
+  const datePart = String(day.getDate()).padStart(2, '0')
+  return `${year}-${month}-${datePart}`
+}
+
+function getIntensity(count: number) {
+  if (count <= 0) return 0
+  if (count <= 2) return 1
+  if (count <= 4) return 2
+  if (count <= 7) return 3
+  return 4
+}
+
+function toWeekKey(date: Date) {
+  const weekStart = startOfWeek(date)
+  const year = weekStart.getFullYear()
+  const month = String(weekStart.getMonth() + 1).padStart(2, '0')
+  const day = String(weekStart.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+function getInitialTrackingState(): TrackerState {
+  const normalizedCollegeMap = new Map(COLLEGES.map((college) => [normalizeText(college), college]))
+
+  const items: Record<number, ItemTracking> = {}
+
+  for (const item of rawItems) {
+    const inferred = new Set<string>()
+    for (const label of item.tagLabels) {
+      const normalized = normalizeText(label)
+      const college = normalizedCollegeMap.get(normalized)
+      if (college) {
+        inferred.add(college)
+      }
+    }
+
+    const assignedColleges = Array.from(inferred)
+    const byCollege = assignedColleges.reduce<Record<string, CollegeTracking>>((acc, college) => {
+      acc[college] = getDefaultCollegeTracking()
+      return acc
+    }, {})
+
+    items[item.itemNumber] = {
+      assignedColleges,
+      byCollege,
+      lisaSheets: [],
+      platformSheets: [],
+      noLisaSheets: false,
+      noPlatformSheets: false,
+      itemComment: '',
+      itemIcon: '',
+      itemColor: '',
+      itemLabel: '',
+    }
+  }
+
+  return { items }
+}
+
+function App() {
+  const [trackingState, setTrackingState] = useState<TrackerState>(() => {
+    const persisted = localStorage.getItem(STORAGE_KEY)
+    if (!persisted) {
+      return getInitialTrackingState()
+    }
+    try {
+      return JSON.parse(persisted) as TrackerState
+    } catch {
+      return getInitialTrackingState()
+    }
+  })
+
+  const [theme, setTheme] = useState<Theme>(() => {
+    const persisted = localStorage.getItem(THEME_KEY)
+    return persisted === 'dark' ? 'dark' : 'light'
+  })
+
+  const [focusMode, setFocusMode] = useState<boolean>(() => localStorage.getItem(FOCUS_KEY) === 'true')
+  const [selectedItemId, setSelectedItemId] = useState<number>(rawItems[0]?.itemNumber ?? 1)
+  const [search, setSearch] = useState('')
+  const [collegeFilter, setCollegeFilter] = useState<string>('ALL')
+  const [masteryFilter, setMasteryFilter] = useState<string>('ALL')
+  const [sortKey, setSortKey] = useState<SortKey>('reviews')
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const backupInputRef = useRef<HTMLInputElement | null>(null)
+  const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
+  const [authUser, setAuthUser] = useState<AuthUser | null>(null)
+  const [authMessage, setAuthMessage] = useState('')
+  const [authError, setAuthError] = useState('')
+  const [firstNameInput, setFirstNameInput] = useState('')
+  const [lastNameInput, setLastNameInput] = useState('')
+  const [emailInput, setEmailInput] = useState('')
+  const [passwordInput, setPasswordInput] = useState('')
+  const [codeInput, setCodeInput] = useState('')
+  const [profile, setProfile] = useState<ProfileState>(() => {
+    const persisted = localStorage.getItem(PROFILE_KEY)
+    if (!persisted) {
+      return {
+        firstName: '',
+        lastName: '',
+        email: '',
+        photoUrl: '',
+        password: '',
+        avatarGradient: AVATAR_GRADIENTS[0],
+      }
+    }
+    try {
+      const parsed = JSON.parse(persisted) as Partial<ProfileState>
+      return {
+        firstName: parsed.firstName ?? '',
+        lastName: parsed.lastName ?? '',
+        email: parsed.email ?? '',
+        photoUrl: parsed.photoUrl ?? '',
+        password: parsed.password ?? '',
+        avatarGradient: parsed.avatarGradient ?? AVATAR_GRADIENTS[0],
+      }
+    } catch {
+      return {
+        firstName: '',
+        lastName: '',
+        email: '',
+        photoUrl: '',
+        password: '',
+        avatarGradient: AVATAR_GRADIENTS[0],
+      }
+    }
+  })
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(trackingState))
+    }, 250)
+    return () => window.clearTimeout(timer)
+  }, [trackingState])
+
+  useEffect(() => {
+    localStorage.setItem(THEME_KEY, theme)
+    document.documentElement.setAttribute('data-theme', theme)
+  }, [theme])
+
+  useEffect(() => {
+    localStorage.setItem(FOCUS_KEY, String(focusMode))
+  }, [focusMode])
+
+  useEffect(() => {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+  }, [profile])
+
+  useEffect(() => {
+    void refreshAuth()
+  }, [])
+
+  async function apiRequest(url: string, init?: RequestInit) {
+    let response: Response | null = null
+    let lastFetchError: unknown = null
+    const candidates = resolveApiCandidates(url)
+
+    for (const candidate of candidates) {
+      try {
+        response = await fetch(candidate, {
+          ...init,
+          credentials: 'include',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(init?.headers ?? {}),
+          },
+        })
+        break
+      } catch (error) {
+        lastFetchError = error
+      }
+    }
+
+    if (!response) {
+      if (lastFetchError instanceof Error) {
+        throw new Error(`API indisponible: ${lastFetchError.message}`)
+      }
+      throw new Error("API indisponible. Lance aussi le serveur backend (`npm run dev:full`) et vérifie la connexion.")
+    }
+
+    let payload: Record<string, unknown> = {}
+    const contentType = response.headers.get('content-type') ?? ''
+    if (contentType.includes('application/json')) {
+      payload = (await response.json().catch(() => ({}))) as Record<string, unknown>
+    } else {
+      const text = await response.text().catch(() => '')
+      payload = { error: text.slice(0, 180) }
+    }
+
+    if (!response.ok) {
+      const apiError = String(payload.error ?? '').trim()
+      throw new Error(apiError || `Erreur API (${response.status})`)
+    }
+    return payload
+  }
+
+  async function refreshAuth() {
+    try {
+      const payload = await apiRequest('/api/auth/me')
+      setAuthUser(payload.user as AuthUser)
+      setAuthStatus('authed')
+    } catch (error) {
+      setAuthUser(null)
+      setAuthStatus('guest')
+      if (error instanceof Error && error.message.includes('404')) {
+        setAuthError(
+          "API introuvable (/api/auth/me). Configure `VITE_API_BASE_URL` vers ton backend, puis rebuild/redeploy.",
+        )
+      }
+    }
+  }
+
+  async function handleRequestCode() {
+    setAuthError('')
+    setAuthMessage('')
+    if (passwordInput.length < 12 || !/[0-9]/.test(passwordInput) || !/[^A-Za-z0-9]/.test(passwordInput)) {
+      setAuthError('Mot de passe invalide: minimum 12 caractères, au moins 1 chiffre et 1 caractère spécial.')
+      return
+    }
+    try {
+      const payload = await apiRequest('/api/auth/register/request', {
+        method: 'POST',
+        body: JSON.stringify({
+          firstName: firstNameInput,
+          lastName: lastNameInput,
+          email: emailInput,
+          password: passwordInput,
+        }),
+      })
+      setAuthMessage(String(payload.message ?? 'Demande envoyée.'))
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Erreur lors de la demande.')
+    }
+  }
+
+  async function handleVerifyCode() {
+    setAuthError('')
+    setAuthMessage('')
+    try {
+      await apiRequest('/api/auth/register/verify', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: emailInput,
+          code: codeInput,
+        }),
+      })
+      await refreshAuth()
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Erreur lors de la vérification.')
+    }
+  }
+
+  async function handleLogin() {
+    setAuthError('')
+    setAuthMessage('')
+    try {
+      await apiRequest('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: emailInput,
+          password: passwordInput,
+        }),
+      })
+      await refreshAuth()
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Erreur de connexion.')
+    }
+  }
+
+  async function handleLogout() {
+    await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
+    setAuthUser(null)
+    setAuthStatus('guest')
+  }
+
+  const items = useMemo<ItemComputed[]>(() => {
+    return rawItems.map((item) => {
+      const tracking = normalizeItemTracking(trackingState.items[item.itemNumber] ?? getDefaultItemTracking())
+      const selectedCollegeTrackers = tracking.assignedColleges.map(
+        (college) => tracking.byCollege[college] ?? getDefaultCollegeTracking(),
+      )
+
+      const totalReviews = selectedCollegeTrackers.reduce((sum, entry) => sum + entry.reviews, 0)
+      const lastReviewDate = selectedCollegeTrackers.reduce<string | null>((latest, entry) => {
+        if (!entry.lastReviewedAt) {
+          return latest
+        }
+        if (!latest || new Date(entry.lastReviewedAt) > new Date(latest)) {
+          return entry.lastReviewedAt
+        }
+        return latest
+      }, null)
+
+      return {
+        ...item,
+        tracking,
+        totalReviews,
+        progress: computeItemProgress(tracking),
+        lastReviewDate,
+      }
+    })
+  }, [trackingState])
+
+  const filteredAndSortedItems = useMemo(() => {
+    const normalizedSearch = normalizeText(search)
+
+    const filtered = items.filter((item) => {
+      if (normalizedSearch) {
+        const searchable = normalizeText(
+          [
+            item.shortDescription,
+            item.tagCodes.join(' '),
+            item.tagLabels.join(' '),
+            item.tracking.itemLabel,
+            item.tracking.assignedColleges.join(' '),
+            item.tracking.lisaSheets.map((sheet) => `${sheet.name} ${sheet.url}`).join(' '),
+            item.tracking.platformSheets.map((sheet) => `${sheet.name} ${sheet.url}`).join(' '),
+            String(item.itemNumber),
+          ].join(' '),
+        )
+        if (!searchable.includes(normalizedSearch)) {
+          return false
+        }
+      }
+
+      if (collegeFilter !== 'ALL' && !item.tracking.assignedColleges.includes(collegeFilter)) {
+        return false
+      }
+
+      if (masteryFilter !== 'ALL') {
+        const hasMastery = item.tracking.assignedColleges.some(
+          (college) => item.tracking.byCollege[college]?.mastery === masteryFilter,
+        )
+        if (!hasMastery) {
+          return false
+        }
+      }
+
+      return true
+    })
+
+    return filtered.sort((a, b) => {
+      if (sortKey === 'reviews') {
+        return b.totalReviews - a.totalReviews || a.itemNumber - b.itemNumber
+      }
+      if (sortKey === 'progress') {
+        return b.progress - a.progress || b.totalReviews - a.totalReviews || a.itemNumber - b.itemNumber
+      }
+      return b.totalReviews - a.totalReviews || b.progress - a.progress || a.itemNumber - b.itemNumber
+    })
+  }, [items, search, collegeFilter, masteryFilter, sortKey])
+
+  const suggestions = useMemo(() => {
+    const lowMastery = items
+      .filter((item) =>
+        item.tracking.assignedColleges.some((college) => {
+          const entry = item.tracking.byCollege[college]
+          return entry && MASTERY_SCORE[entry.mastery] <= MASTERY_SCORE.Moyen
+        }),
+      )
+      .sort((a, b) => a.progress - b.progress || a.itemNumber - b.itemNumber)
+      .slice(0, 8)
+
+    const stale = items
+      .filter((item) => item.tracking.assignedColleges.length > 0)
+      .filter((item) => {
+        if (!item.lastReviewDate) {
+          return true
+        }
+        const days = (Date.now() - new Date(item.lastReviewDate).getTime()) / (1000 * 60 * 60 * 24)
+        return days > 14
+      })
+      .sort((a, b) => {
+        if (!a.lastReviewDate) {
+          return -1
+        }
+        if (!b.lastReviewDate) {
+          return 1
+        }
+        return new Date(a.lastReviewDate).getTime() - new Date(b.lastReviewDate).getTime()
+      })
+      .slice(0, 8)
+
+    return { lowMastery, stale }
+  }, [items])
+
+  const focusCandidates = useMemo(() => {
+    const fromLow = suggestions.lowMastery.map((item) => item.itemNumber)
+    const fromStale = suggestions.stale.map((item) => item.itemNumber)
+    const merged = Array.from(new Set([...fromLow, ...fromStale]))
+    return merged.length > 0 ? merged : filteredAndSortedItems.map((item) => item.itemNumber)
+  }, [suggestions, filteredAndSortedItems])
+
+  const selectedItem = useMemo(() => {
+    if (focusMode && focusCandidates.length > 0 && !focusCandidates.includes(selectedItemId)) {
+      return items.find((item) => item.itemNumber === focusCandidates[0])
+    }
+    return items.find((item) => item.itemNumber === selectedItemId)
+  }, [items, selectedItemId, focusMode, focusCandidates])
+
+  const effectiveSelectedItem = selectedItem ?? items[0]
+
+  const itemTableList = useMemo(() => {
+    if (!focusMode) {
+      return filteredAndSortedItems
+    }
+    return filteredAndSortedItems.filter((item) => item.itemNumber === effectiveSelectedItem?.itemNumber)
+  }, [focusMode, filteredAndSortedItems, effectiveSelectedItem])
+
+  const globalStats = useMemo(() => {
+    const completedCount = items.filter(
+      (item) => item.tracking.assignedColleges.length > 0 && item.progress >= 0.999,
+    ).length
+    const remainingCount = rawItems.length - completedCount
+
+    const byCollege = COLLEGES.map((college) => {
+      let assigned = 0
+      let completed = 0
+      let reviews = 0
+      for (const item of items) {
+        if (!item.tracking.assignedColleges.includes(college)) {
+          continue
+        }
+        assigned += 1
+        const entry = item.tracking.byCollege[college]
+        if (entry) {
+          reviews += entry.reviews
+          const isCompleted = entry.reviews > 0 && MASTERY_SCORE[entry.mastery] >= MASTERY_SCORE.Bon
+          if (isCompleted) {
+            completed += 1
+          }
+        }
+      }
+      return {
+        college,
+        assigned,
+        completed,
+        reviews,
+        progress: assigned === 0 ? 0 : (completed / assigned) * 100,
+      }
+    })
+
+    return {
+      completedCount,
+      remainingCount,
+      overallProgress: (completedCount / rawItems.length) * 100,
+      byCollege,
+    }
+  }, [items])
+
+  const weeklyReviewSeries = useMemo(() => {
+    const yearStart = new Date(HABIT_TRACKER_YEAR, 0, 1)
+    yearStart.setHours(0, 0, 0, 0)
+    const yearEnd = new Date(HABIT_TRACKER_YEAR, 11, 31)
+    yearEnd.setHours(0, 0, 0, 0)
+    const now = new Date()
+    now.setHours(0, 0, 0, 0)
+    const firstGridDay = startOfWeek(yearStart)
+
+    const aggregate = new Map<string, number>()
+    const applyEvent = (event: ReviewEvent) => {
+      const eventDate = new Date(event.date)
+      eventDate.setHours(0, 0, 0, 0)
+      if (eventDate < yearStart || eventDate > yearEnd) {
+        return
+      }
+      const key = toDayKey(eventDate)
+      const nextValue = (aggregate.get(key) ?? 0) + event.delta
+      // Guard against legacy negative events so today's +/- immediately reflects in the heatmap.
+      aggregate.set(key, Math.max(0, nextValue))
+    }
+
+    for (const item of items) {
+      for (const college of item.tracking.assignedColleges) {
+        const entry = item.tracking.byCollege[college]
+        if (!entry) {
+          continue
+        }
+        for (const event of entry.reviewHistory) {
+          applyEvent(event)
+        }
+      }
+
+      for (const sheet of item.tracking.lisaSheets) {
+        for (const event of sheet.tracking.reviewHistory) {
+          applyEvent(event)
+        }
+      }
+      for (const sheet of item.tracking.platformSheets) {
+        for (const event of sheet.tracking.reviewHistory) {
+          applyEvent(event)
+        }
+      }
+    }
+
+    const weeks: Array<{
+      weekKey: string
+      weekLabel: string
+      days: Array<{ dateKey: string; count: number; inRange: boolean; intensity: number }>
+    }> = []
+
+    const weekCursor = new Date(firstGridDay)
+    while (weekCursor <= yearEnd) {
+      const weekStart = new Date(weekCursor)
+      const weekKey = toWeekKey(weekStart)
+      weeks.push({
+        weekKey,
+        weekLabel: new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short' }).format(weekStart),
+        days: Array.from({ length: 7 }).map((_, dayOffset) => {
+          const day = new Date(weekStart)
+          day.setDate(weekStart.getDate() + dayOffset)
+          const dayKey = toDayKey(day)
+          const inRange = day >= yearStart && day <= yearEnd
+          const count = inRange ? (aggregate.get(dayKey) ?? 0) : 0
+          return {
+            dateKey: dayKey,
+            count,
+            inRange,
+            intensity: getIntensity(count),
+          }
+        }),
+      })
+      weekCursor.setDate(weekCursor.getDate() + 7)
+    }
+
+    return weeks
+  }, [items])
+
+  function setSelectedItem(itemNumber: number) {
+    setSelectedItemId(itemNumber)
+  }
+
+  function updateCollegeAssignment(itemNumber: number, college: string, checked: boolean) {
+    setTrackingState((current) => {
+      const currentItemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      const assignedSet = new Set(currentItemTracking.assignedColleges)
+      if (checked) {
+        assignedSet.add(college)
+      } else {
+        assignedSet.delete(college)
+      }
+
+      const byCollege = { ...currentItemTracking.byCollege }
+      if (checked && !byCollege[college]) {
+        byCollege[college] = getDefaultCollegeTracking()
+      }
+
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: {
+            assignedColleges: Array.from(assignedSet),
+            byCollege,
+            lisaSheets: currentItemTracking.lisaSheets,
+            platformSheets: currentItemTracking.platformSheets,
+            noLisaSheets: currentItemTracking.noLisaSheets,
+            noPlatformSheets: currentItemTracking.noPlatformSheets,
+            itemComment: currentItemTracking.itemComment,
+            itemIcon: currentItemTracking.itemIcon,
+            itemColor: currentItemTracking.itemColor,
+            itemLabel: currentItemTracking.itemLabel,
+          },
+        },
+      }
+    })
+  }
+
+  function updateCollegeTracking(
+    itemNumber: number,
+    college: string,
+    updater: (currentTracking: CollegeTracking) => CollegeTracking,
+  ) {
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      const prevCollegeTracking = itemTracking.byCollege[college] ?? getDefaultCollegeTracking()
+      const nextCollegeTracking = updater(prevCollegeTracking)
+
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: {
+            assignedColleges: itemTracking.assignedColleges,
+            byCollege: {
+              ...itemTracking.byCollege,
+              [college]: nextCollegeTracking,
+            },
+            lisaSheets: itemTracking.lisaSheets,
+            platformSheets: itemTracking.platformSheets,
+            noLisaSheets: itemTracking.noLisaSheets,
+            noPlatformSheets: itemTracking.noPlatformSheets,
+            itemComment: itemTracking.itemComment,
+            itemIcon: itemTracking.itemIcon,
+            itemColor: itemTracking.itemColor,
+            itemLabel: itemTracking.itemLabel,
+          },
+        },
+      }
+    })
+  }
+
+  function updateReferenceSheets(
+    itemNumber: number,
+    kind: SheetKind,
+    updater: (currentSheets: ReferenceSheet[]) => ReferenceSheet[],
+  ) {
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      const nextLisaSheets = kind === 'lisaSheets' ? updater(itemTracking.lisaSheets) : itemTracking.lisaSheets
+      const nextPlatformSheets =
+        kind === 'platformSheets' ? updater(itemTracking.platformSheets) : itemTracking.platformSheets
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: {
+            assignedColleges: itemTracking.assignedColleges,
+            byCollege: itemTracking.byCollege,
+            lisaSheets: nextLisaSheets,
+            platformSheets: nextPlatformSheets,
+            noLisaSheets: nextLisaSheets.length > 0 ? false : itemTracking.noLisaSheets,
+            noPlatformSheets: nextPlatformSheets.length > 0 ? false : itemTracking.noPlatformSheets,
+            itemComment: itemTracking.itemComment,
+            itemIcon: itemTracking.itemIcon,
+            itemColor: itemTracking.itemColor,
+            itemLabel: itemTracking.itemLabel,
+          },
+        },
+      }
+    })
+  }
+
+  function updateSheetExclusion(itemNumber: number, key: 'noLisaSheets' | 'noPlatformSheets', value: boolean) {
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: {
+            assignedColleges: itemTracking.assignedColleges,
+            byCollege: itemTracking.byCollege,
+            lisaSheets: itemTracking.lisaSheets,
+            platformSheets: itemTracking.platformSheets,
+            noLisaSheets: key === 'noLisaSheets' ? value : itemTracking.noLisaSheets,
+            noPlatformSheets: key === 'noPlatformSheets' ? value : itemTracking.noPlatformSheets,
+            itemComment: itemTracking.itemComment,
+            itemIcon: itemTracking.itemIcon,
+            itemColor: itemTracking.itemColor,
+            itemLabel: itemTracking.itemLabel,
+          },
+        },
+      }
+    })
+  }
+
+  function updateItemComment(itemNumber: number, value: string) {
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: {
+            assignedColleges: itemTracking.assignedColleges,
+            byCollege: itemTracking.byCollege,
+            lisaSheets: itemTracking.lisaSheets,
+            platformSheets: itemTracking.platformSheets,
+            noLisaSheets: itemTracking.noLisaSheets,
+            noPlatformSheets: itemTracking.noPlatformSheets,
+            itemComment: value,
+            itemIcon: itemTracking.itemIcon,
+            itemColor: itemTracking.itemColor,
+            itemLabel: itemTracking.itemLabel,
+          },
+        },
+      }
+    })
+  }
+
+  function updateItemVisual(
+    itemNumber: number,
+    patch: Partial<Pick<ItemTracking, 'itemIcon' | 'itemColor' | 'itemLabel'>>,
+  ) {
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: {
+            assignedColleges: itemTracking.assignedColleges,
+            byCollege: itemTracking.byCollege,
+            lisaSheets: itemTracking.lisaSheets,
+            platformSheets: itemTracking.platformSheets,
+            noLisaSheets: itemTracking.noLisaSheets,
+            noPlatformSheets: itemTracking.noPlatformSheets,
+            itemComment: itemTracking.itemComment,
+            itemIcon: patch.itemIcon ?? itemTracking.itemIcon,
+            itemColor: patch.itemColor ?? itemTracking.itemColor,
+            itemLabel: patch.itemLabel ?? itemTracking.itemLabel,
+          },
+        },
+      }
+    })
+  }
+
+  function nextFocusItem() {
+    if (focusCandidates.length === 0) {
+      return
+    }
+    const currentIndex = focusCandidates.indexOf(effectiveSelectedItem?.itemNumber ?? focusCandidates[0])
+    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % focusCandidates.length
+    setSelectedItem(focusCandidates[nextIndex])
+  }
+
+  function exportBackup() {
+    const payload: BackupPayload = {
+      app: 'med-learning-tracker',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      data: {
+        trackingState,
+        theme,
+        focusMode,
+        profile,
+      },
+    }
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const datePart = new Date().toISOString().slice(0, 10)
+    const anchor = document.createElement('a')
+    anchor.href = url
+    anchor.download = `med-tracker-backup-${datePart}.json`
+    document.body.appendChild(anchor)
+    anchor.click()
+    document.body.removeChild(anchor)
+    URL.revokeObjectURL(url)
+  }
+
+  async function importBackup(file: File) {
+    try {
+      const content = await file.text()
+      const parsed = JSON.parse(content) as BackupPayload
+      if (
+        parsed?.app !== 'med-learning-tracker' ||
+        parsed?.version !== 1 ||
+        !parsed?.data?.trackingState ||
+        typeof parsed?.data?.trackingState !== 'object'
+      ) {
+        window.alert('Fichier de sauvegarde invalide.')
+        return
+      }
+
+      setTrackingState(parsed.data.trackingState)
+      setTheme(parsed.data.theme === 'dark' ? 'dark' : 'light')
+      setFocusMode(Boolean(parsed.data.focusMode))
+      if (parsed.data.profile) {
+        setProfile({
+          firstName: parsed.data.profile.firstName ?? '',
+          lastName: parsed.data.profile.lastName ?? '',
+          email: parsed.data.profile.email ?? '',
+          photoUrl: parsed.data.profile.photoUrl ?? '',
+          password: parsed.data.profile.password ?? '',
+          avatarGradient: parsed.data.profile.avatarGradient ?? AVATAR_GRADIENTS[0],
+        })
+      }
+      window.alert('Sauvegarde chargée avec succès.')
+    } catch {
+      window.alert('Impossible de lire ce fichier de sauvegarde.')
+    }
+  }
+
+  if (authStatus !== 'authed') {
+    return (
+      <div className="auth-shell">
+        <div className="auth-card">
+          <h1>Connexion / Création de compte</h1>
+          <p className="auth-sub">Validation par code 8 chiffres envoyé à l’administrateur.</p>
+          <p className="auth-sub">Mot de passe requis: 12+ caractères, 1 chiffre, 1 caractère spécial.</p>
+          <div className="auth-grid">
+            <input placeholder="Prénom" value={firstNameInput} onChange={(event) => setFirstNameInput(event.target.value)} />
+            <input placeholder="Nom" value={lastNameInput} onChange={(event) => setLastNameInput(event.target.value)} />
+            <input
+              type="email"
+              placeholder="Email"
+              value={emailInput}
+              onChange={(event) => setEmailInput(event.target.value)}
+            />
+            <input
+              type="password"
+              placeholder="Mot de passe"
+              value={passwordInput}
+              onChange={(event) => setPasswordInput(event.target.value)}
+            />
+            <input
+              placeholder="Code 8 chiffres"
+              value={codeInput}
+              onChange={(event) => setCodeInput(event.target.value)}
+              maxLength={8}
+            />
+          </div>
+          <div className="auth-actions">
+            <button className="ghost-btn" onClick={() => void handleRequestCode()}>
+              Demander code admin
+            </button>
+            <button className="ghost-btn" onClick={() => void handleVerifyCode()}>
+              Valider code et créer compte
+            </button>
+            <button className="ghost-btn" onClick={() => void handleLogin()}>
+              Se connecter
+            </button>
+          </div>
+          {authMessage ? <p className="auth-success">{authMessage}</p> : null}
+          {authError ? <p className="auth-error">{authError}</p> : null}
+          {authStatus === 'loading' ? <p className="auth-sub">Chargement...</p> : null}
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="dashboard-shell">
+      <header className="topbar">
+        <div>
+          <p className="eyebrow">Medical Learning Tracker</p>
+          <h1>Dashboard EDN - 367 items</h1>
+        </div>
+        <div className="topbar-actions">
+          <div className="menu-wrap">
+            <button
+              className="ghost-btn icon-btn"
+              title="Settings"
+              aria-label="Settings"
+              onClick={() => setSettingsOpen((value) => !value)}
+            >
+              ⚙
+            </button>
+            {settingsOpen ? (
+              <div className="menu-popover">
+                <p className="menu-title">Settings</p>
+                <label className="menu-row">
+                  Theme
+                  <select value={theme} onChange={(event) => setTheme(event.target.value as Theme)}>
+                    <option value="light">Light</option>
+                    <option value="dark">Dark</option>
+                  </select>
+                </label>
+                <label className="menu-row">
+                  Focus mode
+                  <input
+                    type="checkbox"
+                    checked={focusMode}
+                    onChange={(event) => setFocusMode(event.target.checked)}
+                  />
+                </label>
+                <div className="menu-actions">
+                  <button type="button" className="menu-action-btn" onClick={exportBackup}>
+                    Exporter sauvegarde
+                  </button>
+                  <button
+                    type="button"
+                    className="menu-action-btn"
+                    onClick={() => backupInputRef.current?.click()}
+                  >
+                    Charger sauvegarde
+                  </button>
+                  <input
+                    ref={backupInputRef}
+                    type="file"
+                    accept="application/json,.json"
+                    className="hidden-file-input"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0]
+                      if (file) {
+                        void importBackup(file)
+                      }
+                      event.target.value = ''
+                    }}
+                  />
+                </div>
+              </div>
+            ) : null}
+          </div>
+          <div className="menu-wrap">
+            <button
+              className="ghost-btn icon-btn profile-trigger-btn"
+              title="Profil"
+              aria-label="Profil"
+              onClick={() => setProfileMenuOpen((value) => !value)}
+            >
+              {profile.photoUrl ? (
+                <img className="profile-trigger-avatar" src={profile.photoUrl} alt="Profil" />
+              ) : (
+                <span className="profile-trigger-avatar profile-avatar-fallback" style={{ background: profile.avatarGradient }}>
+                  {getProfileInitials(profile)}
+                </span>
+              )}
+            </button>
+            {profileMenuOpen ? (
+              <div className="menu-popover">
+                <p className="menu-title">Profil</p>
+                <div className="profile-head">
+                  {profile.photoUrl ? (
+                    <img className="profile-avatar" src={profile.photoUrl} alt="Photo profil" />
+                  ) : (
+                    <div className="profile-avatar profile-avatar-fallback" style={{ background: profile.avatarGradient }}>
+                      {getProfileInitials(profile)}
+                    </div>
+                  )}
+                </div>
+                <label className="menu-row menu-row-input">
+                  Prénom
+                  <input
+                    type="text"
+                    value={profile.firstName}
+                    onChange={(event) => setProfile((current) => ({ ...current, firstName: event.target.value }))}
+                  />
+                </label>
+                <label className="menu-row menu-row-input">
+                  Nom
+                  <input
+                    type="text"
+                    value={profile.lastName}
+                    onChange={(event) => setProfile((current) => ({ ...current, lastName: event.target.value }))}
+                  />
+                </label>
+                <label className="menu-row menu-row-input">
+                  Email
+                  <input
+                    type="email"
+                    value={profile.email}
+                    onChange={(event) => setProfile((current) => ({ ...current, email: event.target.value }))}
+                  />
+                </label>
+                <label className="menu-row menu-row-input">
+                  Photo URL
+                  <input
+                    type="url"
+                    placeholder="https://..."
+                    value={profile.photoUrl}
+                    onChange={(event) => setProfile((current) => ({ ...current, photoUrl: event.target.value }))}
+                  />
+                </label>
+                <div className="menu-row menu-row-input">
+                  <span>Gradient avatar</span>
+                  <div className="avatar-gradient-grid">
+                    {AVATAR_GRADIENTS.map((gradient) => (
+                      <button
+                        key={gradient}
+                        type="button"
+                        className={`avatar-gradient-dot ${profile.avatarGradient === gradient ? 'active' : ''}`}
+                        style={{ background: gradient }}
+                        onClick={() => setProfile((current) => ({ ...current, avatarGradient: gradient }))}
+                        aria-label="Choisir ce gradient avatar"
+                        title="Choisir ce gradient avatar"
+                      />
+                    ))}
+                  </div>
+                </div>
+                <label className="menu-row menu-row-input">
+                  Password
+                  <input
+                    type="password"
+                    value={profile.password}
+                    onChange={(event) => setProfile((current) => ({ ...current, password: event.target.value }))}
+                  />
+                </label>
+                <button type="button" className="menu-action-btn" onClick={() => void handleLogout()}>
+                  Déconnexion ({authUser?.email ?? 'session'})
+                </button>
+              </div>
+            ) : null}
+          </div>
+          <button
+            className="ghost-btn icon-btn"
+            title={theme === 'light' ? 'Night mode' : 'Light mode'}
+            aria-label={theme === 'light' ? 'Night mode' : 'Light mode'}
+            onClick={() => setTheme((value) => (value === 'light' ? 'dark' : 'light'))}
+          >
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
+        </div>
+      </header>
+
+      <section className="global-grid">
+        <article className="stat-card">
+          <p className="stat-label">Items complétés</p>
+          <p className="stat-value">{globalStats.completedCount}</p>
+          <p className="stat-sub">{globalStats.remainingCount} restants</p>
+        </article>
+        <article className="stat-card">
+          <p className="stat-label">Progression globale</p>
+          <p className="stat-value">{globalStats.overallProgress.toFixed(1)}%</p>
+          <div className="progress-track">
+            <div className="progress-fill" style={{ width: `${globalStats.overallProgress}%` }} />
+          </div>
+        </article>
+        <article className="stat-card large-card">
+          <p className="stat-label">Habit tracking {HABIT_TRACKER_YEAR} (lectures)</p>
+          <div className="habit-tracker-wrap">
+            {weeklyReviewSeries.map((week) => (
+              <div className="habit-week" key={week.weekKey} title={`Semaine du ${week.weekLabel}`}>
+                {week.days.map((day) => (
+                  <span
+                    key={day.dateKey}
+                    className={`habit-dot ${day.inRange ? `intensity-${day.intensity}` : 'out-range'}`}
+                    title={`${day.dateKey} • ${day.count} lecture${day.count > 1 ? 's' : ''}`}
+                  />
+                ))}
+              </div>
+            ))}
+          </div>
+          <div className="habit-legend">
+            <span>Faible</span>
+            <div className="legend-scale">
+              <span className="habit-dot intensity-0" />
+              <span className="habit-dot intensity-1" />
+              <span className="habit-dot intensity-2" />
+              <span className="habit-dot intensity-3" />
+              <span className="habit-dot intensity-4" />
+            </div>
+            <span>Intense</span>
+          </div>
+        </article>
+      </section>
+
+      <section className="main-grid">
+        <article className="panel table-panel">
+          <div className="panel-head">
+            <h2>Items</h2>
+            <p>{itemTableList.length} lignes</p>
+          </div>
+
+          <div className="filters-row">
+            <input
+              type="text"
+              placeholder="Search item, tag, college"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+            <select value={collegeFilter} onChange={(event) => setCollegeFilter(event.target.value)}>
+              <option value="ALL">Tous colleges</option>
+              {COLLEGES.map((college) => (
+                <option value={college} key={college}>
+                  {college}
+                </option>
+              ))}
+            </select>
+            <select value={masteryFilter} onChange={(event) => setMasteryFilter(event.target.value)}>
+              <option value="ALL">Tous niveaux</option>
+              {MASTERY_LEVELS.map((level) => (
+                <option value={level} key={level}>
+                  {level}
+                </option>
+              ))}
+            </select>
+            <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}>
+              <option value="reviews">Sort: Reviews</option>
+              <option value="progress">Sort: Progress</option>
+            </select>
+          </div>
+
+              <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Description</th>
+                  <th>Colleges</th>
+                  <th>Fiches LISA</th>
+                  <th>Fiches Plateformes</th>
+                  <th>Reviews</th>
+                  <th>Progress</th>
+                </tr>
+              </thead>
+              <tbody>
+                {itemTableList.map((item) => {
+                  const hasVisualMarker = Boolean(item.tracking.itemIcon || item.tracking.itemColor || item.tracking.itemLabel)
+                  return (
+                    <tr
+                      key={item.itemNumber}
+                      className={item.itemNumber === effectiveSelectedItem?.itemNumber ? 'selected' : ''}
+                      onClick={() => setSelectedItem(item.itemNumber)}
+                    >
+                      <td>
+                        <div className="item-cell">
+                          {hasVisualMarker && (item.tracking.itemIcon || item.tracking.itemColor) ? (
+                            <span className="item-marker" style={{ backgroundColor: item.tracking.itemColor || undefined }}>
+                              {item.tracking.itemIcon || ''}
+                            </span>
+                          ) : null}
+                          <div>
+                            <span>#{item.itemNumber}</span>
+                            {item.tracking.itemLabel ? (
+                              <p className="item-label-chip" style={{ borderColor: item.tracking.itemColor || undefined }}>
+                                {item.tracking.itemLabel}
+                              </p>
+                            ) : null}
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <p className="description-cell">{item.shortDescription}</p>
+                        <p className="tag-row">{item.tagCodes.join(' • ')}</p>
+                      </td>
+                      <td>{item.tracking.assignedColleges.length}</td>
+                      <td>{item.tracking.lisaSheets.length}</td>
+                      <td>{item.tracking.platformSheets.length}</td>
+                      <td>{item.totalReviews}</td>
+                      <td>
+                        <span className="pill">{Math.round(item.progress * 100)}%</span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article className="panel detail-panel">
+          {effectiveSelectedItem ? (
+            <>
+              <div className="panel-head">
+                <div>
+                  <h2>{effectiveSelectedItem.tracking.itemIcon ? `${effectiveSelectedItem.tracking.itemIcon} ` : ''}Item #{effectiveSelectedItem.itemNumber}</h2>
+                  <p>{effectiveSelectedItem.shortDescription}</p>
+                </div>
+                {focusMode ? (
+                  <button className="ghost-btn" onClick={nextFocusItem}>
+                    Item focus suivant
+                  </button>
+                ) : null}
+              </div>
+
+              <div className="meta-grid">
+                <div>
+                  <p className="meta-label">Tags</p>
+                  <p>{effectiveSelectedItem.tagLabels.join(', ') || 'Aucun'}</p>
+                </div>
+                <div>
+                  <p className="meta-label">Dernière review</p>
+                  <p>{formatDate(effectiveSelectedItem.lastReviewDate)}</p>
+                </div>
+              </div>
+
+              <label className="block-label">
+                Commentaire item
+                <textarea
+                  value={effectiveSelectedItem.tracking.itemComment}
+                  placeholder="Commentaire global sur cet item..."
+                  onChange={(event) => updateItemComment(effectiveSelectedItem.itemNumber, event.target.value)}
+                />
+              </label>
+
+              <h3>Marqueur visuel item</h3>
+              <div className="item-visual-editor">
+                <label className="block-label">
+                  Icône
+                  <input
+                    type="text"
+                    maxLength={2}
+                    value={effectiveSelectedItem.tracking.itemIcon}
+                    onChange={(event) =>
+                      updateItemVisual(effectiveSelectedItem.itemNumber, { itemIcon: event.target.value })
+                    }
+                  />
+                </label>
+                <label className="block-label">
+                  Couleur
+                  <input
+                    type="color"
+                    value={effectiveSelectedItem.tracking.itemColor || '#2563eb'}
+                    onChange={(event) =>
+                      updateItemVisual(effectiveSelectedItem.itemNumber, { itemColor: event.target.value })
+                    }
+                  />
+                </label>
+                <label className="block-label">
+                  Libellé
+                  <input
+                    type="text"
+                    placeholder="Tombe souvent, Difficile..."
+                    value={effectiveSelectedItem.tracking.itemLabel}
+                    onChange={(event) =>
+                      updateItemVisual(effectiveSelectedItem.itemNumber, { itemLabel: event.target.value })
+                    }
+                  />
+                </label>
+                <div className="item-visual-actions">
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    onClick={() =>
+                      updateItemVisual(effectiveSelectedItem.itemNumber, {
+                        itemIcon: '',
+                        itemColor: '',
+                        itemLabel: '',
+                      })
+                    }
+                  >
+                    Effacer marqueur
+                  </button>
+                </div>
+              </div>
+
+              <h3>Assignation colleges</h3>
+              <div className="college-picker">
+                {COLLEGES.map((college) => (
+                  <label key={college}>
+                    <input
+                      type="checkbox"
+                      checked={effectiveSelectedItem.tracking.assignedColleges.includes(college)}
+                      onChange={(event) =>
+                        updateCollegeAssignment(effectiveSelectedItem.itemNumber, college, event.target.checked)
+                      }
+                    />
+                    <span>{college}</span>
+                  </label>
+                ))}
+              </div>
+
+              <h3>Tracking par college</h3>
+              <div className="tracking-grid">
+                {effectiveSelectedItem.tracking.assignedColleges.length === 0 ? (
+                  <p className="muted">Sélectionne au moins un college pour commencer le suivi.</p>
+                ) : null}
+
+                {effectiveSelectedItem.tracking.assignedColleges.map((college) => {
+                  const data = effectiveSelectedItem.tracking.byCollege[college] ?? getDefaultCollegeTracking()
+                  return (
+                    <section key={college} className={`college-card ${data.favorite ? 'is-favorite' : ''}`}>
+                      <div className="college-card-head">
+                        <p>{college}</p>
+                        <button
+                          className={`star-btn ${data.favorite ? 'active' : ''}`}
+                          onClick={() =>
+                            updateCollegeTracking(effectiveSelectedItem.itemNumber, college, (current) => ({
+                              ...current,
+                              favorite: !current.favorite,
+                            }))
+                          }
+                        >
+                          ★
+                        </button>
+                      </div>
+
+                      <div className="control-row">
+                        <p>Reviews</p>
+                        <div className="counter-wrap">
+                          <button
+                            onClick={() =>
+                              updateCollegeTracking(effectiveSelectedItem.itemNumber, college, (current) => ({
+                                ...current,
+                                reviews: Math.max(0, current.reviews - 1),
+                                reviewHistory:
+                                  current.reviews > 0
+                                    ? [...current.reviewHistory, { date: new Date().toISOString(), delta: -1 }]
+                                    : current.reviewHistory,
+                              }))
+                            }
+                          >
+                            -
+                          </button>
+                          <span>{data.reviews}</span>
+                          <button
+                            onClick={() =>
+                              updateCollegeTracking(effectiveSelectedItem.itemNumber, college, (current) => ({
+                                ...current,
+                                reviews: current.reviews + 1,
+                                lastReviewedAt: new Date().toISOString(),
+                                reviewHistory: [...current.reviewHistory, { date: new Date().toISOString(), delta: 1 }],
+                              }))
+                            }
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+
+                      <label className="block-label">
+                        Feeling / Mastery
+                        <select
+                          value={data.mastery}
+                          className={`mastery-${normalizeText(data.mastery).toLowerCase().replace(' ', '-')}`}
+                          onChange={(event) =>
+                            updateCollegeTracking(effectiveSelectedItem.itemNumber, college, (current) => ({
+                              ...current,
+                              mastery: event.target.value as Mastery,
+                            }))
+                          }
+                        >
+                          {MASTERY_LEVELS.map((level) => (
+                            <option value={level} key={level}>
+                              {level}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+
+                      <label className="block-label">
+                        Commentaires
+                        <textarea
+                          value={data.comments}
+                          placeholder="Notes ciblées, pièges, rappel d'exam..."
+                          onChange={(event) =>
+                            updateCollegeTracking(effectiveSelectedItem.itemNumber, college, (current) => ({
+                              ...current,
+                              comments: event.target.value,
+                            }))
+                          }
+                        />
+                      </label>
+                    </section>
+                  )
+                })}
+              </div>
+
+              <h3>Fiches LISA</h3>
+              {effectiveSelectedItem.tracking.lisaSheets.length === 0 ? (
+                <label className="checkline">
+                  <input
+                    type="checkbox"
+                    checked={effectiveSelectedItem.tracking.noLisaSheets}
+                    onChange={(event) =>
+                      updateSheetExclusion(effectiveSelectedItem.itemNumber, 'noLisaSheets', event.target.checked)
+                    }
+                  />
+                  PAS de fiche lisa
+                </label>
+              ) : null}
+              <div className="reference-grid">
+                {effectiveSelectedItem.tracking.lisaSheets.length === 0 ? (
+                  <p className="muted">Aucune fiche LISA.</p>
+                ) : null}
+                {effectiveSelectedItem.tracking.lisaSheets.map((sheet) => (
+                  <div key={sheet.id} className={`reference-card ${sheet.tracking.favorite ? 'is-favorite' : ''}`}>
+                    <div className="reference-row">
+                      <button
+                        type="button"
+                        className="sheet-emoji-btn"
+                        title={`Couleur: ${SHEET_COLORS.find((sheetColor) => sheetColor.value === sheet.color)?.label ?? ''}`}
+                        onClick={() =>
+                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
+                            currentSheets.map((currentSheet) =>
+                              currentSheet.id === sheet.id
+                                ? { ...currentSheet, color: getNextSheetColor(currentSheet.color) }
+                                : currentSheet,
+                            ),
+                          )
+                        }
+                      >
+                        {SHEET_COLORS.find((sheetColor) => sheetColor.value === sheet.color)?.emoji ?? '🟡'}
+                      </button>
+                      <input
+                        type="text"
+                        placeholder="Nom de la fiche"
+                        value={sheet.name}
+                        onChange={(event) =>
+                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
+                            currentSheets.map((currentSheet) =>
+                              currentSheet.id === sheet.id ? { ...currentSheet, name: event.target.value } : currentSheet,
+                            ),
+                          )
+                        }
+                      />
+                      <input
+                        type="url"
+                        placeholder="https://..."
+                        value={sheet.url}
+                        onChange={(event) =>
+                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
+                            currentSheets.map((currentSheet) =>
+                              currentSheet.id === sheet.id ? { ...currentSheet, url: event.target.value } : currentSheet,
+                            ),
+                          )
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="remove-ref-btn"
+                        onClick={() =>
+                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
+                            currentSheets.filter((currentSheet) => currentSheet.id !== sheet.id),
+                          )
+                        }
+                      >
+                        -
+                      </button>
+                    </div>
+
+                    <div className="control-row">
+                      <p>Tracking fiche</p>
+                      <div className="counter-wrap">
+                        <button
+                          onClick={() =>
+                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
+                              currentSheets.map((currentSheet) =>
+                                currentSheet.id === sheet.id
+                                  ? {
+                                      ...currentSheet,
+                                      tracking: {
+                                        ...currentSheet.tracking,
+                                        reviews: Math.max(0, currentSheet.tracking.reviews - 1),
+                                        reviewHistory: [
+                                          ...(currentSheet.tracking.reviews > 0
+                                            ? [...currentSheet.tracking.reviewHistory, { date: new Date().toISOString(), delta: -1 }]
+                                            : currentSheet.tracking.reviewHistory),
+                                        ],
+                                      },
+                                    }
+                                  : currentSheet,
+                              ),
+                            )
+                          }
+                        >
+                          -
+                        </button>
+                        <span>{sheet.tracking.reviews}</span>
+                        <button
+                          onClick={() =>
+                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
+                              currentSheets.map((currentSheet) =>
+                                currentSheet.id === sheet.id
+                                  ? {
+                                      ...currentSheet,
+                                      tracking: {
+                                        ...currentSheet.tracking,
+                                        reviews: currentSheet.tracking.reviews + 1,
+                                        lastReviewedAt: new Date().toISOString(),
+                                        reviewHistory: [
+                                          ...currentSheet.tracking.reviewHistory,
+                                          { date: new Date().toISOString(), delta: 1 },
+                                        ],
+                                      },
+                                    }
+                                  : currentSheet,
+                              ),
+                            )
+                          }
+                        >
+                          +
+                        </button>
+                        <button
+                          className={`star-btn ${sheet.tracking.favorite ? 'active' : ''}`}
+                          onClick={() =>
+                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
+                              currentSheets.map((currentSheet) =>
+                                currentSheet.id === sheet.id
+                                  ? {
+                                      ...currentSheet,
+                                      tracking: {
+                                        ...currentSheet.tracking,
+                                        favorite: !currentSheet.tracking.favorite,
+                                      },
+                                    }
+                                  : currentSheet,
+                              ),
+                            )
+                          }
+                        >
+                          ★
+                        </button>
+                      </div>
+                    </div>
+
+                    <label className="block-label">
+                      Feeling / Mastery
+                      <select
+                        value={sheet.tracking.mastery}
+                        onChange={(event) =>
+                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
+                            currentSheets.map((currentSheet) =>
+                              currentSheet.id === sheet.id
+                                ? {
+                                    ...currentSheet,
+                                    tracking: {
+                                      ...currentSheet.tracking,
+                                      mastery: event.target.value as Mastery,
+                                    },
+                                  }
+                                : currentSheet,
+                            ),
+                          )
+                        }
+                      >
+                        {MASTERY_LEVELS.map((level) => (
+                          <option value={level} key={level}>
+                            {level}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block-label">
+                      Commentaires
+                      <textarea
+                        value={sheet.tracking.comments}
+                        placeholder="Notes de la fiche..."
+                        onChange={(event) =>
+                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
+                            currentSheets.map((currentSheet) =>
+                              currentSheet.id === sheet.id
+                                ? {
+                                    ...currentSheet,
+                                    tracking: {
+                                      ...currentSheet.tracking,
+                                      comments: event.target.value,
+                                    },
+                                  }
+                                : currentSheet,
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="add-ref-btn"
+                  onClick={() =>
+                    updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) => [
+                      ...currentSheets,
+                      makeReferenceSheet(),
+                    ])
+                  }
+                >
+                  + Ajouter fiche LISA
+                </button>
+              </div>
+
+              <h3>Fiches Plateformes</h3>
+              {effectiveSelectedItem.tracking.platformSheets.length === 0 ? (
+                <label className="checkline">
+                  <input
+                    type="checkbox"
+                    checked={effectiveSelectedItem.tracking.noPlatformSheets}
+                    onChange={(event) =>
+                      updateSheetExclusion(effectiveSelectedItem.itemNumber, 'noPlatformSheets', event.target.checked)
+                    }
+                  />
+                  PAS de fiche plateformes
+                </label>
+              ) : null}
+              <div className="reference-grid">
+                {effectiveSelectedItem.tracking.platformSheets.length === 0 ? (
+                  <p className="muted">Aucune fiche plateforme.</p>
+                ) : null}
+                {effectiveSelectedItem.tracking.platformSheets.map((sheet) => (
+                  <div key={sheet.id} className={`reference-card ${sheet.tracking.favorite ? 'is-favorite' : ''}`}>
+                    <div className="reference-row">
+                      <button
+                        type="button"
+                        className="sheet-emoji-btn"
+                        title={`Couleur: ${SHEET_COLORS.find((sheetColor) => sheetColor.value === sheet.color)?.label ?? ''}`}
+                        onClick={() =>
+                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
+                            currentSheets.map((currentSheet) =>
+                              currentSheet.id === sheet.id
+                                ? { ...currentSheet, color: getNextSheetColor(currentSheet.color) }
+                                : currentSheet,
+                            ),
+                          )
+                        }
+                      >
+                        {SHEET_COLORS.find((sheetColor) => sheetColor.value === sheet.color)?.emoji ?? '🟡'}
+                      </button>
+                      <input
+                        type="text"
+                        placeholder="Nom de la fiche"
+                        value={sheet.name}
+                        onChange={(event) =>
+                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
+                            currentSheets.map((currentSheet) =>
+                              currentSheet.id === sheet.id ? { ...currentSheet, name: event.target.value } : currentSheet,
+                            ),
+                          )
+                        }
+                      />
+                      <input
+                        type="url"
+                        placeholder="https://..."
+                        value={sheet.url}
+                        onChange={(event) =>
+                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
+                            currentSheets.map((currentSheet) =>
+                              currentSheet.id === sheet.id ? { ...currentSheet, url: event.target.value } : currentSheet,
+                            ),
+                          )
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="remove-ref-btn"
+                        onClick={() =>
+                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
+                            currentSheets.filter((currentSheet) => currentSheet.id !== sheet.id),
+                          )
+                        }
+                      >
+                        -
+                      </button>
+                    </div>
+
+                    <div className="control-row">
+                      <p>Tracking fiche</p>
+                      <div className="counter-wrap">
+                        <button
+                          onClick={() =>
+                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
+                              currentSheets.map((currentSheet) =>
+                                currentSheet.id === sheet.id
+                                  ? {
+                                      ...currentSheet,
+                                      tracking: {
+                                        ...currentSheet.tracking,
+                                        reviews: Math.max(0, currentSheet.tracking.reviews - 1),
+                                        reviewHistory: [
+                                          ...(currentSheet.tracking.reviews > 0
+                                            ? [...currentSheet.tracking.reviewHistory, { date: new Date().toISOString(), delta: -1 }]
+                                            : currentSheet.tracking.reviewHistory),
+                                        ],
+                                      },
+                                    }
+                                  : currentSheet,
+                              ),
+                            )
+                          }
+                        >
+                          -
+                        </button>
+                        <span>{sheet.tracking.reviews}</span>
+                        <button
+                          onClick={() =>
+                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
+                              currentSheets.map((currentSheet) =>
+                                currentSheet.id === sheet.id
+                                  ? {
+                                      ...currentSheet,
+                                      tracking: {
+                                        ...currentSheet.tracking,
+                                        reviews: currentSheet.tracking.reviews + 1,
+                                        lastReviewedAt: new Date().toISOString(),
+                                        reviewHistory: [
+                                          ...currentSheet.tracking.reviewHistory,
+                                          { date: new Date().toISOString(), delta: 1 },
+                                        ],
+                                      },
+                                    }
+                                  : currentSheet,
+                              ),
+                            )
+                          }
+                        >
+                          +
+                        </button>
+                        <button
+                          className={`star-btn ${sheet.tracking.favorite ? 'active' : ''}`}
+                          onClick={() =>
+                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
+                              currentSheets.map((currentSheet) =>
+                                currentSheet.id === sheet.id
+                                  ? {
+                                      ...currentSheet,
+                                      tracking: {
+                                        ...currentSheet.tracking,
+                                        favorite: !currentSheet.tracking.favorite,
+                                      },
+                                    }
+                                  : currentSheet,
+                              ),
+                            )
+                          }
+                        >
+                          ★
+                        </button>
+                      </div>
+                    </div>
+
+                    <label className="block-label">
+                      Feeling / Mastery
+                      <select
+                        value={sheet.tracking.mastery}
+                        onChange={(event) =>
+                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
+                            currentSheets.map((currentSheet) =>
+                              currentSheet.id === sheet.id
+                                ? {
+                                    ...currentSheet,
+                                    tracking: {
+                                      ...currentSheet.tracking,
+                                      mastery: event.target.value as Mastery,
+                                    },
+                                  }
+                                : currentSheet,
+                            ),
+                          )
+                        }
+                      >
+                        {MASTERY_LEVELS.map((level) => (
+                          <option value={level} key={level}>
+                            {level}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+
+                    <label className="block-label">
+                      Commentaires
+                      <textarea
+                        value={sheet.tracking.comments}
+                        placeholder="Notes de la fiche..."
+                        onChange={(event) =>
+                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
+                            currentSheets.map((currentSheet) =>
+                              currentSheet.id === sheet.id
+                                ? {
+                                    ...currentSheet,
+                                    tracking: {
+                                      ...currentSheet.tracking,
+                                      comments: event.target.value,
+                                    },
+                                  }
+                                : currentSheet,
+                            ),
+                          )
+                        }
+                      />
+                    </label>
+                  </div>
+                ))}
+                <button
+                  type="button"
+                  className="add-ref-btn"
+                  onClick={() =>
+                    updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) => [
+                      ...currentSheets,
+                      makeReferenceSheet(),
+                    ])
+                  }
+                >
+                  + Ajouter fiche plateforme
+                </button>
+              </div>
+            </>
+          ) : (
+            <p>Aucun item trouvé.</p>
+          )}
+        </article>
+      </section>
+
+      <section className="bottom-grid">
+        <article className="panel compact-panel">
+          <div className="panel-head">
+            <h2>Progression par college</h2>
+          </div>
+          <div className="college-metrics">
+            {globalStats.byCollege.map((row) => (
+              <div key={row.college} className="metric-row">
+                <p>{row.college}</p>
+                <p>
+                  {row.completed}/{row.assigned} ({row.progress.toFixed(0)}%) - {row.reviews} reviews
+                </p>
+              </div>
+            ))}
+          </div>
+        </article>
+      </section>
+    </div>
+  )
+}
+
+export default App

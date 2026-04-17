@@ -1,0 +1,4836 @@
+[
+  {
+    "itemNumber": 1,
+    "shortDescription": "La relation médecin-malade dans le cadre du colloque singulier ou au sein d'une équipe, le cas échéant pluriprofessionnelle. La communication avec le patient et son entourage. L'annonce d'une maladie grave ou létale ou d'un dommage associé aux soins. La formation du patient. La personnalisation de la prise en charge médicale",
+    "tagCodes": [
+      "Psy",
+      "MI"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 2,
+    "shortDescription": "Les valeurs professionnelles du médecin et des autres professions de santé",
+    "tagCodes": [
+      "MI"
+    ],
+    "tagLabels": [
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 3,
+    "shortDescription": "Le raisonnement et la décision en médecine. La médecine fondée sur les preuves (Evidence Based Medicine, EBM). La décision médicale partagée. La controverse",
+    "tagCodes": [
+      "SP",
+      "MI"
+    ],
+    "tagLabels": [
+      "Santé Publique",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 4,
+    "shortDescription": "Qualité et sécurité des soins. La sécurité du patient. La gestion des risques. Les événements indésirables associés aux soins (EIAS). Démarche qualité et évaluation des pratiques professionnelles",
+    "tagCodes": [
+      "SP",
+      "Inf",
+      "AR",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Santé Publique",
+      "Infectiologie",
+      "Anesthésie - Réanimation",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 5,
+    "shortDescription": "La gestion des erreurs et des plaintes ; l'aléa thérapeutique",
+    "tagCodes": [
+      "SP",
+      "MTL",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Santé Publique",
+      "Médecine du Travail - Médecine Légale",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 6,
+    "shortDescription": "L'organisation de l'exercice clinique et les méthodes qui permettent de sécuriser le parcours du patient",
+    "tagCodes": [
+      "SP"
+    ],
+    "tagLabels": [
+      "Santé Publique"
+    ]
+  },
+  {
+    "itemNumber": 7,
+    "shortDescription": "Les droits individuels et collectifs du patient",
+    "tagCodes": [
+      "MTL"
+    ],
+    "tagLabels": [
+      "Médecine du Travail - Médecine Légale"
+    ]
+  },
+  {
+    "itemNumber": 8,
+    "shortDescription": "Les discriminations",
+    "tagCodes": [
+      "SP",
+      "MG"
+    ],
+    "tagLabels": [
+      "Santé Publique",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 9,
+    "shortDescription": "Introduction à l’éthique médicale",
+    "tagCodes": [
+      "MTL",
+      "Gér",
+      "GO",
+      "AR",
+      "MPR",
+      "MG"
+    ],
+    "tagLabels": [
+      "Médecine du Travail - Médecine Légale",
+      "Gériatrie",
+      "Gynécologie - Obstétrique",
+      "Anesthésie - Réanimation",
+      "MPR",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 10,
+    "shortDescription": "Approches transversales du corps",
+    "tagCodes": [],
+    "tagLabels": []
+  },
+  {
+    "itemNumber": 11,
+    "shortDescription": "Violences et santé",
+    "tagCodes": [
+      "MTL",
+      "MG"
+    ],
+    "tagLabels": [
+      "Médecine du Travail - Médecine Légale",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 12,
+    "shortDescription": "Violences sexuelles",
+    "tagCodes": [
+      "MTL",
+      "GO"
+    ],
+    "tagLabels": [
+      "Médecine du Travail - Médecine Légale",
+      "Gynécologie - Obstétrique"
+    ]
+  },
+  {
+    "itemNumber": 13,
+    "shortDescription": "Certificats médicaux. Décès et législation",
+    "tagCodes": [
+      "MTL",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Médecine du Travail - Médecine Légale",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 14,
+    "shortDescription": "La mort",
+    "tagCodes": [
+      "MTL"
+    ],
+    "tagLabels": [
+      "Médecine du Travail - Médecine Légale"
+    ]
+  },
+  {
+    "itemNumber": 15,
+    "shortDescription": "Soins psychiatriques sans consentement",
+    "tagCodes": [
+      "Psy"
+    ],
+    "tagLabels": [
+      "Psychiatrie"
+    ]
+  },
+  {
+    "itemNumber": 16,
+    "shortDescription": "Organisation du système de soins. Sa régulation. Les indicateurs. Parcours de soins",
+    "tagCodes": [
+      "SP"
+    ],
+    "tagLabels": [
+      "Santé Publique"
+    ]
+  },
+  {
+    "itemNumber": 17,
+    "shortDescription": "Télémédecine, télésanté et téléservices en santé",
+    "tagCodes": [
+      "SP"
+    ],
+    "tagLabels": [
+      "Santé Publique"
+    ]
+  },
+  {
+    "itemNumber": 18,
+    "shortDescription": "Santé et numérique",
+    "tagCodes": [
+      "SP"
+    ],
+    "tagLabels": [
+      "Santé Publique"
+    ]
+  },
+  {
+    "itemNumber": 19,
+    "shortDescription": "La sécurité sociale. L'assurance maladie. Les assurances complémentaires. La complémentaire santé solidaire (CSS). La consommation médicale. Protection sociale. Consommation médicale et économie de la santé",
+    "tagCodes": [
+      "SP"
+    ],
+    "tagLabels": [
+      "Santé Publique"
+    ]
+  },
+  {
+    "itemNumber": 20,
+    "shortDescription": "La méthodologie de la recherche en santé",
+    "tagCodes": [
+      "SP"
+    ],
+    "tagLabels": [
+      "Santé Publique"
+    ]
+  },
+  {
+    "itemNumber": 21,
+    "shortDescription": "Mesure de l'état de santé de la population",
+    "tagCodes": [
+      "SP",
+      "MPR"
+    ],
+    "tagLabels": [
+      "Santé Publique",
+      "MPR"
+    ]
+  },
+  {
+    "itemNumber": 22,
+    "shortDescription": "Maladies rares",
+    "tagCodes": [
+      "MI",
+      "Gén"
+    ],
+    "tagLabels": [
+      "Médecine Interne",
+      "Génétique"
+    ]
+  },
+  {
+    "itemNumber": 23,
+    "shortDescription": "Grossesse normale",
+    "tagCodes": [
+      "GO",
+      "Nép",
+      "MG"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique",
+      "Néphrologie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 24,
+    "shortDescription": "Principales complications de la grossesse",
+    "tagCodes": [
+      "GO",
+      "Nép"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique",
+      "Néphrologie"
+    ]
+  },
+  {
+    "itemNumber": 25,
+    "shortDescription": "Grossesse extra-utérine",
+    "tagCodes": [
+      "GO"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique"
+    ]
+  },
+  {
+    "itemNumber": 26,
+    "shortDescription": "Douleur abdominale aiguë chez une femme enceinte",
+    "tagCodes": [
+      "GO"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique"
+    ]
+  },
+  {
+    "itemNumber": 27,
+    "shortDescription": "Prévention des risques fœtaux : infection, médicaments, toxiques, irradiation",
+    "tagCodes": [
+      "GO",
+      "Inf",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique",
+      "Infectiologie",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 28,
+    "shortDescription": "Connaître les particularités de l'infection urinaire au cours de la grossesse",
+    "tagCodes": [
+      "GO",
+      "Inf"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique",
+      "Infectiologie"
+    ]
+  },
+  {
+    "itemNumber": 29,
+    "shortDescription": "Connaître les principaux risques professionnels pour la maternité, liés au travail de la mère",
+    "tagCodes": [
+      "GO",
+      "MTL"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique",
+      "Médecine du Travail - Médecine Légale"
+    ]
+  },
+  {
+    "itemNumber": 30,
+    "shortDescription": "Prématurité et retard de croissance intra-utérin : facteurs de risque et prévention",
+    "tagCodes": [
+      "GO",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 31,
+    "shortDescription": "Accouchement, délivrance et suites de couches normales",
+    "tagCodes": [
+      "GO"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique"
+    ]
+  },
+  {
+    "itemNumber": 32,
+    "shortDescription": "Évaluation et soins du nouveau-né à terme",
+    "tagCodes": [
+      "Ped"
+    ],
+    "tagLabels": [
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 33,
+    "shortDescription": "Allaitement maternel",
+    "tagCodes": [
+      "GO",
+      "Ped",
+      "Nut",
+      "MG"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique",
+      "Pédiatrie",
+      "Nutrition",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 34,
+    "shortDescription": "Suites de couches pathologiques : pathologie maternelle dans les 40 jours",
+    "tagCodes": [
+      "GO"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique"
+    ]
+  },
+  {
+    "itemNumber": 35,
+    "shortDescription": "Anomalies du cycle menstruel. Métrorragies",
+    "tagCodes": [
+      "GO"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique"
+    ]
+  },
+  {
+    "itemNumber": 36,
+    "shortDescription": "Contraception",
+    "tagCodes": [
+      "GO",
+      "Thé",
+      "End",
+      "Uro",
+      "MG"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique",
+      "Thérapeutique",
+      "Endocrinologie",
+      "Urologie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 37,
+    "shortDescription": "Interruption volontaire de grossesse",
+    "tagCodes": [
+      "GO",
+      "MG"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 38,
+    "shortDescription": "Infertilité du couple : conduite de la première consultation",
+    "tagCodes": [
+      "GO",
+      "End",
+      "Uro"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique",
+      "Endocrinologie",
+      "Urologie"
+    ]
+  },
+  {
+    "itemNumber": 39,
+    "shortDescription": "Assistance médicale à la procréation : principaux aspects biologiques, médicaux et éthiques",
+    "tagCodes": [
+      "GO"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique"
+    ]
+  },
+  {
+    "itemNumber": 40,
+    "shortDescription": "Algies pelviennes chez la femme",
+    "tagCodes": [
+      "GO",
+      "Uro"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique",
+      "Urologie"
+    ]
+  },
+  {
+    "itemNumber": 41,
+    "shortDescription": "Endométriose",
+    "tagCodes": [
+      "GO"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique"
+    ]
+  },
+  {
+    "itemNumber": 42,
+    "shortDescription": "Aménorrhée",
+    "tagCodes": [
+      "GO",
+      "End"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique",
+      "Endocrinologie"
+    ]
+  },
+  {
+    "itemNumber": 43,
+    "shortDescription": "Hémorragie génitale chez la femme",
+    "tagCodes": [
+      "GO"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique"
+    ]
+  },
+  {
+    "itemNumber": 44,
+    "shortDescription": "Tuméfaction pelvienne chez la femme",
+    "tagCodes": [
+      "GO",
+      "Uro",
+      "CD"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique",
+      "Urologie",
+      "Chirurgie Digestive"
+    ]
+  },
+  {
+    "itemNumber": 45,
+    "shortDescription": "Spécificités des maladies génétiques",
+    "tagCodes": [
+      "Ped",
+      "Gén"
+    ],
+    "tagLabels": [
+      "Pédiatrie",
+      "Génétique"
+    ]
+  },
+  {
+    "itemNumber": 46,
+    "shortDescription": "Médecine génomique",
+    "tagCodes": [
+      "Gén"
+    ],
+    "tagLabels": [
+      "Génétique"
+    ]
+  },
+  {
+    "itemNumber": 47,
+    "shortDescription": "Suivi d'un nourrisson, d'un enfant et d'un adolescent normal. Dépistage des anomalies orthopédiques, des troubles visuels, auditifs et dentaires. Examens de santé obligatoires. Médecine scolaire. Mortalité et morbidité infantiles",
+    "tagCodes": [
+      "Ped",
+      "CMF",
+      "Oph",
+      "OT",
+      "ORL",
+      "MG"
+    ],
+    "tagLabels": [
+      "Pédiatrie",
+      "CMF",
+      "Ophtalmologie",
+      "Orthopédie - Traumatologie",
+      "ORL",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 48,
+    "shortDescription": "Alimentation et besoins nutritionnels du nourrisson et de l'enfant",
+    "tagCodes": [
+      "Ped"
+    ],
+    "tagLabels": [
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 49,
+    "shortDescription": "Puberté normale et pathologique",
+    "tagCodes": [
+      "Ped",
+      "GO",
+      "MG"
+    ],
+    "tagLabels": [
+      "Pédiatrie",
+      "Gynécologie - Obstétrique",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 50,
+    "shortDescription": "Pathologie génito-scrotale chez le garçon et chez l'homme",
+    "tagCodes": [
+      "Ped",
+      "Uro",
+      "End"
+    ],
+    "tagLabels": [
+      "Pédiatrie",
+      "Urologie",
+      "Endocrinologie"
+    ]
+  },
+  {
+    "itemNumber": 51,
+    "shortDescription": "Troubles de la miction chez l'enfant",
+    "tagCodes": [
+      "Ped"
+    ],
+    "tagLabels": [
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 52,
+    "shortDescription": "Strabisme et amblyopie de l'enfant",
+    "tagCodes": [
+      "Ped",
+      "Oph"
+    ],
+    "tagLabels": [
+      "Pédiatrie",
+      "Ophtalmologie"
+    ]
+  },
+  {
+    "itemNumber": 53,
+    "shortDescription": "Retard de croissance staturo-pondérale",
+    "tagCodes": [
+      "Ped"
+    ],
+    "tagLabels": [
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 54,
+    "shortDescription": "Boiterie chez l'enfant",
+    "tagCodes": [
+      "Ped",
+      "OT",
+      "Rhu"
+    ],
+    "tagLabels": [
+      "Pédiatrie",
+      "Orthopédie - Traumatologie",
+      "Rhumatologie"
+    ]
+  },
+  {
+    "itemNumber": 55,
+    "shortDescription": "Développement psychomoteur du nourrisson et de l'enfant",
+    "tagCodes": [
+      "Ped",
+      "Psy",
+      "MG"
+    ],
+    "tagLabels": [
+      "Pédiatrie",
+      "Psychiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 56,
+    "shortDescription": "L'enfant handicapé : orientation et prise en charge",
+    "tagCodes": [
+      "Ped",
+      "MPR",
+      "ORL"
+    ],
+    "tagLabels": [
+      "Pédiatrie",
+      "MPR",
+      "ORL"
+    ]
+  },
+  {
+    "itemNumber": 57,
+    "shortDescription": "Maltraitance et enfants en danger. Protection maternelle et infantile",
+    "tagCodes": [
+      "Ped",
+      "MTL"
+    ],
+    "tagLabels": [
+      "Pédiatrie",
+      "Médecine du Travail - Médecine Légale"
+    ]
+  },
+  {
+    "itemNumber": 58,
+    "shortDescription": "Sexualité normale et ses troubles",
+    "tagCodes": [
+      "Psy",
+      "GO",
+      "Uro"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Gynécologie - Obstétrique",
+      "Urologie"
+    ]
+  },
+  {
+    "itemNumber": 59,
+    "shortDescription": "Sujets en situation de précarité",
+    "tagCodes": [
+      "Psy",
+      "Ped",
+      "SP",
+      "MI"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Pédiatrie",
+      "Santé Publique",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 60,
+    "shortDescription": "Connaître les facteurs de risque, prévention, dépistage des troubles psychiques de l'enfant à la personne âgée",
+    "tagCodes": [
+      "Psy"
+    ],
+    "tagLabels": [
+      "Psychiatrie"
+    ]
+  },
+  {
+    "itemNumber": 61,
+    "shortDescription": "Connaître les bases des classifications des troubles mentaux de l'enfant à la personne âgée",
+    "tagCodes": [
+      "Psy"
+    ],
+    "tagLabels": [
+      "Psychiatrie"
+    ]
+  },
+  {
+    "itemNumber": 62,
+    "shortDescription": "Décrire l'organisation de l'offre de soins en psychiatrie, de l'enfant à la personne âgée",
+    "tagCodes": [
+      "Psy"
+    ],
+    "tagLabels": [
+      "Psychiatrie"
+    ]
+  },
+  {
+    "itemNumber": 63,
+    "shortDescription": "Trouble schizophrénique",
+    "tagCodes": [
+      "Psy"
+    ],
+    "tagLabels": [
+      "Psychiatrie"
+    ]
+  },
+  {
+    "itemNumber": 64,
+    "shortDescription": "Trouble bipolaire",
+    "tagCodes": [
+      "Psy"
+    ],
+    "tagLabels": [
+      "Psychiatrie"
+    ]
+  },
+  {
+    "itemNumber": 65,
+    "shortDescription": "Trouble délirant persistant",
+    "tagCodes": [
+      "Psy"
+    ],
+    "tagLabels": [
+      "Psychiatrie"
+    ]
+  },
+  {
+    "itemNumber": 66,
+    "shortDescription": "Diagnostiquer : un trouble dépressif, un trouble anxieux généralisé, un trouble panique, un trouble phobique, un trouble obsessionnel compulsif, un état de stress post-traumatique, un trouble de l'adaptation (de l'enfant à la personne âgée), un trouble de la personnalité",
+    "tagCodes": [
+      "Psy",
+      "MG"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 67,
+    "shortDescription": "Troubles envahissants du développement",
+    "tagCodes": [
+      "Psy"
+    ],
+    "tagLabels": [
+      "Psychiatrie"
+    ]
+  },
+  {
+    "itemNumber": 68,
+    "shortDescription": "Troubles du comportement de l'adolescent",
+    "tagCodes": [
+      "Psy"
+    ],
+    "tagLabels": [
+      "Psychiatrie"
+    ]
+  },
+  {
+    "itemNumber": 69,
+    "shortDescription": "Troubles psychiques de la grossesse et du post-partum",
+    "tagCodes": [
+      "Psy",
+      "GO"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Gynécologie - Obstétrique"
+    ]
+  },
+  {
+    "itemNumber": 70,
+    "shortDescription": "Troubles psychiques du sujet âgé",
+    "tagCodes": [
+      "Psy",
+      "Gér"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Gériatrie"
+    ]
+  },
+  {
+    "itemNumber": 71,
+    "shortDescription": "Troubles des conduites alimentaires chez l'adolescent et l'adulte",
+    "tagCodes": [
+      "Psy",
+      "Ped",
+      "Nut"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Pédiatrie",
+      "Nutrition"
+    ]
+  },
+  {
+    "itemNumber": 72,
+    "shortDescription": "Troubles à symptomatologie somatique et apparentés à tous les âges",
+    "tagCodes": [
+      "Psy",
+      "DSP",
+      "MI",
+      "MG"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Douleurs - Soins Palliatifs",
+      "Médecine Interne",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 73,
+    "shortDescription": "Différents types de techniques psychothérapeutiques",
+    "tagCodes": [
+      "Psy"
+    ],
+    "tagLabels": [
+      "Psychiatrie"
+    ]
+  },
+  {
+    "itemNumber": 74,
+    "shortDescription": "Prescription et surveillance des psychotropes",
+    "tagCodes": [
+      "Psy",
+      "Thé",
+      "Gér",
+      "MG"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Thérapeutique",
+      "Gériatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 75,
+    "shortDescription": "Addiction au tabac",
+    "tagCodes": [
+      "Psy",
+      "SP",
+      "Pne",
+      "MG"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Santé Publique",
+      "Pneumologie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 76,
+    "shortDescription": "Addiction à l'alcool",
+    "tagCodes": [
+      "Psy",
+      "SP",
+      "Neu",
+      "MG"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Santé Publique",
+      "Neurologie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 77,
+    "shortDescription": "Addiction aux médicaments psychotropes (benzodiazépines et apparentés)",
+    "tagCodes": [
+      "Psy",
+      "SP"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Santé Publique"
+    ]
+  },
+  {
+    "itemNumber": 78,
+    "shortDescription": "Addiction au cannabis, à la cocaïne, aux amphétamines, aux opiacés, aux drogues de synthèse",
+    "tagCodes": [
+      "Psy",
+      "SP"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Santé Publique"
+    ]
+  },
+  {
+    "itemNumber": 79,
+    "shortDescription": "Addictions comportementales",
+    "tagCodes": [
+      "Psy",
+      "SP",
+      "MG"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Santé Publique",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 80,
+    "shortDescription": "Dopage et conduites dopantes",
+    "tagCodes": [
+      "Psy",
+      "MG"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 81,
+    "shortDescription": "Altération chronique de la vision",
+    "tagCodes": [
+      "Oph",
+      "Gér"
+    ],
+    "tagLabels": [
+      "Ophtalmologie",
+      "Gériatrie"
+    ]
+  },
+  {
+    "itemNumber": 82,
+    "shortDescription": "Altération aiguë de la vision",
+    "tagCodes": [
+      "Oph",
+      "Neu"
+    ],
+    "tagLabels": [
+      "Ophtalmologie",
+      "Neurologie"
+    ]
+  },
+  {
+    "itemNumber": 83,
+    "shortDescription": "Infections et inflammations oculaires",
+    "tagCodes": [
+      "Oph"
+    ],
+    "tagLabels": [
+      "Ophtalmologie"
+    ]
+  },
+  {
+    "itemNumber": 84,
+    "shortDescription": "Glaucomes",
+    "tagCodes": [
+      "Oph"
+    ],
+    "tagLabels": [
+      "Ophtalmologie"
+    ]
+  },
+  {
+    "itemNumber": 85,
+    "shortDescription": "Troubles de la réfraction",
+    "tagCodes": [
+      "Oph"
+    ],
+    "tagLabels": [
+      "Ophtalmologie"
+    ]
+  },
+  {
+    "itemNumber": 86,
+    "shortDescription": "Pathologie des paupières",
+    "tagCodes": [
+      "Oph"
+    ],
+    "tagLabels": [
+      "Ophtalmologie"
+    ]
+  },
+  {
+    "itemNumber": 87,
+    "shortDescription": "Epistaxis",
+    "tagCodes": [
+      "ORL"
+    ],
+    "tagLabels": [
+      "ORL"
+    ]
+  },
+  {
+    "itemNumber": 88,
+    "shortDescription": "Trouble aigu de la parole. Dysphonie",
+    "tagCodes": [
+      "ORL",
+      "Neu"
+    ],
+    "tagLabels": [
+      "ORL",
+      "Neurologie"
+    ]
+  },
+  {
+    "itemNumber": 89,
+    "shortDescription": "Altération de la fonction auditive",
+    "tagCodes": [
+      "ORL",
+      "Ped",
+      "Gér"
+    ],
+    "tagLabels": [
+      "ORL",
+      "Pédiatrie",
+      "Gériatrie"
+    ]
+  },
+  {
+    "itemNumber": 90,
+    "shortDescription": "Pathologie des glandes salivaires",
+    "tagCodes": [
+      "ORL",
+      "CMF"
+    ],
+    "tagLabels": [
+      "ORL",
+      "CMF"
+    ]
+  },
+  {
+    "itemNumber": 91,
+    "shortDescription": "Déficit neurologique récent",
+    "tagCodes": [
+      "Neu"
+    ],
+    "tagLabels": [
+      "Neurologie"
+    ]
+  },
+  {
+    "itemNumber": 92,
+    "shortDescription": "Déficit moteur et/ou sensitif des membres",
+    "tagCodes": [
+      "Neu"
+    ],
+    "tagLabels": [
+      "Neurologie"
+    ]
+  },
+  {
+    "itemNumber": 93,
+    "shortDescription": "Compression médullaire non traumatique et syndrome de la queue de cheval",
+    "tagCodes": [
+      "Neu",
+      "NC",
+      "Rhu",
+      "OT",
+      "MPR"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "Neurochirurgie",
+      "Rhumatologie",
+      "Orthopédie - Traumatologie",
+      "MPR"
+    ]
+  },
+  {
+    "itemNumber": 94,
+    "shortDescription": "Rachialgie",
+    "tagCodes": [
+      "Rhu",
+      "OT",
+      "MPR",
+      "DSP",
+      "MG"
+    ],
+    "tagLabels": [
+      "Rhumatologie",
+      "Orthopédie - Traumatologie",
+      "MPR",
+      "Douleurs - Soins Palliatifs",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 95,
+    "shortDescription": "Radiculalgie et syndrome canalaire",
+    "tagCodes": [
+      "Neu",
+      "NC",
+      "Rhu",
+      "OT",
+      "DSP"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "Neurochirurgie",
+      "Rhumatologie",
+      "Orthopédie - Traumatologie",
+      "Douleurs - Soins Palliatifs"
+    ]
+  },
+  {
+    "itemNumber": 96,
+    "shortDescription": "Neuropathies périphériques",
+    "tagCodes": [
+      "Neu"
+    ],
+    "tagLabels": [
+      "Neurologie"
+    ]
+  },
+  {
+    "itemNumber": 97,
+    "shortDescription": "Polyradiculonévrite aiguë inflammatoire (syndrome de Guillain-Barré)",
+    "tagCodes": [
+      "Neu",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 98,
+    "shortDescription": "Myasthénie",
+    "tagCodes": [
+      "Neu",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 99,
+    "shortDescription": "Migraine, névralgie du trijumeau et algies de la face",
+    "tagCodes": [
+      "Neu",
+      "NC",
+      "CMF",
+      "DSP",
+      "MG"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "Neurochirurgie",
+      "CMF",
+      "Douleurs - Soins Palliatifs",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 100,
+    "shortDescription": "Céphalée inhabituelle aiguë et chronique chez l'adulte et l'enfant",
+    "tagCodes": [
+      "Neu",
+      "DSP",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "Douleurs - Soins Palliatifs",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 101,
+    "shortDescription": "Paralysie faciale",
+    "tagCodes": [
+      "Neu",
+      "CMF",
+      "ORL"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "CMF",
+      "ORL"
+    ]
+  },
+  {
+    "itemNumber": 102,
+    "shortDescription": "Diplopie",
+    "tagCodes": [
+      "Neu",
+      "Oph"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "Ophtalmologie"
+    ]
+  },
+  {
+    "itemNumber": 103,
+    "shortDescription": "Vertige",
+    "tagCodes": [
+      "Neu",
+      "ORL"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "ORL"
+    ]
+  },
+  {
+    "itemNumber": 104,
+    "shortDescription": "Sclérose en plaques",
+    "tagCodes": [
+      "Neu",
+      "MPR",
+      "Oph"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "MPR",
+      "Ophtalmologie"
+    ]
+  },
+  {
+    "itemNumber": 105,
+    "shortDescription": "Épilepsie de l'enfant et de l'adulte",
+    "tagCodes": [
+      "Neu",
+      "MIR",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "MIR - Urgences",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 106,
+    "shortDescription": "Maladie de Parkinson",
+    "tagCodes": [
+      "Neu",
+      "MPR"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "MPR"
+    ]
+  },
+  {
+    "itemNumber": 107,
+    "shortDescription": "Mouvements anormaux",
+    "tagCodes": [
+      "Neu"
+    ],
+    "tagLabels": [
+      "Neurologie"
+    ]
+  },
+  {
+    "itemNumber": 108,
+    "shortDescription": "Confusion, démences",
+    "tagCodes": [
+      "Neu",
+      "Gér",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "Gériatrie",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 109,
+    "shortDescription": "Troubles de la marche et de l'équilibre",
+    "tagCodes": [
+      "Neu",
+      "MPR",
+      "Gér",
+      "ORL",
+      "Rhu",
+      "MG"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "MPR",
+      "Gériatrie",
+      "ORL",
+      "Rhumatologie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 110,
+    "shortDescription": "Troubles du sommeil de l'enfant et de l'adulte",
+    "tagCodes": [
+      "Neu",
+      "Psy",
+      "Pne",
+      "ORL",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Neurologie",
+      "Psychiatrie",
+      "Pneumologie",
+      "ORL",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 111,
+    "shortDescription": "Dermatoses faciales : acné, rosacée, dermatite séborrhéique",
+    "tagCodes": [
+      "Der"
+    ],
+    "tagLabels": [
+      "Dermatologie"
+    ]
+  },
+  {
+    "itemNumber": 112,
+    "shortDescription": "Dermatose bulleuse touchant la peau et/ou les muqueuses externes",
+    "tagCodes": [
+      "Der"
+    ],
+    "tagLabels": [
+      "Dermatologie"
+    ]
+  },
+  {
+    "itemNumber": 113,
+    "shortDescription": "Hémangiomes et malformations vasculaires cutanées",
+    "tagCodes": [
+      "Der",
+      "CMF"
+    ],
+    "tagLabels": [
+      "Dermatologie",
+      "CMF"
+    ]
+  },
+  {
+    "itemNumber": 114,
+    "shortDescription": "Exanthème et érythrodermie de l'adulte et de l'enfant",
+    "tagCodes": [
+      "Der"
+    ],
+    "tagLabels": [
+      "Dermatologie"
+    ]
+  },
+  {
+    "itemNumber": 115,
+    "shortDescription": "Toxidermies",
+    "tagCodes": [
+      "Der"
+    ],
+    "tagLabels": [
+      "Dermatologie"
+    ]
+  },
+  {
+    "itemNumber": 116,
+    "shortDescription": "Prurit",
+    "tagCodes": [
+      "Der"
+    ],
+    "tagLabels": [
+      "Dermatologie"
+    ]
+  },
+  {
+    "itemNumber": 117,
+    "shortDescription": "Psoriasis",
+    "tagCodes": [
+      "Der",
+      "Rhu"
+    ],
+    "tagLabels": [
+      "Dermatologie",
+      "Rhumatologie"
+    ]
+  },
+  {
+    "itemNumber": 118,
+    "shortDescription": "La personne handicapée : bases de l'évaluation fonctionnelle et thérapeutique",
+    "tagCodes": [
+      "MPR",
+      "Neu",
+      "ORL"
+    ],
+    "tagLabels": [
+      "MPR",
+      "Neurologie",
+      "ORL"
+    ]
+  },
+  {
+    "itemNumber": 119,
+    "shortDescription": "Soin et accompagnement dans la maladie chronique et le handicap",
+    "tagCodes": [
+      "MG"
+    ],
+    "tagLabels": [
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 120,
+    "shortDescription": "Complications de l'immobilité et du décubitus. Prévention et prise en charge",
+    "tagCodes": [
+      "MPR",
+      "Gér"
+    ],
+    "tagLabels": [
+      "MPR",
+      "Gériatrie"
+    ]
+  },
+  {
+    "itemNumber": 121,
+    "shortDescription": "Le handicap psychique",
+    "tagCodes": [
+      "Psy"
+    ],
+    "tagLabels": [
+      "Psychiatrie"
+    ]
+  },
+  {
+    "itemNumber": 122,
+    "shortDescription": "Principales techniques de rééducation et de réadaptation",
+    "tagCodes": [
+      "MPR",
+      "ORL"
+    ],
+    "tagLabels": [
+      "MPR",
+      "ORL"
+    ]
+  },
+  {
+    "itemNumber": 123,
+    "shortDescription": "Vieillissement normal : aspects biologiques, fonctionnels et relationnels. Données épidémiologiques et sociologiques. Prévention du vieillissement pathologique",
+    "tagCodes": [
+      "Gér",
+      "MG"
+    ],
+    "tagLabels": [
+      "Gériatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 124,
+    "shortDescription": "Ménopause, insuffisance ovarienne prématurée, andropause, déficit androgénique lié à l’âge",
+    "tagCodes": [
+      "GO",
+      "Uro",
+      "End",
+      "Thé"
+    ],
+    "tagLabels": [
+      "Gynécologie - Obstétrique",
+      "Urologie",
+      "Endocrinologie",
+      "Thérapeutique"
+    ]
+  },
+  {
+    "itemNumber": 125,
+    "shortDescription": "Troubles de la miction et incontinence urinaire de l'adulte et du sujet âgé",
+    "tagCodes": [
+      "Uro",
+      "Gér",
+      "MPR"
+    ],
+    "tagLabels": [
+      "Urologie",
+      "Gériatrie",
+      "MPR"
+    ]
+  },
+  {
+    "itemNumber": 126,
+    "shortDescription": "Trouble de l'érection",
+    "tagCodes": [
+      "Uro",
+      "End"
+    ],
+    "tagLabels": [
+      "Urologie",
+      "Endocrinologie"
+    ]
+  },
+  {
+    "itemNumber": 127,
+    "shortDescription": "Hypertrophie bénigne de la prostate",
+    "tagCodes": [
+      "Uro"
+    ],
+    "tagLabels": [
+      "Urologie"
+    ]
+  },
+  {
+    "itemNumber": 128,
+    "shortDescription": "Ostéopathies fragilisantes",
+    "tagCodes": [
+      "Gér",
+      "Rhu",
+      "End"
+    ],
+    "tagLabels": [
+      "Gériatrie",
+      "Rhumatologie",
+      "Endocrinologie"
+    ]
+  },
+  {
+    "itemNumber": 129,
+    "shortDescription": "Arthrose",
+    "tagCodes": [
+      "Gér",
+      "Rhu",
+      "MPR"
+    ],
+    "tagLabels": [
+      "Gériatrie",
+      "Rhumatologie",
+      "MPR"
+    ]
+  },
+  {
+    "itemNumber": 130,
+    "shortDescription": "La personne âgée malade : particularités sémiologiques, psychologiques et thérapeutiques",
+    "tagCodes": [
+      "Gér"
+    ],
+    "tagLabels": [
+      "Gériatrie"
+    ]
+  },
+  {
+    "itemNumber": 131,
+    "shortDescription": "Troubles de la marche et de l'équilibre",
+    "tagCodes": [
+      "Gér",
+      "Rhu",
+      "Neu"
+    ],
+    "tagLabels": [
+      "Gériatrie",
+      "Rhumatologie",
+      "Neurologie"
+    ]
+  },
+  {
+    "itemNumber": 132,
+    "shortDescription": "Troubles cognitifs du sujet âgé",
+    "tagCodes": [
+      "Gér",
+      "Neu",
+      "MG"
+    ],
+    "tagLabels": [
+      "Gériatrie",
+      "Neurologie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 133,
+    "shortDescription": "Autonomie et dépendance chez le sujet âgé",
+    "tagCodes": [
+      "Gér",
+      "MG"
+    ],
+    "tagLabels": [
+      "Gériatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 134,
+    "shortDescription": "Bases neurophysiologiques, mécanismes physiopathologiques d'une douleur aiguë et d'une douleur chronique",
+    "tagCodes": [
+      "DSP",
+      "Neu",
+      "NC",
+      "AR",
+      "Gér",
+      "Rhu"
+    ],
+    "tagLabels": [
+      "Douleurs - Soins Palliatifs",
+      "Neurologie",
+      "Neurochirurgie",
+      "Anesthésie - Réanimation",
+      "Gériatrie",
+      "Rhumatologie"
+    ]
+  },
+  {
+    "itemNumber": 135,
+    "shortDescription": "Thérapeutiques antalgiques, médicamenteuses et non médicamenteuses",
+    "tagCodes": [
+      "DSP",
+      "Thé",
+      "NC",
+      "AR",
+      "MIR",
+      "Rhu"
+    ],
+    "tagLabels": [
+      "Douleurs - Soins Palliatifs",
+      "Thérapeutique",
+      "Neurochirurgie",
+      "Anesthésie - Réanimation",
+      "MIR - Urgences",
+      "Rhumatologie"
+    ]
+  },
+  {
+    "itemNumber": 136,
+    "shortDescription": "Anesthésie locale, locorégionale et générale",
+    "tagCodes": [
+      "DSP",
+      "AR"
+    ],
+    "tagLabels": [
+      "Douleurs - Soins Palliatifs",
+      "Anesthésie - Réanimation"
+    ]
+  },
+  {
+    "itemNumber": 137,
+    "shortDescription": "Douleur chez l'enfant : évaluation et traitements antalgiques",
+    "tagCodes": [
+      "DSP",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Douleurs - Soins Palliatifs",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 138,
+    "shortDescription": "Douleur chez la personne vulnérable",
+    "tagCodes": [
+      "DSP",
+      "Psy"
+    ],
+    "tagLabels": [
+      "Douleurs - Soins Palliatifs",
+      "Psychiatrie"
+    ]
+  },
+  {
+    "itemNumber": 139,
+    "shortDescription": "Soins palliatifs pluridisciplinaires chez un malade en phase palliative ou terminale d'une maladie grave, chronique ou létale (1). Principaux repères cliniques. Modalités d'organisation des équipes, en établissement de santé et en et en ambulatoire",
+    "tagCodes": [
+      "DSP",
+      "Gér",
+      "MG"
+    ],
+    "tagLabels": [
+      "Douleurs - Soins Palliatifs",
+      "Gériatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 140,
+    "shortDescription": "Soins palliatifs pluridisciplinaires chez un malade en phase palliative ou terminale d'une maladie grave, chronique ou létale (2). Accompagnement de la personne malade et de son entourage. Principaux repères éthiques",
+    "tagCodes": [
+      "DSP",
+      "Gér"
+    ],
+    "tagLabels": [
+      "Douleurs - Soins Palliatifs",
+      "Gériatrie"
+    ]
+  },
+  {
+    "itemNumber": 141,
+    "shortDescription": "Soins palliatifs pluridisciplinaires chez un malade en phase palliative ou terminale d'une maladie grave, chronique ou létale (3). La sédation pour détresse en phase terminale et dans des situations spécifiques et complexes en fin de vie. Réponse à la demande d'euthanasie ou de suicide assisté",
+    "tagCodes": [
+      "DSP",
+      "Gér"
+    ],
+    "tagLabels": [
+      "Douleurs - Soins Palliatifs",
+      "Gériatrie"
+    ]
+  },
+  {
+    "itemNumber": 142,
+    "shortDescription": "Connaître les aspects spécifiques des soins palliatifs en pédiatrie",
+    "tagCodes": [
+      "DSP",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Douleurs - Soins Palliatifs",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 143,
+    "shortDescription": "Connaître les aspects spécifiques des soins palliatifs en réanimation",
+    "tagCodes": [
+      "DSP",
+      "AR",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Douleurs - Soins Palliatifs",
+      "Anesthésie - Réanimation",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 144,
+    "shortDescription": "Deuil normal et pathologique",
+    "tagCodes": [
+      "Psy",
+      "MG"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 145,
+    "shortDescription": "Surveillance des maladies infectieuses transmissibles",
+    "tagCodes": [
+      "Inf",
+      "SP",
+      "MG"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Santé Publique",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 146,
+    "shortDescription": "Vaccinations",
+    "tagCodes": [
+      "Inf",
+      "SP",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Santé Publique",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 147,
+    "shortDescription": "Fièvre aiguë chez l'enfant et l'adulte",
+    "tagCodes": [
+      "Inf",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 148,
+    "shortDescription": "Infections naso-sinusiennes de l'adulte et de l'enfant",
+    "tagCodes": [
+      "Inf",
+      "ORL",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "ORL",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 149,
+    "shortDescription": "Angines de l'adulte et de l'enfant et rhinopharyngites de l'enfant",
+    "tagCodes": [
+      "Inf",
+      "ORL",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "ORL",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 150,
+    "shortDescription": "Otites infectieuses de l'adulte et de l'enfant",
+    "tagCodes": [
+      "Inf",
+      "ORL",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "ORL",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 151,
+    "shortDescription": "Méningites, méningoencéphalites, abcès cérébral chez l'adulte et l'enfant",
+    "tagCodes": [
+      "Inf",
+      "Neu",
+      "MIR",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Neurologie",
+      "MIR - Urgences",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 152,
+    "shortDescription": "Endocardite infectieuse",
+    "tagCodes": [
+      "Inf",
+      "MCV",
+      "MIR",
+      "MI"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Médecine Cardiovasculaire",
+      "MIR - Urgences",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 153,
+    "shortDescription": "Surveillance des porteurs de valve et prothèses vasculaires",
+    "tagCodes": [
+      "Inf",
+      "MCV"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Médecine Cardiovasculaire"
+    ]
+  },
+  {
+    "itemNumber": 154,
+    "shortDescription": "Infections broncho pulmonaires communautaires de l'adulte et de l'enfant",
+    "tagCodes": [
+      "Inf",
+      "Pne",
+      "MIR",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Pneumologie",
+      "MIR - Urgences",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 155,
+    "shortDescription": "Infections cutanéo-muqueuses et des phanères, bactériennes et mycosiques de l'adulte et de l'enfant",
+    "tagCodes": [
+      "Inf",
+      "Der",
+      "CMF",
+      "AR",
+      "MIR",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Dermatologie",
+      "CMF",
+      "Anesthésie - Réanimation",
+      "MIR - Urgences",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 156,
+    "shortDescription": "Infections ostéo articulaires (IOA) de l'enfant et de l'adulte",
+    "tagCodes": [
+      "Inf",
+      "Rhu",
+      "OT",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Rhumatologie",
+      "Orthopédie - Traumatologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 157,
+    "shortDescription": "Septicémie/Bactériémie/Fongémie de l'adulte et de l'enfant",
+    "tagCodes": [
+      "Inf",
+      "AR",
+      "MIR",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Anesthésie - Réanimation",
+      "MIR - Urgences",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 158,
+    "shortDescription": "Sepsis et choc septique de l’enfant et de l’adulte",
+    "tagCodes": [
+      "AR",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Anesthésie - Réanimation",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 159,
+    "shortDescription": "Tuberculose de l'adulte et de l'enfant",
+    "tagCodes": [
+      "Inf",
+      "Pne",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Pneumologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 160,
+    "shortDescription": "Tétanos",
+    "tagCodes": [
+      "Inf"
+    ],
+    "tagLabels": [
+      "Infectiologie"
+    ]
+  },
+  {
+    "itemNumber": 161,
+    "shortDescription": "Infections urinaires de l'enfant et de l'adulte",
+    "tagCodes": [
+      "Inf",
+      "Uro",
+      "Nép",
+      "MIR",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Urologie",
+      "Néphrologie",
+      "MIR - Urgences",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 162,
+    "shortDescription": "Infections sexuellement transmissibles (IST) : gonococcies, chlamydioses, syphilis, papillomavirus humain (HPV), trichomonose",
+    "tagCodes": [
+      "Inf",
+      "GO",
+      "Der",
+      "MG"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Gynécologie - Obstétrique",
+      "Dermatologie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 163,
+    "shortDescription": "Coqueluche",
+    "tagCodes": [
+      "Inf",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 164,
+    "shortDescription": "Exanthèmes fébriles de l'enfant",
+    "tagCodes": [
+      "Der",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Dermatologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 165,
+    "shortDescription": "Oreillons",
+    "tagCodes": [
+      "Inf"
+    ],
+    "tagLabels": [
+      "Infectiologie"
+    ]
+  },
+  {
+    "itemNumber": 166,
+    "shortDescription": "Grippe",
+    "tagCodes": [
+      "Inf",
+      "MG"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 167,
+    "shortDescription": "Hépatites virales",
+    "tagCodes": [
+      "Inf",
+      "HGE",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "HGE",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 168,
+    "shortDescription": "Infections à herpès virus du sujet immunocompétent",
+    "tagCodes": [
+      "Inf",
+      "Der",
+      "Neu",
+      "CMF",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Dermatologie",
+      "Neurologie",
+      "CMF",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 169,
+    "shortDescription": "Infections à VIH",
+    "tagCodes": [
+      "Inf",
+      "Der",
+      "Neu",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Dermatologie",
+      "Neurologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 170,
+    "shortDescription": "Paludisme",
+    "tagCodes": [
+      "Inf",
+      "MIR",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "MIR - Urgences",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 171,
+    "shortDescription": "Gale et pédiculose",
+    "tagCodes": [
+      "Inf",
+      "Der"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Dermatologie"
+    ]
+  },
+  {
+    "itemNumber": 172,
+    "shortDescription": "Parasitoses digestives : giardiose, amoebose, téniasis, ascaridiose, oxyurose, anguillulose, cryptosporidiose",
+    "tagCodes": [
+      "Inf"
+    ],
+    "tagLabels": [
+      "Infectiologie"
+    ]
+  },
+  {
+    "itemNumber": 173,
+    "shortDescription": "Zoonoses",
+    "tagCodes": [
+      "Inf"
+    ],
+    "tagLabels": [
+      "Infectiologie"
+    ]
+  },
+  {
+    "itemNumber": 174,
+    "shortDescription": "Pathologie infectieuse chez les migrants adultes et enfants",
+    "tagCodes": [
+      "Inf",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 175,
+    "shortDescription": "Voyage en pays tropical de l'adulte et de l'enfant : conseils avant le départ, pathologies du retour : fièvre, diarrhée, manifestations cutanées",
+    "tagCodes": [
+      "Inf",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 176,
+    "shortDescription": "Diarrhées infectieuses de l'adulte et de l'enfant",
+    "tagCodes": [
+      "Inf",
+      "Ped",
+      "SP"
+    ],
+    "tagLabels": [
+      "Infectiologie",
+      "Pédiatrie",
+      "Santé Publique"
+    ]
+  },
+  {
+    "itemNumber": 177,
+    "shortDescription": "Prescription et surveillance des anti-infectieux chez l'adulte et l'enfant",
+    "tagCodes": [
+      "Thé",
+      "Inf",
+      "MIR",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Thérapeutique",
+      "Infectiologie",
+      "MIR - Urgences",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 178,
+    "shortDescription": "Risques émergents, bioterrorisme, maladies hautement transmissibles",
+    "tagCodes": [
+      "Inf"
+    ],
+    "tagLabels": [
+      "Infectiologie"
+    ]
+  },
+  {
+    "itemNumber": 179,
+    "shortDescription": "Risques sanitaires liés à l'eau et à l'alimentation. Toxi-infections alimentaires",
+    "tagCodes": [
+      "SP"
+    ],
+    "tagLabels": [
+      "Santé Publique"
+    ]
+  },
+  {
+    "itemNumber": 180,
+    "shortDescription": "Risques sanitaires liés aux irradiations. Radioprotection",
+    "tagCodes": [
+      "MTL"
+    ],
+    "tagLabels": [
+      "Médecine du Travail - Médecine Légale"
+    ]
+  },
+  {
+    "itemNumber": 181,
+    "shortDescription": "La sécurité sanitaire des produits destinés à l'homme. La veille sanitaire",
+    "tagCodes": [
+      "SP"
+    ],
+    "tagLabels": [
+      "Santé Publique"
+    ]
+  },
+  {
+    "itemNumber": 182,
+    "shortDescription": "Environnement professionnel et santé au travail",
+    "tagCodes": [
+      "MTL"
+    ],
+    "tagLabels": [
+      "Médecine du Travail - Médecine Légale"
+    ]
+  },
+  {
+    "itemNumber": 183,
+    "shortDescription": "Organisation de la médecine du travail. Prévention des risques professionnels",
+    "tagCodes": [
+      "MTL"
+    ],
+    "tagLabels": [
+      "Médecine du Travail - Médecine Légale"
+    ]
+  },
+  {
+    "itemNumber": 184,
+    "shortDescription": "Accidents du travail et maladies professionnelles : définitions et enjeux",
+    "tagCodes": [
+      "MTL"
+    ],
+    "tagLabels": [
+      "Médecine du Travail - Médecine Légale"
+    ]
+  },
+  {
+    "itemNumber": 185,
+    "shortDescription": "Réaction inflammatoire : aspects biologiques et cliniques. Conduite à tenir",
+    "tagCodes": [
+      "Imm",
+      "Rhu",
+      "MI"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Rhumatologie",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 186,
+    "shortDescription": "Hypersensibilités et allergies chez l'enfant et l'adulte : aspects physiopathologiques, épidémiologiques, diagnostiques et principes de traitement",
+    "tagCodes": [
+      "Imm",
+      "Pne",
+      "MTL",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Pneumologie",
+      "Médecine du Travail - Médecine Légale",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 187,
+    "shortDescription": "Hypersensibilités et allergies cutanéomuqueuses chez l'enfant et l'adulte. Urticaire, dermatites atopique et de contact, conjonctivite allergique",
+    "tagCodes": [
+      "Imm",
+      "Der",
+      "Oph",
+      "MTL"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Dermatologie",
+      "Ophtalmologie",
+      "Médecine du Travail - Médecine Légale"
+    ]
+  },
+  {
+    "itemNumber": 188,
+    "shortDescription": "Hypersensibilité et allergies respiratoires chez l'enfant et chez l'adulte. Asthme, rhinite",
+    "tagCodes": [
+      "Imm",
+      "Pne",
+      "MTL",
+      "MIR",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Pneumologie",
+      "Médecine du Travail - Médecine Légale",
+      "MIR - Urgences",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 189,
+    "shortDescription": "Déficit immunitaire",
+    "tagCodes": [
+      "Imm",
+      "MI",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Médecine Interne",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 190,
+    "shortDescription": "Fièvre prolongée",
+    "tagCodes": [
+      "Imm",
+      "Inf",
+      "MI"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Infectiologie",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 191,
+    "shortDescription": "Fièvre chez un patient immunodéprimé",
+    "tagCodes": [
+      "Imm",
+      "Inf",
+      "MI",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Infectiologie",
+      "Médecine Interne",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 192,
+    "shortDescription": "Pathologies auto-immunes : aspects épidémiologiques, diagnostiques et principes de traitement",
+    "tagCodes": [
+      "Imm",
+      "Rhu",
+      "MI"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Rhumatologie",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 193,
+    "shortDescription": "Connaître les principaux types de vascularite systémique, les organes cibles, les outils diagnostiques et les moyens thérapeutiques",
+    "tagCodes": [
+      "Imm",
+      "Rhu",
+      "MI",
+      "Nép"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Rhumatologie",
+      "Médecine Interne",
+      "Néphrologie"
+    ]
+  },
+  {
+    "itemNumber": 194,
+    "shortDescription": "Lupus systémique. Syndrome des anti-phospholipides (SAPL)",
+    "tagCodes": [
+      "Imm",
+      "Rhu",
+      "MI",
+      "Nép",
+      "Der"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Rhumatologie",
+      "Médecine Interne",
+      "Néphrologie",
+      "Dermatologie"
+    ]
+  },
+  {
+    "itemNumber": 195,
+    "shortDescription": "Artérite à cellules géantes",
+    "tagCodes": [
+      "Imm",
+      "Rhu",
+      "MI"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Rhumatologie",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 196,
+    "shortDescription": "Polyarthrite rhumatoïde",
+    "tagCodes": [
+      "Imm",
+      "Rhu",
+      "MPR"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Rhumatologie",
+      "MPR"
+    ]
+  },
+  {
+    "itemNumber": 197,
+    "shortDescription": "Spondyloarthrite",
+    "tagCodes": [
+      "Imm",
+      "Rhu",
+      "MPR"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Rhumatologie",
+      "MPR"
+    ]
+  },
+  {
+    "itemNumber": 198,
+    "shortDescription": "Arthropathie microcristalline",
+    "tagCodes": [
+      "Imm",
+      "Rhu"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Rhumatologie"
+    ]
+  },
+  {
+    "itemNumber": 199,
+    "shortDescription": "Syndrome douloureux régional complexe (ex algodystrophie)",
+    "tagCodes": [
+      "Rhu",
+      "OT",
+      "MPR",
+      "DSP"
+    ],
+    "tagLabels": [
+      "Rhumatologie",
+      "Orthopédie - Traumatologie",
+      "MPR",
+      "Douleurs - Soins Palliatifs"
+    ]
+  },
+  {
+    "itemNumber": 200,
+    "shortDescription": "Douleur et épanchement articulaire. Arthrite d'évolution récente",
+    "tagCodes": [
+      "Imm",
+      "Rhu",
+      "OT"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Rhumatologie",
+      "Orthopédie - Traumatologie"
+    ]
+  },
+  {
+    "itemNumber": 201,
+    "shortDescription": "Transplantation d'organes : aspects épidémiologiques et immunologiques ; principes de traitement; complications et pronostic ; aspects éthiques et légaux. Prélèvements d'organes et législation",
+    "tagCodes": [
+      "Imm",
+      "Uro",
+      "Nép",
+      "Der",
+      "Oph",
+      "CD",
+      "MIR",
+      "AR"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Urologie",
+      "Néphrologie",
+      "Dermatologie",
+      "Ophtalmologie",
+      "Chirurgie Digestive",
+      "MIR - Urgences",
+      "Anesthésie - Réanimation"
+    ]
+  },
+  {
+    "itemNumber": 202,
+    "shortDescription": "Biothérapies et thérapies ciblées",
+    "tagCodes": [
+      "Imm",
+      "Hém",
+      "Rhu",
+      "MI"
+    ],
+    "tagLabels": [
+      "Immunopathologie",
+      "Hématologie",
+      "Rhumatologie",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 203,
+    "shortDescription": "Dyspnée aiguë et chronique",
+    "tagCodes": [
+      "Pne",
+      "MCV",
+      "ORL",
+      "MIR",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Pneumologie",
+      "Médecine Cardiovasculaire",
+      "ORL",
+      "MIR - Urgences",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 204,
+    "shortDescription": "Toux chez l'enfant et chez l'adulte (avec le traitement)",
+    "tagCodes": [
+      "Pne",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Pneumologie",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 205,
+    "shortDescription": "Hémoptysie",
+    "tagCodes": [
+      "Pne",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Pneumologie",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 206,
+    "shortDescription": "Épanchement pleural liquidien",
+    "tagCodes": [
+      "Pne",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Pneumologie",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 207,
+    "shortDescription": "Opacités et masses intra-thoraciques chez l'enfant et chez l'adulte",
+    "tagCodes": [
+      "Pne",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Pneumologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 208,
+    "shortDescription": "Insuffisance respiratoire chronique",
+    "tagCodes": [
+      "Pne"
+    ],
+    "tagLabels": [
+      "Pneumologie"
+    ]
+  },
+  {
+    "itemNumber": 209,
+    "shortDescription": "Bronchopneumopathie chronique obstructive chez l'adulte",
+    "tagCodes": [
+      "Pne",
+      "MIR",
+      "MG"
+    ],
+    "tagLabels": [
+      "Pneumologie",
+      "MIR - Urgences",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 210,
+    "shortDescription": "Pneumopathie interstitielle diffuse",
+    "tagCodes": [
+      "Pne",
+      "Imm",
+      "MI"
+    ],
+    "tagLabels": [
+      "Pneumologie",
+      "Immunopathologie",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 211,
+    "shortDescription": "Sarcoïdose",
+    "tagCodes": [
+      "Pne",
+      "Imm",
+      "Der",
+      "Rhu",
+      "MI"
+    ],
+    "tagLabels": [
+      "Pneumologie",
+      "Immunopathologie",
+      "Dermatologie",
+      "Rhumatologie",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 212,
+    "shortDescription": "Hémogramme chez l'adulte et l'enfant : indications et interprétation",
+    "tagCodes": [
+      "Hém",
+      "Imm",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Hématologie",
+      "Immunopathologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 213,
+    "shortDescription": "Anémie chez l'adulte et l'enfant",
+    "tagCodes": [
+      "Hém",
+      "Imm",
+      "MI",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Hématologie",
+      "Immunopathologie",
+      "Médecine Interne",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 214,
+    "shortDescription": "Thrombopénie chez l'adulte et l'enfant",
+    "tagCodes": [
+      "Hém",
+      "Imm",
+      "MI",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Hématologie",
+      "Immunopathologie",
+      "Médecine Interne",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 215,
+    "shortDescription": "Purpuras chez l'adulte et l'enfant",
+    "tagCodes": [
+      "Hém",
+      "Inf",
+      "MI",
+      "MIR",
+      "Der",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Hématologie",
+      "Infectiologie",
+      "Médecine Interne",
+      "MIR - Urgences",
+      "Dermatologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 216,
+    "shortDescription": "Syndrome hémorragique d'origine hématologique",
+    "tagCodes": [
+      "Hém",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Hématologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 217,
+    "shortDescription": "Syndrome mononucléosique",
+    "tagCodes": [
+      "Hém",
+      "Imm",
+      "Inf",
+      "MI"
+    ],
+    "tagLabels": [
+      "Hématologie",
+      "Immunopathologie",
+      "Infectiologie",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 218,
+    "shortDescription": "Éosinophilie",
+    "tagCodes": [
+      "Hém",
+      "Imm",
+      "Inf",
+      "MI"
+    ],
+    "tagLabels": [
+      "Hématologie",
+      "Immunopathologie",
+      "Infectiologie",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 219,
+    "shortDescription": "Pathologie du fer chez l'adulte et l'enfant",
+    "tagCodes": [
+      "End",
+      "HGE",
+      "Rhu",
+      "MI",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Endocrinologie",
+      "HGE",
+      "Rhumatologie",
+      "Médecine Interne",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 220,
+    "shortDescription": "Adénopathie superficielle de l'adulte et de l'enfant",
+    "tagCodes": [
+      "Hém",
+      "Imm",
+      "Inf",
+      "MI",
+      "ORL",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Hématologie",
+      "Immunopathologie",
+      "Infectiologie",
+      "Médecine Interne",
+      "ORL",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 221,
+    "shortDescription": "Athérome : épidémiologie et physiopathologie. Le malade poly-athéromateux",
+    "tagCodes": [
+      "MCV",
+      "SP",
+      "MG"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire",
+      "Santé Publique",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 222,
+    "shortDescription": "Facteurs de risque cardio-vasculaire et prévention",
+    "tagCodes": [
+      "MCV",
+      "End",
+      "Nut",
+      "SP",
+      "MG"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire",
+      "Endocrinologie",
+      "Nutrition",
+      "Santé Publique",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 223,
+    "shortDescription": "Dyslipidémies",
+    "tagCodes": [
+      "MCV",
+      "End",
+      "Nut",
+      "MG"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire",
+      "Endocrinologie",
+      "Nutrition",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 224,
+    "shortDescription": "Hypertension artérielle de l'adulte et de l’enfant",
+    "tagCodes": [
+      "MCV",
+      "End",
+      "Nép",
+      "Oph",
+      "MI",
+      "MIR",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire",
+      "Endocrinologie",
+      "Néphrologie",
+      "Ophtalmologie",
+      "Médecine Interne",
+      "MIR - Urgences",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 225,
+    "shortDescription": "Artériopathie oblitérante de l'aorte, des artères viscérales et des membres inférieurs ; anévrysmes",
+    "tagCodes": [
+      "MCV"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire"
+    ]
+  },
+  {
+    "itemNumber": 226,
+    "shortDescription": "Thrombose veineuse profonde et embolie pulmonaire",
+    "tagCodes": [
+      "MCV",
+      "Pne",
+      "Hém",
+      "MI",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire",
+      "Pneumologie",
+      "Hématologie",
+      "Médecine Interne",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 227,
+    "shortDescription": "Insuffisance veineuse chronique. Varices",
+    "tagCodes": [
+      "MCV"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire"
+    ]
+  },
+  {
+    "itemNumber": 228,
+    "shortDescription": "Ulcère de jambe",
+    "tagCodes": [
+      "Der"
+    ],
+    "tagLabels": [
+      "Dermatologie"
+    ]
+  },
+  {
+    "itemNumber": 229,
+    "shortDescription": "Surveillance et complications des abords veineux",
+    "tagCodes": [
+      "AR",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Anesthésie - Réanimation",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 230,
+    "shortDescription": "Douleur thoracique aiguë",
+    "tagCodes": [
+      "MCV",
+      "Pne"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire",
+      "Pneumologie"
+    ]
+  },
+  {
+    "itemNumber": 231,
+    "shortDescription": "Électrocardiogramme : indications et interprétations",
+    "tagCodes": [
+      "MCV"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire"
+    ]
+  },
+  {
+    "itemNumber": 232,
+    "shortDescription": "Fibrillation atriale",
+    "tagCodes": [
+      "MCV"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire"
+    ]
+  },
+  {
+    "itemNumber": 233,
+    "shortDescription": "Valvulopathies",
+    "tagCodes": [
+      "MCV"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire"
+    ]
+  },
+  {
+    "itemNumber": 234,
+    "shortDescription": "Insuffisance cardiaque de l'adulte",
+    "tagCodes": [
+      "MCV",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 235,
+    "shortDescription": "Péricardite aiguë",
+    "tagCodes": [
+      "MCV"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire"
+    ]
+  },
+  {
+    "itemNumber": 236,
+    "shortDescription": "Troubles de la conduction intracardiaque",
+    "tagCodes": [
+      "MCV"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire"
+    ]
+  },
+  {
+    "itemNumber": 237,
+    "shortDescription": "Palpitations",
+    "tagCodes": [
+      "MCV",
+      "MG"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 238,
+    "shortDescription": "Souffle cardiaque chez l'enfant",
+    "tagCodes": [
+      "MCV",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Médecine Cardiovasculaire",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 239,
+    "shortDescription": "Acrosyndromes (phénomène de Raynaud, érythermalgie, acrocyanose, engelures, ischémie digitale)",
+    "tagCodes": [
+      "Der",
+      "MI"
+    ],
+    "tagLabels": [
+      "Dermatologie",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 240,
+    "shortDescription": "Hypoglycémie chez l'adulte et l'enfant",
+    "tagCodes": [
+      "End",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Endocrinologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 241,
+    "shortDescription": "Goitre, nodules thyroïdiens et cancers thyroïdiens",
+    "tagCodes": [
+      "End",
+      "ORL",
+      "CD"
+    ],
+    "tagLabels": [
+      "Endocrinologie",
+      "ORL",
+      "Chirurgie Digestive"
+    ]
+  },
+  {
+    "itemNumber": 242,
+    "shortDescription": "Hyperthyroïdie",
+    "tagCodes": [
+      "End",
+      "Oph"
+    ],
+    "tagLabels": [
+      "Endocrinologie",
+      "Ophtalmologie"
+    ]
+  },
+  {
+    "itemNumber": 243,
+    "shortDescription": "Hypothyroïdie",
+    "tagCodes": [
+      "End",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Endocrinologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 244,
+    "shortDescription": "Adénome hypophysaire",
+    "tagCodes": [
+      "End",
+      "NC"
+    ],
+    "tagLabels": [
+      "Endocrinologie",
+      "Neurochirurgie"
+    ]
+  },
+  {
+    "itemNumber": 245,
+    "shortDescription": "Insuffisance surrénale chez l'adulte et l'enfant",
+    "tagCodes": [
+      "End",
+      "MIR",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Endocrinologie",
+      "MIR - Urgences",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 246,
+    "shortDescription": "Gynécomastie",
+    "tagCodes": [
+      "End"
+    ],
+    "tagLabels": [
+      "Endocrinologie"
+    ]
+  },
+  {
+    "itemNumber": 247,
+    "shortDescription": "Diabète sucré de types 1 et 2 de l'enfant et de l'adulte. Complications",
+    "tagCodes": [
+      "End",
+      "Nut",
+      "GO",
+      "Nép",
+      "Oph",
+      "MIR",
+      "Ped",
+      "Thé",
+      "MG"
+    ],
+    "tagLabels": [
+      "Endocrinologie",
+      "Nutrition",
+      "Gynécologie - Obstétrique",
+      "Néphrologie",
+      "Ophtalmologie",
+      "MIR - Urgences",
+      "Pédiatrie",
+      "Thérapeutique",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 248,
+    "shortDescription": "Prévention primaire par la nutrition chez l'adulte et chez l'enfant",
+    "tagCodes": [
+      "Nut",
+      "MG"
+    ],
+    "tagLabels": [
+      "Nutrition",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 249,
+    "shortDescription": "Modifications thérapeutiques du mode de vie (alimentation et activité physique) chez l'adulte et l'enfant",
+    "tagCodes": [
+      "Nut",
+      "MPR",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Nutrition",
+      "MPR",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 250,
+    "shortDescription": "Dénutrition chez l'adulte et l'enfant",
+    "tagCodes": [
+      "Nut",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Nutrition",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 251,
+    "shortDescription": "Amaigrissement à tous les âges",
+    "tagCodes": [
+      "Nut",
+      "MI",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Nutrition",
+      "Médecine Interne",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 252,
+    "shortDescription": "Troubles nutritionnels chez le sujet âgé",
+    "tagCodes": [
+      "Nut",
+      "Gér"
+    ],
+    "tagLabels": [
+      "Nutrition",
+      "Gériatrie"
+    ]
+  },
+  {
+    "itemNumber": 253,
+    "shortDescription": "Obésité de l'enfant et de l'adulte",
+    "tagCodes": [
+      "Nut",
+      "End",
+      "CD",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Nutrition",
+      "Endocrinologie",
+      "Chirurgie Digestive",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 254,
+    "shortDescription": "Besoins nutritionnels et grossesse",
+    "tagCodes": [
+      "Nut",
+      "GO"
+    ],
+    "tagLabels": [
+      "Nutrition",
+      "Gynécologie - Obstétrique"
+    ]
+  },
+  {
+    "itemNumber": 255,
+    "shortDescription": "Diabète gestationnel",
+    "tagCodes": [
+      "Nut",
+      "End",
+      "GO",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Nutrition",
+      "Endocrinologie",
+      "Gynécologie - Obstétrique",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 256,
+    "shortDescription": "Aptitude au sport chez l'adulte et l'enfant ; besoins nutritionnels chez le sportif",
+    "tagCodes": [
+      "Nut",
+      "MPR",
+      "Rhu",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Nutrition",
+      "MPR",
+      "Rhumatologie",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 257,
+    "shortDescription": "Œdèmes des membres inférieurs localisés ou généralisés",
+    "tagCodes": [
+      "Nép",
+      "MI"
+    ],
+    "tagLabels": [
+      "Néphrologie",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 258,
+    "shortDescription": "Élévation de la créatininémie",
+    "tagCodes": [
+      "Nép",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Néphrologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 259,
+    "shortDescription": "Protéinurie et syndrome néphrotique de l'adulte et de l'enfant",
+    "tagCodes": [
+      "Nép",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Néphrologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 260,
+    "shortDescription": "Hématurie",
+    "tagCodes": [
+      "Nép",
+      "Uro",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Néphrologie",
+      "Urologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 261,
+    "shortDescription": "Néphropathie glomérulaire",
+    "tagCodes": [
+      "Nép"
+    ],
+    "tagLabels": [
+      "Néphrologie"
+    ]
+  },
+  {
+    "itemNumber": 262,
+    "shortDescription": "Néphropathies interstitielles",
+    "tagCodes": [
+      "Nép"
+    ],
+    "tagLabels": [
+      "Néphrologie"
+    ]
+  },
+  {
+    "itemNumber": 263,
+    "shortDescription": "Néphropathies vasculaires",
+    "tagCodes": [
+      "Nép"
+    ],
+    "tagLabels": [
+      "Néphrologie"
+    ]
+  },
+  {
+    "itemNumber": 264,
+    "shortDescription": "Insuffisance rénale chronique chez l'adulte et l'enfant",
+    "tagCodes": [
+      "Nép",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Néphrologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 265,
+    "shortDescription": "Lithiase urinaire",
+    "tagCodes": [
+      "Nép",
+      "Uro"
+    ],
+    "tagLabels": [
+      "Néphrologie",
+      "Urologie"
+    ]
+  },
+  {
+    "itemNumber": 266,
+    "shortDescription": "Polykystose rénale",
+    "tagCodes": [
+      "Nép"
+    ],
+    "tagLabels": [
+      "Néphrologie"
+    ]
+  },
+  {
+    "itemNumber": 267,
+    "shortDescription": "Troubles de l'équilibre acido-basique et désordres hydro-électrolytiques",
+    "tagCodes": [
+      "Nép",
+      "End",
+      "AR",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Néphrologie",
+      "Endocrinologie",
+      "Anesthésie - Réanimation",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 268,
+    "shortDescription": "Hypercalcémie",
+    "tagCodes": [
+      "Nép",
+      "End",
+      "Rhu",
+      "MI",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Néphrologie",
+      "Endocrinologie",
+      "Rhumatologie",
+      "Médecine Interne",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 269,
+    "shortDescription": "Douleurs abdominales aiguës chez l'enfant et chez l'adulte",
+    "tagCodes": [
+      "HGE",
+      "Ped"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 270,
+    "shortDescription": "Douleurs lombaires aiguës chez l'enfant et chez l'adulte",
+    "tagCodes": [
+      "MG"
+    ],
+    "tagLabels": [
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 271,
+    "shortDescription": "Reflux gastro-œsophagien chez le nourrisson, chez l'enfant et chez l'adulte. Hernie hiatale",
+    "tagCodes": [
+      "HGE",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 272,
+    "shortDescription": "Ulcère gastrique et duodénal. Gastrite",
+    "tagCodes": [
+      "HGE"
+    ],
+    "tagLabels": [
+      "HGE"
+    ]
+  },
+  {
+    "itemNumber": 273,
+    "shortDescription": "Dysphagie",
+    "tagCodes": [
+      "HGE",
+      "ORL"
+    ],
+    "tagLabels": [
+      "HGE",
+      "ORL"
+    ]
+  },
+  {
+    "itemNumber": 274,
+    "shortDescription": "Vomissements du nourrisson, de l'enfant et de l'adulte",
+    "tagCodes": [
+      "HGE",
+      "Ped"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 275,
+    "shortDescription": "Splénomégalie",
+    "tagCodes": [
+      "Hém",
+      "MI"
+    ],
+    "tagLabels": [
+      "Hématologie",
+      "Médecine Interne"
+    ]
+  },
+  {
+    "itemNumber": 276,
+    "shortDescription": "Hépatomégalie et masse abdominale",
+    "tagCodes": [
+      "HGE",
+      "CD"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Chirurgie Digestive"
+    ]
+  },
+  {
+    "itemNumber": 277,
+    "shortDescription": "Lithiase biliaire et complications",
+    "tagCodes": [
+      "HGE",
+      "CD"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Chirurgie Digestive"
+    ]
+  },
+  {
+    "itemNumber": 278,
+    "shortDescription": "Ictère",
+    "tagCodes": [
+      "HGE",
+      "Ped",
+      "MIR"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Pédiatrie",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 279,
+    "shortDescription": "Cirrhose et complications",
+    "tagCodes": [
+      "HGE",
+      "MIR"
+    ],
+    "tagLabels": [
+      "HGE",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 280,
+    "shortDescription": "Ascite",
+    "tagCodes": [
+      "HGE",
+      "CD",
+      "MIR"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Chirurgie Digestive",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 281,
+    "shortDescription": "Pancréatite chronique",
+    "tagCodes": [
+      "HGE"
+    ],
+    "tagLabels": [
+      "HGE"
+    ]
+  },
+  {
+    "itemNumber": 282,
+    "shortDescription": "Maladies Inflammatoires Chroniques de l'Intestin (MICI) chez l'adulte",
+    "tagCodes": [
+      "HGE",
+      "CD"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Chirurgie Digestive"
+    ]
+  },
+  {
+    "itemNumber": 283,
+    "shortDescription": "Constipation chez l'enfant et l'adulte (avec le traitement)",
+    "tagCodes": [
+      "HGE",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 284,
+    "shortDescription": "Colopathie fonctionnelle",
+    "tagCodes": [
+      "HGE",
+      "MG"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 285,
+    "shortDescription": "Diarrhée chronique chez l'adulte et l'enfant",
+    "tagCodes": [
+      "HGE",
+      "Ped"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 286,
+    "shortDescription": "Diarrhée aiguë et déshydratation chez le nourrisson, l'enfant et l'adulte",
+    "tagCodes": [
+      "HGE",
+      "Ped"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 287,
+    "shortDescription": "Diverticulose colique et diverticulite aiguë du sigmoïde",
+    "tagCodes": [
+      "HGE",
+      "CD"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Chirurgie Digestive"
+    ]
+  },
+  {
+    "itemNumber": 288,
+    "shortDescription": "Pathologie hémorroïdaire",
+    "tagCodes": [
+      "HGE",
+      "CD"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Chirurgie Digestive"
+    ]
+  },
+  {
+    "itemNumber": 289,
+    "shortDescription": "Hernie pariétale chez l'enfant et l'adulte",
+    "tagCodes": [
+      "CD",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Chirurgie Digestive",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 290,
+    "shortDescription": "Épidémiologie, facteurs de risque, prévention et dépistage des cancers",
+    "tagCodes": [
+      "Can",
+      "SP",
+      "MTL",
+      "GO",
+      "MG"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Santé Publique",
+      "Médecine du Travail - Médecine Légale",
+      "Gynécologie - Obstétrique",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 291,
+    "shortDescription": "Cancer : cancérogénèse, oncogénétique",
+    "tagCodes": [
+      "Can",
+      "MTL"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Médecine du Travail - Médecine Légale"
+    ]
+  },
+  {
+    "itemNumber": 292,
+    "shortDescription": "Diagnostic des cancers : signes d'appel et investigations para-cliniques ; caractérisation du stade ; pronostic",
+    "tagCodes": [
+      "Can",
+      "MG"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 293,
+    "shortDescription": "Le médecin préleveur de cellules et/ou de tissus pour des examens d'Anatomie et Cytologie Pathologiques : connaître les principes de réalisation, transmission et utilisation des prélèvements à visée sanitaire et de recherche",
+    "tagCodes": [
+      "Can"
+    ],
+    "tagLabels": [
+      "Cancérologie"
+    ]
+  },
+  {
+    "itemNumber": 294,
+    "shortDescription": "Traitement des cancers : principales modalités, classes thérapeutiques et leurs complications majeures. La décision thérapeutique pluridisciplinaire et l'information du malade",
+    "tagCodes": [
+      "Can",
+      "CD"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Chirurgie Digestive"
+    ]
+  },
+  {
+    "itemNumber": 295,
+    "shortDescription": "Prise en charge et accompagnement d'un malade atteint de cancer à tous les stades de la maladie dont le stade de soins palliatifs en abordant les problématiques techniques, relationnelles, sociales et éthiques. Traitements symptomatiques. Modalités de surveillance",
+    "tagCodes": [
+      "Can"
+    ],
+    "tagLabels": [
+      "Cancérologie"
+    ]
+  },
+  {
+    "itemNumber": 296,
+    "shortDescription": "Agranulocytose médicamenteuse : conduite à tenir",
+    "tagCodes": [
+      "Hém"
+    ],
+    "tagLabels": [
+      "Hématologie"
+    ]
+  },
+  {
+    "itemNumber": 297,
+    "shortDescription": "Cancer de l'enfant : particularités épidémiologiques, diagnostiques et thérapeutiques",
+    "tagCodes": [
+      "Can",
+      "Ped",
+      "SP",
+      "NC"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Pédiatrie",
+      "Santé Publique",
+      "Neurochirurgie"
+    ]
+  },
+  {
+    "itemNumber": 298,
+    "shortDescription": "Tumeurs de la cavité buccale, naso-sinusiennes et du cavum, et des voies aérodigestives supérieures",
+    "tagCodes": [
+      "Can",
+      "ORL",
+      "CMF"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "ORL",
+      "CMF"
+    ]
+  },
+  {
+    "itemNumber": 299,
+    "shortDescription": "Tumeurs intracrâniennes",
+    "tagCodes": [
+      "Can",
+      "Neu",
+      "NC"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Neurologie",
+      "Neurochirurgie"
+    ]
+  },
+  {
+    "itemNumber": 300,
+    "shortDescription": "Tumeurs du col utérin, tumeur du corps utérin",
+    "tagCodes": [
+      "Can",
+      "GO",
+      "MG"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Gynécologie - Obstétrique",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 301,
+    "shortDescription": "Tumeurs du colon et du rectum",
+    "tagCodes": [
+      "Can",
+      "HGE",
+      "CD",
+      "MG"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "HGE",
+      "Chirurgie Digestive",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 302,
+    "shortDescription": "Tumeurs cutanées, épithéliales et mélaniques",
+    "tagCodes": [
+      "Can",
+      "Der",
+      "CMF"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Dermatologie",
+      "CMF"
+    ]
+  },
+  {
+    "itemNumber": 303,
+    "shortDescription": "Tumeurs de l'estomac",
+    "tagCodes": [
+      "Can",
+      "HGE",
+      "CD"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "HGE",
+      "Chirurgie Digestive"
+    ]
+  },
+  {
+    "itemNumber": 304,
+    "shortDescription": "Tumeurs du foie, primitives et secondaires",
+    "tagCodes": [
+      "Can",
+      "HGE",
+      "CD"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "HGE",
+      "Chirurgie Digestive"
+    ]
+  },
+  {
+    "itemNumber": 305,
+    "shortDescription": "Tumeurs de l'œsophage",
+    "tagCodes": [
+      "Can",
+      "HGE",
+      "CD"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "HGE",
+      "Chirurgie Digestive"
+    ]
+  },
+  {
+    "itemNumber": 306,
+    "shortDescription": "Tumeurs de l'ovaire",
+    "tagCodes": [
+      "Can",
+      "GO"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Gynécologie - Obstétrique"
+    ]
+  },
+  {
+    "itemNumber": 307,
+    "shortDescription": "Tumeurs des os primitives et secondaires",
+    "tagCodes": [
+      "Can",
+      "Rhu",
+      "OT",
+      "CMF"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Rhumatologie",
+      "Orthopédie - Traumatologie",
+      "CMF"
+    ]
+  },
+  {
+    "itemNumber": 308,
+    "shortDescription": "Tumeurs du pancréas",
+    "tagCodes": [
+      "Can",
+      "HGE",
+      "CD"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "HGE",
+      "Chirurgie Digestive"
+    ]
+  },
+  {
+    "itemNumber": 309,
+    "shortDescription": "Tumeurs du poumon, primitives et secondaires",
+    "tagCodes": [
+      "Can",
+      "Pne"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Pneumologie"
+    ]
+  },
+  {
+    "itemNumber": 310,
+    "shortDescription": "Tumeurs de la prostate",
+    "tagCodes": [
+      "Can",
+      "Uro"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Urologie"
+    ]
+  },
+  {
+    "itemNumber": 311,
+    "shortDescription": "Tumeurs du rein de l’adulte",
+    "tagCodes": [
+      "Can",
+      "Uro"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Urologie"
+    ]
+  },
+  {
+    "itemNumber": 312,
+    "shortDescription": "Tumeurs du sein",
+    "tagCodes": [
+      "Can",
+      "GO",
+      "MG"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Gynécologie - Obstétrique",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 313,
+    "shortDescription": "Tumeurs du testicule",
+    "tagCodes": [
+      "Can",
+      "Uro"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Urologie"
+    ]
+  },
+  {
+    "itemNumber": 314,
+    "shortDescription": "Tumeurs vésicales",
+    "tagCodes": [
+      "Can",
+      "Uro"
+    ],
+    "tagLabels": [
+      "Cancérologie",
+      "Urologie"
+    ]
+  },
+  {
+    "itemNumber": 315,
+    "shortDescription": "Leucémies aiguës",
+    "tagCodes": [
+      "Hém",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Hématologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 316,
+    "shortDescription": "Syndromes myélodysplasiques",
+    "tagCodes": [
+      "Hém"
+    ],
+    "tagLabels": [
+      "Hématologie"
+    ]
+  },
+  {
+    "itemNumber": 317,
+    "shortDescription": "Syndromes myéloprolifératifs",
+    "tagCodes": [
+      "Hém"
+    ],
+    "tagLabels": [
+      "Hématologie"
+    ]
+  },
+  {
+    "itemNumber": 318,
+    "shortDescription": "Leucémies lymphoïdes chroniques",
+    "tagCodes": [
+      "Hém"
+    ],
+    "tagLabels": [
+      "Hématologie"
+    ]
+  },
+  {
+    "itemNumber": 319,
+    "shortDescription": "Lymphomes malins",
+    "tagCodes": [
+      "Hém",
+      "Der"
+    ],
+    "tagLabels": [
+      "Hématologie",
+      "Dermatologie"
+    ]
+  },
+  {
+    "itemNumber": 320,
+    "shortDescription": "Myélome multiple des os",
+    "tagCodes": [
+      "Hém",
+      "Rhu",
+      "Nép"
+    ],
+    "tagLabels": [
+      "Hématologie",
+      "Rhumatologie",
+      "Néphrologie"
+    ]
+  },
+  {
+    "itemNumber": 321,
+    "shortDescription": "Principe du bon usage du médicament",
+    "tagCodes": [
+      "Thé",
+      "MG"
+    ],
+    "tagLabels": [
+      "Thérapeutique",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 322,
+    "shortDescription": "La décision thérapeutique personnalisée : bon usage dans des situations à risque",
+    "tagCodes": [
+      "Thé",
+      "Gér",
+      "AR",
+      "MG"
+    ],
+    "tagLabels": [
+      "Thérapeutique",
+      "Gériatrie",
+      "Anesthésie - Réanimation",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 323,
+    "shortDescription": "Analyser et utiliser les résultats des études cliniques dans la perspective du bon usage - analyse critique, recherche clinique et niveaux de preuve",
+    "tagCodes": [
+      "Thé",
+      "SP"
+    ],
+    "tagLabels": [
+      "Thérapeutique",
+      "Santé Publique"
+    ]
+  },
+  {
+    "itemNumber": 324,
+    "shortDescription": "Éducation thérapeutique, observance et automédication",
+    "tagCodes": [
+      "Thé",
+      "MI",
+      "MG"
+    ],
+    "tagLabels": [
+      "Thérapeutique",
+      "Médecine Interne",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 325,
+    "shortDescription": "Identification et gestion des risques liés aux médicaments et aux biomatériaux, risque iatrogène, erreur médicamenteuse",
+    "tagCodes": [
+      "Thé",
+      "SP",
+      "Gér",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Thérapeutique",
+      "Santé Publique",
+      "Gériatrie",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 326,
+    "shortDescription": "Cadre réglementaire de la prescription thérapeutique et recommandations pour le bon usage",
+    "tagCodes": [
+      "Thé"
+    ],
+    "tagLabels": [
+      "Thérapeutique"
+    ]
+  },
+  {
+    "itemNumber": 327,
+    "shortDescription": "Principes de la médecine intégrative, utilité et risques des interventions non médicamenteuses et des thérapies complémentaires",
+    "tagCodes": [
+      "Thé",
+      "MG"
+    ],
+    "tagLabels": [
+      "Thérapeutique",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 328,
+    "shortDescription": "Thérapeutiques non médicamenteuses et dispositifs médicaux",
+    "tagCodes": [
+      "Thé",
+      "MPR"
+    ],
+    "tagLabels": [
+      "Thérapeutique",
+      "MPR"
+    ]
+  },
+  {
+    "itemNumber": 329,
+    "shortDescription": "Transfusion sanguine et produits dérivés du sang : indications, complications. Hémovigilance",
+    "tagCodes": [
+      "Thé",
+      "Hém",
+      "Gér",
+      "Ped",
+      "MIR",
+      "AR"
+    ],
+    "tagLabels": [
+      "Thérapeutique",
+      "Hématologie",
+      "Gériatrie",
+      "Pédiatrie",
+      "MIR - Urgences",
+      "Anesthésie - Réanimation"
+    ]
+  },
+  {
+    "itemNumber": 330,
+    "shortDescription": "Prescription et surveillance des classes de médicaments les plus courantes chez l'adulte et chez l'enfant, hors anti-infectieux. Connaitre les grands principes thérapeutiques",
+    "tagCodes": [
+      "Thé",
+      "Hém",
+      "Gér",
+      "Ped",
+      "MIR",
+      "DSP",
+      "Rhu",
+      "Nép",
+      "MI",
+      "MCV",
+      "Der"
+    ],
+    "tagLabels": [
+      "Thérapeutique",
+      "Hématologie",
+      "Gériatrie",
+      "Pédiatrie",
+      "MIR - Urgences",
+      "Douleurs - Soins Palliatifs",
+      "Rhumatologie",
+      "Néphrologie",
+      "Médecine Interne",
+      "Médecine Cardiovasculaire",
+      "Dermatologie"
+    ]
+  },
+  {
+    "itemNumber": 331,
+    "shortDescription": "Arrêt cardio-circulatoire",
+    "tagCodes": [
+      "MIR",
+      "AR",
+      "MCV",
+      "Ped"
+    ],
+    "tagLabels": [
+      "MIR - Urgences",
+      "Anesthésie - Réanimation",
+      "Médecine Cardiovasculaire",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 332,
+    "shortDescription": "État de choc. Principales étiologies : hypovolémique, septique, cardiogénique, anaphylactique",
+    "tagCodes": [
+      "MIR",
+      "AR",
+      "Ped"
+    ],
+    "tagLabels": [
+      "MIR - Urgences",
+      "Anesthésie - Réanimation",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 333,
+    "shortDescription": "Situations sanitaires exceptionnelles",
+    "tagCodes": [
+      "MIR",
+      "AR"
+    ],
+    "tagLabels": [
+      "MIR - Urgences",
+      "Anesthésie - Réanimation"
+    ]
+  },
+  {
+    "itemNumber": 334,
+    "shortDescription": "Prise en charge immédiate pré-hospitalière et à l'arrivée à l'hôpital, évaluation des complications chez : un brûlé, un traumatisé sévère, un traumatisé thoracique, un traumatisé abdominal, un traumatisé des membres et/ou du bassin, un traumatisé du rachis ou vertébro-médullaire, un traumatisé crânien ou crânio-encéphalique",
+    "tagCodes": [
+      "MIR",
+      "AR",
+      "OT",
+      "NC",
+      "ORL",
+      "CD",
+      "Ped"
+    ],
+    "tagLabels": [
+      "MIR - Urgences",
+      "Anesthésie - Réanimation",
+      "Orthopédie - Traumatologie",
+      "Neurochirurgie",
+      "ORL",
+      "Chirurgie Digestive",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 335,
+    "shortDescription": "Orientation diagnostique et conduite à tenir devant un traumatisme maxillo-facial et oculaire",
+    "tagCodes": [
+      "CMF",
+      "ORL",
+      "Oph",
+      "NC",
+      "Ped"
+    ],
+    "tagLabels": [
+      "CMF",
+      "ORL",
+      "Ophtalmologie",
+      "Neurochirurgie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 336,
+    "shortDescription": "Coma non traumatique chez l'adulte et chez l'enfant",
+    "tagCodes": [
+      "MIR",
+      "AR",
+      "Neu"
+    ],
+    "tagLabels": [
+      "MIR - Urgences",
+      "Anesthésie - Réanimation",
+      "Neurologie"
+    ]
+  },
+  {
+    "itemNumber": 337,
+    "shortDescription": "Principales intoxications aiguës",
+    "tagCodes": [
+      "MIR",
+      "AR",
+      "Ped"
+    ],
+    "tagLabels": [
+      "MIR - Urgences",
+      "Anesthésie - Réanimation",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 338,
+    "shortDescription": "Œdème de Quincke et anaphylaxie",
+    "tagCodes": [
+      "MIR",
+      "AR",
+      "Pne"
+    ],
+    "tagLabels": [
+      "MIR - Urgences",
+      "Anesthésie - Réanimation",
+      "Pneumologie"
+    ]
+  },
+  {
+    "itemNumber": 339,
+    "shortDescription": "Syndromes coronariens aigus",
+    "tagCodes": [
+      "MIR",
+      "MCV"
+    ],
+    "tagLabels": [
+      "MIR - Urgences",
+      "Médecine Cardiovasculaire"
+    ]
+  },
+  {
+    "itemNumber": 340,
+    "shortDescription": "Accidents vasculaires cérébraux",
+    "tagCodes": [
+      "MIR",
+      "Neu",
+      "NC",
+      "MPR"
+    ],
+    "tagLabels": [
+      "MIR - Urgences",
+      "Neurologie",
+      "Neurochirurgie",
+      "MPR"
+    ]
+  },
+  {
+    "itemNumber": 341,
+    "shortDescription": "Hémorragie méningée",
+    "tagCodes": [
+      "MIR",
+      "AR",
+      "Neu",
+      "NC"
+    ],
+    "tagLabels": [
+      "MIR - Urgences",
+      "Anesthésie - Réanimation",
+      "Neurologie",
+      "Neurochirurgie"
+    ]
+  },
+  {
+    "itemNumber": 342,
+    "shortDescription": "Malaise, perte de connaissance, crise convulsive chez l'adulte",
+    "tagCodes": [
+      "MIR",
+      "Neu",
+      "MCV"
+    ],
+    "tagLabels": [
+      "MIR - Urgences",
+      "Neurologie",
+      "Médecine Cardiovasculaire"
+    ]
+  },
+  {
+    "itemNumber": 343,
+    "shortDescription": "État confusionnel et trouble de conscience chez l'adulte et chez l'enfant",
+    "tagCodes": [
+      "MIR",
+      "Neu",
+      "Gér",
+      "Ped"
+    ],
+    "tagLabels": [
+      "MIR - Urgences",
+      "Neurologie",
+      "Gériatrie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 344,
+    "shortDescription": "Prise en charge d'une patiente atteinte de pré-éclampsie",
+    "tagCodes": [
+      "MIR",
+      "GO",
+      "Nép",
+      "AR"
+    ],
+    "tagLabels": [
+      "MIR - Urgences",
+      "Gynécologie - Obstétrique",
+      "Néphrologie",
+      "Anesthésie - Réanimation"
+    ]
+  },
+  {
+    "itemNumber": 345,
+    "shortDescription": "Malaise grave du nourrisson et mort inattendue du nourrisson",
+    "tagCodes": [
+      "Ped"
+    ],
+    "tagLabels": [
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 346,
+    "shortDescription": "Convulsions chez le nourrisson et chez l'enfant",
+    "tagCodes": [
+      "Ped"
+    ],
+    "tagLabels": [
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 347,
+    "shortDescription": "Rétention aiguë d'urine",
+    "tagCodes": [
+      "Uro",
+      "Gér"
+    ],
+    "tagLabels": [
+      "Urologie",
+      "Gériatrie"
+    ]
+  },
+  {
+    "itemNumber": 348,
+    "shortDescription": "Insuffisance rénale aiguë - Anurie",
+    "tagCodes": [
+      "Nép",
+      "Uro",
+      "MIR",
+      "AR",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Néphrologie",
+      "Urologie",
+      "MIR - Urgences",
+      "Anesthésie - Réanimation",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 349,
+    "shortDescription": "Infection aiguë des parties molles (abcès, panaris, phlegmon des gaines)",
+    "tagCodes": [
+      "OT",
+      "AR"
+    ],
+    "tagLabels": [
+      "Orthopédie - Traumatologie",
+      "Anesthésie - Réanimation"
+    ]
+  },
+  {
+    "itemNumber": 350,
+    "shortDescription": "Grosse jambe rouge aiguë",
+    "tagCodes": [
+      "Der"
+    ],
+    "tagLabels": [
+      "Dermatologie"
+    ]
+  },
+  {
+    "itemNumber": 351,
+    "shortDescription": "Agitation et délire aiguë",
+    "tagCodes": [
+      "Psy"
+    ],
+    "tagLabels": [
+      "Psychiatrie"
+    ]
+  },
+  {
+    "itemNumber": 352,
+    "shortDescription": "Crise d'angoisse aiguë et attaque de panique",
+    "tagCodes": [
+      "Psy"
+    ],
+    "tagLabels": [
+      "Psychiatrie"
+    ]
+  },
+  {
+    "itemNumber": 353,
+    "shortDescription": "Risque et conduite suicidaires chez l'enfant, l'adolescent et l'adulte : identification et prise en charge",
+    "tagCodes": [
+      "Psy",
+      "Ped",
+      "MG"
+    ],
+    "tagLabels": [
+      "Psychiatrie",
+      "Pédiatrie",
+      "Médecine Générale"
+    ]
+  },
+  {
+    "itemNumber": 354,
+    "shortDescription": "Syndrome occlusif de l'enfant et de l'adulte",
+    "tagCodes": [
+      "CD",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Chirurgie Digestive",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 355,
+    "shortDescription": "Hémorragie digestive",
+    "tagCodes": [
+      "HGE",
+      "MIR",
+      "AR",
+      "Ped"
+    ],
+    "tagLabels": [
+      "HGE",
+      "MIR - Urgences",
+      "Anesthésie - Réanimation",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 356,
+    "shortDescription": "Appendicite de l'enfant et de l'adulte",
+    "tagCodes": [
+      "CD",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Chirurgie Digestive",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 357,
+    "shortDescription": "Péritonite aiguë chez l'enfant et chez l'adulte",
+    "tagCodes": [
+      "CD",
+      "Inf",
+      "AR",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Chirurgie Digestive",
+      "Infectiologie",
+      "Anesthésie - Réanimation",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 358,
+    "shortDescription": "Pancréatite aiguë",
+    "tagCodes": [
+      "HGE",
+      "CD",
+      "MIR",
+      "AR"
+    ],
+    "tagLabels": [
+      "HGE",
+      "Chirurgie Digestive",
+      "MIR - Urgences",
+      "Anesthésie - Réanimation"
+    ]
+  },
+  {
+    "itemNumber": 359,
+    "shortDescription": "Détresse et insuffisance respiratoire aigüe du nourrisson, de l'enfant et de l'adulte",
+    "tagCodes": [
+      "Pne",
+      "ORL",
+      "MIR",
+      "AR",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Pneumologie",
+      "ORL",
+      "MIR - Urgences",
+      "Anesthésie - Réanimation",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 360,
+    "shortDescription": "Pneumothorax",
+    "tagCodes": [
+      "Pne",
+      "MIR"
+    ],
+    "tagLabels": [
+      "Pneumologie",
+      "MIR - Urgences"
+    ]
+  },
+  {
+    "itemNumber": 361,
+    "shortDescription": "Lésions péri-articulaires et ligamentaires du genou, de la cheville et de l'épaule",
+    "tagCodes": [
+      "OT",
+      "Rhu"
+    ],
+    "tagLabels": [
+      "Orthopédie - Traumatologie",
+      "Rhumatologie"
+    ]
+  },
+  {
+    "itemNumber": 362,
+    "shortDescription": "Prothèses et ostéosynthèses",
+    "tagCodes": [
+      "OT",
+      "Inf"
+    ],
+    "tagLabels": [
+      "Orthopédie - Traumatologie",
+      "Infectiologie"
+    ]
+  },
+  {
+    "itemNumber": 363,
+    "shortDescription": "Fractures fréquentes de l'adulte et du sujet âgé",
+    "tagCodes": [
+      "OT"
+    ],
+    "tagLabels": [
+      "Orthopédie - Traumatologie"
+    ]
+  },
+  {
+    "itemNumber": 364,
+    "shortDescription": "Fractures chez l'enfant : particularités épidémiologiques, diagnostiques et thérapeutiques",
+    "tagCodes": [
+      "OT",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Orthopédie - Traumatologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 365,
+    "shortDescription": "Surveillance d'un malade sous plâtre/résine, diagnostiquer une complication",
+    "tagCodes": [
+      "OT",
+      "Ped"
+    ],
+    "tagLabels": [
+      "Orthopédie - Traumatologie",
+      "Pédiatrie"
+    ]
+  },
+  {
+    "itemNumber": 366,
+    "shortDescription": "Exposition accidentelle aux liquides biologiques : conduite à tenir",
+    "tagCodes": [
+      "Inf"
+    ],
+    "tagLabels": [
+      "Infectiologie"
+    ]
+  },
+  {
+    "itemNumber": 367,
+    "shortDescription": "Impact de l’environnement sur la santé",
+    "tagCodes": [
+      "SP",
+      "MTL",
+      "MG"
+    ],
+    "tagLabels": [
+      "Santé Publique",
+      "Médecine du Travail - Médecine Légale",
+      "Médecine Générale"
+    ]
+  }
+]

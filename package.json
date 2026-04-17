@@ -1,0 +1,52 @@
+{
+  "name": "items-trackers-tom",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "server": "node server/index.mjs",
+    "dev:full": "concurrently -k \"npm:server\" \"npm:dev\"",
+    "build": "tsc -b && vite build",
+    "build:deploy": "npm run build && cp .htaccess dist/.htaccess",
+    "package:deploy": "npm run build:deploy && node scripts/prepare-deploy.mjs",
+    "export:ready": "npm run build && node scripts/prepare-root-export.mjs",
+    "export:zip": "npm run export:ready",
+    "dev:restore-index": "node scripts/restore-dev-index.mjs",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "import:items": "node scripts/import-items.mjs"
+  },
+  "dependencies": {
+    "argon2": "^0.44.0",
+    "better-sqlite3": "^12.9.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^8.0.5",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "read-excel-file": "^8.0.3",
+    "recharts": "^3.8.1",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@types/node": "^24.12.2",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.2.1",
+    "eslint": "^9.39.4",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.4.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.58.0",
+    "vite": "^8.0.4"
+  }
+}
