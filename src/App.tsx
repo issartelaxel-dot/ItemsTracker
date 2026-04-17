@@ -572,11 +572,19 @@ function App() {
     }
   }
 
+  function getPasswordStrengthError(password: string) {
+    if (password.length < 12 || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+      return 'Mot de passe invalide: minimum 12 caractères, au moins 1 chiffre et 1 caractère spécial.'
+    }
+    return null
+  }
+
   async function handleRequestCode() {
     setAuthError('')
     setAuthMessage('')
-    if (passwordInput.length < 12 || !/[0-9]/.test(passwordInput) || !/[^A-Za-z0-9]/.test(passwordInput)) {
-      setAuthError('Mot de passe invalide: minimum 12 caractères, au moins 1 chiffre et 1 caractère spécial.')
+    const passwordError = getPasswordStrengthError(passwordInput)
+    if (passwordError) {
+      setAuthError(passwordError)
       return
     }
     try {
@@ -626,6 +634,55 @@ function App() {
       await refreshAuth()
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Erreur de connexion.')
+    }
+  }
+
+  async function handleRequestPasswordReset() {
+    setAuthError('')
+    setAuthMessage('')
+    if (!emailInput.trim()) {
+      setAuthError('Saisis ton email pour recevoir un code de réinitialisation.')
+      return
+    }
+    try {
+      const payload = await apiRequest('/api/auth/password/request', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: emailInput,
+        }),
+      })
+      setAuthMessage(String(payload.message ?? 'Si le compte existe, un code a été envoyé par email.'))
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Erreur lors de la demande de réinitialisation.')
+    }
+  }
+
+  async function handleConfirmPasswordReset() {
+    setAuthError('')
+    setAuthMessage('')
+    const passwordError = getPasswordStrengthError(passwordInput)
+    if (passwordError) {
+      setAuthError(passwordError)
+      return
+    }
+    if (!codeInput.trim()) {
+      setAuthError('Saisis le code à 8 chiffres reçu par email.')
+      return
+    }
+
+    try {
+      const payload = await apiRequest('/api/auth/password/confirm', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: emailInput,
+          code: codeInput,
+          newPassword: passwordInput,
+        }),
+      })
+      setAuthMessage(String(payload.message ?? 'Mot de passe mis à jour.'))
+      await refreshAuth()
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Erreur lors de la réinitialisation du mot de passe.')
     }
   }
 
@@ -1140,7 +1197,8 @@ function App() {
       <div className="auth-shell">
         <div className="auth-card">
           <h1>Connexion / Création de compte</h1>
-          <p className="auth-sub">Validation par code 8 chiffres envoyé à l’administrateur.</p>
+          <p className="auth-sub">Création de compte: code 8 chiffres envoyé à l’administrateur.</p>
+          <p className="auth-sub">Mot de passe oublié: demande un code envoyé à ton email puis valide avec le nouveau mot de passe.</p>
           <p className="auth-sub">Mot de passe requis: 12+ caractères, 1 chiffre, 1 caractère spécial.</p>
           <div className="auth-grid">
             <input placeholder="Prénom" value={firstNameInput} onChange={(event) => setFirstNameInput(event.target.value)} />
@@ -1173,6 +1231,12 @@ function App() {
             </button>
             <button className="ghost-btn" onClick={() => void handleLogin()}>
               Se connecter
+            </button>
+            <button className="ghost-btn" onClick={() => void handleRequestPasswordReset()}>
+              Mot de passe oublié: recevoir un code
+            </button>
+            <button className="ghost-btn" onClick={() => void handleConfirmPasswordReset()}>
+              Réinitialiser le mot de passe avec code
             </button>
           </div>
           {authMessage ? <p className="auth-success">{authMessage}</p> : null}

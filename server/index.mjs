@@ -49,6 +49,14 @@ CREATE TABLE IF NOT EXISTS signup_requests (
   attempts INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS password_resets (
+  email TEXT PRIMARY KEY,
+  code_hash TEXT NOT NULL,
+  expires_at INTEGER NOT NULL,
+  attempts INTEGER NOT NULL DEFAULT 0,
+  created_at TEXT NOT NULL
+);
 `)
 
 const app = express()
@@ -182,6 +190,16 @@ const loginSchema = z.object({
   password: z.string().min(1).max(256),
 })
 
+const passwordResetRequestSchema = z.object({
+  email: z.string().email(),
+})
+
+const passwordResetConfirmSchema = z.object({
+  email: z.string().email(),
+  code: z.string().regex(/^\d{8}$/),
+  newPassword: z.string().min(12).max(256),
+})
+
 async function sendApprovalEmail({ requesterEmail, displayName, code }) {
   const tx = getTransporter()
   const from = process.env.SMTP_FROM || process.env.SMTP_USER
@@ -199,6 +217,27 @@ async function sendApprovalEmail({ requesterEmail, displayName, code }) {
       'Validité: 15 minutes',
       '',
       'Transmets ce code à l’utilisateur pour validation du compte.',
+    ].join('\n'),
+  })
+}
+
+async function sendPasswordResetEmail({ userEmail, displayName, code }) {
+  const tx = getTransporter()
+  const from = process.env.SMTP_FROM || process.env.SMTP_USER
+
+  await tx.sendMail({
+    from,
+    to: userEmail,
+    subject: 'Reinitialisation de mot de passe',
+    text: [
+      'Demande de reinitialisation de mot de passe',
+      `Compte: ${userEmail}`,
+      `Nom: ${displayName || '(non renseigne)'}`,
+      '',
+      `Code temporaire (8 chiffres): ${code}`,
+      'Validite: 15 minutes',
+      '',
+      "Si tu n'es pas a l'origine de cette demande, ignore cet email.",
     ].join('\n'),
   })
 }
@@ -375,6 +414,116 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     res.status(401).json({ error: 'Email ou mot de passe invalide.' })
     return
   }
+
+  const token = signAuthToken({ uid: user.id, email: user.email })
+  setAuthCookie(res, token)
+
+  res.json({
+    ok: true,
+    user: {
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+    },
+  })
+})
+
+app.post('/api/auth/password/request', authLimiter, async (req, res) => {
+  const parsed = passwordResetRequestSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Email invalide.' })
+    return
+  }
+
+  const email = normalizeEmail(parsed.data.email)
+  const user = db.prepare('SELECT email, display_name AS displayName FROM users WHERE email = ?').get(email)
+
+  if (user) {
+    const code = generateApprovalCode()
+    const codeHash = hashApprovalCode(code)
+    const now = Date.now()
+
+    db.prepare(
+      `
+        INSERT INTO password_resets(email, code_hash, expires_at, attempts, created_at)
+        VALUES(?, ?, ?, 0, ?)
+        ON CONFLICT(email) DO UPDATE SET
+          code_hash = excluded.code_hash,
+          expires_at = excluded.expires_at,
+          attempts = 0,
+          created_at = excluded.created_at
+      `,
+    ).run(email, codeHash, now + APPROVAL_CODE_TTL_MS, new Date(now).toISOString())
+
+    try {
+      await sendPasswordResetEmail({ userEmail: email, displayName: user.displayName, code })
+    } catch (error) {
+      console.error('Failed to send password reset email:', error)
+      res.status(500).json({
+        error:
+          "Impossible d'envoyer l'email de reinitialisation (SMTP non configure ou indisponible). Verifie les variables SMTP.",
+      })
+      return
+    }
+  }
+
+  res.json({
+    ok: true,
+    message: 'Si un compte existe avec cet email, un code de reinitialisation a ete envoye.',
+  })
+})
+
+app.post('/api/auth/password/confirm', verifyLimiter, async (req, res) => {
+  const parsed = passwordResetConfirmSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Donnees invalides.' })
+    return
+  }
+
+  const passwordError = validatePasswordStrength(parsed.data.newPassword)
+  if (passwordError) {
+    res.status(400).json({ error: passwordError })
+    return
+  }
+
+  const email = normalizeEmail(parsed.data.email)
+  const user = db.prepare('SELECT id, email, display_name AS displayName FROM users WHERE email = ?').get(email)
+  const requestRow = db.prepare('SELECT * FROM password_resets WHERE email = ?').get(email)
+  if (!user || !requestRow) {
+    res.status(400).json({ error: 'Code invalide ou expire.' })
+    return
+  }
+
+  if (Date.now() > Number(requestRow.expires_at)) {
+    db.prepare('DELETE FROM password_resets WHERE email = ?').run(email)
+    res.status(400).json({ error: 'Le code a expire. Redemande un nouveau code.' })
+    return
+  }
+
+  const providedHash = hashApprovalCode(parsed.data.code)
+  const ok = crypto.timingSafeEqual(Buffer.from(providedHash, 'hex'), Buffer.from(requestRow.code_hash, 'hex'))
+
+  if (!ok) {
+    const attempts = Number(requestRow.attempts || 0) + 1
+    if (attempts >= 5) {
+      db.prepare('DELETE FROM password_resets WHERE email = ?').run(email)
+      res.status(429).json({ error: 'Trop de tentatives. Redemande un nouveau code.' })
+      return
+    }
+    db.prepare('UPDATE password_resets SET attempts = ? WHERE email = ?').run(attempts, email)
+    res.status(400).json({ error: 'Code incorrect.' })
+    return
+  }
+
+  const passwordHash = await argon2.hash(parsed.data.newPassword, {
+    type: argon2.argon2id,
+    memoryCost: 19456,
+    timeCost: 2,
+    parallelism: 1,
+  })
+
+  db.prepare('UPDATE users SET password_hash = ? WHERE email = ?').run(passwordHash, email)
+  db.prepare('DELETE FROM password_resets WHERE email = ?').run(email)
 
   const token = signAuthToken({ uid: user.id, email: user.email })
   setAuthCookie(res, token)
