@@ -149,6 +149,44 @@ function validatePasswordStrength(password) {
   return null
 }
 
+async function ensureBootstrapUser() {
+  const emailRaw = process.env.BOOTSTRAP_EMAIL || ''
+  const password = process.env.BOOTSTRAP_PASSWORD || ''
+  const displayNameRaw = process.env.BOOTSTRAP_DISPLAY_NAME || 'Admin'
+
+  if (!emailRaw || !password) {
+    return
+  }
+
+  const email = normalizeEmail(emailRaw)
+  const passwordError = validatePasswordStrength(password)
+  if (passwordError) {
+    console.error(`BOOTSTRAP_PASSWORD invalide: ${passwordError}`)
+    return
+  }
+
+  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email)
+  if (existing) {
+    return
+  }
+
+  const passwordHash = await argon2.hash(password, {
+    type: argon2.argon2id,
+    memoryCost: 19456,
+    timeCost: 2,
+    parallelism: 1,
+  })
+
+  db.prepare('INSERT INTO users(email, display_name, password_hash, created_at) VALUES(?, ?, ?, ?)').run(
+    email,
+    String(displayNameRaw).trim() || 'Admin',
+    passwordHash,
+    new Date().toISOString(),
+  )
+
+  console.log(`Bootstrap user created: ${email}`)
+}
+
 function signAuthToken(payload) {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })
 }
@@ -557,6 +595,14 @@ app.post('/api/auth/logout', (_req, res) => {
   res.json({ ok: true })
 })
 
-app.listen(PORT, () => {
-  console.log(`Auth server listening on http://localhost:${PORT}`)
+async function startServer() {
+  await ensureBootstrapUser()
+  app.listen(PORT, () => {
+    console.log(`Auth server listening on http://localhost:${PORT}`)
+  })
+}
+
+startServer().catch((error) => {
+  console.error('Failed to start server:', error)
+  process.exit(1)
 })
