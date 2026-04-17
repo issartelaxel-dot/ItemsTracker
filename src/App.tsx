@@ -484,6 +484,7 @@ function App() {
   const [authMessage, setAuthMessage] = useState('')
   const [authError, setAuthError] = useState('')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
+  const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
   const [firstNameInput, setFirstNameInput] = useState('')
   const [lastNameInput, setLastNameInput] = useState('')
   const [emailInput, setEmailInput] = useState('')
@@ -582,6 +583,18 @@ function App() {
 
     return () => window.clearTimeout(timer)
   }, [authStatus, authUser?.id, trackingState, theme, focusMode, profile])
+
+  useEffect(() => {
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteStateRef.current) {
+      return
+    }
+
+    const interval = window.setInterval(() => {
+      void persistUserState({ silent: true, force: true })
+    }, 30_000)
+
+    return () => window.clearInterval(interval)
+  }, [authStatus, authUser?.id])
 
   useEffect(() => {
     if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteStateRef.current) {
@@ -697,7 +710,7 @@ function App() {
         setSaveStatus('saving')
       }
       try {
-        await apiRequest('/api/state', {
+        const payload = await apiRequest('/api/state', {
           method: 'PUT',
           body: JSON.stringify({
             trackingState,
@@ -706,6 +719,17 @@ function App() {
             profile,
           }),
         })
+        const updatedAtRaw = typeof payload.updatedAt === 'string' ? payload.updatedAt : new Date().toISOString()
+        const savedAt = new Date(updatedAtRaw)
+        if (!Number.isNaN(savedAt.getTime())) {
+          setLastSavedAt(
+            new Intl.DateTimeFormat('fr-FR', {
+              hour: '2-digit',
+              minute: '2-digit',
+              second: '2-digit',
+            }).format(savedAt),
+          )
+        }
         if (!silent) {
           setSaveStatus('saved')
           window.setTimeout(() => setSaveStatus('idle'), 1800)
@@ -886,7 +910,7 @@ function App() {
   }
 
   async function handleLogout() {
-    await persistUserState({ force: true })
+    await persistUserState({ force: true, silent: true })
     await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
     localStorage.removeItem(AUTH_TOKEN_KEY)
     hasLoadedRemoteStateRef.current = false
@@ -1539,7 +1563,7 @@ function App() {
                     : 'Sauvegarder maintenant'
             }
             aria-label="Sauvegarder maintenant"
-            onClick={() => void persistUserState()}
+            onClick={() => void persistUserState({ silent: false, force: true })}
           >
             💾
           </button>
@@ -1681,6 +1705,15 @@ function App() {
           </button>
         </div>
       </header>
+      {saveStatus !== 'idle' ? (
+        <div className={`save-popup ${saveStatus}`}>
+          {saveStatus === 'saving'
+            ? 'Sauvegarde en cours...'
+            : saveStatus === 'saved'
+              ? `Sauvegarde OK${lastSavedAt ? ` (${lastSavedAt})` : ''}`
+              : 'Erreur de sauvegarde'}
+        </div>
+      ) : null}
 
       <section className="global-grid">
         <article className="stat-card">
