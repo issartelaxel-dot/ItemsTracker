@@ -618,14 +618,19 @@ function App() {
     setAuthError('')
     setAuthMessage('')
     try {
-      await apiRequest('/api/auth/register/verify', {
+      const payload = await apiRequest('/api/auth/register/verify', {
         method: 'POST',
         body: JSON.stringify({
           email: emailInput,
           code: codeInput,
         }),
       })
-      await refreshAuth()
+      if (payload.user) {
+        setAuthUser(payload.user as AuthUser)
+        setAuthStatus('authed')
+      } else {
+        await refreshAuth()
+      }
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Erreur lors de la vérification.')
     }
@@ -635,14 +640,19 @@ function App() {
     setAuthError('')
     setAuthMessage('')
     try {
-      await apiRequest('/api/auth/login', {
+      const payload = await apiRequest('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({
           email: emailInput,
           password: passwordInput,
         }),
       })
-      await refreshAuth()
+      if (payload.user) {
+        setAuthUser(payload.user as AuthUser)
+        setAuthStatus('authed')
+      } else {
+        await refreshAuth()
+      }
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Erreur de connexion.')
     }
@@ -694,7 +704,12 @@ function App() {
       setResetMode(false)
       setResetCodeInput('')
       setResetPasswordInput('')
-      await refreshAuth()
+      if (payload.user) {
+        setAuthUser(payload.user as AuthUser)
+        setAuthStatus('authed')
+      } else {
+        await refreshAuth()
+      }
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Erreur lors de la réinitialisation du mot de passe.')
     }
