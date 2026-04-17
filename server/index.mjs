@@ -73,6 +73,15 @@ async function initDb() {
       attempts INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS user_state (
+      user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+      tracking_state JSONB NOT NULL,
+      theme TEXT NOT NULL DEFAULT 'light',
+      focus_mode BOOLEAN NOT NULL DEFAULT FALSE,
+      profile JSONB,
+      updated_at TEXT NOT NULL
+    );
   `)
 }
 
@@ -264,6 +273,13 @@ const passwordResetConfirmSchema = z.object({
   newPassword: z.string().min(12).max(256),
 })
 
+const stateUpdateSchema = z.object({
+  trackingState: z.unknown(),
+  theme: z.enum(['light', 'dark']),
+  focusMode: z.boolean(),
+  profile: z.unknown().optional(),
+})
+
 async function sendApprovalEmail({ requesterEmail, displayName, code }) {
   const tx = getTransporter()
   const from = process.env.SMTP_FROM || process.env.SMTP_USER
@@ -337,6 +353,85 @@ app.get('/api/auth/me', async (req, res) => {
   }
 
   res.json({ user })
+})
+
+app.get('/api/state', async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  const uid = Number(auth.uid)
+  if (!Number.isFinite(uid)) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  const result = await pool.query(
+    `
+      SELECT
+        tracking_state AS "trackingState",
+        theme,
+        focus_mode AS "focusMode",
+        profile
+      FROM user_state
+      WHERE user_id = $1
+    `,
+    [uid],
+  )
+
+  res.json({ state: result.rows[0] ?? null })
+})
+
+app.put('/api/state', async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  const uid = Number(auth.uid)
+  if (!Number.isFinite(uid)) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  const parsed = stateUpdateSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Etat invalide.' })
+    return
+  }
+
+  if (!parsed.data.trackingState || typeof parsed.data.trackingState !== 'object') {
+    res.status(400).json({ error: 'Etat invalide.' })
+    return
+  }
+
+  const now = new Date().toISOString()
+
+  await pool.query(
+    `
+      INSERT INTO user_state(user_id, tracking_state, theme, focus_mode, profile, updated_at)
+      VALUES($1, $2::jsonb, $3, $4, $5::jsonb, $6)
+      ON CONFLICT(user_id) DO UPDATE SET
+        tracking_state = EXCLUDED.tracking_state,
+        theme = EXCLUDED.theme,
+        focus_mode = EXCLUDED.focus_mode,
+        profile = EXCLUDED.profile,
+        updated_at = EXCLUDED.updated_at
+    `,
+    [
+      uid,
+      JSON.stringify(parsed.data.trackingState),
+      parsed.data.theme,
+      parsed.data.focusMode,
+      JSON.stringify(parsed.data.profile ?? null),
+      now,
+    ],
+  )
+
+  res.json({ ok: true })
 })
 
 app.post('/api/auth/register/request', authLimiter, async (req, res) => {

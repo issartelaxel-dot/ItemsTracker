@@ -90,10 +90,6 @@ type AuthUser = {
   displayName: string
 }
 
-const STORAGE_KEY = 'med-item-dashboard-state-v1'
-const THEME_KEY = 'med-item-dashboard-theme-v1'
-const FOCUS_KEY = 'med-item-dashboard-focus-v1'
-const PROFILE_KEY = 'med-item-dashboard-profile-v1'
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '')
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
 const HABIT_TRACKER_YEAR = 2026
@@ -419,25 +415,21 @@ function getInitialTrackingState(): TrackerState {
   return { items }
 }
 
+function getDefaultProfile(): ProfileState {
+  return {
+    firstName: '',
+    lastName: '',
+    email: '',
+    photoUrl: '',
+    password: '',
+    avatarGradient: AVATAR_GRADIENTS[0],
+  }
+}
+
 function App() {
-  const [trackingState, setTrackingState] = useState<TrackerState>(() => {
-    const persisted = localStorage.getItem(STORAGE_KEY)
-    if (!persisted) {
-      return getInitialTrackingState()
-    }
-    try {
-      return JSON.parse(persisted) as TrackerState
-    } catch {
-      return getInitialTrackingState()
-    }
-  })
-
-  const [theme, setTheme] = useState<Theme>(() => {
-    const persisted = localStorage.getItem(THEME_KEY)
-    return persisted === 'dark' ? 'dark' : 'light'
-  })
-
-  const [focusMode, setFocusMode] = useState<boolean>(() => localStorage.getItem(FOCUS_KEY) === 'true')
+  const [trackingState, setTrackingState] = useState<TrackerState>(getInitialTrackingState())
+  const [theme, setTheme] = useState<Theme>('light')
+  const [focusMode, setFocusMode] = useState<boolean>(false)
   const [selectedItemId, setSelectedItemId] = useState<number>(rawItems[0]?.itemNumber ?? 1)
   const [search, setSearch] = useState('')
   const [collegeFilter, setCollegeFilter] = useState<string>('ALL')
@@ -446,6 +438,7 @@ function App() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const backupInputRef = useRef<HTMLInputElement | null>(null)
+  const hasLoadedRemoteStateRef = useRef(false)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
   const [authView, setAuthView] = useState<AuthView>('login')
   const [authUser, setAuthUser] = useState<AuthUser | null>(null)
@@ -459,59 +452,11 @@ function App() {
   const [resetMode, setResetMode] = useState(false)
   const [resetCodeInput, setResetCodeInput] = useState('')
   const [resetPasswordInput, setResetPasswordInput] = useState('')
-  const [profile, setProfile] = useState<ProfileState>(() => {
-    const persisted = localStorage.getItem(PROFILE_KEY)
-    if (!persisted) {
-      return {
-        firstName: '',
-        lastName: '',
-        email: '',
-        photoUrl: '',
-        password: '',
-        avatarGradient: AVATAR_GRADIENTS[0],
-      }
-    }
-    try {
-      const parsed = JSON.parse(persisted) as Partial<ProfileState>
-      return {
-        firstName: parsed.firstName ?? '',
-        lastName: parsed.lastName ?? '',
-        email: parsed.email ?? '',
-        photoUrl: parsed.photoUrl ?? '',
-        password: parsed.password ?? '',
-        avatarGradient: parsed.avatarGradient ?? AVATAR_GRADIENTS[0],
-      }
-    } catch {
-      return {
-        firstName: '',
-        lastName: '',
-        email: '',
-        photoUrl: '',
-        password: '',
-        avatarGradient: AVATAR_GRADIENTS[0],
-      }
-    }
-  })
+  const [profile, setProfile] = useState<ProfileState>(getDefaultProfile())
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(trackingState))
-    }, 250)
-    return () => window.clearTimeout(timer)
-  }, [trackingState])
-
-  useEffect(() => {
-    localStorage.setItem(THEME_KEY, theme)
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
-
-  useEffect(() => {
-    localStorage.setItem(FOCUS_KEY, String(focusMode))
-  }, [focusMode])
-
-  useEffect(() => {
-    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
-  }, [profile])
 
   useEffect(() => {
     void refreshAuth()
@@ -522,6 +467,97 @@ function App() {
     setAuthMessage('')
     setResetMode(false)
   }, [authView])
+
+  useEffect(() => {
+    if (authStatus !== 'authed' || !authUser) {
+      hasLoadedRemoteStateRef.current = false
+      return
+    }
+
+    let cancelled = false
+
+    const loadRemoteState = async () => {
+      try {
+        const payload = await apiRequest('/api/state')
+        if (cancelled) {
+          return
+        }
+
+        const remoteState = payload.state as
+          | {
+              trackingState?: unknown
+              theme?: unknown
+              focusMode?: unknown
+              profile?: unknown
+            }
+          | null
+          | undefined
+
+        if (remoteState && typeof remoteState === 'object') {
+          if (remoteState.trackingState && typeof remoteState.trackingState === 'object') {
+            setTrackingState(remoteState.trackingState as TrackerState)
+          } else {
+            setTrackingState(getInitialTrackingState())
+          }
+
+          setTheme(remoteState.theme === 'dark' ? 'dark' : 'light')
+          setFocusMode(Boolean(remoteState.focusMode))
+
+          if (remoteState.profile && typeof remoteState.profile === 'object') {
+            const parsed = remoteState.profile as Partial<ProfileState>
+            setProfile({
+              ...getDefaultProfile(),
+              ...parsed,
+              avatarGradient: parsed.avatarGradient ?? AVATAR_GRADIENTS[0],
+            })
+          } else {
+            setProfile(getDefaultProfile())
+          }
+        } else {
+          setTrackingState(getInitialTrackingState())
+          setTheme('light')
+          setFocusMode(false)
+          setProfile(getDefaultProfile())
+        }
+      } catch {
+        if (!cancelled) {
+          setTrackingState(getInitialTrackingState())
+          setTheme('light')
+          setFocusMode(false)
+          setProfile(getDefaultProfile())
+        }
+      } finally {
+        if (!cancelled) {
+          hasLoadedRemoteStateRef.current = true
+        }
+      }
+    }
+
+    void loadRemoteState()
+    return () => {
+      cancelled = true
+    }
+  }, [authStatus, authUser?.id])
+
+  useEffect(() => {
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteStateRef.current) {
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      void apiRequest('/api/state', {
+        method: 'PUT',
+        body: JSON.stringify({
+          trackingState,
+          theme,
+          focusMode,
+          profile,
+        }),
+      }).catch(() => undefined)
+    }, 600)
+
+    return () => window.clearTimeout(timer)
+  }, [authStatus, authUser?.id, trackingState, theme, focusMode, profile])
 
   async function apiRequest(url: string, init?: RequestInit) {
     let response: Response | null = null
@@ -575,6 +611,7 @@ function App() {
     } catch (error) {
       setAuthUser(null)
       setAuthStatus('guest')
+      hasLoadedRemoteStateRef.current = false
       if (error instanceof Error && error.message.includes('404')) {
         setAuthError(
           "API introuvable (/api/auth/me). Configure `VITE_API_BASE_URL` vers ton backend, puis rebuild/redeploy.",
@@ -717,8 +754,13 @@ function App() {
 
   async function handleLogout() {
     await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
+    hasLoadedRemoteStateRef.current = false
     setAuthUser(null)
     setAuthStatus('guest')
+    setTrackingState(getInitialTrackingState())
+    setTheme('light')
+    setFocusMode(false)
+    setProfile(getDefaultProfile())
   }
 
   const items = useMemo<ItemComputed[]>(() => {
