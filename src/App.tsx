@@ -493,7 +493,7 @@ function App() {
   const [resetCodeInput, setResetCodeInput] = useState('')
   const [resetPasswordInput, setResetPasswordInput] = useState('')
   const [profile, setProfile] = useState<ProfileState>(getDefaultProfile())
-  const savingStateRef = useRef(false)
+  const saveInFlightRef = useRef<Promise<boolean> | null>(null)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -577,7 +577,7 @@ function App() {
     }
 
     const timer = window.setTimeout(() => {
-      void persistUserState()
+      void persistUserState({ silent: true })
     }, 600)
 
     return () => window.clearTimeout(timer)
@@ -601,11 +601,15 @@ function App() {
       if (!target) {
         return
       }
+      const token = localStorage.getItem(AUTH_TOKEN_KEY) || ''
       void fetch(target, {
         method: 'PUT',
         credentials: 'include',
         keepalive: true,
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: payload,
       }).catch(() => undefined)
     }
@@ -672,31 +676,54 @@ function App() {
     return payload
   }
 
-  async function persistUserState() {
-    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteStateRef.current || savingStateRef.current) {
-      return
+  async function persistUserState(options?: { silent?: boolean; force?: boolean }) {
+    const silent = Boolean(options?.silent)
+    const force = Boolean(options?.force)
+
+    if (authStatus !== 'authed' || !authUser) {
+      return false
     }
 
-    savingStateRef.current = true
-    setSaveStatus('saving')
-    try {
-      await apiRequest('/api/state', {
-        method: 'PUT',
-        body: JSON.stringify({
-          trackingState,
-          theme,
-          focusMode,
-          profile,
-        }),
-      })
-      setSaveStatus('saved')
-      window.setTimeout(() => setSaveStatus('idle'), 1800)
-    } catch {
-      setSaveStatus('error')
-      window.setTimeout(() => setSaveStatus('idle'), 2200)
-    } finally {
-      savingStateRef.current = false
+    if (!force && !hasLoadedRemoteStateRef.current) {
+      return false
     }
+
+    if (saveInFlightRef.current) {
+      return saveInFlightRef.current
+    }
+
+    const savePromise = (async () => {
+      if (!silent) {
+        setSaveStatus('saving')
+      }
+      try {
+        await apiRequest('/api/state', {
+          method: 'PUT',
+          body: JSON.stringify({
+            trackingState,
+            theme,
+            focusMode,
+            profile,
+          }),
+        })
+        if (!silent) {
+          setSaveStatus('saved')
+          window.setTimeout(() => setSaveStatus('idle'), 1800)
+        }
+        return true
+      } catch {
+        if (!silent) {
+          setSaveStatus('error')
+          window.setTimeout(() => setSaveStatus('idle'), 2200)
+        }
+        return false
+      } finally {
+        saveInFlightRef.current = null
+      }
+    })()
+
+    saveInFlightRef.current = savePromise
+    return savePromise
   }
 
   async function refreshAuth() {
@@ -859,7 +886,7 @@ function App() {
   }
 
   async function handleLogout() {
-    await persistUserState()
+    await persistUserState({ force: true })
     await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
     localStorage.removeItem(AUTH_TOKEN_KEY)
     hasLoadedRemoteStateRef.current = false
