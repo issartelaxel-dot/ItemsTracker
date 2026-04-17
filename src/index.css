@@ -41,9 +41,11 @@ body {
   min-height: 100vh;
   background: var(--bg);
   color: var(--text);
+  overflow-x: hidden;
 }
 
 #root {
+  width: 100%;
   max-width: 1680px;
   margin: 0 auto;
 }

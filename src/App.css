@@ -1,7 +1,7 @@
 .dashboard-shell {
   display: grid;
   gap: 1rem;
-  padding: 1rem;
+  padding: clamp(0.6rem, 2vw, 1rem);
 }
 
 .auth-shell {
@@ -142,6 +142,12 @@ h3 {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
   padding: 0.6rem;
   z-index: 12;
+}
+
+.menu-popover input,
+.menu-popover select,
+.menu-popover textarea {
+  min-width: 0;
 }
 
 .menu-title {
@@ -483,6 +489,7 @@ tbody tr.selected {
 .description-cell {
   margin: 0;
   max-width: 440px;
+  overflow-wrap: anywhere;
 }
 
 .tag-row {
@@ -876,6 +883,12 @@ tbody tr.selected {
   .topbar {
     flex-direction: column;
     align-items: flex-start;
+    padding: 0.85rem;
+  }
+
+  .topbar-actions {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .filters-row,
@@ -898,5 +911,120 @@ tbody tr.selected {
 
   .large-card {
     grid-column: span 1;
+  }
+
+  .panel {
+    padding: 0.75rem;
+  }
+
+  .panel-head {
+    flex-wrap: wrap;
+  }
+
+  .table-wrap {
+    max-height: 50vh;
+  }
+
+  th,
+  td {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .college-picker {
+    grid-template-columns: 1fr;
+    max-height: 210px;
+  }
+
+  .menu-popover {
+    min-width: 0;
+    width: min(320px, calc(100vw - 1rem));
+    right: 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .dashboard-shell {
+    gap: 0.75rem;
+    padding: 0.45rem;
+  }
+
+  .auth-shell {
+    padding: 0.55rem;
+  }
+
+  .auth-card {
+    padding: 0.8rem;
+    border-radius: 12px;
+  }
+
+  h1 {
+    font-size: 1.25rem;
+  }
+
+  .eyebrow {
+    font-size: 0.66rem;
+  }
+
+  .topbar-actions {
+    gap: 0.45rem;
+  }
+
+  .ghost-btn {
+    padding: 0.45rem 0.65rem;
+  }
+
+  .icon-btn {
+    width: 34px;
+    height: 34px;
+    font-size: 0.95rem;
+  }
+
+  .filters-row {
+    gap: 0.4rem;
+  }
+
+  .stat-card {
+    padding: 0.6rem;
+  }
+
+  .stat-value {
+    font-size: 1.05rem;
+  }
+
+  .menu-popover {
+    position: fixed;
+    left: 0.5rem;
+    right: 0.5rem;
+    top: 4rem;
+    width: auto;
+    max-height: calc(100vh - 5rem);
+    overflow: auto;
+  }
+
+  .menu-title {
+    font-size: 0.9rem;
+  }
+
+  .menu-row,
+  .menu-text,
+  .menu-action-btn {
+    font-size: 0.82rem;
+  }
+
+  .avatar-gradient-dot {
+    width: 28px;
+    height: 28px;
+  }
+
+  .reference-row {
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+  }
+
+  .sheet-emoji-btn,
+  .remove-ref-btn {
+    width: 100%;
+    height: 30px;
   }
 }
