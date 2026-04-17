@@ -1,7 +1,6 @@
 import crypto from 'node:crypto'
 import process from 'node:process'
 import 'dotenv/config'
-import Database from 'better-sqlite3'
 import argon2 from 'argon2'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
@@ -10,7 +9,10 @@ import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 import jwt from 'jsonwebtoken'
 import nodemailer from 'nodemailer'
+import pg from 'pg'
 import { z } from 'zod'
+
+const { Pool } = pg
 
 const PORT = Number(process.env.PORT || 8787)
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
@@ -18,7 +20,7 @@ const CLIENT_ORIGINS = (process.env.CLIENT_ORIGINS || '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean)
-const DB_PATH = process.env.DB_PATH || 'server/data.db'
+const DATABASE_URL = process.env.DATABASE_URL || ''
 const JWT_SECRET = process.env.JWT_SECRET || ''
 const NODE_ENV = process.env.NODE_ENV || 'development'
 const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || 'lax').toLowerCase()
@@ -33,36 +35,46 @@ if (!JWT_SECRET || JWT_SECRET.length < 32) {
   process.exit(1)
 }
 
-const db = new Database(DB_PATH)
-db.pragma('journal_mode = WAL')
+if (!DATABASE_URL) {
+  console.error('DATABASE_URL must be set (PostgreSQL connection string).')
+  process.exit(1)
+}
 
-db.exec(`
-CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  email TEXT NOT NULL UNIQUE,
-  display_name TEXT NOT NULL,
-  password_hash TEXT NOT NULL,
-  created_at TEXT NOT NULL
-);
+const useSsl = !/localhost|127\.0\.0\.1/.test(DATABASE_URL)
+const pool = new Pool({
+  connectionString: DATABASE_URL,
+  ssl: useSsl ? { rejectUnauthorized: false } : false,
+})
 
-CREATE TABLE IF NOT EXISTS signup_requests (
-  email TEXT PRIMARY KEY,
-  display_name TEXT NOT NULL,
-  password_hash TEXT NOT NULL,
-  code_hash TEXT NOT NULL,
-  expires_at INTEGER NOT NULL,
-  attempts INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL
-);
+async function initDb() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS users (
+      id BIGSERIAL PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      display_name TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
 
-CREATE TABLE IF NOT EXISTS password_resets (
-  email TEXT PRIMARY KEY,
-  code_hash TEXT NOT NULL,
-  expires_at INTEGER NOT NULL,
-  attempts INTEGER NOT NULL DEFAULT 0,
-  created_at TEXT NOT NULL
-);
-`)
+    CREATE TABLE IF NOT EXISTS signup_requests (
+      email TEXT PRIMARY KEY,
+      display_name TEXT NOT NULL,
+      password_hash TEXT NOT NULL,
+      code_hash TEXT NOT NULL,
+      expires_at BIGINT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS password_resets (
+      email TEXT PRIMARY KEY,
+      code_hash TEXT NOT NULL,
+      expires_at BIGINT NOT NULL,
+      attempts INTEGER NOT NULL DEFAULT 0,
+      created_at TEXT NOT NULL
+    );
+  `)
+}
 
 const app = express()
 const allowedOrigins = new Set(
@@ -165,8 +177,8 @@ async function ensureBootstrapUser() {
     return
   }
 
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email)
-  if (existing) {
+  const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email])
+  if (existing.rows.length > 0) {
     return
   }
 
@@ -177,12 +189,12 @@ async function ensureBootstrapUser() {
     parallelism: 1,
   })
 
-  db.prepare('INSERT INTO users(email, display_name, password_hash, created_at) VALUES(?, ?, ?, ?)').run(
+  await pool.query('INSERT INTO users(email, display_name, password_hash, created_at) VALUES($1, $2, $3, $4)', [
     email,
     String(displayNameRaw).trim() || 'Admin',
     passwordHash,
     new Date().toISOString(),
-  )
+  ])
 
   console.log(`Bootstrap user created: ${email}`)
 }
@@ -298,16 +310,25 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true })
 })
 
-app.get('/api/auth/me', (req, res) => {
+app.get('/api/auth/me', async (req, res) => {
   const auth = authFromRequest(req)
   if (!auth) {
     res.status(401).json({ error: 'Unauthorized' })
     return
   }
 
-  const user = db
-    .prepare('SELECT id, email, display_name AS displayName, created_at AS createdAt FROM users WHERE id = ?')
-    .get(auth.uid)
+  const uid = Number(auth.uid)
+  if (!Number.isFinite(uid)) {
+    clearAuthCookie(res)
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  const userResult = await pool.query(
+    'SELECT id, email, display_name AS "displayName", created_at AS "createdAt" FROM users WHERE id = $1',
+    [uid],
+  )
+  const user = userResult.rows[0]
 
   if (!user) {
     clearAuthCookie(res)
@@ -333,8 +354,8 @@ app.post('/api/auth/register/request', authLimiter, async (req, res) => {
   }
 
   const displayName = `${parsed.data.firstName} ${parsed.data.lastName}`.trim()
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email)
-  if (existing) {
+  const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email])
+  if (existing.rows.length > 0) {
     res.status(409).json({ error: 'Un compte existe déjà avec cet email.' })
     return
   }
@@ -350,19 +371,20 @@ app.post('/api/auth/register/request', authLimiter, async (req, res) => {
   const codeHash = hashApprovalCode(code)
   const now = Date.now()
 
-  db.prepare(
+  await pool.query(
     `
       INSERT INTO signup_requests(email, display_name, password_hash, code_hash, expires_at, attempts, created_at)
-      VALUES(?, ?, ?, ?, ?, 0, ?)
+      VALUES($1, $2, $3, $4, $5, 0, $6)
       ON CONFLICT(email) DO UPDATE SET
-        display_name = excluded.display_name,
-        password_hash = excluded.password_hash,
-        code_hash = excluded.code_hash,
-        expires_at = excluded.expires_at,
+        display_name = EXCLUDED.display_name,
+        password_hash = EXCLUDED.password_hash,
+        code_hash = EXCLUDED.code_hash,
+        expires_at = EXCLUDED.expires_at,
         attempts = 0,
-        created_at = excluded.created_at
+        created_at = EXCLUDED.created_at
     `,
-  ).run(email, displayName, passwordHash, codeHash, now + APPROVAL_CODE_TTL_MS, new Date(now).toISOString())
+    [email, displayName, passwordHash, codeHash, now + APPROVAL_CODE_TTL_MS, new Date(now).toISOString()],
+  )
 
   try {
     await sendApprovalEmail({ requesterEmail: email, displayName, code })
@@ -390,56 +412,64 @@ app.post('/api/auth/register/verify', verifyLimiter, async (req, res) => {
   }
 
   const email = normalizeEmail(parsed.data.email)
-  const requestRow = db.prepare('SELECT * FROM signup_requests WHERE email = ?').get(email)
+  const requestResult = await pool.query(
+    `SELECT email, display_name AS "displayName", password_hash AS "passwordHash", code_hash AS "codeHash", expires_at AS "expiresAt", attempts
+     FROM signup_requests WHERE email = $1`,
+    [email],
+  )
+  const requestRow = requestResult.rows[0]
+
   if (!requestRow) {
     res.status(404).json({ error: 'Aucune demande en attente pour cet email.' })
     return
   }
 
-  if (Date.now() > Number(requestRow.expires_at)) {
-    db.prepare('DELETE FROM signup_requests WHERE email = ?').run(email)
+  if (Date.now() > Number(requestRow.expiresAt)) {
+    await pool.query('DELETE FROM signup_requests WHERE email = $1', [email])
     res.status(400).json({ error: 'Le code a expiré. Recommence la demande.' })
     return
   }
 
   const providedHash = hashApprovalCode(parsed.data.code)
-  const ok = crypto.timingSafeEqual(Buffer.from(providedHash, 'hex'), Buffer.from(requestRow.code_hash, 'hex'))
+  const ok = crypto.timingSafeEqual(Buffer.from(providedHash, 'hex'), Buffer.from(requestRow.codeHash, 'hex'))
 
   if (!ok) {
     const attempts = Number(requestRow.attempts || 0) + 1
     if (attempts >= 5) {
-      db.prepare('DELETE FROM signup_requests WHERE email = ?').run(email)
+      await pool.query('DELETE FROM signup_requests WHERE email = $1', [email])
       res.status(429).json({ error: 'Trop de tentatives. Recommence la demande.' })
       return
     }
 
-    db.prepare('UPDATE signup_requests SET attempts = ? WHERE email = ?').run(attempts, email)
+    await pool.query('UPDATE signup_requests SET attempts = $1 WHERE email = $2', [attempts, email])
     res.status(400).json({ error: 'Code incorrect.' })
     return
   }
 
-  const existing = db.prepare('SELECT id FROM users WHERE email = ?').get(email)
-  if (existing) {
-    db.prepare('DELETE FROM signup_requests WHERE email = ?').run(email)
+  const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email])
+  if (existing.rows.length > 0) {
+    await pool.query('DELETE FROM signup_requests WHERE email = $1', [email])
     res.status(409).json({ error: 'Un compte existe déjà avec cet email.' })
     return
   }
 
-  const result = db
-    .prepare('INSERT INTO users(email, display_name, password_hash, created_at) VALUES(?, ?, ?, ?)')
-    .run(email, requestRow.display_name, requestRow.password_hash, new Date().toISOString())
+  const insertResult = await pool.query(
+    'INSERT INTO users(email, display_name, password_hash, created_at) VALUES($1, $2, $3, $4) RETURNING id',
+    [email, requestRow.displayName, requestRow.passwordHash, new Date().toISOString()],
+  )
 
-  db.prepare('DELETE FROM signup_requests WHERE email = ?').run(email)
+  await pool.query('DELETE FROM signup_requests WHERE email = $1', [email])
 
-  const token = signAuthToken({ uid: result.lastInsertRowid, email })
+  const userId = Number(insertResult.rows[0]?.id)
+  const token = signAuthToken({ uid: userId, email })
   setAuthCookie(res, token)
 
   res.json({
     ok: true,
     user: {
-      id: result.lastInsertRowid,
+      id: userId,
       email,
-      displayName: requestRow.display_name,
+      displayName: requestRow.displayName,
     },
   })
 })
@@ -452,9 +482,11 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
   }
 
   const email = normalizeEmail(parsed.data.email)
-  const user = db
-    .prepare('SELECT id, email, display_name AS displayName, password_hash AS passwordHash FROM users WHERE email = ?')
-    .get(email)
+  const userResult = await pool.query(
+    'SELECT id, email, display_name AS "displayName", password_hash AS "passwordHash" FROM users WHERE email = $1',
+    [email],
+  )
+  const user = userResult.rows[0]
 
   if (!user) {
     res.status(401).json({ error: 'Email ou mot de passe invalide.' })
@@ -467,13 +499,13 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     return
   }
 
-  const token = signAuthToken({ uid: user.id, email: user.email })
+  const token = signAuthToken({ uid: Number(user.id), email: user.email })
   setAuthCookie(res, token)
 
   res.json({
     ok: true,
     user: {
-      id: user.id,
+      id: Number(user.id),
       email: user.email,
       displayName: user.displayName,
     },
@@ -488,24 +520,26 @@ app.post('/api/auth/password/request', authLimiter, async (req, res) => {
   }
 
   const email = normalizeEmail(parsed.data.email)
-  const user = db.prepare('SELECT email, display_name AS displayName FROM users WHERE email = ?').get(email)
+  const userResult = await pool.query('SELECT email, display_name AS "displayName" FROM users WHERE email = $1', [email])
+  const user = userResult.rows[0]
 
   if (user) {
     const code = generateApprovalCode()
     const codeHash = hashApprovalCode(code)
     const now = Date.now()
 
-    db.prepare(
+    await pool.query(
       `
         INSERT INTO password_resets(email, code_hash, expires_at, attempts, created_at)
-        VALUES(?, ?, ?, 0, ?)
+        VALUES($1, $2, $3, 0, $4)
         ON CONFLICT(email) DO UPDATE SET
-          code_hash = excluded.code_hash,
-          expires_at = excluded.expires_at,
+          code_hash = EXCLUDED.code_hash,
+          expires_at = EXCLUDED.expires_at,
           attempts = 0,
-          created_at = excluded.created_at
+          created_at = EXCLUDED.created_at
       `,
-    ).run(email, codeHash, now + APPROVAL_CODE_TTL_MS, new Date(now).toISOString())
+      [email, codeHash, now + APPROVAL_CODE_TTL_MS, new Date(now).toISOString()],
+    )
 
     try {
       await sendPasswordResetEmail({ userEmail: email, displayName: user.displayName, code })
@@ -539,30 +573,36 @@ app.post('/api/auth/password/confirm', verifyLimiter, async (req, res) => {
   }
 
   const email = normalizeEmail(parsed.data.email)
-  const user = db.prepare('SELECT id, email, display_name AS displayName FROM users WHERE email = ?').get(email)
-  const requestRow = db.prepare('SELECT * FROM password_resets WHERE email = ?').get(email)
+  const userResult = await pool.query('SELECT id, email, display_name AS "displayName" FROM users WHERE email = $1', [email])
+  const user = userResult.rows[0]
+  const requestResult = await pool.query(
+    'SELECT code_hash AS "codeHash", expires_at AS "expiresAt", attempts FROM password_resets WHERE email = $1',
+    [email],
+  )
+  const requestRow = requestResult.rows[0]
+
   if (!user || !requestRow) {
     res.status(400).json({ error: 'Code invalide ou expire.' })
     return
   }
 
-  if (Date.now() > Number(requestRow.expires_at)) {
-    db.prepare('DELETE FROM password_resets WHERE email = ?').run(email)
+  if (Date.now() > Number(requestRow.expiresAt)) {
+    await pool.query('DELETE FROM password_resets WHERE email = $1', [email])
     res.status(400).json({ error: 'Le code a expire. Redemande un nouveau code.' })
     return
   }
 
   const providedHash = hashApprovalCode(parsed.data.code)
-  const ok = crypto.timingSafeEqual(Buffer.from(providedHash, 'hex'), Buffer.from(requestRow.code_hash, 'hex'))
+  const ok = crypto.timingSafeEqual(Buffer.from(providedHash, 'hex'), Buffer.from(requestRow.codeHash, 'hex'))
 
   if (!ok) {
     const attempts = Number(requestRow.attempts || 0) + 1
     if (attempts >= 5) {
-      db.prepare('DELETE FROM password_resets WHERE email = ?').run(email)
+      await pool.query('DELETE FROM password_resets WHERE email = $1', [email])
       res.status(429).json({ error: 'Trop de tentatives. Redemande un nouveau code.' })
       return
     }
-    db.prepare('UPDATE password_resets SET attempts = ? WHERE email = ?').run(attempts, email)
+    await pool.query('UPDATE password_resets SET attempts = $1 WHERE email = $2', [attempts, email])
     res.status(400).json({ error: 'Code incorrect.' })
     return
   }
@@ -574,16 +614,16 @@ app.post('/api/auth/password/confirm', verifyLimiter, async (req, res) => {
     parallelism: 1,
   })
 
-  db.prepare('UPDATE users SET password_hash = ? WHERE email = ?').run(passwordHash, email)
-  db.prepare('DELETE FROM password_resets WHERE email = ?').run(email)
+  await pool.query('UPDATE users SET password_hash = $1 WHERE email = $2', [passwordHash, email])
+  await pool.query('DELETE FROM password_resets WHERE email = $1', [email])
 
-  const token = signAuthToken({ uid: user.id, email: user.email })
+  const token = signAuthToken({ uid: Number(user.id), email: user.email })
   setAuthCookie(res, token)
 
   res.json({
     ok: true,
     user: {
-      id: user.id,
+      id: Number(user.id),
       email: user.email,
       displayName: user.displayName,
     },
@@ -596,6 +636,7 @@ app.post('/api/auth/logout', (_req, res) => {
 })
 
 async function startServer() {
+  await initDb()
   await ensureBootstrapUser()
   app.listen(PORT, () => {
     console.log(`Auth server listening on http://localhost:${PORT}`)
