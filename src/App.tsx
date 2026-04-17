@@ -92,6 +92,7 @@ type AuthUser = {
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '')
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
+const AUTH_TOKEN_KEY = 'med-auth-token-v1'
 const HABIT_TRACKER_YEAR = 2026
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #f90021 0%, #ff8f00 58%, #ffe400 100%)',
@@ -452,15 +453,13 @@ function normalizeProfileInput(rawProfile: unknown, authUser: AuthUser | null): 
   }
 
   const profile = rawProfile as Partial<ProfileState>
-  const photoUrl = typeof profile.photoUrl === 'string' ? profile.photoUrl.trim() : ''
-
   return {
     ...base,
     firstName: typeof profile.firstName === 'string' && profile.firstName.trim() ? profile.firstName.trim() : base.firstName,
     lastName: typeof profile.lastName === 'string' && profile.lastName.trim() ? profile.lastName.trim() : base.lastName,
     email: typeof profile.email === 'string' && profile.email.trim() ? profile.email.trim() : base.email,
-    photoUrl: /^https?:\/\//i.test(photoUrl) ? photoUrl : '',
-    password: typeof profile.password === 'string' ? profile.password : '',
+    photoUrl: '',
+    password: '',
     avatarGradient:
       typeof profile.avatarGradient === 'string' && profile.avatarGradient ? profile.avatarGradient : base.avatarGradient,
   }
@@ -484,6 +483,7 @@ function App() {
   const [authUser, setAuthUser] = useState<AuthUser | null>(null)
   const [authMessage, setAuthMessage] = useState('')
   const [authError, setAuthError] = useState('')
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [firstNameInput, setFirstNameInput] = useState('')
   const [lastNameInput, setLastNameInput] = useState('')
   const [emailInput, setEmailInput] = useState('')
@@ -630,6 +630,8 @@ function App() {
     let lastFetchError: unknown = null
     const candidates = resolveApiCandidates(url)
 
+    const token = localStorage.getItem(AUTH_TOKEN_KEY) || ''
+
     for (const candidate of candidates) {
       try {
         response = await fetch(candidate, {
@@ -637,6 +639,7 @@ function App() {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
+            ...(token && !('Authorization' in (init?.headers ?? {})) ? { Authorization: `Bearer ${token}` } : {}),
             ...(init?.headers ?? {}),
           },
         })
@@ -675,6 +678,7 @@ function App() {
     }
 
     savingStateRef.current = true
+    setSaveStatus('saving')
     try {
       await apiRequest('/api/state', {
         method: 'PUT',
@@ -685,8 +689,11 @@ function App() {
           profile,
         }),
       })
+      setSaveStatus('saved')
+      window.setTimeout(() => setSaveStatus('idle'), 1800)
     } catch {
-      // ignore and retry later via autosave/next action
+      setSaveStatus('error')
+      window.setTimeout(() => setSaveStatus('idle'), 2200)
     } finally {
       savingStateRef.current = false
     }
@@ -698,6 +705,7 @@ function App() {
       setAuthUser(payload.user as AuthUser)
       setAuthStatus('authed')
     } catch (error) {
+      localStorage.removeItem(AUTH_TOKEN_KEY)
       setAuthUser(null)
       setAuthStatus('guest')
       hasLoadedRemoteStateRef.current = false
@@ -751,6 +759,9 @@ function App() {
           code: codeInput,
         }),
       })
+      if (typeof payload.token === 'string' && payload.token) {
+        localStorage.setItem(AUTH_TOKEN_KEY, payload.token)
+      }
       if (payload.user) {
         setAuthUser(payload.user as AuthUser)
         setAuthStatus('authed')
@@ -773,6 +784,9 @@ function App() {
           password: passwordInput,
         }),
       })
+      if (typeof payload.token === 'string' && payload.token) {
+        localStorage.setItem(AUTH_TOKEN_KEY, payload.token)
+      }
       if (payload.user) {
         setAuthUser(payload.user as AuthUser)
         setAuthStatus('authed')
@@ -826,6 +840,9 @@ function App() {
           newPassword: resetPasswordInput,
         }),
       })
+      if (typeof payload.token === 'string' && payload.token) {
+        localStorage.setItem(AUTH_TOKEN_KEY, payload.token)
+      }
       setAuthMessage(String(payload.message ?? 'Mot de passe mis à jour.'))
       setResetMode(false)
       setResetCodeInput('')
@@ -844,6 +861,7 @@ function App() {
   async function handleLogout() {
     await persistUserState()
     await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
+    localStorage.removeItem(AUTH_TOKEN_KEY)
     hasLoadedRemoteStateRef.current = false
     setAuthUser(null)
     setAuthStatus('guest')
@@ -1482,6 +1500,22 @@ function App() {
           <h1>Dashboard EDN - 367 items</h1>
         </div>
         <div className="topbar-actions">
+          <button
+            className="ghost-btn icon-btn"
+            title={
+              saveStatus === 'saving'
+                ? 'Sauvegarde en cours'
+                : saveStatus === 'saved'
+                  ? 'Sauvegarde OK'
+                  : saveStatus === 'error'
+                    ? 'Echec sauvegarde'
+                    : 'Sauvegarder maintenant'
+            }
+            aria-label="Sauvegarder maintenant"
+            onClick={() => void persistUserState()}
+          >
+            💾
+          </button>
           <div className="menu-wrap">
             <button
               className="ghost-btn icon-btn"
@@ -1588,15 +1622,6 @@ function App() {
                     onChange={(event) => setProfile((current) => ({ ...current, email: event.target.value }))}
                   />
                 </label>
-                <label className="menu-row menu-row-input">
-                  Photo URL
-                  <input
-                    type="url"
-                    placeholder="https://..."
-                    value={profile.photoUrl}
-                    onChange={(event) => setProfile((current) => ({ ...current, photoUrl: event.target.value }))}
-                  />
-                </label>
                 <div className="menu-row menu-row-input">
                   <span>Gradient avatar</span>
                   <div className="avatar-gradient-grid">
@@ -1613,14 +1638,6 @@ function App() {
                     ))}
                   </div>
                 </div>
-                <label className="menu-row menu-row-input">
-                  Password
-                  <input
-                    type="password"
-                    value={profile.password}
-                    onChange={(event) => setProfile((current) => ({ ...current, password: event.target.value }))}
-                  />
-                </label>
                 <button type="button" className="menu-action-btn" onClick={() => void handleLogout()}>
                   Déconnexion ({authUser?.email ?? 'session'})
                 </button>
