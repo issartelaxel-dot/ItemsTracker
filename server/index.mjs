@@ -16,6 +16,9 @@ const PORT = Number(process.env.PORT || 8787)
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
 const JWT_SECRET = process.env.JWT_SECRET || ''
 const NODE_ENV = process.env.NODE_ENV || 'development'
+const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || 'lax').toLowerCase()
+const COOKIE_SECURE =
+  process.env.COOKIE_SECURE === 'true' ? true : process.env.COOKIE_SECURE === 'false' ? false : NODE_ENV === 'production'
 const ADMIN_APPROVAL_EMAIL = process.env.ADMIN_APPROVAL_EMAIL || 'issartelaxel@gmail.com'
 const AUTH_COOKIE = 'med_auth'
 const APPROVAL_CODE_TTL_MS = 15 * 60 * 1000
@@ -129,20 +132,22 @@ function signAuthToken(payload) {
 }
 
 function setAuthCookie(res, token) {
+  const sameSite = COOKIE_SAMESITE === 'none' ? 'none' : COOKIE_SAMESITE === 'strict' ? 'strict' : 'lax'
   res.cookie(AUTH_COOKIE, token, {
     httpOnly: true,
-    secure: NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: COOKIE_SECURE,
+    sameSite,
     maxAge: 7 * 24 * 60 * 60 * 1000,
     path: '/',
   })
 }
 
 function clearAuthCookie(res) {
+  const sameSite = COOKIE_SAMESITE === 'none' ? 'none' : COOKIE_SAMESITE === 'strict' ? 'strict' : 'lax'
   res.clearCookie(AUTH_COOKIE, {
     httpOnly: true,
-    secure: NODE_ENV === 'production',
-    sameSite: 'lax',
+    secure: COOKIE_SECURE,
+    sameSite,
     path: '/',
   })
 }
