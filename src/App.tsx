@@ -9,6 +9,7 @@ type SheetColor = 'jaune' | 'rouge' | 'vert' | 'vertfonce'
 type SheetKind = 'lisaSheets' | 'platformSheets'
 type QuizAnimationStyle = 'flip' | 'fade'
 type RewardIntensity = 'low' | 'medium' | 'high'
+type QuizResult = 'again' | 'hard' | 'good' | 'easy'
 
 type ItemBase = {
   itemNumber: number
@@ -74,8 +75,17 @@ type ItemTracking = {
   itemIcon: string
   itemColor: string
   itemLabel: string
+  lastQuizResult: QuizResult | null
+  quizCount: number
+  lastReviewDate: string | null
   quiz: QuizConfig
   actionLogs: ItemActionLog[]
+}
+
+type LegacyItemTracking = Partial<ItemTracking> & {
+  last_quiz_result?: unknown
+  quiz_count?: unknown
+  last_review_date?: unknown
 }
 
 type TrackerState = {
@@ -147,6 +157,16 @@ const MASTERY_SCORE: Record<Mastery, number> = {
   Bon: 2,
   'Très bon': 3,
   Parfait: 4,
+}
+
+const QUIZ_RESULT_META: Record<
+  QuizResult,
+  { label: string; mastery: Mastery; icon: string; actionVerb: string; rewardTone: 'neutral' | 'good' | 'easy' }
+> = {
+  again: { label: 'Revoir', mastery: 'Mauvais', icon: '❌', actionVerb: 'à revoir', rewardTone: 'neutral' },
+  hard: { label: 'Difficile', mastery: 'Moyen', icon: '⚠️', actionVerb: 'difficile', rewardTone: 'neutral' },
+  good: { label: 'Bon', mastery: 'Bon', icon: '✅', actionVerb: 'bon', rewardTone: 'good' },
+  easy: { label: 'Parfait', mastery: 'Parfait', icon: '⚡', actionVerb: 'parfait', rewardTone: 'easy' },
 }
 
 const COLLEGES = [
@@ -275,6 +295,9 @@ function getDefaultItemTracking(): ItemTracking {
     itemIcon: '',
     itemColor: '',
     itemLabel: '',
+    lastQuizResult: null,
+    quizCount: 0,
+    lastReviewDate: null,
     quiz: getDefaultQuizConfig(),
     actionLogs: [],
   }
@@ -290,7 +313,12 @@ function makeReferenceSheet(): ReferenceSheet {
   }
 }
 
+function isQuizResult(value: unknown): value is QuizResult {
+  return value === 'again' || value === 'hard' || value === 'good' || value === 'easy'
+}
+
 function normalizeItemTracking(tracking?: Partial<ItemTracking>): ItemTracking {
+  const rawTracking = tracking as LegacyItemTracking | undefined
   const normalizeSheet = (sheet: Partial<ReferenceSheet>) => ({
     id: sheet.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     name: sheet.name ?? '',
@@ -318,6 +346,27 @@ function normalizeItemTracking(tracking?: Partial<ItemTracking>): ItemTracking {
       ? rawQuiz.activeCardId
       : normalizedCards[0]?.id ?? null
 
+  const rawLastQuizResult =
+    typeof rawTracking?.lastQuizResult === 'string'
+      ? rawTracking.lastQuizResult
+      : typeof rawTracking?.last_quiz_result === 'string'
+        ? rawTracking.last_quiz_result
+        : null
+  const normalizedLastQuizResult = isQuizResult(rawLastQuizResult) ? rawLastQuizResult : null
+  const rawQuizCount =
+    typeof rawTracking?.quizCount === 'number'
+      ? rawTracking.quizCount
+      : typeof rawTracking?.quiz_count === 'number'
+        ? rawTracking.quiz_count
+        : 0
+  const normalizedQuizCount = Number.isFinite(rawQuizCount) ? Math.max(0, Math.floor(rawQuizCount)) : 0
+  const rawLastReviewDate =
+    typeof rawTracking?.lastReviewDate === 'string'
+      ? rawTracking.lastReviewDate
+      : typeof rawTracking?.last_review_date === 'string'
+        ? rawTracking.last_review_date
+        : null
+
   return {
     assignedColleges: tracking?.assignedColleges ?? [],
     byCollege: tracking?.byCollege ?? {},
@@ -333,6 +382,9 @@ function normalizeItemTracking(tracking?: Partial<ItemTracking>): ItemTracking {
     itemIcon: tracking?.itemIcon ?? '',
     itemColor: tracking?.itemColor ?? '',
     itemLabel: tracking?.itemLabel ?? '',
+    lastQuizResult: normalizedLastQuizResult,
+    quizCount: normalizedQuizCount,
+    lastReviewDate: rawLastReviewDate ?? null,
     quiz: {
       ...getDefaultQuizConfig(),
       ...(rawQuiz ?? {}),
@@ -528,6 +580,9 @@ function getInitialTrackingState(): TrackerState {
       itemIcon: '',
       itemColor: '',
       itemLabel: '',
+      lastQuizResult: null,
+      quizCount: 0,
+      lastReviewDate: null,
       quiz: getDefaultQuizConfig(),
       actionLogs: [],
     }
@@ -620,7 +675,7 @@ function App() {
   const [historyItemId, setHistoryItemId] = useState<number | null>(null)
   const [quizItemId, setQuizItemId] = useState<number | null>(null)
   const [quizSide, setQuizSide] = useState<'front' | 'back'>('front')
-  const [quizFeedback, setQuizFeedback] = useState<'knew' | 'later' | null>(null)
+  const [quizFeedback, setQuizFeedback] = useState<QuizResult | null>(null)
   const [quizEditMode, setQuizEditMode] = useState(false)
   const [quizPulseByItem, setQuizPulseByItem] = useState<Record<number, number>>({})
   const [reviewFx, setReviewFx] = useState<Record<string, { delta: number; id: number }>>({})
@@ -1149,13 +1204,17 @@ function getPasswordStrengthMeta(password: string) {
         }
         return latest
       }, null)
+      const mergedLastReviewDate =
+        tracking.lastReviewDate && (!lastReviewDate || new Date(tracking.lastReviewDate) > new Date(lastReviewDate))
+          ? tracking.lastReviewDate
+          : lastReviewDate
 
       return {
         ...item,
         tracking,
         totalReviews,
         progress: computeItemProgress(tracking),
-        lastReviewDate,
+        lastReviewDate: mergedLastReviewDate,
       }
     })
   }, [trackingState])
@@ -1486,14 +1545,38 @@ function getPasswordStrengthMeta(password: string) {
     setQuizFeedback(null)
   }
 
-  function handleQuizResult(result: 'knew' | 'later') {
+  function handleQuizResult(result: QuizResult) {
     if (!quizItem) {
       return
     }
 
+    const meta = QUIZ_RESULT_META[result]
+    const reviewedAt = new Date().toISOString()
     setQuizFeedback(result)
 
-    if (result === 'knew' && quizItem.tracking.quiz.updateProgressOnSuccess) {
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[quizItem.itemNumber] ?? getDefaultItemTracking())
+      const nextTracking = appendActionLogs(
+        {
+          ...itemTracking,
+          itemMastery: meta.mastery,
+          lastQuizResult: result,
+          quizCount: itemTracking.quizCount + 1,
+          lastReviewDate: reviewedAt,
+        },
+        [`Quiz ${meta.icon} ${meta.actionVerb} (${meta.label})`],
+      )
+
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [quizItem.itemNumber]: nextTracking,
+        },
+      }
+    })
+
+    if ((result === 'good' || result === 'easy') && quizItem.tracking.quiz.updateProgressOnSuccess) {
       const firstCollege = quizItem.tracking.assignedColleges[0]
       if (firstCollege) {
         handleCollegeReviewDelta(quizItem.itemNumber, firstCollege, 1)
@@ -1620,6 +1703,9 @@ function getPasswordStrengthMeta(password: string) {
           itemIcon: currentItemTracking.itemIcon,
           itemColor: currentItemTracking.itemColor,
           itemLabel: currentItemTracking.itemLabel,
+          lastQuizResult: currentItemTracking.lastQuizResult,
+          quizCount: currentItemTracking.quizCount,
+          lastReviewDate: currentItemTracking.lastReviewDate,
           quiz: currentItemTracking.quiz,
           actionLogs: currentItemTracking.actionLogs,
         },
@@ -1674,6 +1760,9 @@ function getPasswordStrengthMeta(password: string) {
           itemIcon: itemTracking.itemIcon,
           itemColor: itemTracking.itemColor,
           itemLabel: itemTracking.itemLabel,
+          lastQuizResult: itemTracking.lastQuizResult,
+          quizCount: itemTracking.quizCount,
+          lastReviewDate: itemTracking.lastReviewDate,
           quiz: itemTracking.quiz,
           actionLogs: itemTracking.actionLogs,
         },
@@ -1744,6 +1833,9 @@ function getPasswordStrengthMeta(password: string) {
           itemIcon: itemTracking.itemIcon,
           itemColor: itemTracking.itemColor,
           itemLabel: itemTracking.itemLabel,
+          lastQuizResult: itemTracking.lastQuizResult,
+          quizCount: itemTracking.quizCount,
+          lastReviewDate: itemTracking.lastReviewDate,
           quiz: itemTracking.quiz,
           actionLogs: itemTracking.actionLogs,
         },
@@ -1775,6 +1867,9 @@ function getPasswordStrengthMeta(password: string) {
           itemIcon: itemTracking.itemIcon,
           itemColor: itemTracking.itemColor,
           itemLabel: itemTracking.itemLabel,
+          lastQuizResult: itemTracking.lastQuizResult,
+          quizCount: itemTracking.quizCount,
+          lastReviewDate: itemTracking.lastReviewDate,
           quiz: itemTracking.quiz,
           actionLogs: itemTracking.actionLogs,
         },
@@ -1813,6 +1908,9 @@ function getPasswordStrengthMeta(password: string) {
             itemIcon: itemTracking.itemIcon,
             itemColor: itemTracking.itemColor,
             itemLabel: itemTracking.itemLabel,
+            lastQuizResult: itemTracking.lastQuizResult,
+            quizCount: itemTracking.quizCount,
+            lastReviewDate: itemTracking.lastReviewDate,
             quiz: itemTracking.quiz,
             actionLogs: itemTracking.actionLogs,
           },
@@ -1840,6 +1938,9 @@ function getPasswordStrengthMeta(password: string) {
             itemIcon: itemTracking.itemIcon,
             itemColor: itemTracking.itemColor,
             itemLabel: itemTracking.itemLabel,
+            lastQuizResult: itemTracking.lastQuizResult,
+            quizCount: itemTracking.quizCount,
+            lastReviewDate: itemTracking.lastReviewDate,
             quiz: itemTracking.quiz,
             actionLogs: itemTracking.actionLogs,
           },
@@ -1867,6 +1968,9 @@ function getPasswordStrengthMeta(password: string) {
             itemIcon: itemTracking.itemIcon,
             itemColor: itemTracking.itemColor,
             itemLabel: itemTracking.itemLabel,
+            lastQuizResult: itemTracking.lastQuizResult,
+            quizCount: itemTracking.quizCount,
+            lastReviewDate: itemTracking.lastReviewDate,
             quiz: {
               ...itemTracking.quiz,
               ...patch,
@@ -1976,6 +2080,9 @@ function getPasswordStrengthMeta(password: string) {
           itemIcon: patch.itemIcon ?? itemTracking.itemIcon,
           itemColor: patch.itemColor ?? itemTracking.itemColor,
           itemLabel: patch.itemLabel ?? itemTracking.itemLabel,
+          lastQuizResult: itemTracking.lastQuizResult,
+          quizCount: itemTracking.quizCount,
+          lastReviewDate: itemTracking.lastReviewDate,
           quiz: itemTracking.quiz,
           actionLogs: itemTracking.actionLogs,
         },
@@ -2941,7 +3048,7 @@ function getPasswordStrengthMeta(password: string) {
                         })
                       }
                     />
-                    Mettre à jour la progression après “I knew it”
+                    Mettre à jour la progression après “Bon / Parfait”
                   </label>
                 </div>
               </div>
@@ -3596,14 +3703,24 @@ function getPasswordStrengthMeta(password: string) {
             ) : null}
 
             <div className="quiz-actions">
-              <button type="button" className="ghost-btn" onClick={() => setQuizSide((current) => (current === 'front' ? 'back' : 'front'))}>
+              <button
+                type="button"
+                className="ghost-btn"
+                onClick={() => setQuizSide((current) => (current === 'front' ? 'back' : 'front'))}
+              >
                 Flip
               </button>
-              <button type="button" className="ghost-btn quiz-success-btn" onClick={() => handleQuizResult('knew')}>
-                I knew it
+              <button type="button" className="ghost-btn quiz-rate-btn again" onClick={() => handleQuizResult('again')}>
+                ❌ Revoir
               </button>
-              <button type="button" className="ghost-btn quiz-later-btn" onClick={() => handleQuizResult('later')}>
-                Review later
+              <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleQuizResult('hard')}>
+                ⚠️ Difficile
+              </button>
+              <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleQuizResult('good')}>
+                ✅ Bon
+              </button>
+              <button type="button" className="ghost-btn quiz-rate-btn easy" onClick={() => handleQuizResult('easy')}>
+                ⚡ Parfait
               </button>
               <button type="button" className="ghost-btn" onClick={closeQuiz}>
                 Close
@@ -3612,10 +3729,22 @@ function getPasswordStrengthMeta(password: string) {
 
             {quizFeedback ? (
               <div className={`quiz-feedback ${quizFeedback} reward-${quizItem.tracking.quiz.rewardIntensity}`}>
-                {quizFeedback === 'knew' ? '✓ Bien joué' : '↺ Revoir plus tard'}
-                {quizFeedback === 'knew' && quizItem.tracking.quiz.rewardIntensity !== 'low' ? (
+                <span className="quiz-feedback-main">
+                  {QUIZ_RESULT_META[quizFeedback].icon} {QUIZ_RESULT_META[quizFeedback].label}
+                </span>
+                {quizFeedback === 'good' || quizFeedback === 'easy' ? (
+                  <span className="quiz-feedback-plus-one" aria-hidden="true">
+                    +1
+                  </span>
+                ) : null}
+                {quizFeedback === 'good' ? (
+                  <span className="quiz-feedback-check" aria-hidden="true">
+                    ✔️
+                  </span>
+                ) : null}
+                {quizFeedback === 'easy' && quizItem.tracking.quiz.rewardIntensity !== 'low' ? (
                   <span className="quiz-feedback-sparkles" aria-hidden="true">
-                    ✨
+                    ✨⚡
                   </span>
                 ) : null}
               </div>
