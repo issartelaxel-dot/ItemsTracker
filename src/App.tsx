@@ -7,6 +7,8 @@ type Theme = 'light' | 'dark'
 type SortKey = 'reviews' | 'progress'
 type SheetColor = 'jaune' | 'rouge' | 'vert' | 'vertfonce'
 type SheetKind = 'lisaSheets' | 'platformSheets'
+type QuizAnimationStyle = 'flip' | 'fade'
+type RewardIntensity = 'low' | 'medium' | 'high'
 
 type ItemBase = {
   itemNumber: number
@@ -42,6 +44,18 @@ type ReferenceSheet = {
   tracking: CollegeTracking
 }
 
+type QuizConfig = {
+  enabled: boolean
+  customQuestion: string
+  customAnswer: string
+  animationStyle: QuizAnimationStyle
+  showTags: boolean
+  showColleges: boolean
+  showNotes: boolean
+  rewardIntensity: RewardIntensity
+  updateProgressOnSuccess: boolean
+}
+
 type ItemTracking = {
   assignedColleges: string[]
   byCollege: Record<string, CollegeTracking>
@@ -54,6 +68,7 @@ type ItemTracking = {
   itemIcon: string
   itemColor: string
   itemLabel: string
+  quiz: QuizConfig
   actionLogs: ItemActionLog[]
 }
 
@@ -218,6 +233,20 @@ function getDefaultCollegeTracking(): CollegeTracking {
   }
 }
 
+function getDefaultQuizConfig(): QuizConfig {
+  return {
+    enabled: true,
+    customQuestion: '',
+    customAnswer: '',
+    animationStyle: 'flip',
+    showTags: true,
+    showColleges: true,
+    showNotes: false,
+    rewardIntensity: 'medium',
+    updateProgressOnSuccess: false,
+  }
+}
+
 function getDefaultItemTracking(): ItemTracking {
   return {
     assignedColleges: [],
@@ -231,6 +260,7 @@ function getDefaultItemTracking(): ItemTracking {
     itemIcon: '',
     itemColor: '',
     itemLabel: '',
+    quiz: getDefaultQuizConfig(),
     actionLogs: [],
   }
 }
@@ -272,6 +302,10 @@ function normalizeItemTracking(tracking?: Partial<ItemTracking>): ItemTracking {
     itemIcon: tracking?.itemIcon ?? '',
     itemColor: tracking?.itemColor ?? '',
     itemLabel: tracking?.itemLabel ?? '',
+    quiz: {
+      ...getDefaultQuizConfig(),
+      ...(tracking?.quiz ?? {}),
+    },
     actionLogs: Array.isArray(tracking?.actionLogs)
       ? tracking.actionLogs
           .filter((entry): entry is ItemActionLog => Boolean(entry && typeof entry === 'object'))
@@ -386,6 +420,14 @@ function formatDateTime(dateString: string) {
   }).format(new Date(dateString))
 }
 
+function getAutoQuizQuestion(item: ItemBase): string {
+  const short = item.shortDescription.trim()
+  if (!short) {
+    return `Quel est le point clé de l'item #${item.itemNumber} ?`
+  }
+  return `Item #${item.itemNumber}: peux-tu expliquer ce concept en 20 secondes ?`
+}
+
 function startOfWeek(date: Date) {
   const day = date.getDay()
   const shift = day === 0 ? -6 : 1 - day
@@ -453,6 +495,7 @@ function getInitialTrackingState(): TrackerState {
       itemIcon: '',
       itemColor: '',
       itemLabel: '',
+      quiz: getDefaultQuizConfig(),
       actionLogs: [],
     }
   }
@@ -542,6 +585,10 @@ function App() {
   const [resetPasswordInput, setResetPasswordInput] = useState('')
   const [profile, setProfile] = useState<ProfileState>(getDefaultProfile())
   const [historyItemId, setHistoryItemId] = useState<number | null>(null)
+  const [quizItemId, setQuizItemId] = useState<number | null>(null)
+  const [quizSide, setQuizSide] = useState<'front' | 'back'>('front')
+  const [quizFeedback, setQuizFeedback] = useState<'knew' | 'later' | null>(null)
+  const [quizPulseByItem, setQuizPulseByItem] = useState<Record<number, number>>({})
   const [reviewFx, setReviewFx] = useState<Record<string, { delta: number; id: number }>>({})
   const [starFx, setStarFx] = useState<Record<string, number>>({})
   const [masteryFx, setMasteryFx] = useState<Record<string, number>>({})
@@ -567,17 +614,19 @@ function App() {
   }, [authView])
 
   useEffect(() => {
-    if (historyItemId === null) {
+    if (historyItemId === null && quizItemId === null) {
       return
     }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
         setHistoryItemId(null)
+        setQuizItemId(null)
+        setQuizFeedback(null)
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [historyItemId])
+  }, [historyItemId, quizItemId])
 
   useEffect(() => {
     if (authStatus !== 'authed' || !authUser) {
@@ -1190,6 +1239,35 @@ function getPasswordStrengthMeta(password: string) {
     return items.find((item) => item.itemNumber === historyItemId) ?? null
   }, [historyItemId, items])
 
+  const quizItem = useMemo(() => {
+    if (quizItemId === null) {
+      return null
+    }
+    return items.find((item) => item.itemNumber === quizItemId) ?? null
+  }, [quizItemId, items])
+
+  const quizQuestion = useMemo(() => {
+    if (!quizItem) {
+      return ''
+    }
+    const custom = quizItem.tracking.quiz.customQuestion.trim()
+    if (custom) {
+      return custom
+    }
+    return getAutoQuizQuestion(quizItem)
+  }, [quizItem])
+
+  const quizAnswer = useMemo(() => {
+    if (!quizItem) {
+      return ''
+    }
+    const custom = quizItem.tracking.quiz.customAnswer.trim()
+    if (custom) {
+      return custom
+    }
+    return quizItem.shortDescription
+  }, [quizItem])
+
   const globalStats = useMemo(() => {
     const completedCount = items.filter(
       (item) => item.tracking.assignedColleges.length > 0 && item.progress >= 0.999,
@@ -1313,6 +1391,56 @@ function getPasswordStrengthMeta(password: string) {
     setSelectedItemId(itemNumber)
   }
 
+  function triggerQuizButtonPulse(itemNumber: number) {
+    const token = Date.now()
+    setQuizPulseByItem((current) => ({ ...current, [itemNumber]: token }))
+    window.setTimeout(() => {
+      setQuizPulseByItem((current) => {
+        if (current[itemNumber] !== token) {
+          return current
+        }
+        const { [itemNumber]: _removed, ...rest } = current
+        return rest
+      })
+    }, 360)
+  }
+
+  function openQuiz(itemNumber: number) {
+    const item = items.find((entry) => entry.itemNumber === itemNumber)
+    if (!item || !item.tracking.quiz.enabled) {
+      return
+    }
+    triggerQuizButtonPulse(itemNumber)
+    setQuizItemId(itemNumber)
+    setQuizSide('front')
+    setQuizFeedback(null)
+  }
+
+  function closeQuiz() {
+    setQuizItemId(null)
+    setQuizSide('front')
+    setQuizFeedback(null)
+  }
+
+  function handleQuizResult(result: 'knew' | 'later') {
+    if (!quizItem) {
+      return
+    }
+
+    setQuizFeedback(result)
+
+    if (result === 'knew' && quizItem.tracking.quiz.updateProgressOnSuccess) {
+      const firstCollege = quizItem.tracking.assignedColleges[0]
+      if (firstCollege) {
+        handleCollegeReviewDelta(quizItem.itemNumber, firstCollege, 1)
+      }
+    }
+
+    window.setTimeout(() => {
+      setQuizFeedback((current) => (current === result ? null : current))
+    }, 1200)
+  }
+
   function triggerReviewFx(key: string, delta: number) {
     const id = Date.now() + Math.random()
     setReviewFx((current) => ({ ...current, [key]: { delta, id } }))
@@ -1428,6 +1556,7 @@ function getPasswordStrengthMeta(password: string) {
           itemIcon: currentItemTracking.itemIcon,
           itemColor: currentItemTracking.itemColor,
           itemLabel: currentItemTracking.itemLabel,
+          quiz: currentItemTracking.quiz,
           actionLogs: currentItemTracking.actionLogs,
         },
         [checked ? `College ajouté: ${college}` : `College retiré: ${college}`],
@@ -1481,6 +1610,7 @@ function getPasswordStrengthMeta(password: string) {
           itemIcon: itemTracking.itemIcon,
           itemColor: itemTracking.itemColor,
           itemLabel: itemTracking.itemLabel,
+          quiz: itemTracking.quiz,
           actionLogs: itemTracking.actionLogs,
         },
         actions,
@@ -1550,6 +1680,7 @@ function getPasswordStrengthMeta(password: string) {
           itemIcon: itemTracking.itemIcon,
           itemColor: itemTracking.itemColor,
           itemLabel: itemTracking.itemLabel,
+          quiz: itemTracking.quiz,
           actionLogs: itemTracking.actionLogs,
         },
         actions,
@@ -1580,6 +1711,7 @@ function getPasswordStrengthMeta(password: string) {
           itemIcon: itemTracking.itemIcon,
           itemColor: itemTracking.itemColor,
           itemLabel: itemTracking.itemLabel,
+          quiz: itemTracking.quiz,
           actionLogs: itemTracking.actionLogs,
         },
         [
@@ -1617,6 +1749,7 @@ function getPasswordStrengthMeta(password: string) {
             itemIcon: itemTracking.itemIcon,
             itemColor: itemTracking.itemColor,
             itemLabel: itemTracking.itemLabel,
+            quiz: itemTracking.quiz,
             actionLogs: itemTracking.actionLogs,
           },
         },
@@ -1643,6 +1776,37 @@ function getPasswordStrengthMeta(password: string) {
             itemIcon: itemTracking.itemIcon,
             itemColor: itemTracking.itemColor,
             itemLabel: itemTracking.itemLabel,
+            quiz: itemTracking.quiz,
+            actionLogs: itemTracking.actionLogs,
+          },
+        },
+      }
+    })
+  }
+
+  function updateItemQuizConfig(itemNumber: number, patch: Partial<QuizConfig>) {
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: {
+            assignedColleges: itemTracking.assignedColleges,
+            byCollege: itemTracking.byCollege,
+            lisaSheets: itemTracking.lisaSheets,
+            platformSheets: itemTracking.platformSheets,
+            noLisaSheets: itemTracking.noLisaSheets,
+            noPlatformSheets: itemTracking.noPlatformSheets,
+            itemComment: itemTracking.itemComment,
+            itemMastery: itemTracking.itemMastery,
+            itemIcon: itemTracking.itemIcon,
+            itemColor: itemTracking.itemColor,
+            itemLabel: itemTracking.itemLabel,
+            quiz: {
+              ...itemTracking.quiz,
+              ...patch,
+            },
             actionLogs: itemTracking.actionLogs,
           },
         },
@@ -1670,6 +1834,7 @@ function getPasswordStrengthMeta(password: string) {
           itemIcon: patch.itemIcon ?? itemTracking.itemIcon,
           itemColor: patch.itemColor ?? itemTracking.itemColor,
           itemLabel: patch.itemLabel ?? itemTracking.itemLabel,
+          quiz: itemTracking.quiz,
           actionLogs: itemTracking.actionLogs,
         },
         logAction ? [logAction] : [],
@@ -2229,6 +2394,7 @@ function getPasswordStrengthMeta(password: string) {
                   <th>Fiches Plateformes</th>
                   <th>Reviews</th>
                   <th>Progress</th>
+                  <th>Quiz</th>
                 </tr>
               </thead>
               <tbody>
@@ -2282,6 +2448,20 @@ function getPasswordStrengthMeta(password: string) {
                           {progressPercent >= 100 ? <span className="progress-pill-check">✓</span> : null}
                         </span>
                       </td>
+                      <td>
+                        <button
+                          type="button"
+                          className={`quiz-trigger-btn ${quizPulseByItem[item.itemNumber] ? 'pulse' : ''}`}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            openQuiz(item.itemNumber)
+                          }}
+                          disabled={!item.tracking.quiz.enabled}
+                          title={item.tracking.quiz.enabled ? "Lancer le quiz de l'item" : 'Quiz désactivé pour cet item'}
+                        >
+                          Quiz
+                        </button>
+                      </td>
                     </tr>
                   )
                 })}
@@ -2299,6 +2479,19 @@ function getPasswordStrengthMeta(password: string) {
                   <p>{effectiveSelectedItem.shortDescription}</p>
                 </div>
                 <div className="detail-head-actions">
+                  <button
+                    type="button"
+                    className={`quiz-trigger-btn ${quizPulseByItem[effectiveSelectedItem.itemNumber] ? 'pulse' : ''}`}
+                    onClick={() => openQuiz(effectiveSelectedItem.itemNumber)}
+                    disabled={!effectiveSelectedItem.tracking.quiz.enabled}
+                    title={
+                      effectiveSelectedItem.tracking.quiz.enabled
+                        ? "Lancer le quiz de l'item"
+                        : 'Quiz désactivé pour cet item'
+                    }
+                  >
+                    Quiz
+                  </button>
                   <button
                     type="button"
                     className="history-icon-btn"
@@ -2342,6 +2535,11 @@ function getPasswordStrengthMeta(password: string) {
                 <div>
                   <p className="meta-label">Ressenti item (manuel)</p>
                   <select
+                    className={`manual-item-mastery-select ${
+                      effectiveSelectedItem.tracking.itemMastery === 'Non évalué'
+                        ? 'none'
+                        : `mastery-${normalizeText(effectiveSelectedItem.tracking.itemMastery).toLowerCase().replace(' ', '-')}`
+                    }`}
                     value={effectiveSelectedItem.tracking.itemMastery}
                     onChange={(event) =>
                       updateItemMastery(
@@ -2447,6 +2645,116 @@ function getPasswordStrengthMeta(password: string) {
                   >
                     Effacer marqueur
                   </button>
+                </div>
+              </div>
+
+              <h3>Quiz item</h3>
+              <div className="quiz-config-grid">
+                <label className="checkline">
+                  <input
+                    type="checkbox"
+                    checked={effectiveSelectedItem.tracking.quiz.enabled}
+                    onChange={(event) =>
+                      updateItemQuizConfig(effectiveSelectedItem.itemNumber, { enabled: event.target.checked })
+                    }
+                  />
+                  Activer quiz pour cet item
+                </label>
+                <label className="block-label">
+                  Question custom
+                  <input
+                    type="text"
+                    placeholder="Laisser vide pour question auto..."
+                    value={effectiveSelectedItem.tracking.quiz.customQuestion}
+                    onChange={(event) =>
+                      updateItemQuizConfig(effectiveSelectedItem.itemNumber, { customQuestion: event.target.value })
+                    }
+                  />
+                </label>
+                <label className="block-label">
+                  Réponse custom
+                  <textarea
+                    placeholder="Laisser vide pour utiliser la description de l'item..."
+                    value={effectiveSelectedItem.tracking.quiz.customAnswer}
+                    onChange={(event) =>
+                      updateItemQuizConfig(effectiveSelectedItem.itemNumber, { customAnswer: event.target.value })
+                    }
+                  />
+                </label>
+                <div className="quiz-config-row">
+                  <label className="block-label">
+                    Animation
+                    <select
+                      value={effectiveSelectedItem.tracking.quiz.animationStyle}
+                      onChange={(event) =>
+                        updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
+                          animationStyle: event.target.value as QuizAnimationStyle,
+                        })
+                      }
+                    >
+                      <option value="flip">Flip</option>
+                      <option value="fade">Fade</option>
+                    </select>
+                  </label>
+                  <label className="block-label">
+                    Intensité reward
+                    <select
+                      value={effectiveSelectedItem.tracking.quiz.rewardIntensity}
+                      onChange={(event) =>
+                        updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
+                          rewardIntensity: event.target.value as RewardIntensity,
+                        })
+                      }
+                    >
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                    </select>
+                  </label>
+                </div>
+                <div className="quiz-config-options">
+                  <label className="checkline">
+                    <input
+                      type="checkbox"
+                      checked={effectiveSelectedItem.tracking.quiz.showTags}
+                      onChange={(event) =>
+                        updateItemQuizConfig(effectiveSelectedItem.itemNumber, { showTags: event.target.checked })
+                      }
+                    />
+                    Afficher tags
+                  </label>
+                  <label className="checkline">
+                    <input
+                      type="checkbox"
+                      checked={effectiveSelectedItem.tracking.quiz.showColleges}
+                      onChange={(event) =>
+                        updateItemQuizConfig(effectiveSelectedItem.itemNumber, { showColleges: event.target.checked })
+                      }
+                    />
+                    Afficher colleges
+                  </label>
+                  <label className="checkline">
+                    <input
+                      type="checkbox"
+                      checked={effectiveSelectedItem.tracking.quiz.showNotes}
+                      onChange={(event) =>
+                        updateItemQuizConfig(effectiveSelectedItem.itemNumber, { showNotes: event.target.checked })
+                      }
+                    />
+                    Afficher notes utilisateur
+                  </label>
+                  <label className="checkline">
+                    <input
+                      type="checkbox"
+                      checked={effectiveSelectedItem.tracking.quiz.updateProgressOnSuccess}
+                      onChange={(event) =>
+                        updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
+                          updateProgressOnSuccess: event.target.checked,
+                        })
+                      }
+                    />
+                    Mettre à jour la progression après “I knew it”
+                  </label>
                 </div>
               </div>
 
@@ -2985,6 +3293,76 @@ function getPasswordStrengthMeta(password: string) {
                   ))
               )}
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {quizItem ? (
+        <div className="quiz-modal-backdrop" onClick={closeQuiz}>
+          <div className="quiz-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="quiz-modal-head">
+              <h3>Quiz item #{quizItem.itemNumber}</h3>
+              <button type="button" className="ghost-btn" onClick={closeQuiz}>
+                Close
+              </button>
+            </div>
+
+            <div
+              className={`quiz-flashcard ${quizItem.tracking.quiz.animationStyle} ${
+                quizSide === 'back' ? 'is-back' : 'is-front'
+              }`}
+              onClick={() => setQuizSide((current) => (current === 'front' ? 'back' : 'front'))}
+            >
+              <div className="quiz-face quiz-front">
+                <p className="quiz-face-label">Question</p>
+                <p className="quiz-face-content">{quizQuestion}</p>
+              </div>
+              <div className="quiz-face quiz-back">
+                <p className="quiz-face-label">Réponse</p>
+                <p className="quiz-face-content">{quizAnswer}</p>
+                {quizItem.tracking.quiz.showTags ? (
+                  <p className="quiz-face-meta">
+                    <strong>Tags:</strong> {quizItem.tagLabels.join(', ') || 'Aucun'}
+                  </p>
+                ) : null}
+                {quizItem.tracking.quiz.showColleges ? (
+                  <p className="quiz-face-meta">
+                    <strong>Colleges:</strong> {quizItem.tracking.assignedColleges.join(', ') || 'Aucun'}
+                  </p>
+                ) : null}
+                {quizItem.tracking.quiz.showNotes ? (
+                  <p className="quiz-face-meta">
+                    <strong>Notes:</strong> {quizItem.tracking.itemComment.trim() || 'Aucune note'}
+                  </p>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="quiz-actions">
+              <button type="button" className="ghost-btn" onClick={() => setQuizSide((current) => (current === 'front' ? 'back' : 'front'))}>
+                Flip
+              </button>
+              <button type="button" className="ghost-btn quiz-success-btn" onClick={() => handleQuizResult('knew')}>
+                I knew it
+              </button>
+              <button type="button" className="ghost-btn quiz-later-btn" onClick={() => handleQuizResult('later')}>
+                Review later
+              </button>
+              <button type="button" className="ghost-btn" onClick={closeQuiz}>
+                Close
+              </button>
+            </div>
+
+            {quizFeedback ? (
+              <div className={`quiz-feedback ${quizFeedback} reward-${quizItem.tracking.quiz.rewardIntensity}`}>
+                {quizFeedback === 'knew' ? '✓ Bien joué' : '↺ Revoir plus tard'}
+                {quizFeedback === 'knew' && quizItem.tracking.quiz.rewardIntensity !== 'low' ? (
+                  <span className="quiz-feedback-sparkles" aria-hidden="true">
+                    ✨
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
           </div>
         </div>
       ) : null}
