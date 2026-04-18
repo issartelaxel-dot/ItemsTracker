@@ -383,6 +383,16 @@
     inset 0 1px 0 rgba(255, 255, 255, 0.22);
 }
 
+:root[data-theme='dark'] .topbar {
+  border-color: #2d4664;
+  background:
+    radial-gradient(55% 130% at -10% 100%, rgba(72, 128, 255, 0.34), transparent 62%),
+    linear-gradient(102deg, #1c2f4d 0%, #233f66 40%, #2f4967 72%, #445568 100%);
+  box-shadow:
+    0 18px 34px rgba(3, 9, 16, 0.56),
+    inset 0 1px 0 rgba(198, 224, 255, 0.08);
+}
+
 .topbar::after {
   content: '';
   position: absolute;
@@ -411,6 +421,15 @@
   font-size: clamp(1.25rem, 2.2vw, 2.15rem);
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
   margin-top: 0.15rem;
+}
+
+:root[data-theme='dark'] .topbar .eyebrow {
+  color: rgba(213, 230, 255, 0.82);
+}
+
+:root[data-theme='dark'] .topbar h1 {
+  color: #eaf3ff;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
 
 h1 {
@@ -612,10 +631,22 @@ h3 {
     background-color 0.2s ease;
 }
 
+:root[data-theme='dark'] .topbar .icon-btn {
+  border-color: #3e5a79;
+  background: rgba(15, 31, 52, 0.78);
+  color: #e7f2ff;
+  box-shadow: 0 6px 14px rgba(2, 8, 17, 0.44);
+}
+
 .topbar .icon-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 8px 16px rgba(45, 78, 124, 0.22);
   background: #ffffff;
+}
+
+:root[data-theme='dark'] .topbar .icon-btn:hover {
+  background: rgba(21, 43, 71, 0.95);
+  box-shadow: 0 10px 18px rgba(2, 8, 17, 0.58);
 }
 
 .topbar .icon-btn:active {
@@ -625,6 +656,15 @@ h3 {
 .profile-trigger-btn {
   padding: 0;
   overflow: hidden;
+  border-radius: 999px;
+  background: transparent;
+  box-shadow: 0 2px 8px rgba(49, 71, 98, 0.2);
+}
+
+.topbar .profile-trigger-btn,
+.topbar .profile-trigger-btn:hover,
+.topbar .profile-trigger-btn:active {
+  background: transparent;
 }
 
 .profile-trigger-avatar {
@@ -637,6 +677,13 @@ h3 {
   justify-content: center;
   font-size: 0.78rem;
   border: 0;
+  overflow: hidden;
+  background-clip: padding-box;
+}
+
+:root[data-theme='dark'] .profile-trigger-btn {
+  background: transparent;
+  box-shadow: 0 4px 12px rgba(2, 8, 17, 0.5);
 }
 
 .global-grid {
