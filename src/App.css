@@ -13,6 +13,10 @@
   overflow: hidden;
 }
 
+.auth-shell.is-auth-expanding {
+  pointer-events: none;
+}
+
 .auth-shell::before,
 .auth-shell::after {
   content: '';
@@ -52,6 +56,7 @@
   backdrop-filter: blur(3px);
   position: relative;
   z-index: 1;
+  transition: opacity 0.26s ease;
 }
 
 .auth-brand {
@@ -101,6 +106,7 @@
   padding: clamp(1.1rem, 2.4vw, 2rem);
   display: grid;
   align-content: start;
+  transition: opacity 0.24s ease;
 }
 
 .auth-card input,
@@ -255,6 +261,30 @@
     background-color 0.2s ease;
 }
 
+.auth-card .ghost-btn:disabled {
+  opacity: 0.78;
+  cursor: wait;
+}
+
+.auth-login-btn {
+  min-width: 128px;
+}
+
+.auth-inline-spinner {
+  width: 0.92rem;
+  height: 0.92rem;
+  border-radius: 999px;
+  border: 2px solid rgba(18, 44, 80, 0.2);
+  border-top-color: rgba(18, 44, 80, 0.9);
+  display: inline-block;
+  animation: auth-spin 0.8s linear infinite;
+}
+
+.auth-login-btn .auth-inline-spinner {
+  margin-right: 0.4rem;
+  vertical-align: -0.15rem;
+}
+
 .auth-card .ghost-btn:hover {
   transform: translateY(-1px);
   box-shadow: 0 10px 16px rgba(16, 39, 73, 0.12);
@@ -284,6 +314,44 @@
   background: #fff1f1;
   border: 1px solid #f4c0c0;
   animation: auth-shake 0.3s ease;
+}
+
+.auth-shell.is-auth-expanding .auth-layout {
+  opacity: 0.1;
+}
+
+.auth-expand-card {
+  position: fixed;
+  top: var(--auth-start-top);
+  left: var(--auth-start-left);
+  width: var(--auth-start-width);
+  height: var(--auth-start-height);
+  border-radius: var(--auth-start-radius);
+  background: #fff;
+  box-shadow: 0 26px 65px rgba(0, 0, 0, 0.28);
+  z-index: 9;
+  animation: auth-card-expand 0.78s cubic-bezier(0.2, 0.82, 0.23, 1) forwards;
+  overflow: hidden;
+}
+
+.auth-expand-content {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  gap: 0.55rem;
+  color: #11243a;
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.auth-expand-content .auth-inline-spinner {
+  width: 1.05rem;
+  height: 1.05rem;
+}
+
+.auth-expand-content p {
+  margin: 0;
 }
 
 .topbar,
@@ -1265,6 +1333,32 @@ tbody tr.selected {
   }
   100% {
     transform: translateX(0);
+  }
+}
+
+@keyframes auth-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes auth-card-expand {
+  0% {
+    top: var(--auth-start-top);
+    left: var(--auth-start-left);
+    width: var(--auth-start-width);
+    height: var(--auth-start-height);
+    border-radius: var(--auth-start-radius);
+  }
+  100% {
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    border-radius: 0;
   }
 }
 

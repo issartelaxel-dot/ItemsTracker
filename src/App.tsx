@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import itemsData from './data/items.json'
 import './App.css'
 
@@ -526,6 +526,7 @@ function App() {
   const [lastNameInput, setLastNameInput] = useState('')
   const [emailInput, setEmailInput] = useState('')
   const [passwordInput, setPasswordInput] = useState('')
+  const [loginPending, setLoginPending] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showResetPassword, setShowResetPassword] = useState(false)
   const [codeInput, setCodeInput] = useState('')
@@ -537,7 +538,10 @@ function App() {
   const [reviewFx, setReviewFx] = useState<Record<string, { delta: number; id: number }>>({})
   const [starFx, setStarFx] = useState<Record<string, number>>({})
   const [masteryFx, setMasteryFx] = useState<Record<string, number>>({})
+  const [authTransitionPhase, setAuthTransitionPhase] = useState<'idle' | 'expanding'>('idle')
+  const [authExpandStyle, setAuthExpandStyle] = useState<CSSProperties>({})
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
+  const authCardRef = useRef<HTMLDivElement | null>(null)
   const passwordStrength = getPasswordStrengthMeta(passwordInput)
 
   useEffect(() => {
@@ -552,6 +556,7 @@ function App() {
     setAuthError('')
     setAuthMessage('')
     setResetMode(false)
+    setLoginPending(false)
   }, [authView])
 
   useEffect(() => {
@@ -825,6 +830,34 @@ function App() {
     }
   }
 
+  function startAuthSuccessTransition(user: AuthUser) {
+    setAuthUser(user)
+
+    const cardRect = authCardRef.current?.getBoundingClientRect()
+    if (!cardRect) {
+      setAuthStatus('authed')
+      setLoginPending(false)
+      return
+    }
+
+    setAuthExpandStyle(
+      {
+        '--auth-start-top': `${cardRect.top}px`,
+        '--auth-start-left': `${cardRect.left}px`,
+        '--auth-start-width': `${cardRect.width}px`,
+        '--auth-start-height': `${cardRect.height}px`,
+        '--auth-start-radius': '22px',
+      } as CSSProperties,
+    )
+    setAuthTransitionPhase('expanding')
+
+    window.setTimeout(() => {
+      setAuthTransitionPhase('idle')
+      setAuthStatus('authed')
+      setLoginPending(false)
+    }, 780)
+  }
+
 function getPasswordStrengthError(password: string) {
   if (password.length < 12 || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
     return 'Mot de passe invalide: minimum 12 caractères, au moins 1 chiffre et 1 caractère spécial.'
@@ -902,6 +935,10 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   async function handleLogin() {
+    if (loginPending || authTransitionPhase !== 'idle') {
+      return
+    }
+    setLoginPending(true)
     setAuthError('')
     setAuthMessage('')
     try {
@@ -916,12 +953,18 @@ function getPasswordStrengthMeta(password: string) {
         localStorage.setItem(AUTH_TOKEN_KEY, payload.token)
       }
       if (payload.user) {
-        setAuthUser(payload.user as AuthUser)
-        setAuthStatus('authed')
+        startAuthSuccessTransition(payload.user as AuthUser)
       } else {
-        await refreshAuth()
+        const mePayload = await apiRequest('/api/auth/me')
+        if (mePayload.user) {
+          startAuthSuccessTransition(mePayload.user as AuthUser)
+        } else {
+          setLoginPending(false)
+          await refreshAuth()
+        }
       }
     } catch (error) {
+      setLoginPending(false)
       setAuthError(error instanceof Error ? error.message : 'Erreur de connexion.')
     }
   }
@@ -1671,7 +1714,7 @@ function getPasswordStrengthMeta(password: string) {
 
   if (authStatus !== 'authed') {
     return (
-      <div className="auth-shell">
+      <div className={`auth-shell ${authTransitionPhase === 'expanding' ? 'is-auth-expanding' : ''}`}>
         <div className="auth-layout">
           <aside className="auth-brand">
             <div className="auth-brand-inner">
@@ -1690,7 +1733,7 @@ function getPasswordStrengthMeta(password: string) {
             </div>
           </aside>
 
-          <div className="auth-card">
+          <div ref={authCardRef} className="auth-card">
             <h2 className="auth-title">Authentification</h2>
             <div className="auth-switch">
               <button
@@ -1745,8 +1788,15 @@ function getPasswordStrengthMeta(password: string) {
                     </label>
                   </div>
                   <div className="auth-actions">
-                    <button className="ghost-btn" onClick={() => void handleLogin()}>
-                      Se connecter
+                    <button className="ghost-btn auth-login-btn" disabled={loginPending} onClick={() => void handleLogin()}>
+                      {loginPending ? (
+                        <>
+                          <span className="auth-inline-spinner" aria-hidden="true" />
+                          Connexion...
+                        </>
+                      ) : (
+                        'Se connecter'
+                      )}
                     </button>
                     <button className="ghost-btn" onClick={() => setResetMode((value) => !value)}>
                       {resetMode ? 'Annuler reset' : 'Mot de passe oublié'}
@@ -1866,6 +1916,14 @@ function getPasswordStrengthMeta(password: string) {
             {authStatus === 'loading' ? <p className="auth-sub">Chargement...</p> : null}
           </div>
         </div>
+        {authTransitionPhase === 'expanding' ? (
+          <div className="auth-expand-card" style={authExpandStyle}>
+            <div className="auth-expand-content">
+              <span className="auth-inline-spinner" aria-hidden="true" />
+              <p>Connexion réussie</p>
+            </div>
+          </div>
+        ) : null}
       </div>
     )
   }
