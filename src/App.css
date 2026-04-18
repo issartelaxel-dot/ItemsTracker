@@ -787,11 +787,17 @@ tbody tr.selected {
   width: 30px;
   height: 30px;
   cursor: pointer;
+  transition: transform 0.18s ease;
 }
 
 .star-btn.active {
   color: #d18b00;
   border-color: #d18b00;
+}
+
+.star-btn.pop {
+  animation: star-pop 0.36s ease;
+  box-shadow: 0 0 0.6rem rgba(209, 139, 0, 0.35);
 }
 
 .control-row {
@@ -810,6 +816,7 @@ tbody tr.selected {
   display: flex;
   gap: 0.45rem;
   align-items: center;
+  position: relative;
 }
 
 .counter-wrap button {
@@ -826,6 +833,35 @@ tbody tr.selected {
   min-width: 20px;
   text-align: center;
   font-size: 0.82rem;
+}
+
+.review-count {
+  display: inline-block;
+  transform-origin: center;
+}
+
+.review-count.bump {
+  animation: review-bounce 0.28s ease;
+}
+
+.review-float {
+  position: absolute;
+  top: -0.75rem;
+  left: calc(50% - 0.3rem);
+  font-size: 0.72rem;
+  font-weight: 700;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.review-float.up {
+  color: #1c8f53;
+  animation: review-float-up 0.8s ease forwards;
+}
+
+.review-float.down {
+  color: #cb3e3e;
+  animation: review-float-down 0.8s ease forwards;
 }
 
 .block-label {
@@ -851,16 +887,23 @@ tbody tr.selected {
 .mastery-tres-bon,
 .mastery-parfait {
   font-weight: 600;
+  transition:
+    color 0.28s ease,
+    border-color 0.28s ease,
+    background-color 0.28s ease,
+    box-shadow 0.28s ease;
 }
 
 .mastery-mauvais {
   border-color: #cf3f3f;
   color: #cf3f3f;
+  background: color-mix(in oklab, #cf3f3f 7%, var(--input-bg));
 }
 
 .mastery-moyen {
   border-color: #d98d11;
   color: #d98d11;
+  background: color-mix(in oklab, #d98d11 9%, var(--input-bg));
 }
 
 .mastery-bon,
@@ -868,6 +911,11 @@ tbody tr.selected {
 .mastery-parfait {
   border-color: #00895a;
   color: #00895a;
+  background: color-mix(in oklab, #00895a 8%, var(--input-bg));
+}
+
+.mastery-pulse {
+  animation: mastery-pulse 0.34s ease;
 }
 
 .bottom-grid {
@@ -924,6 +972,70 @@ tbody tr.selected {
 
 .muted {
   color: var(--muted);
+}
+
+@keyframes review-bounce {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.24);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes review-float-up {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.92);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-18px) scale(1.04);
+  }
+}
+
+@keyframes review-float-down {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.92);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-12px) scale(1.02);
+  }
+}
+
+@keyframes star-pop {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  55% {
+    transform: scale(1.28) rotate(10deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes mastery-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(0, 137, 90, 0);
+  }
+  40% {
+    box-shadow: 0 0 0 0.42rem rgba(0, 137, 90, 0.17);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(0, 137, 90, 0);
+  }
 }
 
 @media (max-width: 1220px) {

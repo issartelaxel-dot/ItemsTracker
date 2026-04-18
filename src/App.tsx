@@ -532,6 +532,9 @@ function App() {
   const [resetPasswordInput, setResetPasswordInput] = useState('')
   const [profile, setProfile] = useState<ProfileState>(getDefaultProfile())
   const [historyItemId, setHistoryItemId] = useState<number | null>(null)
+  const [reviewFx, setReviewFx] = useState<Record<string, { delta: number; id: number }>>({})
+  const [starFx, setStarFx] = useState<Record<string, number>>({})
+  const [masteryFx, setMasteryFx] = useState<Record<string, number>>({})
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
 
   useEffect(() => {
@@ -1235,6 +1238,93 @@ function App() {
 
   function setSelectedItem(itemNumber: number) {
     setSelectedItemId(itemNumber)
+  }
+
+  function triggerReviewFx(key: string, delta: number) {
+    const id = Date.now() + Math.random()
+    setReviewFx((current) => ({ ...current, [key]: { delta, id } }))
+    window.setTimeout(() => {
+      setReviewFx((current) => {
+        if (current[key]?.id !== id) {
+          return current
+        }
+        const { [key]: _removed, ...rest } = current
+        return rest
+      })
+    }, 850)
+  }
+
+  function triggerPulseFx(setter: (updater: (current: Record<string, number>) => Record<string, number>) => void, key: string) {
+    const id = Date.now() + Math.random()
+    setter((current) => ({ ...current, [key]: id }))
+    window.setTimeout(() => {
+      setter((current) => {
+        if (current[key] !== id) {
+          return current
+        }
+        const { [key]: _removed, ...rest } = current
+        return rest
+      })
+    }, 380)
+  }
+
+  function getCollegeKey(itemNumber: number, college: string) {
+    return `college:${itemNumber}:${college}`
+  }
+
+  function getSheetKey(itemNumber: number, kind: SheetKind, sheetId: string) {
+    return `sheet:${itemNumber}:${kind}:${sheetId}`
+  }
+
+  function handleCollegeReviewDelta(itemNumber: number, college: string, delta: 1 | -1) {
+    const fxKey = getCollegeKey(itemNumber, college)
+    triggerReviewFx(fxKey, delta)
+    updateCollegeTracking(itemNumber, college, (current) => {
+      if (delta === -1 && current.reviews === 0) {
+        return current
+      }
+      return {
+        ...current,
+        reviews: Math.max(0, current.reviews + delta),
+        lastReviewedAt: delta > 0 ? new Date().toISOString() : current.lastReviewedAt,
+        reviewHistory:
+          delta < 0
+            ? [...current.reviewHistory, { date: new Date().toISOString(), delta: -1 }]
+            : [...current.reviewHistory, { date: new Date().toISOString(), delta: 1 }],
+      }
+    })
+  }
+
+  function handleSheetReviewDelta(itemNumber: number, kind: SheetKind, sheetId: string, delta: 1 | -1) {
+    const fxKey = getSheetKey(itemNumber, kind, sheetId)
+    triggerReviewFx(fxKey, delta)
+    updateReferenceSheets(itemNumber, kind, (currentSheets) =>
+      currentSheets.map((currentSheet) => {
+        if (currentSheet.id !== sheetId) {
+          return currentSheet
+        }
+        if (delta === -1 && currentSheet.tracking.reviews === 0) {
+          return currentSheet
+        }
+        return {
+          ...currentSheet,
+          tracking: {
+            ...currentSheet.tracking,
+            reviews: Math.max(0, currentSheet.tracking.reviews + delta),
+            lastReviewedAt: delta > 0 ? new Date().toISOString() : currentSheet.tracking.lastReviewedAt,
+            reviewHistory:
+              delta < 0
+                ? [...currentSheet.tracking.reviewHistory, { date: new Date().toISOString(), delta: -1 }]
+                : [...currentSheet.tracking.reviewHistory, { date: new Date().toISOString(), delta: 1 }],
+          },
+        }
+      }),
+    )
+  }
+
+  function getMasteryClass(mastery: Mastery, fxKey: string) {
+    const toneClass = `mastery-${normalizeText(mastery).toLowerCase().replace(' ', '-')}`
+    return `${toneClass}${masteryFx[fxKey] ? ' mastery-pulse' : ''}`
   }
 
   function updateCollegeAssignment(itemNumber: number, college: string, checked: boolean) {
@@ -2150,18 +2240,21 @@ function App() {
 
                 {effectiveSelectedItem.tracking.assignedColleges.map((college) => {
                   const data = effectiveSelectedItem.tracking.byCollege[college] ?? getDefaultCollegeTracking()
+                  const collegeFxKey = getCollegeKey(effectiveSelectedItem.itemNumber, college)
+                  const activeReviewFx = reviewFx[collegeFxKey]
                   return (
                     <section key={college} className={`college-card ${data.favorite ? 'is-favorite' : ''}`}>
                       <div className="college-card-head">
                         <p>{college}</p>
                         <button
-                          className={`star-btn ${data.favorite ? 'active' : ''}`}
-                          onClick={() =>
+                          className={`star-btn ${data.favorite ? 'active' : ''}${starFx[collegeFxKey] ? ' pop' : ''}`}
+                          onClick={() => {
+                            triggerPulseFx(setStarFx, collegeFxKey)
                             updateCollegeTracking(effectiveSelectedItem.itemNumber, college, (current) => ({
                               ...current,
                               favorite: !current.favorite,
                             }))
-                          }
+                          }}
                         >
                           ★
                         </button>
@@ -2171,30 +2264,20 @@ function App() {
                         <p>Reviews</p>
                         <div className="counter-wrap">
                           <button
-                            onClick={() =>
-                              updateCollegeTracking(effectiveSelectedItem.itemNumber, college, (current) => ({
-                                ...current,
-                                reviews: Math.max(0, current.reviews - 1),
-                                reviewHistory:
-                                  current.reviews > 0
-                                    ? [...current.reviewHistory, { date: new Date().toISOString(), delta: -1 }]
-                                    : current.reviewHistory,
-                              }))
-                            }
+                            onClick={() => {
+                              if (data.reviews === 0) return
+                              handleCollegeReviewDelta(effectiveSelectedItem.itemNumber, college, -1)
+                            }}
                           >
                             -
                           </button>
-                          <span>{data.reviews}</span>
-                          <button
-                            onClick={() =>
-                              updateCollegeTracking(effectiveSelectedItem.itemNumber, college, (current) => ({
-                                ...current,
-                                reviews: current.reviews + 1,
-                                lastReviewedAt: new Date().toISOString(),
-                                reviewHistory: [...current.reviewHistory, { date: new Date().toISOString(), delta: 1 }],
-                              }))
-                            }
-                          >
+                          <span className={`review-count${activeReviewFx ? ' bump' : ''}`}>{data.reviews}</span>
+                          {activeReviewFx ? (
+                            <span className={`review-float ${activeReviewFx.delta > 0 ? 'up' : 'down'}`}>
+                              {activeReviewFx.delta > 0 ? `+${activeReviewFx.delta}` : String(activeReviewFx.delta)}
+                            </span>
+                          ) : null}
+                          <button onClick={() => handleCollegeReviewDelta(effectiveSelectedItem.itemNumber, college, 1)}>
                             +
                           </button>
                         </div>
@@ -2204,13 +2287,14 @@ function App() {
                         Feeling / Mastery
                         <select
                           value={data.mastery}
-                          className={`mastery-${normalizeText(data.mastery).toLowerCase().replace(' ', '-')}`}
-                          onChange={(event) =>
+                          className={getMasteryClass(data.mastery, collegeFxKey)}
+                          onChange={(event) => {
+                            triggerPulseFx(setMasteryFx, collegeFxKey)
                             updateCollegeTracking(effectiveSelectedItem.itemNumber, college, (current) => ({
                               ...current,
                               mastery: event.target.value as Mastery,
                             }))
-                          }
+                          }}
                         >
                           {MASTERY_LEVELS.map((level) => (
                             <option value={level} key={level}>
@@ -2315,57 +2399,34 @@ function App() {
                       <p>Tracking fiche</p>
                       <div className="counter-wrap">
                         <button
-                          onClick={() =>
-                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
-                              currentSheets.map((currentSheet) =>
-                                currentSheet.id === sheet.id
-                                  ? {
-                                      ...currentSheet,
-                                      tracking: {
-                                        ...currentSheet.tracking,
-                                        reviews: Math.max(0, currentSheet.tracking.reviews - 1),
-                                        reviewHistory: [
-                                          ...(currentSheet.tracking.reviews > 0
-                                            ? [...currentSheet.tracking.reviewHistory, { date: new Date().toISOString(), delta: -1 }]
-                                            : currentSheet.tracking.reviewHistory),
-                                        ],
-                                      },
-                                    }
-                                  : currentSheet,
-                              ),
-                            )
-                          }
+                          onClick={() => {
+                            if (sheet.tracking.reviews === 0) return
+                            handleSheetReviewDelta(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id, -1)
+                          }}
                         >
                           -
                         </button>
-                        <span>{sheet.tracking.reviews}</span>
-                        <button
-                          onClick={() =>
-                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
-                              currentSheets.map((currentSheet) =>
-                                currentSheet.id === sheet.id
-                                  ? {
-                                      ...currentSheet,
-                                      tracking: {
-                                        ...currentSheet.tracking,
-                                        reviews: currentSheet.tracking.reviews + 1,
-                                        lastReviewedAt: new Date().toISOString(),
-                                        reviewHistory: [
-                                          ...currentSheet.tracking.reviewHistory,
-                                          { date: new Date().toISOString(), delta: 1 },
-                                        ],
-                                      },
-                                    }
-                                  : currentSheet,
-                              ),
-                            )
-                          }
-                        >
+                        <span className={`review-count${reviewFx[getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id)] ? ' bump' : ''}`}>
+                          {sheet.tracking.reviews}
+                        </span>
+                        {reviewFx[getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id)] ? (
+                          <span
+                            className={`review-float ${
+                              reviewFx[getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id)]!.delta > 0 ? 'up' : 'down'
+                            }`}
+                          >
+                            {reviewFx[getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id)]!.delta > 0
+                              ? `+${reviewFx[getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id)]!.delta}`
+                              : String(reviewFx[getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id)]!.delta)}
+                          </span>
+                        ) : null}
+                        <button onClick={() => handleSheetReviewDelta(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id, 1)}>
                           +
                         </button>
                         <button
-                          className={`star-btn ${sheet.tracking.favorite ? 'active' : ''}`}
-                          onClick={() =>
+                          className={`star-btn ${sheet.tracking.favorite ? 'active' : ''}${starFx[getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id)] ? ' pop' : ''}`}
+                          onClick={() => {
+                            triggerPulseFx(setStarFx, getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id))
                             updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
                               currentSheets.map((currentSheet) =>
                                 currentSheet.id === sheet.id
@@ -2379,7 +2440,7 @@ function App() {
                                   : currentSheet,
                               ),
                             )
-                          }
+                          }}
                         >
                           ★
                         </button>
@@ -2390,7 +2451,12 @@ function App() {
                       Feeling / Mastery
                       <select
                         value={sheet.tracking.mastery}
-                        onChange={(event) =>
+                        className={getMasteryClass(
+                          sheet.tracking.mastery,
+                          getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id),
+                        )}
+                        onChange={(event) => {
+                          triggerPulseFx(setMasteryFx, getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id))
                           updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
                             currentSheets.map((currentSheet) =>
                               currentSheet.id === sheet.id
@@ -2404,7 +2470,7 @@ function App() {
                                 : currentSheet,
                             ),
                           )
-                        }
+                        }}
                       >
                         {MASTERY_LEVELS.map((level) => (
                           <option value={level} key={level}>
@@ -2529,57 +2595,38 @@ function App() {
                       <p>Tracking fiche</p>
                       <div className="counter-wrap">
                         <button
-                          onClick={() =>
-                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
-                              currentSheets.map((currentSheet) =>
-                                currentSheet.id === sheet.id
-                                  ? {
-                                      ...currentSheet,
-                                      tracking: {
-                                        ...currentSheet.tracking,
-                                        reviews: Math.max(0, currentSheet.tracking.reviews - 1),
-                                        reviewHistory: [
-                                          ...(currentSheet.tracking.reviews > 0
-                                            ? [...currentSheet.tracking.reviewHistory, { date: new Date().toISOString(), delta: -1 }]
-                                            : currentSheet.tracking.reviewHistory),
-                                        ],
-                                      },
-                                    }
-                                  : currentSheet,
-                              ),
-                            )
-                          }
+                          onClick={() => {
+                            if (sheet.tracking.reviews === 0) return
+                            handleSheetReviewDelta(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id, -1)
+                          }}
                         >
                           -
                         </button>
-                        <span>{sheet.tracking.reviews}</span>
-                        <button
-                          onClick={() =>
-                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
-                              currentSheets.map((currentSheet) =>
-                                currentSheet.id === sheet.id
-                                  ? {
-                                      ...currentSheet,
-                                      tracking: {
-                                        ...currentSheet.tracking,
-                                        reviews: currentSheet.tracking.reviews + 1,
-                                        lastReviewedAt: new Date().toISOString(),
-                                        reviewHistory: [
-                                          ...currentSheet.tracking.reviewHistory,
-                                          { date: new Date().toISOString(), delta: 1 },
-                                        ],
-                                      },
-                                    }
-                                  : currentSheet,
-                              ),
-                            )
-                          }
-                        >
+                        <span className={`review-count${reviewFx[getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id)] ? ' bump' : ''}`}>
+                          {sheet.tracking.reviews}
+                        </span>
+                        {reviewFx[getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id)] ? (
+                          <span
+                            className={`review-float ${
+                              reviewFx[getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id)]!.delta > 0
+                                ? 'up'
+                                : 'down'
+                            }`}
+                          >
+                            {reviewFx[getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id)]!.delta > 0
+                              ? `+${reviewFx[getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id)]!.delta}`
+                              : String(reviewFx[getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id)]!.delta)}
+                          </span>
+                        ) : null}
+                        <button onClick={() => handleSheetReviewDelta(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id, 1)}>
                           +
                         </button>
                         <button
-                          className={`star-btn ${sheet.tracking.favorite ? 'active' : ''}`}
-                          onClick={() =>
+                          className={`star-btn ${sheet.tracking.favorite ? 'active' : ''}${
+                            starFx[getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id)] ? ' pop' : ''
+                          }`}
+                          onClick={() => {
+                            triggerPulseFx(setStarFx, getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id))
                             updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
                               currentSheets.map((currentSheet) =>
                                 currentSheet.id === sheet.id
@@ -2593,7 +2640,7 @@ function App() {
                                   : currentSheet,
                               ),
                             )
-                          }
+                          }}
                         >
                           ★
                         </button>
@@ -2604,7 +2651,15 @@ function App() {
                       Feeling / Mastery
                       <select
                         value={sheet.tracking.mastery}
-                        onChange={(event) =>
+                        className={getMasteryClass(
+                          sheet.tracking.mastery,
+                          getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id),
+                        )}
+                        onChange={(event) => {
+                          triggerPulseFx(
+                            setMasteryFx,
+                            getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id),
+                          )
                           updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
                             currentSheets.map((currentSheet) =>
                               currentSheet.id === sheet.id
@@ -2618,7 +2673,7 @@ function App() {
                                 : currentSheet,
                             ),
                           )
-                        }
+                        }}
                       >
                         {MASTERY_LEVELS.map((level) => (
                           <option value={level} key={level}>
