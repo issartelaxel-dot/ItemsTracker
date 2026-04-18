@@ -367,8 +367,30 @@
   display: flex;
   justify-content: space-between;
   gap: 1rem;
-  padding: 1.2rem;
+  padding: 1.05rem 1.15rem;
   align-items: center;
+  position: relative;
+  overflow: hidden;
+  border-radius: 15px;
+  border-color: #b8c9de;
+  background:
+    radial-gradient(55% 130% at -10% 100%, rgba(92, 145, 255, 0.55), transparent 62%),
+    linear-gradient(100deg, #5b87e5 0%, #7fa4ed 42%, #a2bbe8 100%);
+  background-size: 160% 160%;
+  animation: topbar-gradient-shift 16s ease-in-out infinite;
+  box-shadow:
+    0 16px 30px rgba(42, 81, 145, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.topbar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(112deg, transparent 30%, rgba(255, 255, 255, 0.22) 50%, transparent 70%);
+  transform: translateX(-120%);
+  animation: topbar-sheen 9s ease-in-out infinite;
+  pointer-events: none;
 }
 
 .eyebrow {
@@ -377,6 +399,18 @@
   font-size: 0.72rem;
   margin: 0;
   color: var(--muted);
+}
+
+.topbar .eyebrow {
+  color: rgba(246, 250, 255, 0.9);
+  font-size: 0.74rem;
+}
+
+.topbar h1 {
+  color: #f8fbff;
+  font-size: clamp(1.25rem, 2.2vw, 2.15rem);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.12);
+  margin-top: 0.15rem;
 }
 
 h1 {
@@ -391,9 +425,11 @@ h3 {
 
 .topbar-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.6rem;
+  flex-wrap: nowrap;
+  gap: 0.45rem;
   align-items: center;
+  position: relative;
+  z-index: 1;
 }
 
 .save-popup {
@@ -558,13 +594,32 @@ h3 {
 }
 
 .icon-btn {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.05rem;
+  font-size: 1.02rem;
+  border-radius: 12px;
+  border-color: #b8c9de;
+  background: rgba(245, 249, 255, 0.9);
+  color: #213a5d;
+  box-shadow: 0 3px 8px rgba(70, 95, 131, 0.16);
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.topbar .icon-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 16px rgba(45, 78, 124, 0.22);
+  background: #ffffff;
+}
+
+.topbar .icon-btn:active {
+  transform: scale(0.96);
 }
 
 .profile-trigger-btn {
@@ -1359,6 +1414,34 @@ tbody tr.selected {
     width: 100vw;
     height: 100vh;
     border-radius: 0;
+  }
+}
+
+@keyframes topbar-gradient-shift {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes topbar-sheen {
+  0%,
+  70%,
+  100% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  78% {
+    opacity: 0.65;
+  }
+  90% {
+    transform: translateX(120%);
+    opacity: 0;
   }
 }
 
