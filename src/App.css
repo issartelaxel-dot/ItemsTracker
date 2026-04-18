@@ -575,6 +575,8 @@ tbody tr.selected {
 .item-visual-actions {
   display: flex;
   align-items: end;
+  gap: 0.35rem;
+  flex-wrap: nowrap;
 }
 
 .item-visual-editor .block-label {
@@ -594,17 +596,11 @@ tbody tr.selected {
   border-radius: 8px;
 }
 
-.item-visual-shortcuts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0 0 0.9rem;
-}
-
-.item-visual-shortcut {
-  border-radius: 8px;
-  padding: 0.35rem 0.6rem;
-  font-size: 0.76rem;
+.item-visual-emoji-btn {
+  min-width: 32px;
+  padding: 0.3rem 0.35rem;
+  font-size: 0.88rem;
+  line-height: 1;
 }
 
 .reference-grid {
@@ -918,9 +914,8 @@ tbody tr.selected {
     grid-template-columns: 1fr;
   }
 
-  .item-visual-shortcuts {
-    display: grid;
-    grid-template-columns: 1fr;
+  .item-visual-actions {
+    justify-content: flex-start;
   }
 
   .global-grid {

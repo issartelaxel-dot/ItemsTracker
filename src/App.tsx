@@ -1937,6 +1937,36 @@ function App() {
                 <div className="item-visual-actions">
                   <button
                     type="button"
+                    className="ghost-btn item-visual-emoji-btn"
+                    title="Tombe souvent"
+                    aria-label="Marquer comme tombe souvent"
+                    onClick={() =>
+                      updateItemVisual(effectiveSelectedItem.itemNumber, {
+                        itemIcon: '⭐️',
+                        itemColor: '#facc15',
+                        itemLabel: 'Tombe souvent',
+                      })
+                    }
+                  >
+                    ⭐️
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-btn item-visual-emoji-btn"
+                    title="Difficile"
+                    aria-label="Marquer comme difficile"
+                    onClick={() =>
+                      updateItemVisual(effectiveSelectedItem.itemNumber, {
+                        itemIcon: '⚠️',
+                        itemColor: '#ef4444',
+                        itemLabel: 'Difficile',
+                      })
+                    }
+                  >
+                    ⚠️
+                  </button>
+                  <button
+                    type="button"
                     className="ghost-btn"
                     onClick={() =>
                       updateItemVisual(effectiveSelectedItem.itemNumber, {
@@ -1949,34 +1979,6 @@ function App() {
                     Effacer marqueur
                   </button>
                 </div>
-              </div>
-              <div className="item-visual-shortcuts">
-                <button
-                  type="button"
-                  className="ghost-btn item-visual-shortcut"
-                  onClick={() =>
-                    updateItemVisual(effectiveSelectedItem.itemNumber, {
-                      itemIcon: '⭐️',
-                      itemColor: '#facc15',
-                      itemLabel: 'Tombe souvent',
-                    })
-                  }
-                >
-                  ⭐️ Tombe souvent
-                </button>
-                <button
-                  type="button"
-                  className="ghost-btn item-visual-shortcut"
-                  onClick={() =>
-                    updateItemVisual(effectiveSelectedItem.itemNumber, {
-                      itemIcon: '⚠️',
-                      itemColor: '#ef4444',
-                      itemLabel: 'Difficile',
-                    })
-                  }
-                >
-                  ⚠️ Difficile
-                </button>
               </div>
 
               <h3>Assignation colleges</h3>
