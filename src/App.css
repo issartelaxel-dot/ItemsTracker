@@ -736,8 +736,8 @@ h3 {
   display: flex;
   gap: 0.24rem;
   align-items: flex-start;
-  overflow-x: auto;
-  padding: 0.25rem 0 0.1rem;
+  overflow: visible;
+  padding: 0.3rem min(10rem, 18vw) 1rem 0.2rem;
 }
 
 .habit-week {
@@ -1753,6 +1753,11 @@ tbody tr.selected {
 
   .auth-card {
     padding: 0.95rem;
+  }
+
+  .habit-tracker-wrap {
+    padding-right: 1.1rem;
+    padding-bottom: 0.7rem;
   }
 
   .topbar {

@@ -2122,7 +2122,6 @@ function getPasswordStrengthMeta(password: string) {
                   <span
                     key={day.dateKey}
                     className={`habit-dot ${day.inRange ? `intensity-${day.intensity}` : 'out-range'}`}
-                    title={`${day.dateKey} • ${day.count} lecture${day.count > 1 ? 's' : ''}`}
                     data-tip={`${day.dateKey} • ${day.count} lecture${day.count > 1 ? 's' : ''}`}
                     style={{ animationDelay: `${Math.min((weekIndex * 7 + dayIndex) * 8, 900)}ms` }}
                   />
