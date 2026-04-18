@@ -1062,6 +1062,67 @@ tbody tr.selected {
   background: var(--surface);
 }
 
+.progress-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 600;
+  border: 1px solid transparent;
+}
+
+.progress-pill.tier-low {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.progress-pill.tier-mid {
+  background: #fff1b8;
+  border-color: #f3d66d;
+  color: #7a5a00;
+}
+
+.progress-pill.tier-mid-high {
+  background: #dff6d9;
+  border-color: #9fd791;
+  color: #2f6b29;
+}
+
+.progress-pill.tier-high {
+  background: #bfeeb2;
+  border-color: #6fcf72;
+  color: #165f2a;
+}
+
+.progress-pill.tier-complete {
+  background: #1f7a3a;
+  border-color: #176530;
+  color: #f5fff7;
+}
+
+.progress-pill-check {
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+:root[data-theme='dark'] .progress-pill.tier-mid {
+  background: #4a3a10;
+  border-color: #8b6f20;
+  color: #ffe39d;
+}
+
+:root[data-theme='dark'] .progress-pill.tier-mid-high {
+  background: #1f4a21;
+  border-color: #3b7a40;
+  color: #b7f0b3;
+}
+
+:root[data-theme='dark'] .progress-pill.tier-high {
+  background: #1c5f2d;
+  border-color: #2f9445;
+  color: #d1ffd8;
+}
+
 .meta-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

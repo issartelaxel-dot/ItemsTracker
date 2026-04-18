@@ -2196,6 +2196,17 @@ function getPasswordStrengthMeta(password: string) {
               <tbody>
                 {itemTableList.map((item) => {
                   const hasVisualMarker = Boolean(item.tracking.itemIcon || item.tracking.itemColor || item.tracking.itemLabel)
+                  const progressPercent = Math.round(item.progress * 100)
+                  const progressTier =
+                    progressPercent >= 100
+                      ? 'tier-complete'
+                      : progressPercent >= 75
+                        ? 'tier-high'
+                        : progressPercent >= 50
+                          ? 'tier-mid-high'
+                          : progressPercent >= 30
+                            ? 'tier-mid'
+                            : 'tier-low'
                   return (
                     <tr
                       key={item.itemNumber}
@@ -2228,7 +2239,10 @@ function getPasswordStrengthMeta(password: string) {
                       <td>{item.tracking.platformSheets.length}</td>
                       <td>{item.totalReviews}</td>
                       <td>
-                        <span className="pill">{Math.round(item.progress * 100)}%</span>
+                        <span className={`pill progress-pill ${progressTier}`}>
+                          {progressPercent}%
+                          {progressPercent >= 100 ? <span className="progress-pill-check">✓</span> : null}
+                        </span>
                       </td>
                     </tr>
                   )
