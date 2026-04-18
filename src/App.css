@@ -534,10 +534,13 @@ tbody tr.selected {
 .history-icon-btn {
   border: 1px solid var(--border);
   background: var(--input-bg);
-  border-radius: 8px;
+  border-radius: 10px;
   color: var(--text);
-  width: 34px;
-  height: 30px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 0.95rem;
+  line-height: 1;
   cursor: pointer;
 }
 

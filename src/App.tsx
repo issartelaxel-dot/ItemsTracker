@@ -1938,7 +1938,6 @@ function App() {
                   <th>Fiches Plateformes</th>
                   <th>Reviews</th>
                   <th>Progress</th>
-                  <th>Hist.</th>
                 </tr>
               </thead>
               <tbody>
@@ -1978,21 +1977,6 @@ function App() {
                       <td>
                         <span className="pill">{Math.round(item.progress * 100)}%</span>
                       </td>
-                      <td>
-                        <button
-                          type="button"
-                          className="history-icon-btn"
-                          title={`Historique item #${item.itemNumber}`}
-                          aria-label={`Afficher l'historique de l'item ${item.itemNumber}`}
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            setSelectedItem(item.itemNumber)
-                            setHistoryItemId(item.itemNumber)
-                          }}
-                        >
-                          🕘
-                        </button>
-                      </td>
                     </tr>
                   )
                 })}
@@ -2010,8 +1994,14 @@ function App() {
                   <p>{effectiveSelectedItem.shortDescription}</p>
                 </div>
                 <div className="detail-head-actions">
-                  <button className="ghost-btn" onClick={() => setHistoryItemId(effectiveSelectedItem.itemNumber)}>
-                    🕘 Historique
+                  <button
+                    type="button"
+                    className="history-icon-btn"
+                    title={`Historique item #${effectiveSelectedItem.itemNumber}`}
+                    aria-label={`Afficher l'historique de l'item ${effectiveSelectedItem.itemNumber}`}
+                    onClick={() => setHistoryItemId(effectiveSelectedItem.itemNumber)}
+                  >
+                    🕘
                   </button>
                   {focusMode ? (
                     <button className="ghost-btn" onClick={nextFocusItem}>
