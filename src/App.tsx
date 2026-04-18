@@ -49,6 +49,9 @@ type QuizCard = {
   id: string
   question: string
   answer: string
+  lastResult: QuizResult | null
+  quizCount: number
+  lastReviewedAt: string | null
 }
 
 type QuizConfig = {
@@ -56,11 +59,7 @@ type QuizConfig = {
   cards: QuizCard[]
   activeCardId: string | null
   animationStyle: QuizAnimationStyle
-  showTags: boolean
-  showColleges: boolean
-  showNotes: boolean
   rewardIntensity: RewardIntensity
-  updateProgressOnSuccess: boolean
 }
 
 type ItemTracking = {
@@ -263,22 +262,22 @@ function getDefaultQuizConfig(): QuizConfig {
   const defaultCardId = `quiz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   return {
     enabled: true,
-    cards: [{ id: defaultCardId, question: '', answer: '' }],
+    cards: [{ id: defaultCardId, question: '', answer: '', lastResult: null, quizCount: 0, lastReviewedAt: null }],
     activeCardId: defaultCardId,
     animationStyle: 'flip',
-    showTags: true,
-    showColleges: true,
-    showNotes: false,
     rewardIntensity: 'medium',
-    updateProgressOnSuccess: false,
   }
 }
 
 function makeQuizCard(partial?: Partial<QuizCard>): QuizCard {
+  const rawCount = typeof partial?.quizCount === 'number' ? partial.quizCount : 0
   return {
     id: partial?.id ?? `quiz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     question: partial?.question ?? '',
     answer: partial?.answer ?? '',
+    lastResult: isQuizResult(partial?.lastResult) ? partial.lastResult : null,
+    quizCount: Number.isFinite(rawCount) ? Math.max(0, Math.floor(rawCount)) : 0,
+    lastReviewedAt: typeof partial?.lastReviewedAt === 'string' ? partial.lastReviewedAt : null,
   }
 }
 
@@ -677,6 +676,7 @@ function App() {
   const [quizSide, setQuizSide] = useState<'front' | 'back'>('front')
   const [quizFeedback, setQuizFeedback] = useState<QuizResult | null>(null)
   const [quizEditMode, setQuizEditMode] = useState(false)
+  const [quizConfigExpanded, setQuizConfigExpanded] = useState(false)
   const [quizPulseByItem, setQuizPulseByItem] = useState<Record<number, number>>({})
   const [reviewFx, setReviewFx] = useState<Record<string, { delta: number; id: number }>>({})
   const [starFx, setStarFx] = useState<Record<string, number>>({})
@@ -1552,19 +1552,36 @@ function getPasswordStrengthMeta(password: string) {
 
     const meta = QUIZ_RESULT_META[result]
     const reviewedAt = new Date().toISOString()
+    const activeCardId = quizItem.tracking.quiz.activeCardId
     setQuizFeedback(result)
 
     setTrackingState((current) => {
       const itemTracking = normalizeItemTracking(current.items[quizItem.itemNumber] ?? getDefaultItemTracking())
+      const nextCards = itemTracking.quiz.cards.map((card, index) => {
+        const isActive = activeCardId ? card.id === activeCardId : index === 0
+        if (!isActive) {
+          return card
+        }
+        return {
+          ...card,
+          lastResult: result,
+          quizCount: card.quizCount + 1,
+          lastReviewedAt: reviewedAt,
+        }
+      })
+      const totalCardQuizCount = nextCards.reduce((sum, card) => sum + card.quizCount, 0)
       const nextTracking = appendActionLogs(
         {
           ...itemTracking,
-          itemMastery: meta.mastery,
           lastQuizResult: result,
-          quizCount: itemTracking.quizCount + 1,
+          quizCount: totalCardQuizCount,
           lastReviewDate: reviewedAt,
+          quiz: {
+            ...itemTracking.quiz,
+            cards: nextCards,
+          },
         },
-        [`Quiz ${meta.icon} ${meta.actionVerb} (${meta.label})`],
+        [`Quiz carte ${meta.icon} ${meta.actionVerb} (${meta.label})`],
       )
 
       return {
@@ -2890,7 +2907,19 @@ function getPasswordStrengthMeta(password: string) {
                 </div>
               </div>
 
-              <h3>Quiz item</h3>
+              <div className="quiz-config-head">
+                <h3>Quiz item</h3>
+                <button
+                  type="button"
+                  className={`ghost-btn quiz-config-toggle ${quizConfigExpanded ? 'open' : ''}`}
+                  onClick={() => setQuizConfigExpanded((current) => !current)}
+                  aria-expanded={quizConfigExpanded}
+                  aria-label={quizConfigExpanded ? 'Masquer les détails du quiz' : 'Afficher les détails du quiz'}
+                  title={quizConfigExpanded ? 'Masquer les détails' : 'Afficher les détails'}
+                >
+                  ▾
+                </button>
+              </div>
               <div className="quiz-config-grid">
                 <label className="checkline">
                   <input
@@ -2920,6 +2949,17 @@ function getPasswordStrengthMeta(password: string) {
                         >
                           Carte {index + 1}
                         </button>
+                        <span
+                          className={`quiz-card-level-pill ${card.lastResult ?? 'none'}`}
+                          title={
+                            card.lastResult
+                              ? `${QUIZ_RESULT_META[card.lastResult].label} · ${card.quizCount} quiz`
+                              : 'Non évalué'
+                          }
+                        >
+                          {card.lastResult ? QUIZ_RESULT_META[card.lastResult].icon : '•'}{' '}
+                          {card.lastResult ? QUIZ_RESULT_META[card.lastResult].label : 'Non évalué'}
+                        </span>
                         <button
                           type="button"
                           className="quiz-card-remove"
@@ -2938,87 +2978,82 @@ function getPasswordStrengthMeta(password: string) {
                     </button>
                   </div>
                 </label>
-                {effectiveSelectedItem.tracking.quiz.cards
-                  .filter((card) => card.id === effectiveSelectedItem.tracking.quiz.activeCardId)
-                  .map((activeCard) => (
-                    <div key={activeCard.id} className="quiz-card-editor">
-                      <label className="block-label">
-                        Question carte active
-                        <input
-                          type="text"
-                          placeholder="Laisser vide pour question auto..."
-                          value={activeCard.question}
-                          onChange={(event) =>
-                            updateQuizCard(effectiveSelectedItem.itemNumber, activeCard.id, {
-                              question: event.target.value,
-                            })
-                          }
-                        />
-                      </label>
-                      <label className="block-label">
-                        Réponse carte active
-                        <textarea
-                          placeholder="Laisser vide pour utiliser la description de l'item..."
-                          value={activeCard.answer}
-                          onChange={(event) =>
-                            updateQuizCard(effectiveSelectedItem.itemNumber, activeCard.id, {
-                              answer: event.target.value,
-                            })
-                          }
-                        />
-                      </label>
+                {quizConfigExpanded ? (
+                  <>
+                    {effectiveSelectedItem.tracking.quiz.cards
+                      .filter((card) => card.id === effectiveSelectedItem.tracking.quiz.activeCardId)
+                      .map((activeCard) => (
+                        <div key={activeCard.id} className="quiz-card-editor">
+                          <label className="block-label">
+                            Question carte active
+                            <input
+                              type="text"
+                              placeholder="Laisser vide pour question auto..."
+                              value={activeCard.question}
+                              onChange={(event) =>
+                                updateQuizCard(effectiveSelectedItem.itemNumber, activeCard.id, {
+                                  question: event.target.value,
+                                })
+                              }
+                            />
+                          </label>
+                          <label className="block-label">
+                            Réponse carte active
+                            <textarea
+                              placeholder="Laisser vide pour utiliser la description de l'item..."
+                              value={activeCard.answer}
+                              onChange={(event) =>
+                                updateQuizCard(effectiveSelectedItem.itemNumber, activeCard.id, {
+                                  answer: event.target.value,
+                                })
+                              }
+                            />
+                          </label>
+                        </div>
+                      ))}
+                    <label className="block-label">
+                      Animation
+                      <select
+                        value={effectiveSelectedItem.tracking.quiz.animationStyle}
+                        onChange={(event) =>
+                          updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
+                            animationStyle: event.target.value as QuizAnimationStyle,
+                          })
+                        }
+                      >
+                        <option value="flip">Flip</option>
+                        <option value="fade">Fade</option>
+                      </select>
+                    </label>
+                    <div className="quiz-last-result">
+                      <span className="quiz-last-result-label">Niveau carte active</span>
+                      {effectiveSelectedItem.tracking.quiz.cards
+                        .filter((card) => card.id === effectiveSelectedItem.tracking.quiz.activeCardId)
+                        .map((card) =>
+                          card.lastResult ? (
+                            <span key={card.id} className={`quiz-last-result-pill ${card.lastResult}`}>
+                              {QUIZ_RESULT_META[card.lastResult].icon} {QUIZ_RESULT_META[card.lastResult].label}
+                            </span>
+                          ) : (
+                            <span key={card.id} className="quiz-last-result-pill none">
+                              Non évalué
+                            </span>
+                          ),
+                        )}
+                      {!effectiveSelectedItem.tracking.quiz.cards.some(
+                        (card) => card.id === effectiveSelectedItem.tracking.quiz.activeCardId,
+                      ) ? (
+                        <span className="quiz-last-result-pill none">Non évalué</span>
+                      ) : null}
+                      <span className="quiz-last-result-count">
+                        Quiz faits (carte active):{' '}
+                        {effectiveSelectedItem.tracking.quiz.cards.find(
+                          (card) => card.id === effectiveSelectedItem.tracking.quiz.activeCardId,
+                        )?.quizCount ?? 0}
+                      </span>
                     </div>
-                  ))}
-                <label className="block-label">
-                  Animation
-                  <select
-                    value={effectiveSelectedItem.tracking.quiz.animationStyle}
-                    onChange={(event) =>
-                      updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
-                        animationStyle: event.target.value as QuizAnimationStyle,
-                      })
-                    }
-                  >
-                    <option value="flip">Flip</option>
-                    <option value="fade">Fade</option>
-                  </select>
-                </label>
-                <div className="quiz-last-result">
-                  <span className="quiz-last-result-label">Dernier niveau</span>
-                  {effectiveSelectedItem.tracking.lastQuizResult ? (
-                    <span className={`quiz-last-result-pill ${effectiveSelectedItem.tracking.lastQuizResult}`}>
-                      {QUIZ_RESULT_META[effectiveSelectedItem.tracking.lastQuizResult].icon}{' '}
-                      {QUIZ_RESULT_META[effectiveSelectedItem.tracking.lastQuizResult].label}
-                    </span>
-                  ) : (
-                    <span className="quiz-last-result-pill none">Non évalué</span>
-                  )}
-                  <span className="quiz-last-result-count">
-                    Quiz faits: {effectiveSelectedItem.tracking.quizCount}
-                  </span>
-                </div>
-                <div className="quiz-config-options">
-                  <label className="checkline">
-                    <input
-                      type="checkbox"
-                      checked={effectiveSelectedItem.tracking.quiz.showTags}
-                      onChange={(event) =>
-                        updateItemQuizConfig(effectiveSelectedItem.itemNumber, { showTags: event.target.checked })
-                      }
-                    />
-                    Afficher tags
-                  </label>
-                  <label className="checkline">
-                    <input
-                      type="checkbox"
-                      checked={effectiveSelectedItem.tracking.quiz.showColleges}
-                      onChange={(event) =>
-                        updateItemQuizConfig(effectiveSelectedItem.itemNumber, { showColleges: event.target.checked })
-                      }
-                    />
-                    Afficher colleges
-                  </label>
-                </div>
+                  </>
+                ) : null}
               </div>
 
               <h3>Assignation colleges</h3>
@@ -3626,16 +3661,6 @@ function getPasswordStrengthMeta(password: string) {
               <div className="quiz-face quiz-back">
                 <p className="quiz-face-label">Réponse</p>
                 <p className="quiz-face-content">{quizAnswer}</p>
-                {quizItem.tracking.quiz.showTags ? (
-                  <p className="quiz-face-meta">
-                    <strong>Tags:</strong> {quizItem.tagLabels.join(', ') || 'Aucun'}
-                  </p>
-                ) : null}
-                {quizItem.tracking.quiz.showColleges ? (
-                  <p className="quiz-face-meta">
-                    <strong>Colleges:</strong> {quizItem.tracking.assignedColleges.join(', ') || 'Aucun'}
-                  </p>
-                ) : null}
               </div>
             </div>
 
