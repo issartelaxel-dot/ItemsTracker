@@ -5,7 +5,10 @@
 }
 
 .auth-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
+  width: 100vw;
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
   display: grid;
   place-items: center;
   padding: clamp(0.8rem, 2vw, 1.2rem);
