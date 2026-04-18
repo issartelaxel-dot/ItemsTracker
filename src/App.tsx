@@ -526,6 +526,8 @@ function App() {
   const [lastNameInput, setLastNameInput] = useState('')
   const [emailInput, setEmailInput] = useState('')
   const [passwordInput, setPasswordInput] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showResetPassword, setShowResetPassword] = useState(false)
   const [codeInput, setCodeInput] = useState('')
   const [resetMode, setResetMode] = useState(false)
   const [resetCodeInput, setResetCodeInput] = useState('')
@@ -536,6 +538,7 @@ function App() {
   const [starFx, setStarFx] = useState<Record<string, number>>({})
   const [masteryFx, setMasteryFx] = useState<Record<string, number>>({})
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
+  const passwordStrength = getPasswordStrengthMeta(passwordInput)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -822,12 +825,32 @@ function App() {
     }
   }
 
-  function getPasswordStrengthError(password: string) {
-    if (password.length < 12 || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
-      return 'Mot de passe invalide: minimum 12 caractères, au moins 1 chiffre et 1 caractère spécial.'
-    }
-    return null
+function getPasswordStrengthError(password: string) {
+  if (password.length < 12 || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
+    return 'Mot de passe invalide: minimum 12 caractères, au moins 1 chiffre et 1 caractère spécial.'
   }
+  return null
+}
+
+function getPasswordStrengthMeta(password: string) {
+  let score = 0
+  if (password.length >= 8) score += 1
+  if (password.length >= 12) score += 1
+  if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1
+  if (/[0-9]/.test(password)) score += 1
+  if (/[^A-Za-z0-9]/.test(password)) score += 1
+
+  if (!password) {
+    return { score: 0, label: 'Aucun', tone: 'weak' as const }
+  }
+  if (score <= 2) {
+    return { score, label: 'Faible', tone: 'weak' as const }
+  }
+  if (score <= 4) {
+    return { score, label: 'Moyen', tone: 'medium' as const }
+  }
+  return { score, label: 'Fort', tone: 'strong' as const }
+}
 
   async function handleRequestCode() {
     setAuthError('')
@@ -1649,119 +1672,199 @@ function App() {
   if (authStatus !== 'authed') {
     return (
       <div className="auth-shell">
-        <div className="auth-card">
-          <h1>Authentification</h1>
-          <div className="auth-switch">
-            <button
-              className={`ghost-btn auth-switch-btn ${authView === 'login' ? 'active' : ''}`}
-              onClick={() => setAuthView('login')}
-            >
-              Connexion
-            </button>
-            <button
-              className={`ghost-btn auth-switch-btn ${authView === 'register' ? 'active' : ''}`}
-              onClick={() => setAuthView('register')}
-            >
-              Inscription
-            </button>
-          </div>
-          {authView === 'login' ? (
-            <>
-              <p className="auth-sub">Connecte-toi avec ton email et ton mot de passe.</p>
-              <p className="auth-sub">Mot de passe oublié: demande un code puis valide le nouveau mot de passe.</p>
-              <div className="auth-grid">
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={emailInput}
-                  onChange={(event) => setEmailInput(event.target.value)}
-                />
-                <input
-                  type="password"
-                  placeholder="Mot de passe"
-                  value={passwordInput}
-                  onChange={(event) => setPasswordInput(event.target.value)}
-                />
-              </div>
-              <div className="auth-actions">
-                <button className="ghost-btn" onClick={() => void handleLogin()}>
-                  Se connecter
-                </button>
-                <button className="ghost-btn" onClick={() => setResetMode((value) => !value)}>
-                  {resetMode ? 'Annuler reset' : 'Mot de passe oublié'}
-                </button>
-              </div>
-              {resetMode ? (
+        <div className="auth-layout">
+          <aside className="auth-brand">
+            <div className="auth-brand-inner">
+              <p className="auth-brand-kicker">ItemsTracker</p>
+              {authView === 'login' ? (
                 <>
-                  <p className="auth-sub">Réinitialisation: saisis le code reçu par email et un nouveau mot de passe.</p>
+                  <h1>Bienvenue</h1>
+                  <p>Accède à ton dashboard EDN et optimise tes révisions</p>
+                </>
+              ) : (
+                <>
+                  <h1>Crée ton espace de révision</h1>
+                  <p>Commence à maîtriser les 367 items efficacement</p>
+                </>
+              )}
+            </div>
+          </aside>
+
+          <div className="auth-card">
+            <h2 className="auth-title">Authentification</h2>
+            <div className="auth-switch">
+              <button
+                className={`ghost-btn auth-switch-btn ${authView === 'login' ? 'active' : ''}`}
+                onClick={() => setAuthView('login')}
+              >
+                Connexion
+              </button>
+              <button
+                className={`ghost-btn auth-switch-btn ${authView === 'register' ? 'active' : ''}`}
+                onClick={() => setAuthView('register')}
+              >
+                Inscription
+              </button>
+            </div>
+
+            <div key={authView} className="auth-panel-content">
+              {authView === 'login' ? (
+                <>
+                  <p className="auth-sub">Connecte-toi avec ton email et ton mot de passe.</p>
+                  <p className="auth-sub">Mot de passe oublié: demande un code puis valide le nouveau mot de passe.</p>
                   <div className="auth-grid">
-                    <input
-                      placeholder="Code reset (8 chiffres)"
-                      value={resetCodeInput}
-                      onChange={(event) => setResetCodeInput(event.target.value)}
-                      maxLength={8}
-                    />
-                    <input
-                      type="password"
-                      placeholder="Nouveau mot de passe"
-                      value={resetPasswordInput}
-                      onChange={(event) => setResetPasswordInput(event.target.value)}
-                    />
+                    <label className="auth-input-wrap auth-input-full">
+                      <span className="auth-input-icon" aria-hidden="true">
+                        ✉
+                      </span>
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        value={emailInput}
+                        onChange={(event) => setEmailInput(event.target.value)}
+                      />
+                    </label>
+                    <label className="auth-input-wrap auth-input-full">
+                      <span className="auth-input-icon" aria-hidden="true">
+                        🔒
+                      </span>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Mot de passe"
+                        value={passwordInput}
+                        onChange={(event) => setPasswordInput(event.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="auth-password-toggle"
+                        onClick={() => setShowPassword((value) => !value)}
+                        aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                      >
+                        {showPassword ? '🙈' : '👁️'}
+                      </button>
+                    </label>
                   </div>
                   <div className="auth-actions">
-                    <button className="ghost-btn" onClick={() => void handleRequestPasswordReset()}>
-                      Recevoir un code reset
+                    <button className="ghost-btn" onClick={() => void handleLogin()}>
+                      Se connecter
                     </button>
-                    <button className="ghost-btn" onClick={() => void handleConfirmPasswordReset()}>
-                      Valider reset mot de passe
+                    <button className="ghost-btn" onClick={() => setResetMode((value) => !value)}>
+                      {resetMode ? 'Annuler reset' : 'Mot de passe oublié'}
+                    </button>
+                  </div>
+                  {resetMode ? (
+                    <>
+                      <p className="auth-sub">Réinitialisation: saisis le code reçu par email et un nouveau mot de passe.</p>
+                      <div className="auth-grid">
+                        <input
+                          placeholder="Code reset (8 chiffres)"
+                          value={resetCodeInput}
+                          onChange={(event) => setResetCodeInput(event.target.value)}
+                          maxLength={8}
+                        />
+                        <label className="auth-input-wrap">
+                          <span className="auth-input-icon" aria-hidden="true">
+                            🔑
+                          </span>
+                          <input
+                            type={showResetPassword ? 'text' : 'password'}
+                            placeholder="Nouveau mot de passe"
+                            value={resetPasswordInput}
+                            onChange={(event) => setResetPasswordInput(event.target.value)}
+                          />
+                          <button
+                            type="button"
+                            className="auth-password-toggle"
+                            onClick={() => setShowResetPassword((value) => !value)}
+                            aria-label={showResetPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                          >
+                            {showResetPassword ? '🙈' : '👁️'}
+                          </button>
+                        </label>
+                      </div>
+                      <div className="auth-actions">
+                        <button className="ghost-btn" onClick={() => void handleRequestPasswordReset()}>
+                          Recevoir un code reset
+                        </button>
+                        <button className="ghost-btn" onClick={() => void handleConfirmPasswordReset()}>
+                          Valider reset mot de passe
+                        </button>
+                      </div>
+                    </>
+                  ) : null}
+                </>
+              ) : (
+                <>
+                  <p className="auth-sub">Inscription validée par code 8 chiffres envoyé à l’administrateur.</p>
+                  <p className="auth-sub">Mot de passe requis: 12+ caractères, 1 chiffre, 1 caractère spécial.</p>
+                  <div className="auth-grid">
+                    <input
+                      placeholder="Prénom"
+                      value={firstNameInput}
+                      onChange={(event) => setFirstNameInput(event.target.value)}
+                    />
+                    <input placeholder="Nom" value={lastNameInput} onChange={(event) => setLastNameInput(event.target.value)} />
+                    <label className="auth-input-wrap auth-input-full">
+                      <span className="auth-input-icon" aria-hidden="true">
+                        ✉
+                      </span>
+                      <input
+                        type="email"
+                        placeholder="Email"
+                        value={emailInput}
+                        onChange={(event) => setEmailInput(event.target.value)}
+                      />
+                    </label>
+                    <label className="auth-input-wrap auth-input-full">
+                      <span className="auth-input-icon" aria-hidden="true">
+                        🔒
+                      </span>
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="Mot de passe"
+                        value={passwordInput}
+                        onChange={(event) => setPasswordInput(event.target.value)}
+                      />
+                      <button
+                        type="button"
+                        className="auth-password-toggle"
+                        onClick={() => setShowPassword((value) => !value)}
+                        aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
+                      >
+                        {showPassword ? '🙈' : '👁️'}
+                      </button>
+                    </label>
+                    <input
+                      placeholder="Code admin (8 chiffres)"
+                      value={codeInput}
+                      onChange={(event) => setCodeInput(event.target.value)}
+                      maxLength={8}
+                    />
+                  </div>
+
+                  <div className={`auth-strength auth-strength-${passwordStrength.tone}`}>
+                    <span className="auth-strength-label">Force mot de passe: {passwordStrength.label}</span>
+                    <div className="auth-strength-track">
+                      <span style={{ width: `${Math.max(12, passwordStrength.score * 20)}%` }} />
+                    </div>
+                  </div>
+
+                  <div className="auth-actions">
+                    <button className="ghost-btn" onClick={() => void handleRequestCode()}>
+                      Demander code admin
+                    </button>
+                    <button className="ghost-btn" onClick={() => void handleVerifyCode()}>
+                      Valider code et créer compte
                     </button>
                   </div>
                 </>
-              ) : null}
-            </>
-          ) : (
-            <>
-              <p className="auth-sub">Inscription validée par code 8 chiffres envoyé à l’administrateur.</p>
-              <p className="auth-sub">Mot de passe requis: 12+ caractères, 1 chiffre, 1 caractère spécial.</p>
-              <div className="auth-grid">
-                <input
-                  placeholder="Prénom"
-                  value={firstNameInput}
-                  onChange={(event) => setFirstNameInput(event.target.value)}
-                />
-                <input placeholder="Nom" value={lastNameInput} onChange={(event) => setLastNameInput(event.target.value)} />
-                <input
-                  type="email"
-                  placeholder="Email"
-                  value={emailInput}
-                  onChange={(event) => setEmailInput(event.target.value)}
-                />
-                <input
-                  type="password"
-                  placeholder="Mot de passe"
-                  value={passwordInput}
-                  onChange={(event) => setPasswordInput(event.target.value)}
-                />
-                <input
-                  placeholder="Code admin (8 chiffres)"
-                  value={codeInput}
-                  onChange={(event) => setCodeInput(event.target.value)}
-                  maxLength={8}
-                />
-              </div>
-              <div className="auth-actions">
-                <button className="ghost-btn" onClick={() => void handleRequestCode()}>
-                  Demander code admin
-                </button>
-                <button className="ghost-btn" onClick={() => void handleVerifyCode()}>
-                  Valider code et créer compte
-                </button>
-              </div>
-            </>
-          )}
-          {authMessage ? <p className="auth-success">{authMessage}</p> : null}
-          {authError ? <p className="auth-error">{authError}</p> : null}
-          {authStatus === 'loading' ? <p className="auth-sub">Chargement...</p> : null}
+              )}
+            </div>
+
+            {authMessage ? <p className="auth-success">{authMessage}</p> : null}
+            {authError ? <p className="auth-error">{authError}</p> : null}
+            {authStatus === 'loading' ? <p className="auth-sub">Chargement...</p> : null}
+          </div>
         </div>
       </div>
     )
