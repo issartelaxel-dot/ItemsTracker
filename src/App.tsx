@@ -2357,15 +2357,6 @@ function getPasswordStrengthMeta(password: string) {
                       </option>
                     ))}
                   </select>
-                  <span
-                    className={`auto-mastery-badge ${
-                      effectiveSelectedItem.tracking.itemMastery === 'Non évalué'
-                        ? 'none'
-                        : `mastery-${normalizeText(effectiveSelectedItem.tracking.itemMastery).toLowerCase().replace(' ', '-')}`
-                    }`}
-                  >
-                    {effectiveSelectedItem.tracking.itemMastery}
-                  </span>
                 </div>
               </div>
 
