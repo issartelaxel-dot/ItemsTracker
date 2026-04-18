@@ -375,7 +375,7 @@
   border-color: #b8c9de;
   background:
     radial-gradient(55% 130% at -10% 100%, rgba(92, 145, 255, 0.55), transparent 62%),
-    linear-gradient(100deg, #5b87e5 0%, #7fa4ed 42%, #a2bbe8 100%);
+    linear-gradient(100deg, #5b87e5 0%, #7fa4ed 38%, #cfdaf0 72%, #ffffff 100%);
   background-size: 160% 160%;
   animation: topbar-gradient-shift 16s ease-in-out infinite;
   box-shadow:
