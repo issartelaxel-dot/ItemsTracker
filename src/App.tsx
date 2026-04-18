@@ -2116,13 +2116,15 @@ function getPasswordStrengthMeta(password: string) {
         <article className="stat-card large-card">
           <p className="stat-label">Habit tracking {HABIT_TRACKER_YEAR} (lectures)</p>
           <div className="habit-tracker-wrap">
-            {weeklyReviewSeries.map((week) => (
+            {weeklyReviewSeries.map((week, weekIndex) => (
               <div className="habit-week" key={week.weekKey} title={`Semaine du ${week.weekLabel}`}>
-                {week.days.map((day) => (
+                {week.days.map((day, dayIndex) => (
                   <span
                     key={day.dateKey}
                     className={`habit-dot ${day.inRange ? `intensity-${day.intensity}` : 'out-range'}`}
                     title={`${day.dateKey} • ${day.count} lecture${day.count > 1 ? 's' : ''}`}
+                    data-tip={`${day.dateKey} • ${day.count} lecture${day.count > 1 ? 's' : ''}`}
+                    style={{ animationDelay: `${Math.min((weekIndex * 7 + dayIndex) * 8, 900)}ms` }}
                   />
                 ))}
               </div>
