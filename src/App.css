@@ -771,9 +771,9 @@ h3 {
 .habit-dot[data-tip]:hover::after {
   content: attr(data-tip);
   position: absolute;
-  left: 50%;
-  top: calc(100% + 8px);
-  transform: translateX(-50%);
+  left: calc(100% + 8px);
+  top: 50%;
+  transform: translateY(-50%);
   white-space: nowrap;
   background: rgba(16, 27, 44, 0.94);
   color: #f4f8ff;
@@ -790,9 +790,9 @@ h3 {
 .habit-dot[data-tip]:hover::before {
   content: '';
   position: absolute;
-  left: 50%;
-  top: calc(100% + 2px);
-  transform: translateX(-50%) rotate(225deg);
+  left: calc(100% + 2px);
+  top: 50%;
+  transform: translateY(-50%) rotate(135deg);
   width: 7px;
   height: 7px;
   background: rgba(16, 27, 44, 0.94);
@@ -1505,11 +1505,11 @@ tbody tr.selected {
 @keyframes habit-tip-in {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(2px);
+    transform: translateY(-50%) translateX(2px);
   }
   to {
     opacity: 1;
-    transform: translateX(-50%) translateY(0);
+    transform: translateY(-50%) translateX(0);
   }
 }
 
