@@ -50,6 +50,7 @@ type ItemTracking = {
   noLisaSheets: boolean
   noPlatformSheets: boolean
   itemComment: string
+  itemMastery: Mastery | 'Non évalué'
   itemIcon: string
   itemColor: string
   itemLabel: string
@@ -86,7 +87,6 @@ type ItemComputed = ItemBase & {
   totalReviews: number
   progress: number
   lastReviewDate: string | null
-  autoMastery: Mastery | 'Non évalué'
 }
 
 type AuthStatus = 'loading' | 'guest' | 'authed'
@@ -227,6 +227,7 @@ function getDefaultItemTracking(): ItemTracking {
     noLisaSheets: false,
     noPlatformSheets: false,
     itemComment: '',
+    itemMastery: 'Non évalué',
     itemIcon: '',
     itemColor: '',
     itemLabel: '',
@@ -264,6 +265,10 @@ function normalizeItemTracking(tracking?: Partial<ItemTracking>): ItemTracking {
     noLisaSheets: tracking?.noLisaSheets ?? false,
     noPlatformSheets: tracking?.noPlatformSheets ?? false,
     itemComment: tracking?.itemComment ?? '',
+    itemMastery:
+      tracking?.itemMastery && MASTERY_LEVELS.includes(tracking.itemMastery as Mastery)
+        ? (tracking.itemMastery as Mastery)
+        : 'Non évalué',
     itemIcon: tracking?.itemIcon ?? '',
     itemColor: tracking?.itemColor ?? '',
     itemLabel: tracking?.itemLabel ?? '',
@@ -367,38 +372,6 @@ function computeItemProgress(itemTracking: ItemTracking): number {
   return average(axes)
 }
 
-function computeItemAutoMastery(itemTracking: ItemTracking): Mastery | 'Non évalué' {
-  const allMasteries: Mastery[] = []
-
-  for (const college of itemTracking.assignedColleges) {
-    const tracking = itemTracking.byCollege[college]
-    if (tracking) {
-      allMasteries.push(tracking.mastery)
-    }
-  }
-
-  for (const sheet of itemTracking.lisaSheets) {
-    allMasteries.push(sheet.tracking.mastery)
-  }
-
-  for (const sheet of itemTracking.platformSheets) {
-    allMasteries.push(sheet.tracking.mastery)
-  }
-
-  if (allMasteries.length === 0) {
-    return 'Non évalué'
-  }
-
-  const total = allMasteries.reduce((sum, mastery) => sum + MASTERY_SCORE[mastery], 0)
-  const average = total / allMasteries.length
-
-  if (average < 0.5) return 'Mauvais'
-  if (average < 1.5) return 'Moyen'
-  if (average < 2.5) return 'Bon'
-  if (average < 3.5) return 'Très bon'
-  return 'Parfait'
-}
-
 function formatDate(dateString: string | null) {
   if (!dateString) {
     return 'Jamais'
@@ -476,6 +449,7 @@ function getInitialTrackingState(): TrackerState {
       noLisaSheets: false,
       noPlatformSheets: false,
       itemComment: '',
+      itemMastery: 'Non évalué',
       itemIcon: '',
       itemColor: '',
       itemLabel: '',
@@ -1099,7 +1073,6 @@ function getPasswordStrengthMeta(password: string) {
         totalReviews,
         progress: computeItemProgress(tracking),
         lastReviewDate,
-        autoMastery: computeItemAutoMastery(tracking),
       }
     })
   }, [trackingState])
@@ -1451,6 +1424,7 @@ function getPasswordStrengthMeta(password: string) {
           noLisaSheets: currentItemTracking.noLisaSheets,
           noPlatformSheets: currentItemTracking.noPlatformSheets,
           itemComment: currentItemTracking.itemComment,
+          itemMastery: currentItemTracking.itemMastery,
           itemIcon: currentItemTracking.itemIcon,
           itemColor: currentItemTracking.itemColor,
           itemLabel: currentItemTracking.itemLabel,
@@ -1503,6 +1477,7 @@ function getPasswordStrengthMeta(password: string) {
           noLisaSheets: itemTracking.noLisaSheets,
           noPlatformSheets: itemTracking.noPlatformSheets,
           itemComment: itemTracking.itemComment,
+          itemMastery: itemTracking.itemMastery,
           itemIcon: itemTracking.itemIcon,
           itemColor: itemTracking.itemColor,
           itemLabel: itemTracking.itemLabel,
@@ -1571,6 +1546,7 @@ function getPasswordStrengthMeta(password: string) {
           noLisaSheets: nextLisaSheets.length > 0 ? false : itemTracking.noLisaSheets,
           noPlatformSheets: nextPlatformSheets.length > 0 ? false : itemTracking.noPlatformSheets,
           itemComment: itemTracking.itemComment,
+          itemMastery: itemTracking.itemMastery,
           itemIcon: itemTracking.itemIcon,
           itemColor: itemTracking.itemColor,
           itemLabel: itemTracking.itemLabel,
@@ -1600,6 +1576,7 @@ function getPasswordStrengthMeta(password: string) {
           noLisaSheets: key === 'noLisaSheets' ? value : itemTracking.noLisaSheets,
           noPlatformSheets: key === 'noPlatformSheets' ? value : itemTracking.noPlatformSheets,
           itemComment: itemTracking.itemComment,
+          itemMastery: itemTracking.itemMastery,
           itemIcon: itemTracking.itemIcon,
           itemColor: itemTracking.itemColor,
           itemLabel: itemTracking.itemLabel,
@@ -1636,6 +1613,33 @@ function getPasswordStrengthMeta(password: string) {
             noLisaSheets: itemTracking.noLisaSheets,
             noPlatformSheets: itemTracking.noPlatformSheets,
             itemComment: value,
+            itemMastery: itemTracking.itemMastery,
+            itemIcon: itemTracking.itemIcon,
+            itemColor: itemTracking.itemColor,
+            itemLabel: itemTracking.itemLabel,
+            actionLogs: itemTracking.actionLogs,
+          },
+        },
+      }
+    })
+  }
+
+  function updateItemMastery(itemNumber: number, value: Mastery | 'Non évalué') {
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: {
+            assignedColleges: itemTracking.assignedColleges,
+            byCollege: itemTracking.byCollege,
+            lisaSheets: itemTracking.lisaSheets,
+            platformSheets: itemTracking.platformSheets,
+            noLisaSheets: itemTracking.noLisaSheets,
+            noPlatformSheets: itemTracking.noPlatformSheets,
+            itemComment: itemTracking.itemComment,
+            itemMastery: value,
             itemIcon: itemTracking.itemIcon,
             itemColor: itemTracking.itemColor,
             itemLabel: itemTracking.itemLabel,
@@ -1662,6 +1666,7 @@ function getPasswordStrengthMeta(password: string) {
           noLisaSheets: itemTracking.noLisaSheets,
           noPlatformSheets: itemTracking.noPlatformSheets,
           itemComment: itemTracking.itemComment,
+          itemMastery: itemTracking.itemMastery,
           itemIcon: patch.itemIcon ?? itemTracking.itemIcon,
           itemColor: patch.itemColor ?? itemTracking.itemColor,
           itemLabel: patch.itemLabel ?? itemTracking.itemLabel,
@@ -2335,15 +2340,31 @@ function getPasswordStrengthMeta(password: string) {
                   <p>{formatDate(effectiveSelectedItem.lastReviewDate)}</p>
                 </div>
                 <div>
-                  <p className="meta-label">Ressenti auto item</p>
+                  <p className="meta-label">Ressenti item (manuel)</p>
+                  <select
+                    value={effectiveSelectedItem.tracking.itemMastery}
+                    onChange={(event) =>
+                      updateItemMastery(
+                        effectiveSelectedItem.itemNumber,
+                        (event.target.value as Mastery | 'Non évalué') ?? 'Non évalué',
+                      )
+                    }
+                  >
+                    <option value="Non évalué">Non évalué</option>
+                    {MASTERY_LEVELS.map((level) => (
+                      <option key={level} value={level}>
+                        {level}
+                      </option>
+                    ))}
+                  </select>
                   <span
                     className={`auto-mastery-badge ${
-                      effectiveSelectedItem.autoMastery === 'Non évalué'
+                      effectiveSelectedItem.tracking.itemMastery === 'Non évalué'
                         ? 'none'
-                        : `mastery-${normalizeText(effectiveSelectedItem.autoMastery).toLowerCase().replace(' ', '-')}`
+                        : `mastery-${normalizeText(effectiveSelectedItem.tracking.itemMastery).toLowerCase().replace(' ', '-')}`
                     }`}
                   >
-                    {effectiveSelectedItem.autoMastery}
+                    {effectiveSelectedItem.tracking.itemMastery}
                   </span>
                 </div>
               </div>

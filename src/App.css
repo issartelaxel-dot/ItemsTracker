@@ -1147,6 +1147,7 @@ tbody tr.selected {
   font-weight: 600;
   line-height: 1.1;
   background: var(--surface);
+  margin-top: 0.3rem;
 }
 
 .auto-mastery-badge.none {
