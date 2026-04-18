@@ -1872,6 +1872,20 @@ function App() {
                   <p>{effectiveSelectedItem.tagLabels.join(', ') || 'Aucun'}</p>
                 </div>
                 <div>
+                  <p className="meta-label">Relectures (total)</p>
+                  <p>
+                    {effectiveSelectedItem.totalReviews +
+                      effectiveSelectedItem.tracking.lisaSheets.reduce(
+                        (sum, sheet) => sum + sheet.tracking.reviews,
+                        0,
+                      ) +
+                      effectiveSelectedItem.tracking.platformSheets.reduce(
+                        (sum, sheet) => sum + sheet.tracking.reviews,
+                        0,
+                      )}
+                  </p>
+                </div>
+                <div>
                   <p className="meta-label">Dernière review</p>
                   <p>{formatDate(effectiveSelectedItem.lastReviewDate)}</p>
                 </div>
@@ -1935,6 +1949,34 @@ function App() {
                     Effacer marqueur
                   </button>
                 </div>
+              </div>
+              <div className="item-visual-shortcuts">
+                <button
+                  type="button"
+                  className="ghost-btn item-visual-shortcut"
+                  onClick={() =>
+                    updateItemVisual(effectiveSelectedItem.itemNumber, {
+                      itemIcon: '⭐️',
+                      itemColor: '#facc15',
+                      itemLabel: 'Tombe souvent',
+                    })
+                  }
+                >
+                  ⭐️ Tombe souvent
+                </button>
+                <button
+                  type="button"
+                  className="ghost-btn item-visual-shortcut"
+                  onClick={() =>
+                    updateItemVisual(effectiveSelectedItem.itemNumber, {
+                      itemIcon: '⚠️',
+                      itemColor: '#ef4444',
+                      itemLabel: 'Difficile',
+                    })
+                  }
+                >
+                  ⚠️ Difficile
+                </button>
               </div>
 
               <h3>Assignation colleges</h3>
