@@ -772,7 +772,7 @@ h3 {
   content: attr(data-tip);
   position: absolute;
   left: 50%;
-  bottom: calc(100% + 8px);
+  top: calc(100% + 8px);
   transform: translateX(-50%);
   white-space: nowrap;
   background: rgba(16, 27, 44, 0.94);
@@ -791,8 +791,8 @@ h3 {
   content: '';
   position: absolute;
   left: 50%;
-  bottom: calc(100% + 2px);
-  transform: translateX(-50%) rotate(45deg);
+  top: calc(100% + 2px);
+  transform: translateX(-50%) rotate(225deg);
   width: 7px;
   height: 7px;
   background: rgba(16, 27, 44, 0.94);
