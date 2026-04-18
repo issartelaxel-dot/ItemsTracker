@@ -1158,6 +1158,30 @@ tbody tr.selected {
   color: var(--muted);
 }
 
+.quiz-manage-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+}
+
+.quiz-manage-btn.active {
+  border-color: color-mix(in oklab, var(--accent) 58%, var(--border));
+  background: color-mix(in oklab, var(--accent) 12%, var(--input-bg));
+}
+
+.quiz-manage-btn.danger {
+  color: #b23a3a;
+  border-color: #d7a7a7;
+}
+
+.quiz-manage-btn.danger:hover {
+  background: #ffecec;
+}
+
 .quiz-flashcard {
   position: relative;
   min-height: 230px;
@@ -1237,6 +1261,15 @@ tbody tr.selected {
   display: flex;
   flex-wrap: wrap;
   gap: 0.45rem;
+}
+
+.quiz-modal-editor {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.55rem;
+  background: var(--surface-soft);
+  display: grid;
+  gap: 0.35rem;
 }
 
 .quiz-success-btn {

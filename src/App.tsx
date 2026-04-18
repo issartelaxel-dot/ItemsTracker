@@ -621,6 +621,7 @@ function App() {
   const [quizItemId, setQuizItemId] = useState<number | null>(null)
   const [quizSide, setQuizSide] = useState<'front' | 'back'>('front')
   const [quizFeedback, setQuizFeedback] = useState<'knew' | 'later' | null>(null)
+  const [quizEditMode, setQuizEditMode] = useState(false)
   const [quizPulseByItem, setQuizPulseByItem] = useState<Record<number, number>>({})
   const [reviewFx, setReviewFx] = useState<Record<string, { delta: number; id: number }>>({})
   const [starFx, setStarFx] = useState<Record<string, number>>({})
@@ -1458,12 +1459,14 @@ function getPasswordStrengthMeta(password: string) {
     setQuizItemId(itemNumber)
     setQuizSide('front')
     setQuizFeedback(null)
+    setQuizEditMode(false)
   }
 
   function closeQuiz() {
     setQuizItemId(null)
     setQuizSide('front')
     setQuizFeedback(null)
+    setQuizEditMode(false)
   }
 
   function navigateQuizCard(direction: 'prev' | 'next') {
@@ -1939,6 +1942,18 @@ function getPasswordStrengthMeta(password: string) {
         },
       }
     })
+  }
+
+  function removeActiveQuizCardWithConfirm() {
+    if (!quizItem || !activeQuizCard) {
+      return
+    }
+    const ok = window.confirm('Supprimer cette flashcard ? Cette action est irréversible.')
+    if (!ok) {
+      return
+    }
+    removeQuizCard(quizItem.itemNumber, activeQuizCard.id)
+    setQuizEditMode(false)
   }
 
   function updateItemVisual(
@@ -3483,6 +3498,34 @@ function getPasswordStrengthMeta(password: string) {
                   )}
                   /{Math.max(1, quizItem.tracking.quiz.cards.length)}
                 </span>
+                <button
+                  type="button"
+                  className="ghost-btn quiz-manage-btn"
+                  onClick={() => {
+                    addQuizCard(quizItem.itemNumber)
+                    setQuizSide('front')
+                    setQuizEditMode(true)
+                  }}
+                  title="Créer une flashcard"
+                >
+                  ➕
+                </button>
+                <button
+                  type="button"
+                  className={`ghost-btn quiz-manage-btn ${quizEditMode ? 'active' : ''}`}
+                  onClick={() => setQuizEditMode((current) => !current)}
+                  title="Modifier la flashcard"
+                >
+                  ✏️
+                </button>
+                <button
+                  type="button"
+                  className="ghost-btn quiz-manage-btn danger"
+                  onClick={removeActiveQuizCardWithConfirm}
+                  title="Supprimer la flashcard"
+                >
+                  🗑️
+                </button>
                 <button type="button" className="ghost-btn" onClick={() => navigateQuizCard('prev')}>
                   ←
                 </button>
@@ -3525,6 +3568,32 @@ function getPasswordStrengthMeta(password: string) {
                 ) : null}
               </div>
             </div>
+
+            {quizEditMode && activeQuizCard ? (
+              <div className="quiz-modal-editor">
+                <label className="block-label">
+                  Question
+                  <input
+                    type="text"
+                    placeholder="Question de la flashcard..."
+                    value={activeQuizCard.question}
+                    onChange={(event) =>
+                      updateQuizCard(quizItem.itemNumber, activeQuizCard.id, { question: event.target.value })
+                    }
+                  />
+                </label>
+                <label className="block-label">
+                  Réponse
+                  <textarea
+                    placeholder="Réponse de la flashcard..."
+                    value={activeQuizCard.answer}
+                    onChange={(event) =>
+                      updateQuizCard(quizItem.itemNumber, activeQuizCard.id, { answer: event.target.value })
+                    }
+                  />
+                </label>
+              </div>
+            ) : null}
 
             <div className="quiz-actions">
               <button type="button" className="ghost-btn" onClick={() => setQuizSide((current) => (current === 'front' ? 'back' : 'front'))}>
