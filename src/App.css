@@ -370,7 +370,7 @@
   padding: 1.05rem 1.15rem;
   align-items: center;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   border-radius: 15px;
   border-color: #b8c9de;
   background:
