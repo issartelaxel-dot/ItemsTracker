@@ -20,6 +20,11 @@ type ReviewEvent = {
   delta: number
 }
 
+type ItemActionLog = {
+  at: string
+  action: string
+}
+
 type CollegeTracking = {
   favorite: boolean
   reviews: number
@@ -48,6 +53,7 @@ type ItemTracking = {
   itemIcon: string
   itemColor: string
   itemLabel: string
+  actionLogs: ItemActionLog[]
 }
 
 type TrackerState = {
@@ -223,6 +229,7 @@ function getDefaultItemTracking(): ItemTracking {
     itemIcon: '',
     itemColor: '',
     itemLabel: '',
+    actionLogs: [],
   }
 }
 
@@ -259,6 +266,28 @@ function normalizeItemTracking(tracking?: Partial<ItemTracking>): ItemTracking {
     itemIcon: tracking?.itemIcon ?? '',
     itemColor: tracking?.itemColor ?? '',
     itemLabel: tracking?.itemLabel ?? '',
+    actionLogs: Array.isArray(tracking?.actionLogs)
+      ? tracking.actionLogs
+          .filter((entry): entry is ItemActionLog => Boolean(entry && typeof entry === 'object'))
+          .map((entry) => ({
+            at: typeof entry.at === 'string' ? entry.at : new Date().toISOString(),
+            action: typeof entry.action === 'string' ? entry.action : '',
+          }))
+          .filter((entry) => entry.action.trim().length > 0)
+      : [],
+  }
+}
+
+function appendActionLogs(itemTracking: ItemTracking, actions: string[]): ItemTracking {
+  if (actions.length === 0) {
+    return itemTracking
+  }
+
+  const now = new Date().toISOString()
+  const newLogs = actions.map((action) => ({ at: now, action }))
+  return {
+    ...itemTracking,
+    actionLogs: [...itemTracking.actionLogs, ...newLogs].slice(-200),
   }
 }
 
@@ -344,6 +373,13 @@ function formatDate(dateString: string | null) {
   return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' }).format(new Date(dateString))
 }
 
+function formatDateTime(dateString: string) {
+  return new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: 'short',
+    timeStyle: 'medium',
+  }).format(new Date(dateString))
+}
+
 function startOfWeek(date: Date) {
   const day = date.getDay()
   const shift = day === 0 ? -6 : 1 - day
@@ -410,6 +446,7 @@ function getInitialTrackingState(): TrackerState {
       itemIcon: '',
       itemColor: '',
       itemLabel: '',
+      actionLogs: [],
     }
   }
 
@@ -494,6 +531,7 @@ function App() {
   const [resetCodeInput, setResetCodeInput] = useState('')
   const [resetPasswordInput, setResetPasswordInput] = useState('')
   const [profile, setProfile] = useState<ProfileState>(getDefaultProfile())
+  const [historyItemId, setHistoryItemId] = useState<number | null>(null)
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
 
   useEffect(() => {
@@ -509,6 +547,19 @@ function App() {
     setAuthMessage('')
     setResetMode(false)
   }, [authView])
+
+  useEffect(() => {
+    if (historyItemId === null) {
+      return
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setHistoryItemId(null)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [historyItemId])
 
   useEffect(() => {
     if (authStatus !== 'authed' || !authUser) {
@@ -1056,6 +1107,13 @@ function App() {
     return filteredAndSortedItems.filter((item) => item.itemNumber === effectiveSelectedItem?.itemNumber)
   }, [focusMode, filteredAndSortedItems, effectiveSelectedItem])
 
+  const historyItem = useMemo(() => {
+    if (historyItemId === null) {
+      return null
+    }
+    return items.find((item) => item.itemNumber === historyItemId) ?? null
+  }, [historyItemId, items])
+
   const globalStats = useMemo(() => {
     const completedCount = items.filter(
       (item) => item.tracking.assignedColleges.length > 0 && item.progress >= 0.999,
@@ -1194,22 +1252,28 @@ function App() {
         byCollege[college] = getDefaultCollegeTracking()
       }
 
+      const nextTracking = appendActionLogs(
+        {
+          assignedColleges: Array.from(assignedSet),
+          byCollege,
+          lisaSheets: currentItemTracking.lisaSheets,
+          platformSheets: currentItemTracking.platformSheets,
+          noLisaSheets: currentItemTracking.noLisaSheets,
+          noPlatformSheets: currentItemTracking.noPlatformSheets,
+          itemComment: currentItemTracking.itemComment,
+          itemIcon: currentItemTracking.itemIcon,
+          itemColor: currentItemTracking.itemColor,
+          itemLabel: currentItemTracking.itemLabel,
+          actionLogs: currentItemTracking.actionLogs,
+        },
+        [checked ? `College ajouté: ${college}` : `College retiré: ${college}`],
+      )
+
       return {
         ...current,
         items: {
           ...current.items,
-          [itemNumber]: {
-            assignedColleges: Array.from(assignedSet),
-            byCollege,
-            lisaSheets: currentItemTracking.lisaSheets,
-            platformSheets: currentItemTracking.platformSheets,
-            noLisaSheets: currentItemTracking.noLisaSheets,
-            noPlatformSheets: currentItemTracking.noPlatformSheets,
-            itemComment: currentItemTracking.itemComment,
-            itemIcon: currentItemTracking.itemIcon,
-            itemColor: currentItemTracking.itemColor,
-            itemLabel: currentItemTracking.itemLabel,
-          },
+          [itemNumber]: nextTracking,
         },
       }
     })
@@ -1224,26 +1288,44 @@ function App() {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
       const prevCollegeTracking = itemTracking.byCollege[college] ?? getDefaultCollegeTracking()
       const nextCollegeTracking = updater(prevCollegeTracking)
+      const actions: string[] = []
+      if (nextCollegeTracking.reviews !== prevCollegeTracking.reviews) {
+        const diff = nextCollegeTracking.reviews - prevCollegeTracking.reviews
+        const signed = diff > 0 ? `+${diff}` : String(diff)
+        actions.push(`[${college}] Reviews ${signed} (${nextCollegeTracking.reviews})`)
+      }
+      if (nextCollegeTracking.mastery !== prevCollegeTracking.mastery) {
+        actions.push(`[${college}] Mastery: ${nextCollegeTracking.mastery}`)
+      }
+      if (nextCollegeTracking.favorite !== prevCollegeTracking.favorite) {
+        actions.push(`[${college}] Favori ${nextCollegeTracking.favorite ? 'activé' : 'désactivé'}`)
+      }
+
+      const nextTracking = appendActionLogs(
+        {
+          assignedColleges: itemTracking.assignedColleges,
+          byCollege: {
+            ...itemTracking.byCollege,
+            [college]: nextCollegeTracking,
+          },
+          lisaSheets: itemTracking.lisaSheets,
+          platformSheets: itemTracking.platformSheets,
+          noLisaSheets: itemTracking.noLisaSheets,
+          noPlatformSheets: itemTracking.noPlatformSheets,
+          itemComment: itemTracking.itemComment,
+          itemIcon: itemTracking.itemIcon,
+          itemColor: itemTracking.itemColor,
+          itemLabel: itemTracking.itemLabel,
+          actionLogs: itemTracking.actionLogs,
+        },
+        actions,
+      )
 
       return {
         ...current,
         items: {
           ...current.items,
-          [itemNumber]: {
-            assignedColleges: itemTracking.assignedColleges,
-            byCollege: {
-              ...itemTracking.byCollege,
-              [college]: nextCollegeTracking,
-            },
-            lisaSheets: itemTracking.lisaSheets,
-            platformSheets: itemTracking.platformSheets,
-            noLisaSheets: itemTracking.noLisaSheets,
-            noPlatformSheets: itemTracking.noPlatformSheets,
-            itemComment: itemTracking.itemComment,
-            itemIcon: itemTracking.itemIcon,
-            itemColor: itemTracking.itemColor,
-            itemLabel: itemTracking.itemLabel,
-          },
+          [itemNumber]: nextTracking,
         },
       }
     })
@@ -1256,25 +1338,61 @@ function App() {
   ) {
     setTrackingState((current) => {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
-      const nextLisaSheets = kind === 'lisaSheets' ? updater(itemTracking.lisaSheets) : itemTracking.lisaSheets
-      const nextPlatformSheets =
-        kind === 'platformSheets' ? updater(itemTracking.platformSheets) : itemTracking.platformSheets
+      const currentSheets = kind === 'lisaSheets' ? itemTracking.lisaSheets : itemTracking.platformSheets
+      const kindLabel = kind === 'lisaSheets' ? 'Fiche LISA' : 'Fiche plateforme'
+      const nextSheets = updater(currentSheets)
+      const nextLisaSheets = kind === 'lisaSheets' ? nextSheets : itemTracking.lisaSheets
+      const nextPlatformSheets = kind === 'platformSheets' ? nextSheets : itemTracking.platformSheets
+      const actions: string[] = []
+
+      if (nextSheets.length > currentSheets.length) {
+        actions.push(`${kindLabel} ajoutée`)
+      } else if (nextSheets.length < currentSheets.length) {
+        actions.push(`${kindLabel} supprimée`)
+      }
+
+      const previousById = new Map(currentSheets.map((sheet) => [sheet.id, sheet]))
+      for (const sheet of nextSheets) {
+        const previous = previousById.get(sheet.id)
+        if (!previous) {
+          continue
+        }
+        if (sheet.tracking.reviews !== previous.tracking.reviews) {
+          const diff = sheet.tracking.reviews - previous.tracking.reviews
+          const signed = diff > 0 ? `+${diff}` : String(diff)
+          actions.push(`${kindLabel} "${sheet.name || 'sans nom'}": reviews ${signed} (${sheet.tracking.reviews})`)
+        }
+        if (sheet.tracking.mastery !== previous.tracking.mastery) {
+          actions.push(`${kindLabel} "${sheet.name || 'sans nom'}": mastery ${sheet.tracking.mastery}`)
+        }
+        if (sheet.tracking.favorite !== previous.tracking.favorite) {
+          actions.push(
+            `${kindLabel} "${sheet.name || 'sans nom'}": favori ${sheet.tracking.favorite ? 'activé' : 'désactivé'}`,
+          )
+        }
+      }
+
+      const nextTracking = appendActionLogs(
+        {
+          assignedColleges: itemTracking.assignedColleges,
+          byCollege: itemTracking.byCollege,
+          lisaSheets: nextLisaSheets,
+          platformSheets: nextPlatformSheets,
+          noLisaSheets: nextLisaSheets.length > 0 ? false : itemTracking.noLisaSheets,
+          noPlatformSheets: nextPlatformSheets.length > 0 ? false : itemTracking.noPlatformSheets,
+          itemComment: itemTracking.itemComment,
+          itemIcon: itemTracking.itemIcon,
+          itemColor: itemTracking.itemColor,
+          itemLabel: itemTracking.itemLabel,
+          actionLogs: itemTracking.actionLogs,
+        },
+        actions,
+      )
       return {
         ...current,
         items: {
           ...current.items,
-          [itemNumber]: {
-            assignedColleges: itemTracking.assignedColleges,
-            byCollege: itemTracking.byCollege,
-            lisaSheets: nextLisaSheets,
-            platformSheets: nextPlatformSheets,
-            noLisaSheets: nextLisaSheets.length > 0 ? false : itemTracking.noLisaSheets,
-            noPlatformSheets: nextPlatformSheets.length > 0 ? false : itemTracking.noPlatformSheets,
-            itemComment: itemTracking.itemComment,
-            itemIcon: itemTracking.itemIcon,
-            itemColor: itemTracking.itemColor,
-            itemLabel: itemTracking.itemLabel,
-          },
+          [itemNumber]: nextTracking,
         },
       }
     })
@@ -1283,22 +1401,31 @@ function App() {
   function updateSheetExclusion(itemNumber: number, key: 'noLisaSheets' | 'noPlatformSheets', value: boolean) {
     setTrackingState((current) => {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      const nextTracking = appendActionLogs(
+        {
+          assignedColleges: itemTracking.assignedColleges,
+          byCollege: itemTracking.byCollege,
+          lisaSheets: itemTracking.lisaSheets,
+          platformSheets: itemTracking.platformSheets,
+          noLisaSheets: key === 'noLisaSheets' ? value : itemTracking.noLisaSheets,
+          noPlatformSheets: key === 'noPlatformSheets' ? value : itemTracking.noPlatformSheets,
+          itemComment: itemTracking.itemComment,
+          itemIcon: itemTracking.itemIcon,
+          itemColor: itemTracking.itemColor,
+          itemLabel: itemTracking.itemLabel,
+          actionLogs: itemTracking.actionLogs,
+        },
+        [
+          `${key === 'noLisaSheets' ? 'Pas de fiche LISA' : 'Pas de fiche plateforme'} ${
+            value ? 'activé' : 'désactivé'
+          }`,
+        ],
+      )
       return {
         ...current,
         items: {
           ...current.items,
-          [itemNumber]: {
-            assignedColleges: itemTracking.assignedColleges,
-            byCollege: itemTracking.byCollege,
-            lisaSheets: itemTracking.lisaSheets,
-            platformSheets: itemTracking.platformSheets,
-            noLisaSheets: key === 'noLisaSheets' ? value : itemTracking.noLisaSheets,
-            noPlatformSheets: key === 'noPlatformSheets' ? value : itemTracking.noPlatformSheets,
-            itemComment: itemTracking.itemComment,
-            itemIcon: itemTracking.itemIcon,
-            itemColor: itemTracking.itemColor,
-            itemLabel: itemTracking.itemLabel,
-          },
+          [itemNumber]: nextTracking,
         },
       }
     })
@@ -1322,6 +1449,7 @@ function App() {
             itemIcon: itemTracking.itemIcon,
             itemColor: itemTracking.itemColor,
             itemLabel: itemTracking.itemLabel,
+            actionLogs: itemTracking.actionLogs,
           },
         },
       }
@@ -1331,25 +1459,31 @@ function App() {
   function updateItemVisual(
     itemNumber: number,
     patch: Partial<Pick<ItemTracking, 'itemIcon' | 'itemColor' | 'itemLabel'>>,
+    logAction?: string,
   ) {
     setTrackingState((current) => {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      const nextTracking = appendActionLogs(
+        {
+          assignedColleges: itemTracking.assignedColleges,
+          byCollege: itemTracking.byCollege,
+          lisaSheets: itemTracking.lisaSheets,
+          platformSheets: itemTracking.platformSheets,
+          noLisaSheets: itemTracking.noLisaSheets,
+          noPlatformSheets: itemTracking.noPlatformSheets,
+          itemComment: itemTracking.itemComment,
+          itemIcon: patch.itemIcon ?? itemTracking.itemIcon,
+          itemColor: patch.itemColor ?? itemTracking.itemColor,
+          itemLabel: patch.itemLabel ?? itemTracking.itemLabel,
+          actionLogs: itemTracking.actionLogs,
+        },
+        logAction ? [logAction] : [],
+      )
       return {
         ...current,
         items: {
           ...current.items,
-          [itemNumber]: {
-            assignedColleges: itemTracking.assignedColleges,
-            byCollege: itemTracking.byCollege,
-            lisaSheets: itemTracking.lisaSheets,
-            platformSheets: itemTracking.platformSheets,
-            noLisaSheets: itemTracking.noLisaSheets,
-            noPlatformSheets: itemTracking.noPlatformSheets,
-            itemComment: itemTracking.itemComment,
-            itemIcon: patch.itemIcon ?? itemTracking.itemIcon,
-            itemColor: patch.itemColor ?? itemTracking.itemColor,
-            itemLabel: patch.itemLabel ?? itemTracking.itemLabel,
-          },
+          [itemNumber]: nextTracking,
         },
       }
     })
@@ -1804,6 +1938,7 @@ function App() {
                   <th>Fiches Plateformes</th>
                   <th>Reviews</th>
                   <th>Progress</th>
+                  <th>Hist.</th>
                 </tr>
               </thead>
               <tbody>
@@ -1843,6 +1978,21 @@ function App() {
                       <td>
                         <span className="pill">{Math.round(item.progress * 100)}%</span>
                       </td>
+                      <td>
+                        <button
+                          type="button"
+                          className="history-icon-btn"
+                          title={`Historique item #${item.itemNumber}`}
+                          aria-label={`Afficher l'historique de l'item ${item.itemNumber}`}
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            setSelectedItem(item.itemNumber)
+                            setHistoryItemId(item.itemNumber)
+                          }}
+                        >
+                          🕘
+                        </button>
+                      </td>
                     </tr>
                   )
                 })}
@@ -1859,11 +2009,16 @@ function App() {
                   <h2>{effectiveSelectedItem.tracking.itemIcon ? `${effectiveSelectedItem.tracking.itemIcon} ` : ''}Item #{effectiveSelectedItem.itemNumber}</h2>
                   <p>{effectiveSelectedItem.shortDescription}</p>
                 </div>
-                {focusMode ? (
-                  <button className="ghost-btn" onClick={nextFocusItem}>
-                    Item focus suivant
+                <div className="detail-head-actions">
+                  <button className="ghost-btn" onClick={() => setHistoryItemId(effectiveSelectedItem.itemNumber)}>
+                    🕘 Historique
                   </button>
-                ) : null}
+                  {focusMode ? (
+                    <button className="ghost-btn" onClick={nextFocusItem}>
+                      Item focus suivant
+                    </button>
+                  ) : null}
+                </div>
               </div>
 
               <div className="meta-grid">
@@ -1945,7 +2100,7 @@ function App() {
                         itemIcon: '⭐️',
                         itemColor: '#facc15',
                         itemLabel: 'Tombe souvent',
-                      })
+                      }, 'Marqueur visuel: ⭐️ Tombe souvent')
                     }
                   >
                     ⭐️
@@ -1960,7 +2115,7 @@ function App() {
                         itemIcon: '⚠️',
                         itemColor: '#ef4444',
                         itemLabel: 'Difficile',
-                      })
+                      }, 'Marqueur visuel: ⚠️ Difficile')
                     }
                   >
                     ⚠️
@@ -1973,7 +2128,7 @@ function App() {
                         itemIcon: '',
                         itemColor: '',
                         itemLabel: '',
-                      })
+                      }, 'Marqueur visuel effacé')
                     }
                   >
                     Effacer marqueur
@@ -2526,6 +2681,34 @@ function App() {
           )}
         </article>
       </section>
+
+      {historyItem ? (
+        <div className="history-modal-backdrop" onClick={() => setHistoryItemId(null)}>
+          <div className="history-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="history-modal-head">
+              <h3>Historique Item #{historyItem.itemNumber}</h3>
+              <button type="button" className="ghost-btn" onClick={() => setHistoryItemId(null)}>
+                Fermer
+              </button>
+            </div>
+            <div className="history-modal-body">
+              {historyItem.tracking.actionLogs.length === 0 ? (
+                <p className="muted">Aucune action enregistrée pour cet item.</p>
+              ) : (
+                historyItem.tracking.actionLogs
+                  .slice()
+                  .reverse()
+                  .map((log, idx) => (
+                    <div key={`${log.at}-${idx}`} className="history-log-row">
+                      <p className="history-log-date">{formatDateTime(log.at)}</p>
+                      <p className="history-log-action">{log.action}</p>
+                    </div>
+                  ))
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <section className="bottom-grid">
         <article className="panel compact-panel">
