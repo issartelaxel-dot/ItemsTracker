@@ -1576,13 +1576,6 @@ function getPasswordStrengthMeta(password: string) {
       }
     })
 
-    if ((result === 'good' || result === 'easy') && quizItem.tracking.quiz.updateProgressOnSuccess) {
-      const firstCollege = quizItem.tracking.assignedColleges[0]
-      if (firstCollege) {
-        handleCollegeReviewDelta(quizItem.itemNumber, firstCollege, 1)
-      }
-    }
-
     window.setTimeout(() => {
       setQuizFeedback((current) => (current === result ? null : current))
     }, 1200)
@@ -2976,36 +2969,33 @@ function getPasswordStrengthMeta(password: string) {
                       </label>
                     </div>
                   ))}
-                <div className="quiz-config-row">
-                  <label className="block-label">
-                    Animation
-                    <select
-                      value={effectiveSelectedItem.tracking.quiz.animationStyle}
-                      onChange={(event) =>
-                        updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
-                          animationStyle: event.target.value as QuizAnimationStyle,
-                        })
-                      }
-                    >
-                      <option value="flip">Flip</option>
-                      <option value="fade">Fade</option>
-                    </select>
-                  </label>
-                  <label className="block-label">
-                    Intensité reward
-                    <select
-                      value={effectiveSelectedItem.tracking.quiz.rewardIntensity}
-                      onChange={(event) =>
-                        updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
-                          rewardIntensity: event.target.value as RewardIntensity,
-                        })
-                      }
-                    >
-                      <option value="low">Low</option>
-                      <option value="medium">Medium</option>
-                      <option value="high">High</option>
-                    </select>
-                  </label>
+                <label className="block-label">
+                  Animation
+                  <select
+                    value={effectiveSelectedItem.tracking.quiz.animationStyle}
+                    onChange={(event) =>
+                      updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
+                        animationStyle: event.target.value as QuizAnimationStyle,
+                      })
+                    }
+                  >
+                    <option value="flip">Flip</option>
+                    <option value="fade">Fade</option>
+                  </select>
+                </label>
+                <div className="quiz-last-result">
+                  <span className="quiz-last-result-label">Dernier niveau</span>
+                  {effectiveSelectedItem.tracking.lastQuizResult ? (
+                    <span className={`quiz-last-result-pill ${effectiveSelectedItem.tracking.lastQuizResult}`}>
+                      {QUIZ_RESULT_META[effectiveSelectedItem.tracking.lastQuizResult].icon}{' '}
+                      {QUIZ_RESULT_META[effectiveSelectedItem.tracking.lastQuizResult].label}
+                    </span>
+                  ) : (
+                    <span className="quiz-last-result-pill none">Non évalué</span>
+                  )}
+                  <span className="quiz-last-result-count">
+                    Quiz faits: {effectiveSelectedItem.tracking.quizCount}
+                  </span>
                 </div>
                 <div className="quiz-config-options">
                   <label className="checkline">
@@ -3027,28 +3017,6 @@ function getPasswordStrengthMeta(password: string) {
                       }
                     />
                     Afficher colleges
-                  </label>
-                  <label className="checkline">
-                    <input
-                      type="checkbox"
-                      checked={effectiveSelectedItem.tracking.quiz.showNotes}
-                      onChange={(event) =>
-                        updateItemQuizConfig(effectiveSelectedItem.itemNumber, { showNotes: event.target.checked })
-                      }
-                    />
-                    Afficher notes utilisateur
-                  </label>
-                  <label className="checkline">
-                    <input
-                      type="checkbox"
-                      checked={effectiveSelectedItem.tracking.quiz.updateProgressOnSuccess}
-                      onChange={(event) =>
-                        updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
-                          updateProgressOnSuccess: event.target.checked,
-                        })
-                      }
-                    />
-                    Mettre à jour la progression après “Bon / Parfait”
                   </label>
                 </div>
               </div>
@@ -3668,11 +3636,6 @@ function getPasswordStrengthMeta(password: string) {
                     <strong>Colleges:</strong> {quizItem.tracking.assignedColleges.join(', ') || 'Aucun'}
                   </p>
                 ) : null}
-                {quizItem.tracking.quiz.showNotes ? (
-                  <p className="quiz-face-meta">
-                    <strong>Notes:</strong> {quizItem.tracking.itemComment.trim() || 'Aucune note'}
-                  </p>
-                ) : null}
               </div>
             </div>
 
@@ -3721,9 +3684,6 @@ function getPasswordStrengthMeta(password: string) {
               </button>
               <button type="button" className="ghost-btn quiz-rate-btn easy" onClick={() => handleQuizResult('easy')}>
                 ⚡ Parfait
-              </button>
-              <button type="button" className="ghost-btn" onClick={closeQuiz}>
-                Close
               </button>
             </div>
 
