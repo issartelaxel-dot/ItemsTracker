@@ -44,10 +44,16 @@ type ReferenceSheet = {
   tracking: CollegeTracking
 }
 
+type QuizCard = {
+  id: string
+  question: string
+  answer: string
+}
+
 type QuizConfig = {
   enabled: boolean
-  customQuestion: string
-  customAnswer: string
+  cards: QuizCard[]
+  activeCardId: string | null
   animationStyle: QuizAnimationStyle
   showTags: boolean
   showColleges: boolean
@@ -234,16 +240,25 @@ function getDefaultCollegeTracking(): CollegeTracking {
 }
 
 function getDefaultQuizConfig(): QuizConfig {
+  const defaultCardId = `quiz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   return {
     enabled: true,
-    customQuestion: '',
-    customAnswer: '',
+    cards: [{ id: defaultCardId, question: '', answer: '' }],
+    activeCardId: defaultCardId,
     animationStyle: 'flip',
     showTags: true,
     showColleges: true,
     showNotes: false,
     rewardIntensity: 'medium',
     updateProgressOnSuccess: false,
+  }
+}
+
+function makeQuizCard(partial?: Partial<QuizCard>): QuizCard {
+  return {
+    id: partial?.id ?? `quiz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    question: partial?.question ?? '',
+    answer: partial?.answer ?? '',
   }
 }
 
@@ -287,6 +302,22 @@ function normalizeItemTracking(tracking?: Partial<ItemTracking>): ItemTracking {
     },
   })
 
+  const rawQuiz = tracking?.quiz as Partial<QuizConfig> & { customQuestion?: unknown; customAnswer?: unknown } | undefined
+  const fallbackCard = makeQuizCard({
+    question: typeof rawQuiz?.customQuestion === 'string' ? rawQuiz.customQuestion : '',
+    answer: typeof rawQuiz?.customAnswer === 'string' ? rawQuiz.customAnswer : '',
+  })
+  const normalizedCards =
+    Array.isArray(rawQuiz?.cards) && rawQuiz.cards.length > 0
+      ? rawQuiz.cards
+          .filter((card) => Boolean(card && typeof card === 'object'))
+          .map((card) => makeQuizCard(card))
+      : [fallbackCard]
+  const normalizedActiveCardId =
+    typeof rawQuiz?.activeCardId === 'string' && normalizedCards.some((card) => card.id === rawQuiz.activeCardId)
+      ? rawQuiz.activeCardId
+      : normalizedCards[0]?.id ?? null
+
   return {
     assignedColleges: tracking?.assignedColleges ?? [],
     byCollege: tracking?.byCollege ?? {},
@@ -304,7 +335,9 @@ function normalizeItemTracking(tracking?: Partial<ItemTracking>): ItemTracking {
     itemLabel: tracking?.itemLabel ?? '',
     quiz: {
       ...getDefaultQuizConfig(),
-      ...(tracking?.quiz ?? {}),
+      ...(rawQuiz ?? {}),
+      cards: normalizedCards,
+      activeCardId: normalizedActiveCardId,
     },
     actionLogs: Array.isArray(tracking?.actionLogs)
       ? tracking.actionLogs
@@ -1246,27 +1279,38 @@ function getPasswordStrengthMeta(password: string) {
     return items.find((item) => item.itemNumber === quizItemId) ?? null
   }, [quizItemId, items])
 
+  const activeQuizCard = useMemo(() => {
+    if (!quizItem) {
+      return null
+    }
+    return (
+      quizItem.tracking.quiz.cards.find((card) => card.id === quizItem.tracking.quiz.activeCardId) ??
+      quizItem.tracking.quiz.cards[0] ??
+      null
+    )
+  }, [quizItem])
+
   const quizQuestion = useMemo(() => {
     if (!quizItem) {
       return ''
     }
-    const custom = quizItem.tracking.quiz.customQuestion.trim()
+    const custom = activeQuizCard?.question.trim() ?? ''
     if (custom) {
       return custom
     }
     return getAutoQuizQuestion(quizItem)
-  }, [quizItem])
+  }, [quizItem, activeQuizCard])
 
   const quizAnswer = useMemo(() => {
     if (!quizItem) {
       return ''
     }
-    const custom = quizItem.tracking.quiz.customAnswer.trim()
+    const custom = activeQuizCard?.answer.trim() ?? ''
     if (custom) {
       return custom
     }
     return quizItem.shortDescription
-  }, [quizItem])
+  }, [quizItem, activeQuizCard])
 
   const globalStats = useMemo(() => {
     const completedCount = items.filter(
@@ -1418,6 +1462,23 @@ function getPasswordStrengthMeta(password: string) {
 
   function closeQuiz() {
     setQuizItemId(null)
+    setQuizSide('front')
+    setQuizFeedback(null)
+  }
+
+  function navigateQuizCard(direction: 'prev' | 'next') {
+    if (!quizItem) {
+      return
+    }
+    const cards = quizItem.tracking.quiz.cards
+    if (cards.length <= 1) {
+      return
+    }
+    const currentIndex = cards.findIndex((card) => card.id === quizItem.tracking.quiz.activeCardId)
+    const safeIndex = currentIndex === -1 ? 0 : currentIndex
+    const nextIndex =
+      direction === 'next' ? (safeIndex + 1) % cards.length : (safeIndex - 1 + cards.length) % cards.length
+    updateItemQuizConfig(quizItem.itemNumber, { activeCardId: cards[nextIndex].id })
     setQuizSide('front')
     setQuizFeedback(null)
   }
@@ -1808,6 +1869,72 @@ function getPasswordStrengthMeta(password: string) {
               ...patch,
             },
             actionLogs: itemTracking.actionLogs,
+          },
+        },
+      }
+    })
+  }
+
+  function addQuizCard(itemNumber: number) {
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      const newCard = makeQuizCard()
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: {
+            ...itemTracking,
+            quiz: {
+              ...itemTracking.quiz,
+              cards: [...itemTracking.quiz.cards, newCard],
+              activeCardId: newCard.id,
+            },
+          },
+        },
+      }
+    })
+  }
+
+  function updateQuizCard(itemNumber: number, cardId: string, patch: Partial<QuizCard>) {
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: {
+            ...itemTracking,
+            quiz: {
+              ...itemTracking.quiz,
+              cards: itemTracking.quiz.cards.map((card) => (card.id === cardId ? { ...card, ...patch } : card)),
+            },
+          },
+        },
+      }
+    })
+  }
+
+  function removeQuizCard(itemNumber: number, cardId: string) {
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      const remaining = itemTracking.quiz.cards.filter((card) => card.id !== cardId)
+      const fallback = remaining.length > 0 ? remaining : [makeQuizCard()]
+      const nextActive = fallback.some((card) => card.id === itemTracking.quiz.activeCardId)
+        ? itemTracking.quiz.activeCardId
+        : fallback[0].id
+
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: {
+            ...itemTracking,
+            quiz: {
+              ...itemTracking.quiz,
+              cards: fallback,
+              activeCardId: nextActive,
+            },
           },
         },
       }
@@ -2661,26 +2788,72 @@ function getPasswordStrengthMeta(password: string) {
                   Activer quiz pour cet item
                 </label>
                 <label className="block-label">
-                  Question custom
-                  <input
-                    type="text"
-                    placeholder="Laisser vide pour question auto..."
-                    value={effectiveSelectedItem.tracking.quiz.customQuestion}
-                    onChange={(event) =>
-                      updateItemQuizConfig(effectiveSelectedItem.itemNumber, { customQuestion: event.target.value })
-                    }
-                  />
+                  Cartes quiz
+                  <div className="quiz-card-list">
+                    {effectiveSelectedItem.tracking.quiz.cards.map((card, index) => (
+                      <div key={card.id} className="quiz-card-row">
+                        <button
+                          type="button"
+                          className={`quiz-card-select ${
+                            effectiveSelectedItem.tracking.quiz.activeCardId === card.id ? 'active' : ''
+                          }`}
+                          onClick={() =>
+                            updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
+                              activeCardId: card.id,
+                            })
+                          }
+                        >
+                          Carte {index + 1}
+                        </button>
+                        <button
+                          type="button"
+                          className="quiz-card-remove"
+                          onClick={() => removeQuizCard(effectiveSelectedItem.itemNumber, card.id)}
+                        >
+                          Suppr
+                        </button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      className="quiz-card-add"
+                      onClick={() => addQuizCard(effectiveSelectedItem.itemNumber)}
+                    >
+                      + Ajouter carte
+                    </button>
+                  </div>
                 </label>
-                <label className="block-label">
-                  Réponse custom
-                  <textarea
-                    placeholder="Laisser vide pour utiliser la description de l'item..."
-                    value={effectiveSelectedItem.tracking.quiz.customAnswer}
-                    onChange={(event) =>
-                      updateItemQuizConfig(effectiveSelectedItem.itemNumber, { customAnswer: event.target.value })
-                    }
-                  />
-                </label>
+                {effectiveSelectedItem.tracking.quiz.cards
+                  .filter((card) => card.id === effectiveSelectedItem.tracking.quiz.activeCardId)
+                  .map((activeCard) => (
+                    <div key={activeCard.id} className="quiz-card-editor">
+                      <label className="block-label">
+                        Question carte active
+                        <input
+                          type="text"
+                          placeholder="Laisser vide pour question auto..."
+                          value={activeCard.question}
+                          onChange={(event) =>
+                            updateQuizCard(effectiveSelectedItem.itemNumber, activeCard.id, {
+                              question: event.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                      <label className="block-label">
+                        Réponse carte active
+                        <textarea
+                          placeholder="Laisser vide pour utiliser la description de l'item..."
+                          value={activeCard.answer}
+                          onChange={(event) =>
+                            updateQuizCard(effectiveSelectedItem.itemNumber, activeCard.id, {
+                              answer: event.target.value,
+                            })
+                          }
+                        />
+                      </label>
+                    </div>
+                  ))}
                 <div className="quiz-config-row">
                   <label className="block-label">
                     Animation
@@ -3302,9 +3475,24 @@ function getPasswordStrengthMeta(password: string) {
           <div className="quiz-modal" onClick={(event) => event.stopPropagation()}>
             <div className="quiz-modal-head">
               <h3>Quiz item #{quizItem.itemNumber}</h3>
-              <button type="button" className="ghost-btn" onClick={closeQuiz}>
-                Close
-              </button>
+              <div className="quiz-head-actions">
+                <span className="quiz-card-counter">
+                  {Math.max(
+                    1,
+                    quizItem.tracking.quiz.cards.findIndex((card) => card.id === quizItem.tracking.quiz.activeCardId) + 1,
+                  )}
+                  /{Math.max(1, quizItem.tracking.quiz.cards.length)}
+                </span>
+                <button type="button" className="ghost-btn" onClick={() => navigateQuizCard('prev')}>
+                  ←
+                </button>
+                <button type="button" className="ghost-btn" onClick={() => navigateQuizCard('next')}>
+                  →
+                </button>
+                <button type="button" className="ghost-btn" onClick={closeQuiz}>
+                  Close
+                </button>
+              </div>
             </div>
 
             <div
