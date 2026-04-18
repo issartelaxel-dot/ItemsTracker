@@ -1137,6 +1137,36 @@ tbody tr.selected {
   text-transform: uppercase;
 }
 
+.auto-mastery-badge {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.16rem 0.5rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.1;
+  background: var(--surface);
+}
+
+.auto-mastery-badge.none {
+  color: var(--muted);
+}
+
+.auto-mastery-badge.mastery-mauvais {
+  background: color-mix(in oklab, #cf3f3f 10%, var(--input-bg));
+}
+
+.auto-mastery-badge.mastery-moyen {
+  background: color-mix(in oklab, #d98d11 12%, var(--input-bg));
+}
+
+.auto-mastery-badge.mastery-bon,
+.auto-mastery-badge.mastery-tres-bon,
+.auto-mastery-badge.mastery-parfait {
+  background: color-mix(in oklab, #00895a 10%, var(--input-bg));
+}
+
 .college-picker {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(225px, 1fr));

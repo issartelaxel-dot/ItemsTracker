@@ -86,6 +86,7 @@ type ItemComputed = ItemBase & {
   totalReviews: number
   progress: number
   lastReviewDate: string | null
+  autoMastery: Mastery | 'Non évalué'
 }
 
 type AuthStatus = 'loading' | 'guest' | 'authed'
@@ -364,6 +365,38 @@ function computeItemProgress(itemTracking: ItemTracking): number {
   }
 
   return average(axes)
+}
+
+function computeItemAutoMastery(itemTracking: ItemTracking): Mastery | 'Non évalué' {
+  const allMasteries: Mastery[] = []
+
+  for (const college of itemTracking.assignedColleges) {
+    const tracking = itemTracking.byCollege[college]
+    if (tracking) {
+      allMasteries.push(tracking.mastery)
+    }
+  }
+
+  for (const sheet of itemTracking.lisaSheets) {
+    allMasteries.push(sheet.tracking.mastery)
+  }
+
+  for (const sheet of itemTracking.platformSheets) {
+    allMasteries.push(sheet.tracking.mastery)
+  }
+
+  if (allMasteries.length === 0) {
+    return 'Non évalué'
+  }
+
+  const total = allMasteries.reduce((sum, mastery) => sum + MASTERY_SCORE[mastery], 0)
+  const average = total / allMasteries.length
+
+  if (average < 0.5) return 'Mauvais'
+  if (average < 1.5) return 'Moyen'
+  if (average < 2.5) return 'Bon'
+  if (average < 3.5) return 'Très bon'
+  return 'Parfait'
 }
 
 function formatDate(dateString: string | null) {
@@ -1066,6 +1099,7 @@ function getPasswordStrengthMeta(password: string) {
         totalReviews,
         progress: computeItemProgress(tracking),
         lastReviewDate,
+        autoMastery: computeItemAutoMastery(tracking),
       }
     })
   }, [trackingState])
@@ -2299,6 +2333,18 @@ function getPasswordStrengthMeta(password: string) {
                 <div>
                   <p className="meta-label">Dernière review</p>
                   <p>{formatDate(effectiveSelectedItem.lastReviewDate)}</p>
+                </div>
+                <div>
+                  <p className="meta-label">Ressenti auto item</p>
+                  <span
+                    className={`auto-mastery-badge ${
+                      effectiveSelectedItem.autoMastery === 'Non évalué'
+                        ? 'none'
+                        : `mastery-${normalizeText(effectiveSelectedItem.autoMastery).toLowerCase().replace(' ', '-')}`
+                    }`}
+                  >
+                    {effectiveSelectedItem.autoMastery}
+                  </span>
                 </div>
               </div>
 
