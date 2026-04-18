@@ -259,11 +259,10 @@ function getDefaultCollegeTracking(): CollegeTracking {
 }
 
 function getDefaultQuizConfig(): QuizConfig {
-  const defaultCardId = `quiz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
   return {
-    enabled: true,
-    cards: [{ id: defaultCardId, question: '', answer: '', lastResult: null, quizCount: 0, lastReviewedAt: null }],
-    activeCardId: defaultCardId,
+    enabled: false,
+    cards: [],
+    activeCardId: null,
     animationStyle: 'flip',
     rewardIntensity: 'medium',
   }
@@ -330,20 +329,16 @@ function normalizeItemTracking(tracking?: Partial<ItemTracking>): ItemTracking {
   })
 
   const rawQuiz = tracking?.quiz as Partial<QuizConfig> & { customQuestion?: unknown; customAnswer?: unknown } | undefined
-  const fallbackCard = makeQuizCard({
-    question: typeof rawQuiz?.customQuestion === 'string' ? rawQuiz.customQuestion : '',
-    answer: typeof rawQuiz?.customAnswer === 'string' ? rawQuiz.customAnswer : '',
-  })
   const normalizedCards =
-    Array.isArray(rawQuiz?.cards) && rawQuiz.cards.length > 0
+    Array.isArray(rawQuiz?.cards)
       ? rawQuiz.cards
           .filter((card) => Boolean(card && typeof card === 'object'))
           .map((card) => makeQuizCard(card))
-      : [fallbackCard]
+      : []
   const normalizedActiveCardId =
     typeof rawQuiz?.activeCardId === 'string' && normalizedCards.some((card) => card.id === rawQuiz.activeCardId)
       ? rawQuiz.activeCardId
-      : normalizedCards[0]?.id ?? null
+      : null
 
   const rawLastQuizResult =
     typeof rawTracking?.lastQuizResult === 'string'
@@ -2036,10 +2031,9 @@ function getPasswordStrengthMeta(password: string) {
     setTrackingState((current) => {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
       const remaining = itemTracking.quiz.cards.filter((card) => card.id !== cardId)
-      const fallback = remaining.length > 0 ? remaining : [makeQuizCard()]
-      const nextActive = fallback.some((card) => card.id === itemTracking.quiz.activeCardId)
+      const nextActive = remaining.some((card) => card.id === itemTracking.quiz.activeCardId)
         ? itemTracking.quiz.activeCardId
-        : fallback[0].id
+        : null
 
       return {
         ...current,
@@ -2049,7 +2043,7 @@ function getPasswordStrengthMeta(password: string) {
             ...itemTracking,
             quiz: {
               ...itemTracking.quiz,
-              cards: fallback,
+              cards: remaining,
               activeCardId: nextActive,
             },
           },
@@ -2740,19 +2734,6 @@ function getPasswordStrengthMeta(password: string) {
                 <div className="detail-head-actions">
                   <button
                     type="button"
-                    className={`quiz-trigger-btn ${quizPulseByItem[effectiveSelectedItem.itemNumber] ? 'pulse' : ''}`}
-                    onClick={() => openQuiz(effectiveSelectedItem.itemNumber)}
-                    disabled={!effectiveSelectedItem.tracking.quiz.enabled}
-                    title={
-                      effectiveSelectedItem.tracking.quiz.enabled
-                        ? "Lancer le quiz de l'item"
-                        : 'Quiz désactivé pour cet item'
-                    }
-                  >
-                    Quiz
-                  </button>
-                  <button
-                    type="button"
                     className="history-icon-btn"
                     title={`Historique item #${effectiveSelectedItem.itemNumber}`}
                     aria-label={`Afficher l'historique de l'item ${effectiveSelectedItem.itemNumber}`}
@@ -2908,7 +2889,22 @@ function getPasswordStrengthMeta(password: string) {
               </div>
 
               <div className="quiz-config-head">
-                <h3>Quiz item</h3>
+                <div className="quiz-config-title-row">
+                  <h3>Quiz item</h3>
+                  <button
+                    type="button"
+                    className={`quiz-trigger-btn ${quizPulseByItem[effectiveSelectedItem.itemNumber] ? 'pulse' : ''}`}
+                    onClick={() => openQuiz(effectiveSelectedItem.itemNumber)}
+                    disabled={!effectiveSelectedItem.tracking.quiz.enabled}
+                    title={
+                      effectiveSelectedItem.tracking.quiz.enabled
+                        ? "Lancer le quiz de l'item"
+                        : 'Quiz désactivé pour cet item'
+                    }
+                  >
+                    Quiz
+                  </button>
+                </div>
                 <button
                   type="button"
                   className={`ghost-btn quiz-config-toggle ${quizConfigExpanded ? 'open' : ''}`}

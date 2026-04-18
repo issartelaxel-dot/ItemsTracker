@@ -1708,6 +1708,12 @@ tbody tr.selected {
   margin: 0;
 }
 
+.quiz-config-title-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .quiz-config-toggle {
   min-width: 32px;
   width: 32px;
