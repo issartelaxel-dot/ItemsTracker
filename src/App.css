@@ -847,21 +847,10 @@ h3 {
   grid-template-columns: 1.15fr 0.85fr;
   gap: 1rem;
   min-height: 62vh;
-  align-items: stretch;
-}
-
-.main-grid > .panel {
-  min-height: 0;
 }
 
 .panel {
   padding: 0.9rem;
-}
-
-.table-panel {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr);
-  min-height: 0;
 }
 
 .panel-head {
@@ -932,8 +921,7 @@ textarea {
 
 .table-wrap {
   overflow: auto;
-  height: 100%;
-  min-height: 0;
+  max-height: 58vh;
   border: 1px solid var(--border);
   border-radius: 12px;
 }
