@@ -1504,16 +1504,27 @@ function getPasswordStrengthMeta(password: string) {
     }, 360)
   }
 
-  function openQuiz(itemNumber: number) {
+  function openQuiz(itemNumber: number, cardId?: string) {
     const item = items.find((entry) => entry.itemNumber === itemNumber)
     if (!item || !item.tracking.quiz.enabled) {
       return
+    }
+    if (cardId && item.tracking.quiz.activeCardId !== cardId) {
+      updateItemQuizConfig(itemNumber, { activeCardId: cardId })
     }
     triggerQuizButtonPulse(itemNumber)
     setQuizItemId(itemNumber)
     setQuizSide('front')
     setQuizFeedback(null)
     setQuizEditMode(false)
+  }
+
+  function getQuizCardButtonLabel(card: QuizCard, index: number) {
+    const question = card.question.trim()
+    if (!question) {
+      return `Carte ${index + 1}`
+    }
+    return question.length > 35 ? `${question.slice(0, 35)}...` : question
   }
 
   function closeQuiz() {
@@ -2937,13 +2948,19 @@ function getPasswordStrengthMeta(password: string) {
                           className={`quiz-card-select ${
                             effectiveSelectedItem.tracking.quiz.activeCardId === card.id ? 'active' : ''
                           }`}
-                          onClick={() =>
+                          title={card.question.trim() || `Carte ${index + 1}`}
+                          onClick={() => {
+                            setQuizSide('front')
+                            setQuizEditMode(true)
                             updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
                               activeCardId: card.id,
                             })
-                          }
+                            if (effectiveSelectedItem.tracking.quiz.enabled) {
+                              openQuiz(effectiveSelectedItem.itemNumber, card.id)
+                            }
+                          }}
                         >
-                          Carte {index + 1}
+                          {getQuizCardButtonLabel(card, index)}
                         </button>
                         <span
                           className={`quiz-card-level-pill ${card.lastResult ?? 'none'}`}
