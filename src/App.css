@@ -1073,12 +1073,7 @@ h3 {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.6rem;
-  align-items: start;
-}
-
-.global-grid > .stat-card {
-  align-self: start;
-  margin: 0;
+  align-items: stretch;
 }
 
 .stat-card {
