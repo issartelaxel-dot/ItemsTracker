@@ -20,16 +20,17 @@
 }
 
 :root[data-theme='dark'] {
-  --bg: #0f1820;
-  --panel-bg: #13202a;
-  --surface: #223341;
-  --surface-soft: #182733;
-  --selected: #263a4a;
-  --input-bg: #0f1820;
-  --text: #e7f1f7;
-  --muted: #9db4c7;
-  --border: #304656;
-  --accent: #2eb6ff;
+  --bg: #020d2d;
+  --panel-bg: #03173f;
+  --surface: #031134;
+  --surface-soft: #041b49;
+  --selected: #0b2b63;
+  --input-bg: #021331;
+  --text: #e7f1ff;
+  --muted: #9db1d0;
+  --border: #1a4d83;
+  --accent: #4f8fff;
+  background: radial-gradient(circle at top left, #0a2a66 0%, #03143c 35%, #020d2d 100%);
 }
 
 * {
