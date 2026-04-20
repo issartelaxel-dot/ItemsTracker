@@ -2427,20 +2427,32 @@ function getPasswordStrengthMeta(password: string) {
         </label>
         <nav className="sidebar-nav">
           <button type="button" className="sidebar-nav-item" onClick={() => scrollToSection('dashboard-overview')}>
-            Dashboard
+            <span className="sidebar-nav-icon" aria-hidden="true">
+              ⌂
+            </span>
+            <span>Dashboard</span>
           </button>
           <button
             type="button"
             className="sidebar-nav-item active"
             onClick={() => scrollToSection('items-section')}
           >
-            Items
+            <span className="sidebar-nav-icon" aria-hidden="true">
+              ☑
+            </span>
+            <span>Items</span>
           </button>
           <button type="button" className="sidebar-nav-item" onClick={() => scrollToSection('flashcards-section')}>
-            FlashCards
+            <span className="sidebar-nav-icon" aria-hidden="true">
+              ▤
+            </span>
+            <span>FlashCards</span>
           </button>
           <button type="button" className="sidebar-nav-item" onClick={() => scrollToSection('stats-section')}>
-            Stats
+            <span className="sidebar-nav-icon" aria-hidden="true">
+              ◔
+            </span>
+            <span>Stats</span>
           </button>
         </nav>
         <div className="sidebar-footer">
