@@ -689,6 +689,7 @@ function App() {
   const [flashGeneratedIndex, setFlashGeneratedIndex] = useState(0)
   const [flashGeneratedSide, setFlashGeneratedSide] = useState<'front' | 'back'>('front')
   const [flashGeneratedFeedback, setFlashGeneratedFeedback] = useState<QuizResult | null>(null)
+  const [flashGeneratedSessionResults, setFlashGeneratedSessionResults] = useState<Record<string, QuizResult>>({})
   const [flashIndex, setFlashIndex] = useState(0)
   const [flashSide, setFlashSide] = useState<'front' | 'back'>('front')
   const [flashFeedback, setFlashFeedback] = useState<QuizResult | null>(null)
@@ -1501,6 +1502,32 @@ function getPasswordStrengthMeta(password: string) {
 
   const activeGlobalFlashcard = filteredFlashcards[flashIndex] ?? null
   const activeGeneratedFlashcard = generatedFlashcards[flashGeneratedIndex] ?? null
+  const activeGeneratedKey = activeGeneratedFlashcard
+    ? `${activeGeneratedFlashcard.itemNumber}:${activeGeneratedFlashcard.cardId}`
+    : null
+
+  const generatedRecap = useMemo(() => {
+    const success: GlobalFlashcard[] = []
+    const toReview: GlobalFlashcard[] = []
+    for (const card of generatedFlashcards) {
+      const key = `${card.itemNumber}:${card.cardId}`
+      const result = flashGeneratedSessionResults[key]
+      if (result === 'good' || result === 'easy') {
+        success.push(card)
+      } else if (result === 'again' || result === 'hard') {
+        toReview.push(card)
+      }
+    }
+    const score = generatedFlashcards.length === 0 ? 0 : Math.round((success.length / generatedFlashcards.length) * 100)
+    return {
+      success,
+      toReview,
+      answered: success.length + toReview.length,
+      total: generatedFlashcards.length,
+      score,
+      completed: generatedFlashcards.length > 0 && success.length + toReview.length >= generatedFlashcards.length,
+    }
+  }, [generatedFlashcards, flashGeneratedSessionResults])
 
   const flashSessionStats = useMemo(() => {
     const reviewed = filteredFlashcards.filter((card) => card.quizCount > 0).length
@@ -1536,6 +1563,15 @@ function getPasswordStrengthMeta(password: string) {
       setFlashGeneratedIndex(generatedFlashcards.length - 1)
     }
   }, [generatedFlashcards.length, flashGeneratedIndex])
+
+  useEffect(() => {
+    if (!flashGeneratorModalOpen || flashGeneratorStep !== 3) {
+      return
+    }
+    if (generatedRecap.completed) {
+      setFlashGeneratorStep(4)
+    }
+  }, [flashGeneratorModalOpen, flashGeneratorStep, generatedRecap.completed])
 
   useEffect(() => {
     if (activeView !== 'flashcards' || flashGeneratorModalOpen) {
@@ -1855,10 +1891,11 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   function handleGeneratedFlashResult(result: QuizResult) {
-    if (!activeGeneratedFlashcard) {
+    if (!activeGeneratedFlashcard || !activeGeneratedKey) {
       return
     }
     applyQuizResultToCard(activeGeneratedFlashcard.itemNumber, activeGeneratedFlashcard.cardId, result)
+    setFlashGeneratedSessionResults((current) => ({ ...current, [activeGeneratedKey]: result }))
     setFlashGeneratedFeedback(result)
     window.setTimeout(() => {
       setFlashGeneratedFeedback((current) => (current === result ? null : current))
@@ -1937,6 +1974,7 @@ function getPasswordStrengthMeta(password: string) {
     setFlashGeneratedIndex(0)
     setFlashGeneratedSide('front')
     setFlashGeneratedFeedback(null)
+    setFlashGeneratedSessionResults({})
   }
 
   function triggerReviewFx(key: string, delta: number) {
@@ -4299,7 +4337,7 @@ function getPasswordStrengthMeta(password: string) {
               <div className="flash-generator-modal" role="dialog" aria-modal="true" aria-label="Quiz Generator" onClick={(event) => event.stopPropagation()}>
                 <div className="flash-generator-modal-head">
                   <h3>Quiz Generator</h3>
-                  <p>Étape {flashGeneratorStep}/3</p>
+                  <p>Étape {flashGeneratorStep}/4</p>
                   <button type="button" className="ghost-btn" onClick={() => setFlashGeneratorModalOpen(false)}>
                     Fermer
                   </button>
@@ -4509,6 +4547,48 @@ function getPasswordStrengthMeta(password: string) {
                   </div>
                 ) : null}
 
+                {flashGeneratorStep === 4 ? (
+                  <div className="flash-generator-step flash-generator-recap">
+                    <p className="flash-generator-step-title">Récapitulatif de session</p>
+                    <div className="flash-generator-recap-score">
+                      <strong>{generatedRecap.score}%</strong>
+                      <span>
+                        {generatedRecap.success.length}/{generatedRecap.total} réussites
+                      </span>
+                    </div>
+                    <div className="flash-generator-recap-grid">
+                      <div className="flash-generator-recap-list">
+                        <h4>Questions réussies</h4>
+                        {generatedRecap.success.length === 0 ? (
+                          <p className="muted">Aucune pour le moment.</p>
+                        ) : (
+                          <ul>
+                            {generatedRecap.success.map((card, index) => (
+                              <li key={`recap-success-${card.itemNumber}-${card.cardId}`} style={{ animationDelay: `${index * 35}ms` }}>
+                                Item #{card.itemNumber} - {card.question}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                      <div className="flash-generator-recap-list">
+                        <h4>Questions à revoir</h4>
+                        {generatedRecap.toReview.length === 0 ? (
+                          <p className="muted">Excellent, rien à revoir.</p>
+                        ) : (
+                          <ul>
+                            {generatedRecap.toReview.map((card, index) => (
+                              <li key={`recap-review-${card.itemNumber}-${card.cardId}`} style={{ animationDelay: `${index * 35}ms` }}>
+                                Item #{card.itemNumber} - {card.question}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
                 <div className="flash-generator-modal-nav">
                   <button
                     type="button"
@@ -4521,8 +4601,13 @@ function getPasswordStrengthMeta(password: string) {
                   <button
                     type="button"
                     className="ghost-btn"
-                    onClick={() => setFlashGeneratorStep((current) => Math.min(3, current + 1))}
-                    disabled={(flashGeneratorStep === 1 && !isFlashStepOneValid) || (flashGeneratorStep === 2 && !isFlashStepTwoValid) || flashGeneratorStep === 3}
+                    onClick={() => setFlashGeneratorStep((current) => Math.min(4, current + 1))}
+                    disabled={
+                      (flashGeneratorStep === 1 && !isFlashStepOneValid) ||
+                      (flashGeneratorStep === 2 && !isFlashStepTwoValid) ||
+                      (flashGeneratorStep === 3 && !generatedRecap.completed) ||
+                      flashGeneratorStep === 4
+                    }
                   >
                     Suivant
                   </button>
