@@ -669,6 +669,9 @@ function App() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [flashGeneratorScope, setFlashGeneratorScope] = useState<FlashGeneratorScope>('items')
+  const [flashCollegeFilter, setFlashCollegeFilter] = useState<string>('ALL')
+  const [flashItemFilter, setFlashItemFilter] = useState<string>('ALL')
+  const [flashResultFilter, setFlashResultFilter] = useState<'ALL' | QuizResult>('ALL')
   const [flashSelectedItems, setFlashSelectedItems] = useState<number[]>(() => rawItems.map((item) => item.itemNumber))
   const [flashSelectedColleges, setFlashSelectedColleges] = useState<string[]>(() => [...COLLEGES])
   const [flashSelectedFeelings, setFlashSelectedFeelings] = useState<FlashFeelingFilter[]>([
@@ -680,9 +683,12 @@ function App() {
   ])
   const [flashPrioritizeWeak, setFlashPrioritizeWeak] = useState(false)
   const [flashQuestionCount, setFlashQuestionCount] = useState(20)
-  const [flashSessionCardKeys, setFlashSessionCardKeys] = useState<string[]>([])
+  const [flashGeneratedCardKeys, setFlashGeneratedCardKeys] = useState<string[]>([])
   const [flashGeneratorModalOpen, setFlashGeneratorModalOpen] = useState(false)
   const [flashGeneratorStep, setFlashGeneratorStep] = useState(1)
+  const [flashGeneratedIndex, setFlashGeneratedIndex] = useState(0)
+  const [flashGeneratedSide, setFlashGeneratedSide] = useState<'front' | 'back'>('front')
+  const [flashGeneratedFeedback, setFlashGeneratedFeedback] = useState<QuizResult | null>(null)
   const [flashIndex, setFlashIndex] = useState(0)
   const [flashSide, setFlashSide] = useState<'front' | 'back'>('front')
   const [flashFeedback, setFlashFeedback] = useState<QuizResult | null>(null)
@@ -1472,39 +1478,64 @@ function getPasswordStrengthMeta(password: string) {
     return new Map(allFlashcards.map((card) => [`${card.itemNumber}:${card.cardId}`, card]))
   }, [allFlashcards])
 
-  const sessionFlashcards = useMemo<GlobalFlashcard[]>(() => {
-    if (flashSessionCardKeys.length === 0) {
-      return allFlashcards
-    }
-    return flashSessionCardKeys
+  const filteredFlashcards = useMemo<GlobalFlashcard[]>(() => {
+    return allFlashcards.filter((entry) => {
+      if (flashCollegeFilter !== 'ALL' && !entry.colleges.includes(flashCollegeFilter)) {
+        return false
+      }
+      if (flashItemFilter !== 'ALL' && entry.itemNumber !== Number(flashItemFilter)) {
+        return false
+      }
+      if (flashResultFilter !== 'ALL' && entry.lastResult !== flashResultFilter) {
+        return false
+      }
+      return true
+    })
+  }, [allFlashcards, flashCollegeFilter, flashItemFilter, flashResultFilter])
+
+  const generatedFlashcards = useMemo<GlobalFlashcard[]>(() => {
+    return flashGeneratedCardKeys
       .map((key) => flashcardsByKey.get(key) ?? null)
       .filter((card): card is GlobalFlashcard => card !== null)
-  }, [allFlashcards, flashcardsByKey, flashSessionCardKeys])
+  }, [flashcardsByKey, flashGeneratedCardKeys])
 
-  const activeGlobalFlashcard = sessionFlashcards[flashIndex] ?? null
+  const activeGlobalFlashcard = filteredFlashcards[flashIndex] ?? null
+  const activeGeneratedFlashcard = generatedFlashcards[flashGeneratedIndex] ?? null
 
   const flashSessionStats = useMemo(() => {
-    const reviewed = sessionFlashcards.filter((card) => card.quizCount > 0).length
-    const difficult = sessionFlashcards.filter((card) => card.lastResult === 'again' || card.lastResult === 'hard').length
-    const good = sessionFlashcards.filter((card) => card.lastResult === 'good' || card.lastResult === 'easy').length
-    const completion = sessionFlashcards.length === 0 ? 0 : Math.round((reviewed / sessionFlashcards.length) * 100)
+    const reviewed = filteredFlashcards.filter((card) => card.quizCount > 0).length
+    const difficult = filteredFlashcards.filter((card) => card.lastResult === 'again' || card.lastResult === 'hard').length
+    const good = filteredFlashcards.filter((card) => card.lastResult === 'good' || card.lastResult === 'easy').length
+    const completion = filteredFlashcards.length === 0 ? 0 : Math.round((reviewed / filteredFlashcards.length) * 100)
     return { reviewed, difficult, good, completion }
-  }, [sessionFlashcards])
+  }, [filteredFlashcards])
 
   useEffect(() => {
-    if (sessionFlashcards.length === 0) {
+    if (filteredFlashcards.length === 0) {
       setFlashIndex(0)
       return
     }
-    if (flashIndex >= sessionFlashcards.length) {
-      setFlashIndex(sessionFlashcards.length - 1)
+    if (flashIndex >= filteredFlashcards.length) {
+      setFlashIndex(filteredFlashcards.length - 1)
     }
-  }, [sessionFlashcards.length, flashIndex])
+  }, [filteredFlashcards.length, flashIndex])
 
   useEffect(() => {
     setFlashSide('front')
     setFlashFeedback(null)
-  }, [flashIndex, flashSessionCardKeys])
+  }, [flashIndex, flashCollegeFilter, flashItemFilter, flashResultFilter])
+
+  useEffect(() => {
+    if (generatedFlashcards.length === 0) {
+      setFlashGeneratedIndex(0)
+      setFlashGeneratedSide('front')
+      setFlashGeneratedFeedback(null)
+      return
+    }
+    if (flashGeneratedIndex >= generatedFlashcards.length) {
+      setFlashGeneratedIndex(generatedFlashcards.length - 1)
+    }
+  }, [generatedFlashcards.length, flashGeneratedIndex])
 
   useEffect(() => {
     if (activeView !== 'flashcards' || flashGeneratorModalOpen) {
@@ -1526,14 +1557,14 @@ function getPasswordStrengthMeta(password: string) {
       } else if (event.key === '4') {
         handleGlobalFlashResult('easy')
       } else if (event.key === 'ArrowLeft') {
-        setFlashIndex((current) => (current - 1 + sessionFlashcards.length) % sessionFlashcards.length)
+        setFlashIndex((current) => (current - 1 + filteredFlashcards.length) % filteredFlashcards.length)
       } else if (event.key === 'ArrowRight') {
-        setFlashIndex((current) => (current + 1) % sessionFlashcards.length)
+        setFlashIndex((current) => (current + 1) % filteredFlashcards.length)
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [activeView, activeGlobalFlashcard, sessionFlashcards.length, flashGeneratorModalOpen])
+  }, [activeView, activeGlobalFlashcard, filteredFlashcards.length, flashGeneratorModalOpen])
 
   const globalStats = useMemo(() => {
     const completedCount = items.filter(
@@ -1814,13 +1845,31 @@ function getPasswordStrengthMeta(password: string) {
     window.setTimeout(() => {
       setFlashFeedback((current) => (current === result ? null : current))
       setFlashIndex((current) => {
-        if (sessionFlashcards.length <= 1) {
+        if (filteredFlashcards.length <= 1) {
           return 0
         }
-        return (current + 1) % sessionFlashcards.length
+        return (current + 1) % filteredFlashcards.length
       })
       setFlashSide('front')
     }, 450)
+  }
+
+  function handleGeneratedFlashResult(result: QuizResult) {
+    if (!activeGeneratedFlashcard) {
+      return
+    }
+    applyQuizResultToCard(activeGeneratedFlashcard.itemNumber, activeGeneratedFlashcard.cardId, result)
+    setFlashGeneratedFeedback(result)
+    window.setTimeout(() => {
+      setFlashGeneratedFeedback((current) => (current === result ? null : current))
+      setFlashGeneratedIndex((current) => {
+        if (generatedFlashcards.length <= 1) {
+          return 0
+        }
+        return (current + 1) % generatedFlashcards.length
+      })
+      setFlashGeneratedSide('front')
+    }, 420)
   }
 
   function jumpToQuizGeneratorSetup() {
@@ -1884,12 +1933,10 @@ function getPasswordStrengthMeta(password: string) {
     const selected = ranked.slice(0, safeCount)
     const keys = selected.map((card) => `${card.itemNumber}:${card.cardId}`)
 
-    setFlashSessionCardKeys(keys)
-    setFlashIndex(0)
-    setFlashSide('front')
-    setFlashFeedback(null)
-    setFlashGeneratorModalOpen(false)
-    setFlashGeneratorStep(1)
+    setFlashGeneratedCardKeys(keys)
+    setFlashGeneratedIndex(0)
+    setFlashGeneratedSide('front')
+    setFlashGeneratedFeedback(null)
   }
 
   function triggerReviewFx(key: string, delta: number) {
@@ -4200,7 +4247,7 @@ function getPasswordStrengthMeta(password: string) {
         <section id="flashcards-section" className="panel flashcards-page">
           <div className="panel-head">
             <h2>FlashCards</h2>
-            <p>{sessionFlashcards.length} cartes</p>
+            <p>{filteredFlashcards.length} cartes</p>
           </div>
           <div className="flashcards-generator-callout">
             <div className="flashcards-generator-copy">
@@ -4221,6 +4268,31 @@ function getPasswordStrengthMeta(password: string) {
             <span>Scope: {flashGeneratorScope === 'items' ? `${flashSelectedItems.length} items` : `${flashSelectedColleges.length} colleges`}</span>
             <span>Ressentis: {flashSelectedFeelings.length}</span>
             <span>Questions: {flashQuestionCount}</span>
+          </div>
+          <div className="filters-row flashcards-filters">
+            <select value={flashCollegeFilter} onChange={(event) => setFlashCollegeFilter(event.target.value)}>
+              <option value="ALL">Tous colleges</option>
+              {COLLEGES.map((college) => (
+                <option key={college} value={college}>
+                  {college}
+                </option>
+              ))}
+            </select>
+            <select value={flashItemFilter} onChange={(event) => setFlashItemFilter(event.target.value)}>
+              <option value="ALL">Tous items</option>
+              {items.map((item) => (
+                <option key={item.itemNumber} value={String(item.itemNumber)}>
+                  Item #{item.itemNumber}
+                </option>
+              ))}
+            </select>
+            <select value={flashResultFilter} onChange={(event) => setFlashResultFilter(event.target.value as 'ALL' | QuizResult)}>
+              <option value="ALL">Tous ressentis</option>
+              <option value="again">Revoir</option>
+              <option value="hard">Difficile</option>
+              <option value="good">Bon</option>
+              <option value="easy">Parfait</option>
+            </select>
           </div>
           {flashGeneratorModalOpen ? (
             <div className="flash-generator-modal-overlay" role="presentation" onClick={() => setFlashGeneratorModalOpen(false)}>
@@ -4364,6 +4436,76 @@ function getPasswordStrengthMeta(password: string) {
                         Generer quiz
                       </button>
                     </div>
+                    {generatedFlashcards.length > 0 && activeGeneratedFlashcard ? (
+                      <>
+                        <div className="flashcards-session-head">
+                          <p>
+                            Item #{activeGeneratedFlashcard.itemNumber} • {flashGeneratedIndex + 1}/{generatedFlashcards.length}
+                          </p>
+                          <p className="muted">
+                            Ressenti actuel:{' '}
+                            {activeGeneratedFlashcard.lastResult ? QUIZ_RESULT_META[activeGeneratedFlashcard.lastResult].label : 'Non evalue'}
+                          </p>
+                          <div className="flashcards-session-nav">
+                            <button
+                              type="button"
+                              className="ghost-btn"
+                              onClick={() =>
+                                setFlashGeneratedIndex(
+                                  (current) => (current - 1 + generatedFlashcards.length) % generatedFlashcards.length,
+                                )
+                              }
+                            >
+                              ←
+                            </button>
+                            <button
+                              type="button"
+                              className="ghost-btn"
+                              onClick={() => setFlashGeneratedIndex((current) => (current + 1) % generatedFlashcards.length)}
+                            >
+                              →
+                            </button>
+                          </div>
+                        </div>
+                        <div
+                          className={`quiz-flashcard flip ${flashGeneratedSide === 'back' ? 'is-back' : 'is-front'}`}
+                          onClick={() => setFlashGeneratedSide((current) => (current === 'front' ? 'back' : 'front'))}
+                        >
+                          <div className="quiz-face quiz-front">
+                            <p className="quiz-face-label">Question</p>
+                            <p className="quiz-face-content">{activeGeneratedFlashcard.question}</p>
+                          </div>
+                          <div className="quiz-face quiz-back">
+                            <p className="quiz-face-label">Réponse</p>
+                            <p className="quiz-face-content">{activeGeneratedFlashcard.answer}</p>
+                          </div>
+                        </div>
+                        <div className="quiz-actions">
+                          <button type="button" className="ghost-btn" onClick={() => setFlashGeneratedSide((current) => (current === 'front' ? 'back' : 'front'))}>
+                            Flip
+                          </button>
+                          <button type="button" className="ghost-btn quiz-rate-btn again" onClick={() => handleGeneratedFlashResult('again')}>
+                            ❌ Revoir
+                          </button>
+                          <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleGeneratedFlashResult('hard')}>
+                            ⚠️ Difficile
+                          </button>
+                          <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleGeneratedFlashResult('good')}>
+                            ✅ Bon
+                          </button>
+                          <button type="button" className="ghost-btn quiz-rate-btn easy" onClick={() => handleGeneratedFlashResult('easy')}>
+                            ⚡ Parfait
+                          </button>
+                        </div>
+                        {flashGeneratedFeedback ? (
+                          <div className={`quiz-feedback ${flashGeneratedFeedback} reward-medium`}>
+                            <span className="quiz-feedback-main">
+                              {QUIZ_RESULT_META[flashGeneratedFeedback].icon} {QUIZ_RESULT_META[flashGeneratedFeedback].label}
+                            </span>
+                          </div>
+                        ) : null}
+                      </>
+                    ) : null}
                   </div>
                 ) : null}
 
@@ -4399,7 +4541,7 @@ function getPasswordStrengthMeta(password: string) {
             <>
               <div className="flashcards-session-head">
                 <p>
-                  Item #{activeGlobalFlashcard.itemNumber} • {flashIndex + 1}/{sessionFlashcards.length}
+                  Item #{activeGlobalFlashcard.itemNumber} • {flashIndex + 1}/{filteredFlashcards.length}
                 </p>
                 <p className="muted">
                   Ressenti actuel:{' '}
@@ -4409,14 +4551,14 @@ function getPasswordStrengthMeta(password: string) {
                   <button
                     type="button"
                     className="ghost-btn"
-                    onClick={() => setFlashIndex((current) => (current - 1 + sessionFlashcards.length) % sessionFlashcards.length)}
+                    onClick={() => setFlashIndex((current) => (current - 1 + filteredFlashcards.length) % filteredFlashcards.length)}
                   >
                     ←
                   </button>
                   <button
                     type="button"
                     className="ghost-btn"
-                    onClick={() => setFlashIndex((current) => (current + 1) % sessionFlashcards.length)}
+                    onClick={() => setFlashIndex((current) => (current + 1) % filteredFlashcards.length)}
                   >
                     →
                   </button>
