@@ -1138,14 +1138,14 @@ h3 {
 
 .main-grid {
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
   gap: 1rem;
   min-height: 62vh;
   transition: grid-template-columns 0.24s ease;
 }
 
 .main-grid.full-table {
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0fr);
 }
 
 .table-panel.full-width {
@@ -1153,7 +1153,16 @@ h3 {
 }
 
 .detail-panel {
+  min-width: 0;
+  overflow: hidden;
   animation: detail-panel-enter 0.26s ease both;
+}
+
+.detail-panel.is-closed {
+  padding: 0;
+  border-width: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .panel {

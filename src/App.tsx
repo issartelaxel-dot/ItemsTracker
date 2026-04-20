@@ -2814,8 +2814,8 @@ function getPasswordStrengthMeta(password: string) {
           </div>
         </article>
 
-        {effectiveSelectedItem ? (
-          <article className="panel detail-panel">
+        <article className={`panel detail-panel ${effectiveSelectedItem ? 'is-open' : 'is-closed'}`}>
+          {effectiveSelectedItem ? (
             <>
               <div className="panel-head">
                 <div>
@@ -3663,8 +3663,8 @@ function getPasswordStrengthMeta(password: string) {
                 </button>
               </div>
             </>
-          </article>
-        ) : null}
+          ) : null}
+        </article>
       </section>
 
       {historyItem ? (
