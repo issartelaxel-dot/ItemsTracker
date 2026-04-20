@@ -1,7 +1,147 @@
+.dashboard-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 0.9rem;
+  min-height: 100dvh;
+  padding: clamp(0.5rem, 1.4vw, 0.95rem);
+}
+
 .dashboard-shell {
   display: grid;
   gap: 1rem;
-  padding: clamp(0.6rem, 2vw, 1rem);
+  padding: 0;
+  align-content: start;
+}
+
+.dashboard-sidebar {
+  position: sticky;
+  top: 0.75rem;
+  height: calc(100dvh - 1.5rem);
+  border-radius: 18px;
+  border: 1px solid rgba(150, 188, 255, 0.42);
+  background:
+    radial-gradient(85% 70% at 72% 88%, rgba(89, 126, 242, 0.8), transparent 72%),
+    radial-gradient(95% 80% at 20% 8%, rgba(68, 108, 223, 0.72), transparent 74%),
+    linear-gradient(165deg, #1a2f6f 0%, #24408b 42%, #224eb6 100%);
+  box-shadow: inset 0 1px 0 rgba(223, 234, 255, 0.2), 0 16px 42px rgba(4, 18, 48, 0.42);
+  padding: 0.85rem 0.8rem;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  color: #eaf2ff;
+}
+
+.sidebar-head {
+  margin-bottom: 0.7rem;
+}
+
+.sidebar-grade {
+  margin: 0;
+  font-size: 1.04rem;
+  font-weight: 700;
+}
+
+.sidebar-title {
+  margin: 0.2rem 0 0;
+  color: rgba(224, 237, 255, 0.8);
+  font-size: 0.85rem;
+}
+
+.sidebar-search {
+  margin-bottom: 0.75rem;
+}
+
+.sidebar-search input {
+  width: 100%;
+  border-radius: 11px;
+  border: 1px solid rgba(164, 198, 255, 0.34);
+  background: rgba(12, 34, 82, 0.58);
+  color: #eff6ff;
+}
+
+.sidebar-search input::placeholder {
+  color: rgba(220, 236, 255, 0.72);
+}
+
+.sidebar-nav {
+  display: grid;
+  gap: 0.36rem;
+  align-content: start;
+}
+
+.sidebar-nav-item {
+  border: 0;
+  border-radius: 11px;
+  color: rgba(233, 243, 255, 0.9);
+  background: transparent;
+  text-align: left;
+  padding: 0.55rem 0.65rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.sidebar-nav-item:hover {
+  background: rgba(167, 195, 255, 0.16);
+}
+
+.sidebar-nav-item.active {
+  background: rgba(153, 186, 255, 0.26);
+  box-shadow: inset 0 0 0 1px rgba(189, 210, 255, 0.34);
+}
+
+.sidebar-footer {
+  display: grid;
+  gap: 0.58rem;
+  align-content: end;
+}
+
+.sidebar-settings-btn {
+  width: 100%;
+  border-color: rgba(172, 199, 255, 0.42);
+  background: rgba(24, 48, 104, 0.54);
+  color: #e9f3ff;
+}
+
+.sidebar-profile-wrap {
+  position: relative;
+}
+
+.sidebar-profile-trigger {
+  width: 100%;
+  border: 1px solid rgba(170, 200, 255, 0.32);
+  border-radius: 12px;
+  background: rgba(18, 41, 94, 0.42);
+  color: #f2f7ff;
+  display: flex;
+  align-items: center;
+  gap: 0.58rem;
+  padding: 0.45rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.sidebar-profile-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  object-fit: cover;
+  flex: none;
+}
+
+.sidebar-profile-trigger span {
+  display: grid;
+  min-width: 0;
+}
+
+.sidebar-profile-trigger strong,
+.sidebar-profile-trigger small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-profile-trigger small {
+  color: rgba(219, 234, 255, 0.74);
+  font-size: 0.72rem;
 }
 
 .auth-shell {
@@ -368,42 +508,18 @@
 
 .topbar {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 1rem;
-  padding: 1.05rem 1.15rem;
+  padding: 0.25rem 0;
   align-items: center;
-  position: relative;
-  overflow: visible;
-  border-radius: 15px;
-  border-color: #b8c9de;
-  background:
-    radial-gradient(55% 130% at -10% 100%, rgba(92, 145, 255, 0.55), transparent 62%),
-    linear-gradient(100deg, #5b87e5 0%, #7fa4ed 38%, #cfdaf0 72%, #ffffff 100%);
-  background-size: 160% 160%;
-  animation: topbar-gradient-shift 16s ease-in-out infinite;
-  box-shadow:
-    0 16px 30px rgba(42, 81, 145, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.22);
-}
-
-:root[data-theme='dark'] .topbar {
-  border-color: #2d4664;
-  background:
-    radial-gradient(55% 130% at -10% 100%, rgba(72, 128, 255, 0.34), transparent 62%),
-    linear-gradient(102deg, #1c2f4d 0%, #233f66 40%, #2f4967 72%, #445568 100%);
-  box-shadow:
-    0 18px 34px rgba(3, 9, 16, 0.56),
-    inset 0 1px 0 rgba(198, 224, 255, 0.08);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
 }
 
 .topbar::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(112deg, transparent 30%, rgba(255, 255, 255, 0.22) 50%, transparent 70%);
-  transform: translateX(-120%);
-  animation: topbar-sheen 9s ease-in-out infinite;
-  pointer-events: none;
+  display: none;
 }
 
 .eyebrow {
@@ -450,8 +566,6 @@ h3 {
   flex-wrap: nowrap;
   gap: 0.45rem;
   align-items: center;
-  position: relative;
-  z-index: 1;
 }
 
 .save-popup {
@@ -494,6 +608,16 @@ h3 {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.12);
   padding: 0.6rem;
   z-index: 12;
+}
+
+.dashboard-sidebar .menu-popover {
+  left: 0;
+  right: auto;
+}
+
+.sidebar-profile-wrap .menu-popover {
+  top: auto;
+  bottom: calc(100% + 0.35rem);
 }
 
 .menu-popover input,
@@ -876,7 +1000,7 @@ h3 {
 
 .filters-row {
   display: grid;
-  grid-template-columns: minmax(200px, 2fr) repeat(3, minmax(100px, 1fr)) auto;
+  grid-template-columns: repeat(4, minmax(100px, 1fr));
   gap: 0.5rem;
   margin-bottom: 0.8rem;
 }
@@ -2658,6 +2782,26 @@ tbody tr.selected {
 }
 
 @media (max-width: 760px) {
+  .dashboard-layout {
+    grid-template-columns: 1fr;
+    gap: 0.55rem;
+    padding: 0.45rem;
+  }
+
+  .dashboard-sidebar {
+    position: static;
+    height: auto;
+    grid-template-rows: auto auto auto auto;
+  }
+
+  .sidebar-nav {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .sidebar-footer {
+    align-content: start;
+  }
+
   .auth-shell {
     padding: 0.6rem;
   }
@@ -2691,14 +2835,13 @@ tbody tr.selected {
   }
 
   .topbar {
-    flex-direction: column;
-    align-items: flex-start;
-    padding: 0.85rem;
+    justify-content: flex-end;
+    padding: 0.2rem 0;
   }
 
   .topbar-actions {
-    width: 100%;
-    justify-content: flex-start;
+    width: auto;
+    justify-content: flex-end;
   }
 
   .filters-row,
@@ -2768,9 +2911,16 @@ tbody tr.selected {
 }
 
 @media (max-width: 560px) {
+  .dashboard-layout {
+    padding: 0.35rem;
+  }
+
   .dashboard-shell {
     gap: 0.75rem;
-    padding: 0.45rem;
+  }
+
+  .sidebar-nav {
+    grid-template-columns: 1fr;
   }
 
   .auth-layout {

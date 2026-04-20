@@ -2406,38 +2406,52 @@ function getPasswordStrengthMeta(password: string) {
     )
   }
 
+  const scrollToSection = (sectionId: string) => {
+    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
-    <div className="dashboard-shell">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Medical Learning Tracker</p>
-          <h1>Dashboard EDN - 367 items</h1>
+    <div className="dashboard-layout">
+      <aside className="dashboard-sidebar">
+        <div className="sidebar-head">
+          <p className="sidebar-grade">IVeme annee</p>
+          <p className="sidebar-title">Items Tracker</p>
         </div>
-        <div className="topbar-actions">
-          <button
-            className="ghost-btn icon-btn"
-            title={
-              saveStatus === 'saving'
-                ? 'Sauvegarde en cours'
-                : saveStatus === 'saved'
-                  ? 'Sauvegarde OK'
-                  : saveStatus === 'error'
-                    ? 'Echec sauvegarde'
-                    : 'Sauvegarder maintenant'
-            }
-            aria-label="Sauvegarder maintenant"
-            onClick={() => void persistUserState({ silent: false, force: true })}
-          >
-            💾
+        <label className="sidebar-search">
+          <input
+            type="text"
+            placeholder="Search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+          />
+        </label>
+        <nav className="sidebar-nav">
+          <button type="button" className="sidebar-nav-item" onClick={() => scrollToSection('dashboard-overview')}>
+            Dashboard
           </button>
+          <button
+            type="button"
+            className="sidebar-nav-item active"
+            onClick={() => scrollToSection('items-section')}
+          >
+            Items
+          </button>
+          <button type="button" className="sidebar-nav-item" onClick={() => scrollToSection('flashcards-section')}>
+            FlashCards
+          </button>
+          <button type="button" className="sidebar-nav-item" onClick={() => scrollToSection('stats-section')}>
+            Stats
+          </button>
+        </nav>
+        <div className="sidebar-footer">
           <div className="menu-wrap">
             <button
-              className="ghost-btn icon-btn"
+              className="ghost-btn sidebar-settings-btn"
               title="Settings"
               aria-label="Settings"
               onClick={() => setSettingsOpen((value) => !value)}
             >
-              ⚙
+              ⚙ Reglages
             </button>
             {settingsOpen ? (
               <div className="menu-popover">
@@ -2451,21 +2465,13 @@ function getPasswordStrengthMeta(password: string) {
                 </label>
                 <label className="menu-row">
                   Focus mode
-                  <input
-                    type="checkbox"
-                    checked={focusMode}
-                    onChange={(event) => setFocusMode(event.target.checked)}
-                  />
+                  <input type="checkbox" checked={focusMode} onChange={(event) => setFocusMode(event.target.checked)} />
                 </label>
                 <div className="menu-actions">
                   <button type="button" className="menu-action-btn" onClick={exportBackup}>
                     Exporter sauvegarde
                   </button>
-                  <button
-                    type="button"
-                    className="menu-action-btn"
-                    onClick={() => backupInputRef.current?.click()}
-                  >
+                  <button type="button" className="menu-action-btn" onClick={() => backupInputRef.current?.click()}>
                     Charger sauvegarde
                   </button>
                   <input
@@ -2485,20 +2491,24 @@ function getPasswordStrengthMeta(password: string) {
               </div>
             ) : null}
           </div>
-          <div className="menu-wrap">
+          <div className="menu-wrap sidebar-profile-wrap">
             <button
-              className="ghost-btn icon-btn profile-trigger-btn"
+              className="sidebar-profile-trigger"
               title="Profil"
               aria-label="Profil"
               onClick={() => setProfileMenuOpen((value) => !value)}
             >
               {profile.photoUrl ? (
-                <img className="profile-trigger-avatar" src={profile.photoUrl} alt="Profil" />
+                <img className="sidebar-profile-avatar" src={profile.photoUrl} alt="Profil" />
               ) : (
-                <span className="profile-trigger-avatar profile-avatar-fallback" style={{ background: profile.avatarGradient }}>
+                <span className="sidebar-profile-avatar profile-avatar-fallback" style={{ background: profile.avatarGradient }}>
                   {getProfileInitials(profile)}
                 </span>
               )}
+              <span>
+                <strong>{profile.firstName || authUser?.displayName || 'Setup Hub'}</strong>
+                <small>{profile.email || authUser?.email || 'hello@setup-hub.com'}</small>
+              </span>
             </button>
             {profileMenuOpen ? (
               <div className="menu-popover">
@@ -2558,6 +2568,28 @@ function getPasswordStrengthMeta(password: string) {
               </div>
             ) : null}
           </div>
+        </div>
+      </aside>
+
+      <div className="dashboard-shell">
+        <header className="topbar">
+          <div className="topbar-actions">
+          <button
+            className="ghost-btn icon-btn"
+            title={
+              saveStatus === 'saving'
+                ? 'Sauvegarde en cours'
+                : saveStatus === 'saved'
+                  ? 'Sauvegarde OK'
+                  : saveStatus === 'error'
+                    ? 'Echec sauvegarde'
+                    : 'Sauvegarder maintenant'
+            }
+            aria-label="Sauvegarder maintenant"
+            onClick={() => void persistUserState({ silent: false, force: true })}
+          >
+            💾
+          </button>
           <button
             className="ghost-btn icon-btn"
             title={theme === 'light' ? 'Night mode' : 'Light mode'}
@@ -2566,19 +2598,19 @@ function getPasswordStrengthMeta(password: string) {
           >
             {theme === 'light' ? '🌙' : '☀️'}
           </button>
-        </div>
-      </header>
-      {saveStatus !== 'idle' ? (
-        <div className={`save-popup ${saveStatus}`}>
-          {saveStatus === 'saving'
-            ? 'Sauvegarde en cours...'
-            : saveStatus === 'saved'
-              ? `Sauvegarde OK${lastSavedAt ? ` (${lastSavedAt})` : ''}`
-              : 'Erreur de sauvegarde'}
-        </div>
-      ) : null}
+          </div>
+        </header>
+        {saveStatus !== 'idle' ? (
+          <div className={`save-popup ${saveStatus}`}>
+            {saveStatus === 'saving'
+              ? 'Sauvegarde en cours...'
+              : saveStatus === 'saved'
+                ? `Sauvegarde OK${lastSavedAt ? ` (${lastSavedAt})` : ''}`
+                : 'Erreur de sauvegarde'}
+          </div>
+        ) : null}
 
-      <section className="global-grid">
+        <section id="dashboard-overview" className="global-grid">
         <article className="stat-card">
           <p className="stat-label">Items complétés</p>
           <p className="stat-value">{globalStats.completedCount}</p>
@@ -2619,9 +2651,9 @@ function getPasswordStrengthMeta(password: string) {
             <span>Intense</span>
           </div>
         </article>
-      </section>
+        </section>
 
-      <section className="main-grid">
+        <section id="items-section" className="main-grid">
         <article className="panel table-panel">
           <div className="panel-head">
             <h2>Items</h2>
@@ -2629,12 +2661,6 @@ function getPasswordStrengthMeta(password: string) {
           </div>
 
           <div className="filters-row">
-            <input
-              type="text"
-              placeholder="Search item, tag, college"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
             <select value={collegeFilter} onChange={(event) => setCollegeFilter(event.target.value)}>
               <option value="ALL">Tous colleges</option>
               {COLLEGES.map((college) => (
@@ -2909,7 +2935,7 @@ function getPasswordStrengthMeta(password: string) {
                 </div>
               </div>
 
-              <div className="quiz-config-head">
+              <div id="flashcards-section" className="quiz-config-head">
                 <div className="quiz-config-title-row">
                   <h3>Quiz item</h3>
                   <button
@@ -3768,7 +3794,7 @@ function getPasswordStrengthMeta(password: string) {
         </div>
       ) : null}
 
-      <section className="bottom-grid">
+      <section id="stats-section" className="bottom-grid">
         <article className="panel compact-panel">
           <div className="panel-head">
             <h2>Progression par college</h2>
@@ -3785,6 +3811,7 @@ function getPasswordStrengthMeta(password: string) {
           </div>
         </article>
       </section>
+      </div>
     </div>
   )
 }
