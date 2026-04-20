@@ -645,6 +645,7 @@ function App() {
   const [sortKey, setSortKey] = useState<SortKey>('reviews')
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const backupInputRef = useRef<HTMLInputElement | null>(null)
   const hasLoadedRemoteStateRef = useRef(false)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
@@ -2411,13 +2412,32 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   return (
-    <div className="dashboard-layout">
+    <div className={`dashboard-layout ${sidebarCollapsed ? 'is-sidebar-collapsed' : ''}`}>
       <aside className="dashboard-sidebar">
         <div className="sidebar-head">
-          <p className="sidebar-grade">IVeme annee</p>
-          <p className="sidebar-title">Items Tracker</p>
+          <div className="sidebar-head-top">
+            <span className="sidebar-logo" aria-hidden="true">
+              <span className="sidebar-logo-bar" />
+            </span>
+            <div className="sidebar-head-titles">
+              <p className="sidebar-grade">IVeme annee</p>
+              <p className="sidebar-title">Items Tracker</p>
+            </div>
+            <button
+              type="button"
+              className="sidebar-collapse-btn"
+              onClick={() => setSidebarCollapsed((current) => !current)}
+              aria-label={sidebarCollapsed ? 'Etendre le menu' : 'Replier le menu'}
+              title={sidebarCollapsed ? 'Etendre le menu' : 'Replier le menu'}
+            >
+              {sidebarCollapsed ? '→' : '←'}
+            </button>
+          </div>
         </div>
         <label className="sidebar-search">
+          <span className="sidebar-search-icon" aria-hidden="true">
+            ⌕
+          </span>
           <input
             type="text"
             placeholder="Search"
@@ -2430,7 +2450,7 @@ function getPasswordStrengthMeta(password: string) {
             <span className="sidebar-nav-icon" aria-hidden="true">
               ⌂
             </span>
-            <span>Dashboard</span>
+            <span className="sidebar-nav-label">Dashboard</span>
           </button>
           <button
             type="button"
@@ -2440,19 +2460,19 @@ function getPasswordStrengthMeta(password: string) {
             <span className="sidebar-nav-icon" aria-hidden="true">
               ☑
             </span>
-            <span>Items</span>
+            <span className="sidebar-nav-label">Items</span>
           </button>
           <button type="button" className="sidebar-nav-item" onClick={() => scrollToSection('flashcards-section')}>
             <span className="sidebar-nav-icon" aria-hidden="true">
               ▤
             </span>
-            <span>FlashCards</span>
+            <span className="sidebar-nav-label">FlashCards</span>
           </button>
           <button type="button" className="sidebar-nav-item" onClick={() => scrollToSection('stats-section')}>
             <span className="sidebar-nav-icon" aria-hidden="true">
               ◔
             </span>
-            <span>Stats</span>
+            <span className="sidebar-nav-label">Stats</span>
           </button>
         </nav>
         <div className="sidebar-footer">
@@ -2463,7 +2483,10 @@ function getPasswordStrengthMeta(password: string) {
               aria-label="Settings"
               onClick={() => setSettingsOpen((value) => !value)}
             >
-              ⚙ Reglages
+              <span className="sidebar-settings-icon" aria-hidden="true">
+                ⚙
+              </span>
+              <span className="sidebar-settings-label">Reglages</span>
             </button>
             {settingsOpen ? (
               <div className="menu-popover">
