@@ -1155,13 +1155,23 @@ h3 {
 .detail-panel {
   min-width: 0;
   overflow: hidden;
-  animation: detail-panel-enter 0.26s ease both;
+  transition:
+    opacity 0.26s ease,
+    transform 0.26s ease,
+    padding 0.26s ease,
+    border-width 0.26s ease;
+}
+
+.detail-panel.is-open {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .detail-panel.is-closed {
   padding: 0;
   border-width: 0;
   opacity: 0;
+  transform: translateX(14px);
   pointer-events: none;
 }
 
