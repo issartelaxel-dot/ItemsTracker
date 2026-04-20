@@ -1,12 +1,18 @@
 RewriteEngine On
 RewriteBase /ItemsTracker/
 
-# Serve existing files/directories as-is.
-RewriteCond %{REQUEST_FILENAME} -f [OR]
-RewriteCond %{REQUEST_FILENAME} -d
-RewriteRule ^ - [L]
+# Always serve the built app entrypoint for the directory root.
+RewriteRule ^$ dist/index.html [L]
+RewriteRule ^index\.html$ dist/index.html [L]
 
-# SPA fallback (do not rewrite API routes).
-RewriteCond %{REQUEST_URI} !^/api/
+# If a requested file exists under dist/, serve it from there.
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{DOCUMENT_ROOT}/ItemsTracker/dist/$1 -f
+RewriteRule ^(.*)$ dist/$1 [L]
+
+# SPA fallback (except API) to built index.
 RewriteCond %{REQUEST_URI} !^/ItemsTracker/api/
-RewriteRule ^ index.html [L]
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^ dist/index.html [L]
