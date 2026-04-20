@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
 import itemsData from './data/items.json'
 import './App.css'
 
@@ -1927,7 +1927,7 @@ function getPasswordStrengthMeta(password: string) {
     logo.style.setProperty('--logo-bar-offset-y', `${y.toFixed(2)}px`)
   }
 
-  function handleSidebarLogoPointerMove(event: PointerEvent<HTMLSpanElement>) {
+  function handleSidebarLogoPointerEnter() {
     const logo = sidebarLogoRef.current
     if (!logo) {
       return
@@ -1935,35 +1935,8 @@ function getPasswordStrengthMeta(password: string) {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       return
     }
-
-    const rect = logo.getBoundingClientRect()
-    const pointerY = event.clientY - rect.top
-    const current = sidebarLogoOffsetRef.current
-
-    const baseCenterY = 12
-    const barCenterY = baseCenterY + current.y
-    const dy = barCenterY - pointerY
-    const distanceY = Math.abs(dy)
-    const repelRadius = 28
-
-    const targetX = 0
-    let targetY = current.y
-
-    if (distanceY < repelRadius) {
-      const safeDistance = Math.max(distanceY, 0.001)
-      const pressure = (repelRadius - safeDistance) / repelRadius
-      const push = 8 * pressure + 1.1
-      const directionY = dy >= 0 ? 1 : -1
-      targetY = current.y + directionY * push
-    } else {
-      targetY = current.y * 0.84
-    }
-
-    const maxY = 8
-    const clampedY = Math.max(0, Math.min(maxY, targetY))
-
     logo.classList.add('is-fleeing')
-    setSidebarLogoBarOffset(targetX, clampedY)
+    setSidebarLogoBarOffset(0, 10)
   }
 
   function handleSidebarLogoPointerLeave() {
@@ -2744,7 +2717,7 @@ function getPasswordStrengthMeta(password: string) {
               ref={sidebarLogoRef}
               className="sidebar-logo"
               aria-hidden="true"
-              onPointerMove={handleSidebarLogoPointerMove}
+              onPointerEnter={handleSidebarLogoPointerEnter}
               onPointerLeave={handleSidebarLogoPointerLeave}
             >
               <span className="sidebar-logo-bar" />

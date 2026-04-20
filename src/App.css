@@ -165,13 +165,9 @@
     calc(-50% + var(--logo-bar-offset-x, 0px)),
     var(--logo-bar-offset-y, 0px)
   );
-  transition: transform 0.24s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.26s cubic-bezier(0.22, 1, 0.36, 1);
   pointer-events: none;
   will-change: transform;
-}
-
-.sidebar-logo.is-fleeing .sidebar-logo-bar {
-  transition-duration: 70ms;
 }
 
 .sidebar-grade {
