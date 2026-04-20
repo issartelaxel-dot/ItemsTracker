@@ -681,8 +681,8 @@ function App() {
   const [flashPrioritizeWeak, setFlashPrioritizeWeak] = useState(false)
   const [flashQuestionCount, setFlashQuestionCount] = useState(20)
   const [flashSessionCardKeys, setFlashSessionCardKeys] = useState<string[]>([])
-  const [flashGeneratorOpen, setFlashGeneratorOpen] = useState(false)
-  const [flashGeneratorNudge, setFlashGeneratorNudge] = useState(0)
+  const [flashGeneratorModalOpen, setFlashGeneratorModalOpen] = useState(false)
+  const [flashGeneratorStep, setFlashGeneratorStep] = useState(1)
   const [flashIndex, setFlashIndex] = useState(0)
   const [flashSide, setFlashSide] = useState<'front' | 'back'>('front')
   const [flashFeedback, setFlashFeedback] = useState<QuizResult | null>(null)
@@ -722,7 +722,6 @@ function App() {
   const [authExpandStyle, setAuthExpandStyle] = useState<CSSProperties>({})
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const authCardRef = useRef<HTMLDivElement | null>(null)
-  const flashGeneratorSetupRef = useRef<HTMLDivElement | null>(null)
   const sidebarLogoRef = useRef<HTMLSpanElement | null>(null)
   const sidebarLogoOffsetRef = useRef({ x: 0, y: 0 })
   const passwordStrength = getPasswordStrengthMeta(passwordInput)
@@ -756,6 +755,19 @@ function App() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [historyItemId, quizItemId])
+
+  useEffect(() => {
+    if (!flashGeneratorModalOpen) {
+      return
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setFlashGeneratorModalOpen(false)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [flashGeneratorModalOpen])
 
   useEffect(() => {
     if (authStatus !== 'authed' || !authUser) {
@@ -1495,7 +1507,7 @@ function getPasswordStrengthMeta(password: string) {
   }, [flashIndex, flashSessionCardKeys])
 
   useEffect(() => {
-    if (activeView !== 'flashcards') {
+    if (activeView !== 'flashcards' || flashGeneratorModalOpen) {
       return
     }
     const onKeyDown = (event: KeyboardEvent) => {
@@ -1521,7 +1533,7 @@ function getPasswordStrengthMeta(password: string) {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [activeView, activeGlobalFlashcard, sessionFlashcards.length])
+  }, [activeView, activeGlobalFlashcard, sessionFlashcards.length, flashGeneratorModalOpen])
 
   const globalStats = useMemo(() => {
     const completedCount = items.filter(
@@ -1812,16 +1824,9 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   function jumpToQuizGeneratorSetup() {
-    setFlashGeneratorOpen(true)
+    setFlashGeneratorModalOpen(true)
+    setFlashGeneratorStep(1)
     setFlashSide('front')
-    const nudgeToken = Date.now()
-    setFlashGeneratorNudge(nudgeToken)
-    window.setTimeout(() => {
-      setFlashGeneratorNudge((current) => (current === nudgeToken ? 0 : current))
-    }, 650)
-    window.requestAnimationFrame(() => {
-      flashGeneratorSetupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    })
   }
 
   function toggleFlashFeeling(feeling: FlashFeelingFilter) {
@@ -1835,6 +1840,10 @@ function getPasswordStrengthMeta(password: string) {
     setFlashSelectedFeelings(['none', 'again', 'hard'])
     setFlashPrioritizeWeak(true)
   }
+
+  const isFlashStepOneValid =
+    flashGeneratorScope === 'items' ? flashSelectedItems.length > 0 : flashSelectedColleges.length > 0
+  const isFlashStepTwoValid = flashSelectedFeelings.length > 0
 
   function applyQuizGenerator() {
     const selectedItemsSet = new Set(flashSelectedItems)
@@ -1879,6 +1888,8 @@ function getPasswordStrengthMeta(password: string) {
     setFlashIndex(0)
     setFlashSide('front')
     setFlashFeedback(null)
+    setFlashGeneratorModalOpen(false)
+    setFlashGeneratorStep(1)
   }
 
   function triggerReviewFx(key: string, delta: number) {
@@ -4206,157 +4217,177 @@ function getPasswordStrengthMeta(password: string) {
               Ouvrir Quiz Generator
             </button>
           </div>
-          <div
-            ref={flashGeneratorSetupRef}
-            className={`flashcards-generator-setup ${flashGeneratorOpen ? 'is-open' : 'is-closed'} ${
-              flashGeneratorNudge ? 'is-nudged' : ''
-            }`}
-          >
-            <div className="flashcards-generator-setup-head">
-              <strong>Configuration Quiz Generator</strong>
-              <button
-                type="button"
-                className="ghost-btn"
-                onClick={() => setFlashGeneratorOpen((current) => !current)}
-                aria-expanded={flashGeneratorOpen}
-              >
-                {flashGeneratorOpen ? 'Masquer' : 'Afficher'}
-              </button>
-            </div>
-            <div className="flash-generator-step">
-              <p className="flash-generator-step-title">1) Trier par items ou colleges</p>
-              <div className="flashcards-mode-row">
-                <button
-                  type="button"
-                  className={`ghost-btn ${flashGeneratorScope === 'items' ? 'active' : ''}`}
-                  onClick={() => setFlashGeneratorScope('items')}
-                >
-                  Par items
-                </button>
-                <button
-                  type="button"
-                  className={`ghost-btn ${flashGeneratorScope === 'colleges' ? 'active' : ''}`}
-                  onClick={() => setFlashGeneratorScope('colleges')}
-                >
-                  Par colleges
-                </button>
-              </div>
-              <div className="flash-generator-actions">
-                <button
-                  type="button"
-                  className="ghost-btn"
-                  onClick={() =>
-                    flashGeneratorScope === 'items'
-                      ? setFlashSelectedItems(items.map((item) => item.itemNumber))
-                      : setFlashSelectedColleges([...COLLEGES])
-                  }
-                >
-                  Select all
-                </button>
-                <button
-                  type="button"
-                  className="ghost-btn"
-                  onClick={() =>
-                    flashGeneratorScope === 'items' ? setFlashSelectedItems([]) : setFlashSelectedColleges([])
-                  }
-                >
-                  Deselect all
-                </button>
-              </div>
-              <div className="flash-generator-chip-grid">
-                {flashGeneratorScope === 'items'
-                  ? items.map((item) => {
-                      const active = flashSelectedItems.includes(item.itemNumber)
-                      return (
-                        <button
-                          key={`item-pick-${item.itemNumber}`}
-                          type="button"
-                          className={`flash-generator-chip ${active ? 'active' : ''}`}
-                          onClick={() =>
-                            setFlashSelectedItems((current) =>
-                              current.includes(item.itemNumber)
-                                ? current.filter((id) => id !== item.itemNumber)
-                                : [...current, item.itemNumber],
-                            )
-                          }
-                        >
-                          Item #{item.itemNumber}
-                        </button>
-                      )
-                    })
-                  : COLLEGES.map((college) => {
-                      const active = flashSelectedColleges.includes(college)
-                      return (
-                        <button
-                          key={`college-pick-${college}`}
-                          type="button"
-                          className={`flash-generator-chip ${active ? 'active' : ''}`}
-                          onClick={() =>
-                            setFlashSelectedColleges((current) =>
-                              current.includes(college)
-                                ? current.filter((entry) => entry !== college)
-                                : [...current, college],
-                            )
-                          }
-                        >
-                          {college}
-                        </button>
-                      )
-                    })}
-              </div>
-            </div>
-            <div className="flash-generator-step">
-              <p className="flash-generator-step-title">2) Ressenti cible</p>
-              <div className="flash-generator-actions">
-                <button type="button" className="ghost-btn" onClick={applyWeakPriorityPreset}>
-                  Prioriser les faibles
-                </button>
-                <button
-                  type="button"
-                  className="ghost-btn"
-                  onClick={() => {
-                    setFlashSelectedFeelings(['none', 'again', 'hard', 'good', 'easy'])
-                    setFlashPrioritizeWeak(false)
-                  }}
-                >
-                  Tous ressentis
-                </button>
-              </div>
-              <div className="flashcards-mode-row">
-                <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('none') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('none')}>
-                  Non evalue
-                </button>
-                <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('again') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('again')}>
-                  Revoir
-                </button>
-                <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('hard') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('hard')}>
-                  Difficile
-                </button>
-                <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('good') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('good')}>
-                  Bon
-                </button>
-                <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('easy') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('easy')}>
-                  Parfait
-                </button>
-              </div>
-            </div>
-            <div className="flash-generator-step">
-              <p className="flash-generator-step-title">3) Nombre de questions</p>
-              <div className="flash-generator-count-row">
-                <input
-                  type="number"
-                  min={1}
-                  max={200}
-                  value={flashQuestionCount}
-                  onChange={(event) => setFlashQuestionCount(Number(event.target.value) || 1)}
-                />
-                <button type="button" className="ghost-btn flashcards-generator-btn" onClick={applyQuizGenerator}>
-                  Generer quiz
-                </button>
-              </div>
-              {flashPrioritizeWeak ? <p className="muted">Preset actif: priorisation des faibles.</p> : null}
-            </div>
+          <div className="flashcards-generator-summary">
+            <span>Scope: {flashGeneratorScope === 'items' ? `${flashSelectedItems.length} items` : `${flashSelectedColleges.length} colleges`}</span>
+            <span>Ressentis: {flashSelectedFeelings.length}</span>
+            <span>Questions: {flashQuestionCount}</span>
           </div>
+          {flashGeneratorModalOpen ? (
+            <div className="flash-generator-modal-overlay" role="presentation" onClick={() => setFlashGeneratorModalOpen(false)}>
+              <div className="flash-generator-modal" role="dialog" aria-modal="true" aria-label="Quiz Generator" onClick={(event) => event.stopPropagation()}>
+                <div className="flash-generator-modal-head">
+                  <h3>Quiz Generator</h3>
+                  <p>Étape {flashGeneratorStep}/3</p>
+                  <button type="button" className="ghost-btn" onClick={() => setFlashGeneratorModalOpen(false)}>
+                    Fermer
+                  </button>
+                </div>
+
+                {flashGeneratorStep === 1 ? (
+                  <div className="flash-generator-step">
+                    <p className="flash-generator-step-title">1) Trier par items ou colleges</p>
+                    <div className="flashcards-mode-row">
+                      <button type="button" className={`ghost-btn ${flashGeneratorScope === 'items' ? 'active' : ''}`} onClick={() => setFlashGeneratorScope('items')}>
+                        Par items
+                      </button>
+                      <button type="button" className={`ghost-btn ${flashGeneratorScope === 'colleges' ? 'active' : ''}`} onClick={() => setFlashGeneratorScope('colleges')}>
+                        Par colleges
+                      </button>
+                    </div>
+                    <div className="flash-generator-actions">
+                      <button
+                        type="button"
+                        className="ghost-btn"
+                        onClick={() =>
+                          flashGeneratorScope === 'items'
+                            ? setFlashSelectedItems(items.map((item) => item.itemNumber))
+                            : setFlashSelectedColleges([...COLLEGES])
+                        }
+                      >
+                        Select all
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-btn"
+                        onClick={() =>
+                          flashGeneratorScope === 'items' ? setFlashSelectedItems([]) : setFlashSelectedColleges([])
+                        }
+                      >
+                        Deselect all
+                      </button>
+                    </div>
+                    <div className="flash-generator-chip-grid">
+                      {flashGeneratorScope === 'items'
+                        ? items.map((item) => {
+                            const active = flashSelectedItems.includes(item.itemNumber)
+                            return (
+                              <button
+                                key={`item-pick-${item.itemNumber}`}
+                                type="button"
+                                className={`flash-generator-chip ${active ? 'active' : ''}`}
+                                onClick={() =>
+                                  setFlashSelectedItems((current) =>
+                                    current.includes(item.itemNumber)
+                                      ? current.filter((id) => id !== item.itemNumber)
+                                      : [...current, item.itemNumber],
+                                  )
+                                }
+                              >
+                                Item #{item.itemNumber}
+                              </button>
+                            )
+                          })
+                        : COLLEGES.map((college) => {
+                            const active = flashSelectedColleges.includes(college)
+                            return (
+                              <button
+                                key={`college-pick-${college}`}
+                                type="button"
+                                className={`flash-generator-chip ${active ? 'active' : ''}`}
+                                onClick={() =>
+                                  setFlashSelectedColleges((current) =>
+                                    current.includes(college)
+                                      ? current.filter((entry) => entry !== college)
+                                      : [...current, college],
+                                  )
+                                }
+                              >
+                                {college}
+                              </button>
+                            )
+                          })}
+                    </div>
+                  </div>
+                ) : null}
+
+                {flashGeneratorStep === 2 ? (
+                  <div className="flash-generator-step">
+                    <p className="flash-generator-step-title">2) Ressenti cible</p>
+                    <div className="flash-generator-actions">
+                      <button type="button" className="ghost-btn" onClick={applyWeakPriorityPreset}>
+                        Prioriser les faibles
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-btn"
+                        onClick={() => {
+                          setFlashSelectedFeelings(['none', 'again', 'hard', 'good', 'easy'])
+                          setFlashPrioritizeWeak(false)
+                        }}
+                      >
+                        Tous ressentis
+                      </button>
+                    </div>
+                    <div className="flashcards-mode-row">
+                      <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('none') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('none')}>
+                        Non evalue
+                      </button>
+                      <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('again') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('again')}>
+                        Revoir
+                      </button>
+                      <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('hard') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('hard')}>
+                        Difficile
+                      </button>
+                      <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('good') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('good')}>
+                        Bon
+                      </button>
+                      <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('easy') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('easy')}>
+                        Parfait
+                      </button>
+                    </div>
+                    {flashPrioritizeWeak ? <p className="muted">Preset actif: priorisation des faibles.</p> : null}
+                  </div>
+                ) : null}
+
+                {flashGeneratorStep === 3 ? (
+                  <div className="flash-generator-step">
+                    <p className="flash-generator-step-title">3) Nombre de questions</p>
+                    <div className="flash-generator-count-row">
+                      <input
+                        type="number"
+                        min={1}
+                        max={200}
+                        value={flashQuestionCount}
+                        onChange={(event) => setFlashQuestionCount(Number(event.target.value) || 1)}
+                      />
+                      <button type="button" className="ghost-btn flashcards-generator-btn" onClick={applyQuizGenerator}>
+                        Generer quiz
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="flash-generator-modal-nav">
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    onClick={() => setFlashGeneratorStep((current) => Math.max(1, current - 1))}
+                    disabled={flashGeneratorStep === 1}
+                  >
+                    Précédent
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    onClick={() => setFlashGeneratorStep((current) => Math.min(3, current + 1))}
+                    disabled={(flashGeneratorStep === 1 && !isFlashStepOneValid) || (flashGeneratorStep === 2 && !isFlashStepTwoValid) || flashGeneratorStep === 3}
+                  >
+                    Suivant
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
           <div className="flashcards-stats-row">
             <span>Progression session: {flashSessionStats.completion}%</span>
             <span>Revuees: {flashSessionStats.reviewed}</span>

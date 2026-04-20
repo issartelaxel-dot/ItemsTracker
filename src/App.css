@@ -1370,32 +1370,68 @@ h3 {
   color: #fff;
 }
 
-.flashcards-generator-setup {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface-soft);
-  padding: 0.55rem 0.65rem;
-  display: grid;
-  gap: 0.55rem;
-  overflow: hidden;
-  transition:
-    max-height 0.28s ease,
-    opacity 0.22s ease,
-    transform 0.22s ease,
-    padding 0.22s ease,
-    border-color 0.22s ease;
+.flashcards-generator-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  color: var(--muted);
+  font-size: 0.76rem;
 }
 
-.flashcards-generator-setup-head {
+.flashcards-generator-summary span {
+  border: 1px solid var(--border);
+  background: var(--surface-soft);
+  border-radius: 999px;
+  padding: 0.2rem 0.52rem;
+}
+
+.flash-generator-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  background: rgba(6, 16, 34, 0.56);
+  backdrop-filter: blur(2px);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  animation: flash-generator-overlay-in 0.18s ease both;
+}
+
+.flash-generator-modal {
+  width: min(860px, 100%);
+  max-height: min(86vh, 760px);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--panel-bg);
+  box-shadow: 0 24px 48px rgba(2, 8, 19, 0.42);
+  padding: 0.85rem;
+  display: grid;
+  gap: 0.75rem;
+  animation: flash-generator-modal-in 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.flash-generator-modal-head {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.flash-generator-modal-head h3 {
+  margin: 0;
+}
+
+.flash-generator-modal-head p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.flash-generator-modal-nav {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.flashcards-generator-setup-head strong {
-  font-size: 0.86rem;
-  color: var(--text);
+  gap: 0.5rem;
 }
 
 .flash-generator-step {
@@ -1455,28 +1491,6 @@ h3 {
   width: 118px;
 }
 
-.flashcards-generator-setup.is-open {
-  max-height: 680px;
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.flashcards-generator-setup.is-closed {
-  max-height: 46px;
-  opacity: 0.92;
-}
-
-.flashcards-generator-setup.is-closed .flash-generator-step,
-.flashcards-generator-setup.is-closed .flashcards-mode-row,
-.flashcards-generator-setup.is-closed .flashcards-filters {
-  display: none;
-}
-
-.flashcards-generator-setup.is-nudged {
-  border-color: color-mix(in oklab, var(--accent) 62%, var(--border));
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 16%, transparent);
-}
-
 .flashcards-mode-row {
   display: flex;
   gap: 0.45rem;
@@ -1486,11 +1500,6 @@ h3 {
 .flashcards-mode-row .ghost-btn.active {
   background: color-mix(in oklab, var(--accent) 16%, var(--input-bg));
   border-color: color-mix(in oklab, var(--accent) 45%, var(--border));
-}
-
-.flashcards-filters {
-  grid-template-columns: repeat(3, minmax(140px, 1fr));
-  margin-bottom: 0;
 }
 
 .flashcards-stats-row {
@@ -3321,6 +3330,26 @@ tbody tr.selected {
   50% {
     background-position: 82% 14%, 52% 48%;
     border-color: #9fb8e8;
+  }
+}
+
+@keyframes flash-generator-overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes flash-generator-modal-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
