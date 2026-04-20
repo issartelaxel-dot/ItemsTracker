@@ -11,6 +11,8 @@ type QuizAnimationStyle = 'flip' | 'fade'
 type RewardIntensity = 'low' | 'medium' | 'high'
 type QuizResult = 'again' | 'hard' | 'good' | 'easy'
 type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'stats'
+type FlashGeneratorScope = 'items' | 'colleges'
+type FlashFeelingFilter = 'none' | QuizResult
 
 type ItemBase = {
   itemNumber: number
@@ -185,13 +187,6 @@ const QUIZ_RESULT_META: Record<
   hard: { label: 'Difficile', mastery: 'Moyen', icon: '⚠️', actionVerb: 'difficile', rewardTone: 'neutral' },
   good: { label: 'Bon', mastery: 'Bon', icon: '✅', actionVerb: 'bon', rewardTone: 'good' },
   easy: { label: 'Parfait', mastery: 'Parfait', icon: '⚡', actionVerb: 'parfait', rewardTone: 'easy' },
-}
-
-const FLASH_RESULT_PRIORITY: Record<QuizResult, number> = {
-  again: 0,
-  hard: 1,
-  good: 2,
-  easy: 3,
 }
 
 const COLLEGES = [
@@ -673,10 +668,19 @@ function App() {
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [flashCollegeFilter, setFlashCollegeFilter] = useState<string>('ALL')
-  const [flashItemFilter, setFlashItemFilter] = useState<string>('ALL')
-  const [flashResultFilter, setFlashResultFilter] = useState<'ALL' | QuizResult>('ALL')
-  const [flashMode, setFlashMode] = useState<'review' | 'discover' | 'catchup'>('review')
+  const [flashGeneratorScope, setFlashGeneratorScope] = useState<FlashGeneratorScope>('items')
+  const [flashSelectedItems, setFlashSelectedItems] = useState<number[]>(() => rawItems.map((item) => item.itemNumber))
+  const [flashSelectedColleges, setFlashSelectedColleges] = useState<string[]>(() => [...COLLEGES])
+  const [flashSelectedFeelings, setFlashSelectedFeelings] = useState<FlashFeelingFilter[]>([
+    'none',
+    'again',
+    'hard',
+    'good',
+    'easy',
+  ])
+  const [flashPrioritizeWeak, setFlashPrioritizeWeak] = useState(false)
+  const [flashQuestionCount, setFlashQuestionCount] = useState(20)
+  const [flashSessionCardKeys, setFlashSessionCardKeys] = useState<string[]>([])
   const [flashGeneratorOpen, setFlashGeneratorOpen] = useState(false)
   const [flashGeneratorNudge, setFlashGeneratorNudge] = useState(0)
   const [flashIndex, setFlashIndex] = useState(0)
@@ -1437,8 +1441,8 @@ function getPasswordStrengthMeta(password: string) {
     }
   }, [activeQuizCard])
 
-  const globalFlashcards = useMemo<GlobalFlashcard[]>(() => {
-    const pool = items.flatMap((item) =>
+  const allFlashcards = useMemo<GlobalFlashcard[]>(() => {
+    return items.flatMap((item) =>
       item.tracking.quiz.cards.map((card) => ({
         itemNumber: item.itemNumber,
         cardId: card.id,
@@ -1450,62 +1454,45 @@ function getPasswordStrengthMeta(password: string) {
         lastReviewedAt: card.lastReviewedAt,
       })),
     )
-    const filtered = pool.filter((entry) => {
-      if (flashCollegeFilter !== 'ALL' && !entry.colleges.includes(flashCollegeFilter)) {
-        return false
-      }
-      if (flashItemFilter !== 'ALL' && entry.itemNumber !== Number(flashItemFilter)) {
-        return false
-      }
-      if (flashResultFilter !== 'ALL' && entry.lastResult !== flashResultFilter) {
-        return false
-      }
-      return true
-    })
+  }, [items])
 
-    return filtered.sort((a, b) => {
-      if (flashMode === 'discover') {
-        const aSeen = a.quizCount > 0 ? 1 : 0
-        const bSeen = b.quizCount > 0 ? 1 : 0
-        return aSeen - bSeen || a.itemNumber - b.itemNumber
-      }
+  const flashcardsByKey = useMemo(() => {
+    return new Map(allFlashcards.map((card) => [`${card.itemNumber}:${card.cardId}`, card]))
+  }, [allFlashcards])
 
-      if (flashMode === 'catchup') {
-        const aTime = a.lastReviewedAt ? new Date(a.lastReviewedAt).getTime() : 0
-        const bTime = b.lastReviewedAt ? new Date(b.lastReviewedAt).getTime() : 0
-        return aTime - bTime || a.quizCount - b.quizCount || a.itemNumber - b.itemNumber
-      }
+  const sessionFlashcards = useMemo<GlobalFlashcard[]>(() => {
+    if (flashSessionCardKeys.length === 0) {
+      return allFlashcards
+    }
+    return flashSessionCardKeys
+      .map((key) => flashcardsByKey.get(key) ?? null)
+      .filter((card): card is GlobalFlashcard => card !== null)
+  }, [allFlashcards, flashcardsByKey, flashSessionCardKeys])
 
-      const aPriority = a.lastResult ? FLASH_RESULT_PRIORITY[a.lastResult] : -1
-      const bPriority = b.lastResult ? FLASH_RESULT_PRIORITY[b.lastResult] : -1
-      return aPriority - bPriority || a.quizCount - b.quizCount || a.itemNumber - b.itemNumber
-    })
-  }, [items, flashCollegeFilter, flashItemFilter, flashResultFilter, flashMode])
-
-  const activeGlobalFlashcard = globalFlashcards[flashIndex] ?? null
+  const activeGlobalFlashcard = sessionFlashcards[flashIndex] ?? null
 
   const flashSessionStats = useMemo(() => {
-    const reviewed = globalFlashcards.filter((card) => card.quizCount > 0).length
-    const difficult = globalFlashcards.filter((card) => card.lastResult === 'again' || card.lastResult === 'hard').length
-    const good = globalFlashcards.filter((card) => card.lastResult === 'good' || card.lastResult === 'easy').length
-    const completion = globalFlashcards.length === 0 ? 0 : Math.round((reviewed / globalFlashcards.length) * 100)
+    const reviewed = sessionFlashcards.filter((card) => card.quizCount > 0).length
+    const difficult = sessionFlashcards.filter((card) => card.lastResult === 'again' || card.lastResult === 'hard').length
+    const good = sessionFlashcards.filter((card) => card.lastResult === 'good' || card.lastResult === 'easy').length
+    const completion = sessionFlashcards.length === 0 ? 0 : Math.round((reviewed / sessionFlashcards.length) * 100)
     return { reviewed, difficult, good, completion }
-  }, [globalFlashcards])
+  }, [sessionFlashcards])
 
   useEffect(() => {
-    if (globalFlashcards.length === 0) {
+    if (sessionFlashcards.length === 0) {
       setFlashIndex(0)
       return
     }
-    if (flashIndex >= globalFlashcards.length) {
-      setFlashIndex(globalFlashcards.length - 1)
+    if (flashIndex >= sessionFlashcards.length) {
+      setFlashIndex(sessionFlashcards.length - 1)
     }
-  }, [globalFlashcards.length, flashIndex])
+  }, [sessionFlashcards.length, flashIndex])
 
   useEffect(() => {
     setFlashSide('front')
     setFlashFeedback(null)
-  }, [flashIndex, flashCollegeFilter, flashItemFilter, flashResultFilter, flashMode])
+  }, [flashIndex, flashSessionCardKeys])
 
   useEffect(() => {
     if (activeView !== 'flashcards') {
@@ -1527,14 +1514,14 @@ function getPasswordStrengthMeta(password: string) {
       } else if (event.key === '4') {
         handleGlobalFlashResult('easy')
       } else if (event.key === 'ArrowLeft') {
-        setFlashIndex((current) => (current - 1 + globalFlashcards.length) % globalFlashcards.length)
+        setFlashIndex((current) => (current - 1 + sessionFlashcards.length) % sessionFlashcards.length)
       } else if (event.key === 'ArrowRight') {
-        setFlashIndex((current) => (current + 1) % globalFlashcards.length)
+        setFlashIndex((current) => (current + 1) % sessionFlashcards.length)
       }
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [activeView, activeGlobalFlashcard, globalFlashcards.length])
+  }, [activeView, activeGlobalFlashcard, sessionFlashcards.length])
 
   const globalStats = useMemo(() => {
     const completedCount = items.filter(
@@ -1815,10 +1802,10 @@ function getPasswordStrengthMeta(password: string) {
     window.setTimeout(() => {
       setFlashFeedback((current) => (current === result ? null : current))
       setFlashIndex((current) => {
-        if (globalFlashcards.length <= 1) {
+        if (sessionFlashcards.length <= 1) {
           return 0
         }
-        return (current + 1) % globalFlashcards.length
+        return (current + 1) % sessionFlashcards.length
       })
       setFlashSide('front')
     }, 450)
@@ -1826,7 +1813,6 @@ function getPasswordStrengthMeta(password: string) {
 
   function jumpToQuizGeneratorSetup() {
     setFlashGeneratorOpen(true)
-    setFlashMode('review')
     setFlashSide('front')
     const nudgeToken = Date.now()
     setFlashGeneratorNudge(nudgeToken)
@@ -1836,6 +1822,63 @@ function getPasswordStrengthMeta(password: string) {
     window.requestAnimationFrame(() => {
       flashGeneratorSetupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
+  }
+
+  function toggleFlashFeeling(feeling: FlashFeelingFilter) {
+    setFlashSelectedFeelings((current) =>
+      current.includes(feeling) ? current.filter((entry) => entry !== feeling) : [...current, feeling],
+    )
+    setFlashPrioritizeWeak(false)
+  }
+
+  function applyWeakPriorityPreset() {
+    setFlashSelectedFeelings(['none', 'again', 'hard'])
+    setFlashPrioritizeWeak(true)
+  }
+
+  function applyQuizGenerator() {
+    const selectedItemsSet = new Set(flashSelectedItems)
+    const selectedCollegesSet = new Set(flashSelectedColleges)
+    const selectedFeelingsSet = new Set(flashSelectedFeelings)
+    const scopeFiltered = allFlashcards.filter((card) => {
+      if (flashGeneratorScope === 'items') {
+        return selectedItemsSet.has(card.itemNumber)
+      }
+      return card.colleges.some((college) => selectedCollegesSet.has(college))
+    })
+
+    const feelingFiltered = scopeFiltered.filter((card) => {
+      const feeling = card.lastResult ?? 'none'
+      return selectedFeelingsSet.has(feeling)
+    })
+
+    const weakRank: Record<FlashFeelingFilter, number> = {
+      none: 0,
+      again: 1,
+      hard: 2,
+      good: 3,
+      easy: 4,
+    }
+
+    const ranked = [...feelingFiltered].sort((a, b) => {
+      const aFeeling = a.lastResult ?? 'none'
+      const bFeeling = b.lastResult ?? 'none'
+      const aScore = flashPrioritizeWeak ? weakRank[aFeeling] * 100 + a.quizCount * 4 : a.quizCount
+      const bScore = flashPrioritizeWeak ? weakRank[bFeeling] * 100 + b.quizCount * 4 : b.quizCount
+      if (aScore !== bScore) {
+        return aScore - bScore
+      }
+      return a.itemNumber - b.itemNumber
+    })
+
+    const safeCount = Math.max(1, Math.min(200, Number.isFinite(flashQuestionCount) ? Math.round(flashQuestionCount) : 20))
+    const selected = ranked.slice(0, safeCount)
+    const keys = selected.map((card) => `${card.itemNumber}:${card.cardId}`)
+
+    setFlashSessionCardKeys(keys)
+    setFlashIndex(0)
+    setFlashSide('front')
+    setFlashFeedback(null)
   }
 
   function triggerReviewFx(key: string, delta: number) {
@@ -1894,40 +1937,33 @@ function getPasswordStrengthMeta(password: string) {
     }
 
     const rect = logo.getBoundingClientRect()
-    const pointerX = event.clientX - rect.left
     const pointerY = event.clientY - rect.top
     const current = sidebarLogoOffsetRef.current
 
-    const baseCenterX = rect.width / 2
     const baseCenterY = 12
-    const barCenterX = baseCenterX + current.x
     const barCenterY = baseCenterY + current.y
-    const dx = barCenterX - pointerX
     const dy = barCenterY - pointerY
-    const distance = Math.hypot(dx, dy)
-    const repelRadius = 34
+    const distanceY = Math.abs(dy)
+    const repelRadius = 28
 
-    let targetX = current.x
+    const targetX = 0
     let targetY = current.y
 
-    if (distance < repelRadius) {
-      const safeDistance = Math.max(distance, 0.001)
+    if (distanceY < repelRadius) {
+      const safeDistance = Math.max(distanceY, 0.001)
       const pressure = (repelRadius - safeDistance) / repelRadius
-      const push = 9 * pressure + 1.2
-      targetX = current.x + (dx / safeDistance) * push
-      targetY = current.y + (dy / safeDistance) * push
+      const push = 8 * pressure + 1.1
+      const directionY = dy >= 0 ? 1 : -1
+      targetY = current.y + directionY * push
     } else {
-      targetX = current.x * 0.84
       targetY = current.y * 0.84
     }
 
-    const maxX = 9
     const maxY = 8
-    targetX = Math.max(-maxX, Math.min(maxX, targetX))
-    targetY = Math.max(-maxY, Math.min(maxY, targetY))
+    const clampedY = Math.max(0, Math.min(maxY, targetY))
 
     logo.classList.add('is-fleeing')
-    setSidebarLogoBarOffset(targetX, targetY)
+    setSidebarLogoBarOffset(targetX, clampedY)
   }
 
   function handleSidebarLogoPointerLeave() {
@@ -4162,7 +4198,7 @@ function getPasswordStrengthMeta(password: string) {
         <section id="flashcards-section" className="panel flashcards-page">
           <div className="panel-head">
             <h2>FlashCards</h2>
-            <p>{globalFlashcards.length} cartes</p>
+            <p>{sessionFlashcards.length} cartes</p>
           </div>
           <div className="flashcards-generator-callout">
             <div className="flashcards-generator-copy">
@@ -4196,53 +4232,138 @@ function getPasswordStrengthMeta(password: string) {
                 {flashGeneratorOpen ? 'Masquer' : 'Afficher'}
               </button>
             </div>
-            <div className="flashcards-mode-row">
-              <button
-                type="button"
-                className={`ghost-btn ${flashMode === 'review' ? 'active' : ''}`}
-                onClick={() => setFlashMode('review')}
-              >
-                Reviser
-              </button>
-              <button
-                type="button"
-                className={`ghost-btn ${flashMode === 'discover' ? 'active' : ''}`}
-                onClick={() => setFlashMode('discover')}
-              >
-                Decouvrir
-              </button>
-              <button
-                type="button"
-                className={`ghost-btn ${flashMode === 'catchup' ? 'active' : ''}`}
-                onClick={() => setFlashMode('catchup')}
-              >
-                Rattrapage
-              </button>
+            <div className="flash-generator-step">
+              <p className="flash-generator-step-title">1) Trier par items ou colleges</p>
+              <div className="flashcards-mode-row">
+                <button
+                  type="button"
+                  className={`ghost-btn ${flashGeneratorScope === 'items' ? 'active' : ''}`}
+                  onClick={() => setFlashGeneratorScope('items')}
+                >
+                  Par items
+                </button>
+                <button
+                  type="button"
+                  className={`ghost-btn ${flashGeneratorScope === 'colleges' ? 'active' : ''}`}
+                  onClick={() => setFlashGeneratorScope('colleges')}
+                >
+                  Par colleges
+                </button>
+              </div>
+              <div className="flash-generator-actions">
+                <button
+                  type="button"
+                  className="ghost-btn"
+                  onClick={() =>
+                    flashGeneratorScope === 'items'
+                      ? setFlashSelectedItems(items.map((item) => item.itemNumber))
+                      : setFlashSelectedColleges([...COLLEGES])
+                  }
+                >
+                  Select all
+                </button>
+                <button
+                  type="button"
+                  className="ghost-btn"
+                  onClick={() =>
+                    flashGeneratorScope === 'items' ? setFlashSelectedItems([]) : setFlashSelectedColleges([])
+                  }
+                >
+                  Deselect all
+                </button>
+              </div>
+              <div className="flash-generator-chip-grid">
+                {flashGeneratorScope === 'items'
+                  ? items.map((item) => {
+                      const active = flashSelectedItems.includes(item.itemNumber)
+                      return (
+                        <button
+                          key={`item-pick-${item.itemNumber}`}
+                          type="button"
+                          className={`flash-generator-chip ${active ? 'active' : ''}`}
+                          onClick={() =>
+                            setFlashSelectedItems((current) =>
+                              current.includes(item.itemNumber)
+                                ? current.filter((id) => id !== item.itemNumber)
+                                : [...current, item.itemNumber],
+                            )
+                          }
+                        >
+                          Item #{item.itemNumber}
+                        </button>
+                      )
+                    })
+                  : COLLEGES.map((college) => {
+                      const active = flashSelectedColleges.includes(college)
+                      return (
+                        <button
+                          key={`college-pick-${college}`}
+                          type="button"
+                          className={`flash-generator-chip ${active ? 'active' : ''}`}
+                          onClick={() =>
+                            setFlashSelectedColleges((current) =>
+                              current.includes(college)
+                                ? current.filter((entry) => entry !== college)
+                                : [...current, college],
+                            )
+                          }
+                        >
+                          {college}
+                        </button>
+                      )
+                    })}
+              </div>
             </div>
-            <div className="filters-row flashcards-filters">
-              <select value={flashCollegeFilter} onChange={(event) => setFlashCollegeFilter(event.target.value)}>
-                <option value="ALL">Tous colleges</option>
-                {COLLEGES.map((college) => (
-                  <option key={college} value={college}>
-                    {college}
-                  </option>
-                ))}
-              </select>
-              <select value={flashItemFilter} onChange={(event) => setFlashItemFilter(event.target.value)}>
-                <option value="ALL">Tous items</option>
-                {items.map((item) => (
-                  <option key={item.itemNumber} value={String(item.itemNumber)}>
-                    Item #{item.itemNumber}
-                  </option>
-                ))}
-              </select>
-              <select value={flashResultFilter} onChange={(event) => setFlashResultFilter(event.target.value as 'ALL' | QuizResult)}>
-                <option value="ALL">Tous ressentis</option>
-                <option value="again">Revoir</option>
-                <option value="hard">Difficile</option>
-                <option value="good">Bon</option>
-                <option value="easy">Parfait</option>
-              </select>
+            <div className="flash-generator-step">
+              <p className="flash-generator-step-title">2) Ressenti cible</p>
+              <div className="flash-generator-actions">
+                <button type="button" className="ghost-btn" onClick={applyWeakPriorityPreset}>
+                  Prioriser les faibles
+                </button>
+                <button
+                  type="button"
+                  className="ghost-btn"
+                  onClick={() => {
+                    setFlashSelectedFeelings(['none', 'again', 'hard', 'good', 'easy'])
+                    setFlashPrioritizeWeak(false)
+                  }}
+                >
+                  Tous ressentis
+                </button>
+              </div>
+              <div className="flashcards-mode-row">
+                <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('none') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('none')}>
+                  Non evalue
+                </button>
+                <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('again') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('again')}>
+                  Revoir
+                </button>
+                <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('hard') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('hard')}>
+                  Difficile
+                </button>
+                <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('good') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('good')}>
+                  Bon
+                </button>
+                <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('easy') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('easy')}>
+                  Parfait
+                </button>
+              </div>
+            </div>
+            <div className="flash-generator-step">
+              <p className="flash-generator-step-title">3) Nombre de questions</p>
+              <div className="flash-generator-count-row">
+                <input
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={flashQuestionCount}
+                  onChange={(event) => setFlashQuestionCount(Number(event.target.value) || 1)}
+                />
+                <button type="button" className="ghost-btn flashcards-generator-btn" onClick={applyQuizGenerator}>
+                  Generer quiz
+                </button>
+              </div>
+              {flashPrioritizeWeak ? <p className="muted">Preset actif: priorisation des faibles.</p> : null}
             </div>
           </div>
           <div className="flashcards-stats-row">
@@ -4256,7 +4377,7 @@ function getPasswordStrengthMeta(password: string) {
             <>
               <div className="flashcards-session-head">
                 <p>
-                  Item #{activeGlobalFlashcard.itemNumber} • {flashIndex + 1}/{globalFlashcards.length}
+                  Item #{activeGlobalFlashcard.itemNumber} • {flashIndex + 1}/{sessionFlashcards.length}
                 </p>
                 <p className="muted">
                   Ressenti actuel:{' '}
@@ -4266,14 +4387,14 @@ function getPasswordStrengthMeta(password: string) {
                   <button
                     type="button"
                     className="ghost-btn"
-                    onClick={() => setFlashIndex((current) => (current - 1 + globalFlashcards.length) % globalFlashcards.length)}
+                    onClick={() => setFlashIndex((current) => (current - 1 + sessionFlashcards.length) % sessionFlashcards.length)}
                   >
                     ←
                   </button>
                   <button
                     type="button"
                     className="ghost-btn"
-                    onClick={() => setFlashIndex((current) => (current + 1) % globalFlashcards.length)}
+                    onClick={() => setFlashIndex((current) => (current + 1) % sessionFlashcards.length)}
                   >
                     →
                   </button>
@@ -4318,7 +4439,7 @@ function getPasswordStrengthMeta(password: string) {
               ) : null}
             </>
           ) : (
-            <p className="muted">Aucune flashcard pour ces filtres.</p>
+            <p className="muted">Aucune flashcard pour cette configuration de quiz.</p>
           )}
         </section>
       ) : null}

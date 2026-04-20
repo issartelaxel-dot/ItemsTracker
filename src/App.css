@@ -1402,8 +1402,65 @@ h3 {
   color: var(--text);
 }
 
+.flash-generator-step {
+  display: grid;
+  gap: 0.42rem;
+}
+
+.flash-generator-step-title {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.flash-generator-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.flash-generator-actions .ghost-btn {
+  padding: 0.34rem 0.58rem;
+  font-size: 0.75rem;
+}
+
+.flash-generator-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28rem;
+  max-height: 130px;
+  overflow: auto;
+  padding-right: 0.2rem;
+}
+
+.flash-generator-chip {
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.2rem 0.48rem;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+.flash-generator-chip.active {
+  border-color: color-mix(in oklab, var(--accent) 55%, var(--border));
+  background: color-mix(in oklab, var(--accent) 16%, var(--input-bg));
+}
+
+.flash-generator-count-row {
+  display: flex;
+  gap: 0.45rem;
+  align-items: center;
+}
+
+.flash-generator-count-row input {
+  width: 118px;
+}
+
 .flashcards-generator-setup.is-open {
-  max-height: 260px;
+  max-height: 680px;
   opacity: 1;
   transform: translateY(0);
 }
@@ -1413,6 +1470,7 @@ h3 {
   opacity: 0.92;
 }
 
+.flashcards-generator-setup.is-closed .flash-generator-step,
 .flashcards-generator-setup.is-closed .flashcards-mode-row,
 .flashcards-generator-setup.is-closed .flashcards-filters {
   display: none;
