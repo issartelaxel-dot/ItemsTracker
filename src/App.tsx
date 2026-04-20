@@ -716,6 +716,7 @@ function App() {
   const [authExpandStyle, setAuthExpandStyle] = useState<CSSProperties>({})
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const authCardRef = useRef<HTMLDivElement | null>(null)
+  const flashGeneratorSetupRef = useRef<HTMLDivElement | null>(null)
   const passwordStrength = getPasswordStrengthMeta(passwordInput)
 
   useEffect(() => {
@@ -1819,6 +1820,14 @@ function getPasswordStrengthMeta(password: string) {
     }, 450)
   }
 
+  function jumpToQuizGeneratorSetup() {
+    setFlashMode('review')
+    setFlashSide('front')
+    window.requestAnimationFrame(() => {
+      flashGeneratorSetupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
+
   function triggerReviewFx(key: string, delta: number) {
     const id = Date.now() + Math.random()
     setReviewFx((current) => ({ ...current, [key]: { delta, id } }))
@@ -2666,19 +2675,21 @@ function getPasswordStrengthMeta(password: string) {
             onClick={() => setActiveView('colleges')}
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
-              ⛭
+              ◫
             </span>
             <span className="sidebar-nav-label">Colleges</span>
           </button>
           <button
             type="button"
-            className={`sidebar-nav-item ${activeView === 'stats' ? 'active' : ''}`}
-            onClick={() => setActiveView('stats')}
+            className="sidebar-nav-item is-disabled"
+            disabled
+            title="Insights bientôt disponible"
+            aria-label="Insights bientôt disponible"
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
               ◔
             </span>
-            <span className="sidebar-nav-label">Stats</span>
+            <span className="sidebar-nav-label">Insights</span>
           </button>
         </nav>
         <div className="sidebar-footer">
@@ -4072,7 +4083,22 @@ function getPasswordStrengthMeta(password: string) {
             <h2>FlashCards</h2>
             <p>{globalFlashcards.length} cartes</p>
           </div>
-          <div className="flashcards-mode-row">
+          <div className="flashcards-generator-callout">
+            <div className="flashcards-generator-copy">
+              <p className="flashcards-generator-kicker">Nouveau</p>
+              <h3>Quiz Generator</h3>
+              <p>Construis une session flashcards guidée: sélection items/collèges, ressenti cible, puis nombre de questions.</p>
+              <div className="flashcards-generator-tags" aria-hidden="true">
+                <span>Items ou collèges</span>
+                <span>Ressenti ciblé</span>
+                <span>Sans chrono</span>
+              </div>
+            </div>
+            <button type="button" className="ghost-btn flashcards-generator-btn" onClick={jumpToQuizGeneratorSetup}>
+              Ouvrir Quiz Generator
+            </button>
+          </div>
+          <div ref={flashGeneratorSetupRef} className="flashcards-mode-row">
             <button
               type="button"
               className={`ghost-btn ${flashMode === 'review' ? 'active' : ''}`}
@@ -4297,8 +4323,8 @@ function getPasswordStrengthMeta(password: string) {
 
       {activeView === 'stats' ? (
         <section className="panel stats-placeholder">
-          <h2>Stats</h2>
-          <p>En cours de dev.</p>
+          <h2>Insights</h2>
+          <p>Bientôt disponible.</p>
         </section>
       ) : null}
       </div>
