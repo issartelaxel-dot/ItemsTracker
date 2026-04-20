@@ -1216,10 +1216,25 @@ tbody tr.selected {
 
 .quiz-face-label {
   margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
   color: var(--muted);
   font-size: 0.72rem;
+}
+
+.quiz-face-feeling {
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 0.66rem;
+  line-height: 1.2;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.12rem 0.45rem;
+  white-space: nowrap;
 }
 
 .quiz-face-content {
