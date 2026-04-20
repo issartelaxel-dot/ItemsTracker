@@ -1184,23 +1184,23 @@ h3 {
 }
 
 .habit-dot.intensity-1 {
-  background: #f7d2ec;
-  border-color: #efb4db;
+  background: #cfe1ff;
+  border-color: #aac7f8;
 }
 
 .habit-dot.intensity-2 {
-  background: #eea8d4;
-  border-color: #de87c0;
+  background: #9fc3ff;
+  border-color: #7ea9ec;
 }
 
 .habit-dot.intensity-3 {
-  background: #df79be;
-  border-color: #c95ea8;
+  background: #6fa4f5;
+  border-color: #4e89df;
 }
 
 .habit-dot.intensity-4 {
-  background: #ca4ca4;
-  border-color: #b03990;
+  background: #3d7de0;
+  border-color: #2d66bf;
 }
 
 .habit-legend {
@@ -1517,11 +1517,59 @@ h3 {
   background: #ccecc0;
 }
 
+:root[data-theme='dark'] .colleges-heat-cell.zero {
+  background: #071d49;
+  border-color: #1d4b82;
+}
+
+:root[data-theme='dark'] .colleges-heat-cell.low {
+  background: #0a2a62;
+  border-color: #245996;
+}
+
+:root[data-theme='dark'] .colleges-heat-cell.mid {
+  background: #123679;
+  border-color: #2f68ab;
+}
+
+:root[data-theme='dark'] .colleges-heat-cell.mid-high {
+  background: #1a448f;
+  border-color: #3d79bd;
+}
+
+:root[data-theme='dark'] .colleges-heat-cell.high {
+  background: #2453a3;
+  border-color: #4e88ca;
+}
+
 .colleges-heat-legend {
   display: flex;
   justify-content: space-between;
   color: var(--muted);
   font-size: 0.74rem;
+}
+
+:root[data-theme='dark'] * {
+  scrollbar-color: #3d6fad #04153a;
+}
+
+:root[data-theme='dark'] ::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+
+:root[data-theme='dark'] ::-webkit-scrollbar-track {
+  background: #04153a;
+}
+
+:root[data-theme='dark'] ::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #4f7fbd, #3f6ea8);
+  border-radius: 999px;
+  border: 2px solid #04153a;
+}
+
+:root[data-theme='dark'] ::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #5a8bc9, #4b7bb4);
 }
 
 .panel {
