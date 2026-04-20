@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import itemsData from './data/items.json'
 import './App.css'
 
@@ -1927,7 +1927,7 @@ function getPasswordStrengthMeta(password: string) {
     logo.style.setProperty('--logo-bar-offset-y', `${y.toFixed(2)}px`)
   }
 
-  function handleSidebarLogoPointerEnter() {
+  function handleSidebarLogoPointerMove(event: PointerEvent<HTMLSpanElement>) {
     const logo = sidebarLogoRef.current
     if (!logo) {
       return
@@ -1935,8 +1935,26 @@ function getPasswordStrengthMeta(password: string) {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       return
     }
-    logo.classList.add('is-fleeing')
-    setSidebarLogoBarOffset(0, 10)
+
+    const rect = logo.getBoundingClientRect()
+    const pointerX = event.clientX - rect.left
+    const pointerY = event.clientY - rect.top
+    const baseCenterX = rect.width / 2
+    const baseCenterY = 12
+    const distance = Math.hypot(pointerX - baseCenterX, pointerY - baseCenterY)
+    const isNearBar = distance <= 18
+    const targetY = isNearBar ? 20 : 0
+
+    if (sidebarLogoOffsetRef.current.y === targetY) {
+      return
+    }
+
+    if (isNearBar) {
+      logo.classList.add('is-fleeing')
+    } else {
+      logo.classList.remove('is-fleeing')
+    }
+    setSidebarLogoBarOffset(0, targetY)
   }
 
   function handleSidebarLogoPointerLeave() {
@@ -2717,7 +2735,7 @@ function getPasswordStrengthMeta(password: string) {
               ref={sidebarLogoRef}
               className="sidebar-logo"
               aria-hidden="true"
-              onPointerEnter={handleSidebarLogoPointerEnter}
+              onPointerMove={handleSidebarLogoPointerMove}
               onPointerLeave={handleSidebarLogoPointerLeave}
             >
               <span className="sidebar-logo-bar" />
