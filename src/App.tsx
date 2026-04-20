@@ -638,7 +638,7 @@ function App() {
   const [trackingState, setTrackingState] = useState<TrackerState>(getInitialTrackingState())
   const [theme, setTheme] = useState<Theme>('light')
   const [focusMode, setFocusMode] = useState<boolean>(false)
-  const [selectedItemId, setSelectedItemId] = useState<number>(rawItems[0]?.itemNumber ?? 1)
+  const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [search, setSearch] = useState('')
   const [collegeFilter, setCollegeFilter] = useState<string>('ALL')
   const [masteryFilter, setMasteryFilter] = useState<string>('ALL')
@@ -1306,20 +1306,29 @@ function getPasswordStrengthMeta(password: string) {
   }, [suggestions, filteredAndSortedItems])
 
   const selectedItem = useMemo(() => {
+    if (selectedItemId === null) {
+      return null
+    }
     if (focusMode && focusCandidates.length > 0 && !focusCandidates.includes(selectedItemId)) {
       return items.find((item) => item.itemNumber === focusCandidates[0])
     }
     return items.find((item) => item.itemNumber === selectedItemId)
   }, [items, selectedItemId, focusMode, focusCandidates])
 
-  const effectiveSelectedItem = selectedItem ?? items[0]
+  const effectiveSelectedItem = selectedItem ?? null
 
   const itemTableList = useMemo(() => {
     if (!focusMode) {
       return filteredAndSortedItems
     }
-    return filteredAndSortedItems.filter((item) => item.itemNumber === effectiveSelectedItem?.itemNumber)
-  }, [focusMode, filteredAndSortedItems, effectiveSelectedItem])
+    if (effectiveSelectedItem) {
+      return filteredAndSortedItems.filter((item) => item.itemNumber === effectiveSelectedItem.itemNumber)
+    }
+    if (focusCandidates.length === 0) {
+      return filteredAndSortedItems
+    }
+    return filteredAndSortedItems.filter((item) => item.itemNumber === focusCandidates[0])
+  }, [focusMode, filteredAndSortedItems, effectiveSelectedItem, focusCandidates])
 
   const historyItem = useMemo(() => {
     if (historyItemId === null) {
@@ -1498,7 +1507,7 @@ function getPasswordStrengthMeta(password: string) {
   }, [items])
 
   function setSelectedItem(itemNumber: number) {
-    setSelectedItemId(itemNumber)
+    setSelectedItemId((current) => (current === itemNumber ? null : itemNumber))
   }
 
   function triggerQuizButtonPulse(itemNumber: number) {
@@ -2130,7 +2139,7 @@ function getPasswordStrengthMeta(password: string) {
     }
     const currentIndex = focusCandidates.indexOf(effectiveSelectedItem?.itemNumber ?? focusCandidates[0])
     const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % focusCandidates.length
-    setSelectedItem(focusCandidates[nextIndex])
+    setSelectedItemId(focusCandidates[nextIndex])
   }
 
   function exportBackup() {
@@ -2540,7 +2549,7 @@ function getPasswordStrengthMeta(password: string) {
                   {getProfileInitials(profile)}
                 </span>
               )}
-              <span>
+              <span className="sidebar-profile-meta">
                 <strong>{profile.firstName || authUser?.displayName || 'Setup Hub'}</strong>
                 <small>{profile.email || authUser?.email || 'hello@setup-hub.com'}</small>
               </span>
@@ -2688,8 +2697,8 @@ function getPasswordStrengthMeta(password: string) {
         </article>
         </section>
 
-        <section id="items-section" className="main-grid">
-        <article className="panel table-panel">
+        <section id="items-section" className={`main-grid ${effectiveSelectedItem ? 'has-detail' : 'full-table'}`}>
+        <article className={`panel table-panel ${effectiveSelectedItem ? '' : 'full-width'}`}>
           <div className="panel-head">
             <h2>Items</h2>
             <p>{itemTableList.length} lignes</p>
@@ -2805,8 +2814,8 @@ function getPasswordStrengthMeta(password: string) {
           </div>
         </article>
 
-        <article className="panel detail-panel">
-          {effectiveSelectedItem ? (
+        {effectiveSelectedItem ? (
+          <article className="panel detail-panel">
             <>
               <div className="panel-head">
                 <div>
@@ -2814,6 +2823,15 @@ function getPasswordStrengthMeta(password: string) {
                   <p>{effectiveSelectedItem.shortDescription}</p>
                 </div>
                 <div className="detail-head-actions">
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    title="Masquer le panneau item"
+                    aria-label="Masquer le panneau item"
+                    onClick={() => setSelectedItemId(null)}
+                  >
+                    ✕
+                  </button>
                   <button
                     type="button"
                     className="history-icon-btn"
@@ -3645,10 +3663,8 @@ function getPasswordStrengthMeta(password: string) {
                 </button>
               </div>
             </>
-          ) : (
-            <p>Aucun item trouvé.</p>
-          )}
-        </article>
+          </article>
+        ) : null}
       </section>
 
       {historyItem ? (

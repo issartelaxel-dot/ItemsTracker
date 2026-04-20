@@ -239,7 +239,7 @@
 .dashboard-layout.is-sidebar-collapsed .sidebar-search input,
 .dashboard-layout.is-sidebar-collapsed .sidebar-nav-label,
 .dashboard-layout.is-sidebar-collapsed .sidebar-settings-label,
-.dashboard-layout.is-sidebar-collapsed .sidebar-profile-trigger > span {
+.dashboard-layout.is-sidebar-collapsed .sidebar-profile-meta {
   display: none;
 }
 
@@ -1141,6 +1141,19 @@ h3 {
   grid-template-columns: 1.15fr 0.85fr;
   gap: 1rem;
   min-height: 62vh;
+  transition: grid-template-columns 0.24s ease;
+}
+
+.main-grid.full-table {
+  grid-template-columns: 1fr;
+}
+
+.table-panel.full-width {
+  width: 100%;
+}
+
+.detail-panel {
+  animation: detail-panel-enter 0.26s ease both;
 }
 
 .panel {
@@ -2731,6 +2744,17 @@ tbody tr.selected {
   90% {
     transform: translateX(120%);
     opacity: 0;
+  }
+}
+
+@keyframes detail-panel-enter {
+  from {
+    opacity: 0;
+    transform: translateX(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
   }
 }
 
