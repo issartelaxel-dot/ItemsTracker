@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import itemsData from './data/items.json'
 import './App.css'
 
@@ -677,6 +677,8 @@ function App() {
   const [flashItemFilter, setFlashItemFilter] = useState<string>('ALL')
   const [flashResultFilter, setFlashResultFilter] = useState<'ALL' | QuizResult>('ALL')
   const [flashMode, setFlashMode] = useState<'review' | 'discover' | 'catchup'>('review')
+  const [flashGeneratorOpen, setFlashGeneratorOpen] = useState(false)
+  const [flashGeneratorNudge, setFlashGeneratorNudge] = useState(0)
   const [flashIndex, setFlashIndex] = useState(0)
   const [flashSide, setFlashSide] = useState<'front' | 'back'>('front')
   const [flashFeedback, setFlashFeedback] = useState<QuizResult | null>(null)
@@ -717,6 +719,8 @@ function App() {
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const authCardRef = useRef<HTMLDivElement | null>(null)
   const flashGeneratorSetupRef = useRef<HTMLDivElement | null>(null)
+  const sidebarLogoRef = useRef<HTMLSpanElement | null>(null)
+  const sidebarLogoOffsetRef = useRef({ x: 0, y: 0 })
   const passwordStrength = getPasswordStrengthMeta(passwordInput)
 
   useEffect(() => {
@@ -1821,8 +1825,14 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   function jumpToQuizGeneratorSetup() {
+    setFlashGeneratorOpen(true)
     setFlashMode('review')
     setFlashSide('front')
+    const nudgeToken = Date.now()
+    setFlashGeneratorNudge(nudgeToken)
+    window.setTimeout(() => {
+      setFlashGeneratorNudge((current) => (current === nudgeToken ? 0 : current))
+    }, 650)
     window.requestAnimationFrame(() => {
       flashGeneratorSetupRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
     })
@@ -1862,6 +1872,71 @@ function getPasswordStrengthMeta(password: string) {
 
   function getSheetKey(itemNumber: number, kind: SheetKind, sheetId: string) {
     return `sheet:${itemNumber}:${kind}:${sheetId}`
+  }
+
+  function setSidebarLogoBarOffset(x: number, y: number) {
+    const logo = sidebarLogoRef.current
+    if (!logo) {
+      return
+    }
+    sidebarLogoOffsetRef.current = { x, y }
+    logo.style.setProperty('--logo-bar-offset-x', `${x.toFixed(2)}px`)
+    logo.style.setProperty('--logo-bar-offset-y', `${y.toFixed(2)}px`)
+  }
+
+  function handleSidebarLogoPointerMove(event: PointerEvent<HTMLSpanElement>) {
+    const logo = sidebarLogoRef.current
+    if (!logo) {
+      return
+    }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return
+    }
+
+    const rect = logo.getBoundingClientRect()
+    const pointerX = event.clientX - rect.left
+    const pointerY = event.clientY - rect.top
+    const current = sidebarLogoOffsetRef.current
+
+    const baseCenterX = rect.width / 2
+    const baseCenterY = 12
+    const barCenterX = baseCenterX + current.x
+    const barCenterY = baseCenterY + current.y
+    const dx = barCenterX - pointerX
+    const dy = barCenterY - pointerY
+    const distance = Math.hypot(dx, dy)
+    const repelRadius = 34
+
+    let targetX = current.x
+    let targetY = current.y
+
+    if (distance < repelRadius) {
+      const safeDistance = Math.max(distance, 0.001)
+      const pressure = (repelRadius - safeDistance) / repelRadius
+      const push = 9 * pressure + 1.2
+      targetX = current.x + (dx / safeDistance) * push
+      targetY = current.y + (dy / safeDistance) * push
+    } else {
+      targetX = current.x * 0.84
+      targetY = current.y * 0.84
+    }
+
+    const maxX = 9
+    const maxY = 8
+    targetX = Math.max(-maxX, Math.min(maxX, targetX))
+    targetY = Math.max(-maxY, Math.min(maxY, targetY))
+
+    logo.classList.add('is-fleeing')
+    setSidebarLogoBarOffset(targetX, targetY)
+  }
+
+  function handleSidebarLogoPointerLeave() {
+    const logo = sidebarLogoRef.current
+    if (!logo) {
+      return
+    }
+    logo.classList.remove('is-fleeing')
+    setSidebarLogoBarOffset(0, 0)
   }
 
   function handleCollegeReviewDelta(itemNumber: number, college: string, delta: 1 | -1) {
@@ -2629,7 +2704,13 @@ function getPasswordStrengthMeta(password: string) {
       <aside className="dashboard-sidebar">
         <div className="sidebar-head">
           <div className="sidebar-head-top">
-            <span className="sidebar-logo" aria-hidden="true">
+            <span
+              ref={sidebarLogoRef}
+              className="sidebar-logo"
+              aria-hidden="true"
+              onPointerMove={handleSidebarLogoPointerMove}
+              onPointerLeave={handleSidebarLogoPointerLeave}
+            >
               <span className="sidebar-logo-bar" />
             </span>
             <div className="sidebar-head-titles">
@@ -4098,53 +4179,71 @@ function getPasswordStrengthMeta(password: string) {
               Ouvrir Quiz Generator
             </button>
           </div>
-          <div ref={flashGeneratorSetupRef} className="flashcards-mode-row">
-            <button
-              type="button"
-              className={`ghost-btn ${flashMode === 'review' ? 'active' : ''}`}
-              onClick={() => setFlashMode('review')}
-            >
-              Reviser
-            </button>
-            <button
-              type="button"
-              className={`ghost-btn ${flashMode === 'discover' ? 'active' : ''}`}
-              onClick={() => setFlashMode('discover')}
-            >
-              Decouvrir
-            </button>
-            <button
-              type="button"
-              className={`ghost-btn ${flashMode === 'catchup' ? 'active' : ''}`}
-              onClick={() => setFlashMode('catchup')}
-            >
-              Rattrapage
-            </button>
-          </div>
-          <div className="filters-row flashcards-filters">
-            <select value={flashCollegeFilter} onChange={(event) => setFlashCollegeFilter(event.target.value)}>
-              <option value="ALL">Tous colleges</option>
-              {COLLEGES.map((college) => (
-                <option key={college} value={college}>
-                  {college}
-                </option>
-              ))}
-            </select>
-            <select value={flashItemFilter} onChange={(event) => setFlashItemFilter(event.target.value)}>
-              <option value="ALL">Tous items</option>
-              {items.map((item) => (
-                <option key={item.itemNumber} value={String(item.itemNumber)}>
-                  Item #{item.itemNumber}
-                </option>
-              ))}
-            </select>
-            <select value={flashResultFilter} onChange={(event) => setFlashResultFilter(event.target.value as 'ALL' | QuizResult)}>
-              <option value="ALL">Tous ressentis</option>
-              <option value="again">Revoir</option>
-              <option value="hard">Difficile</option>
-              <option value="good">Bon</option>
-              <option value="easy">Parfait</option>
-            </select>
+          <div
+            ref={flashGeneratorSetupRef}
+            className={`flashcards-generator-setup ${flashGeneratorOpen ? 'is-open' : 'is-closed'} ${
+              flashGeneratorNudge ? 'is-nudged' : ''
+            }`}
+          >
+            <div className="flashcards-generator-setup-head">
+              <strong>Configuration Quiz Generator</strong>
+              <button
+                type="button"
+                className="ghost-btn"
+                onClick={() => setFlashGeneratorOpen((current) => !current)}
+                aria-expanded={flashGeneratorOpen}
+              >
+                {flashGeneratorOpen ? 'Masquer' : 'Afficher'}
+              </button>
+            </div>
+            <div className="flashcards-mode-row">
+              <button
+                type="button"
+                className={`ghost-btn ${flashMode === 'review' ? 'active' : ''}`}
+                onClick={() => setFlashMode('review')}
+              >
+                Reviser
+              </button>
+              <button
+                type="button"
+                className={`ghost-btn ${flashMode === 'discover' ? 'active' : ''}`}
+                onClick={() => setFlashMode('discover')}
+              >
+                Decouvrir
+              </button>
+              <button
+                type="button"
+                className={`ghost-btn ${flashMode === 'catchup' ? 'active' : ''}`}
+                onClick={() => setFlashMode('catchup')}
+              >
+                Rattrapage
+              </button>
+            </div>
+            <div className="filters-row flashcards-filters">
+              <select value={flashCollegeFilter} onChange={(event) => setFlashCollegeFilter(event.target.value)}>
+                <option value="ALL">Tous colleges</option>
+                {COLLEGES.map((college) => (
+                  <option key={college} value={college}>
+                    {college}
+                  </option>
+                ))}
+              </select>
+              <select value={flashItemFilter} onChange={(event) => setFlashItemFilter(event.target.value)}>
+                <option value="ALL">Tous items</option>
+                {items.map((item) => (
+                  <option key={item.itemNumber} value={String(item.itemNumber)}>
+                    Item #{item.itemNumber}
+                  </option>
+                ))}
+              </select>
+              <select value={flashResultFilter} onChange={(event) => setFlashResultFilter(event.target.value as 'ALL' | QuizResult)}>
+                <option value="ALL">Tous ressentis</option>
+                <option value="again">Revoir</option>
+                <option value="hard">Difficile</option>
+                <option value="good">Bon</option>
+                <option value="easy">Parfait</option>
+              </select>
+            </div>
           </div>
           <div className="flashcards-stats-row">
             <span>Progression session: {flashSessionStats.completion}%</span>
