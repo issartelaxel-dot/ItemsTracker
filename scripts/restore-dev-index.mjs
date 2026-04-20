@@ -6,8 +6,8 @@ const devIndex = resolve(root, 'index.dev.html')
 const rootIndex = resolve(root, 'index.html')
 
 if (!existsSync(devIndex)) {
-  console.error('index.dev.html not found. Nothing to restore.')
-  process.exit(1)
+  console.log('index.dev.html not found. Skipping restore.')
+  process.exit(0)
 }
 
 cpSync(devIndex, rootIndex)

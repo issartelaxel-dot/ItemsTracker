@@ -712,6 +712,7 @@ function App() {
   const [starFx, setStarFx] = useState<Record<string, number>>({})
   const [masteryFx, setMasteryFx] = useState<Record<string, number>>({})
   const [authTransitionPhase, setAuthTransitionPhase] = useState<'idle' | 'expanding'>('idle')
+  const [dashboardIntroPhase, setDashboardIntroPhase] = useState<'idle' | 'entering'>('idle')
   const [authExpandStyle, setAuthExpandStyle] = useState<CSSProperties>({})
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const authCardRef = useRef<HTMLDivElement | null>(null)
@@ -820,6 +821,14 @@ function App() {
 
     return () => window.clearTimeout(timer)
   }, [authStatus, authUser?.id, trackingState, theme, focusMode, profile])
+
+  useEffect(() => {
+    if (authStatus !== 'authed' || dashboardIntroPhase !== 'entering') {
+      return
+    }
+    const timer = window.setTimeout(() => setDashboardIntroPhase('idle'), 720)
+    return () => window.clearTimeout(timer)
+  }, [authStatus, dashboardIntroPhase])
 
   useEffect(() => {
     if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteStateRef.current) {
@@ -1010,6 +1019,7 @@ function App() {
 
     const cardRect = authCardRef.current?.getBoundingClientRect()
     if (!cardRect) {
+      setDashboardIntroPhase('entering')
       setAuthStatus('authed')
       setLoginPending(false)
       return
@@ -1028,6 +1038,7 @@ function App() {
 
     window.setTimeout(() => {
       setAuthTransitionPhase('idle')
+      setDashboardIntroPhase('entering')
       setAuthStatus('authed')
       setLoginPending(false)
     }, 780)
@@ -2601,7 +2612,11 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   return (
-    <div className={`dashboard-layout ${sidebarCollapsed ? 'is-sidebar-collapsed' : ''}`}>
+    <div
+      className={`dashboard-layout ${sidebarCollapsed ? 'is-sidebar-collapsed' : ''} ${
+        dashboardIntroPhase === 'entering' ? 'is-shell-entering' : ''
+      }`}
+    >
       <aside className="dashboard-sidebar">
         <div className="sidebar-head">
           <div className="sidebar-head-top">
@@ -2612,15 +2627,6 @@ function getPasswordStrengthMeta(password: string) {
               <p className="sidebar-grade">IVeme annee</p>
               <p className="sidebar-title">Items Tracker</p>
             </div>
-            <button
-              type="button"
-              className="sidebar-collapse-btn"
-              onClick={() => setSidebarCollapsed((current) => !current)}
-              aria-label={sidebarCollapsed ? 'Etendre le menu' : 'Replier le menu'}
-              title={sidebarCollapsed ? 'Etendre le menu' : 'Replier le menu'}
-            >
-              {sidebarCollapsed ? '→' : '←'}
-            </button>
           </div>
         </div>
         <nav className="sidebar-nav">
@@ -2806,7 +2812,16 @@ function getPasswordStrengthMeta(password: string) {
         </div>
       </aside>
 
-      <div className="dashboard-shell">
+      <div className={`dashboard-shell ${activeView === 'items' ? 'items-view-shell' : ''}`}>
+        <button
+          type="button"
+          className="sidebar-collapse-btn"
+          onClick={() => setSidebarCollapsed((current) => !current)}
+          aria-label={sidebarCollapsed ? 'Etendre le menu' : 'Replier le menu'}
+          title={sidebarCollapsed ? 'Etendre le menu' : 'Replier le menu'}
+        >
+          {sidebarCollapsed ? '→' : '←'}
+        </button>
         <header className="topbar">
           <div className="topbar-actions">
           <button

@@ -13,6 +13,30 @@
   grid-template-columns: 86px minmax(0, 1fr);
 }
 
+.dashboard-layout.is-shell-entering {
+  animation: dashboard-shell-in 0.46s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dashboard-layout.is-shell-entering .dashboard-sidebar {
+  animation: dashboard-section-in 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 60ms;
+}
+
+.dashboard-layout.is-shell-entering .topbar {
+  animation: dashboard-section-in 0.36s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 120ms;
+}
+
+.dashboard-layout.is-shell-entering .global-grid,
+.dashboard-layout.is-shell-entering .main-grid,
+.dashboard-layout.is-shell-entering .flashcards-page,
+.dashboard-layout.is-shell-entering .colleges-page,
+.dashboard-layout.is-shell-entering .bottom-grid,
+.dashboard-layout.is-shell-entering .stats-placeholder {
+  animation: dashboard-section-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: 170ms;
+}
+
 .dashboard-shell {
   display: grid;
   gap: 1rem;
@@ -22,6 +46,16 @@
   background: #f6f8fb;
   border-top-left-radius: 30px;
   border-left: 1px solid #c3d2ee;
+  position: relative;
+}
+
+.dashboard-shell.items-view-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  height: 100dvh;
+  min-height: 100dvh;
+  overflow: hidden;
 }
 
 .dashboard-sidebar {
@@ -48,7 +82,7 @@
 
 .sidebar-head-top {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto 1fr;
   align-items: start;
   gap: 0.48rem;
 }
@@ -66,6 +100,26 @@
   color: #e8f2ff;
   padding: 0;
   cursor: pointer;
+  border-radius: 8px;
+}
+
+.dashboard-shell .sidebar-collapse-btn {
+  position: absolute;
+  top: 0.65rem;
+  left: 0.7rem;
+  z-index: 3;
+  border-color: #7d9de0;
+  background: #f7faff;
+  color: #2f5fcb;
+  box-shadow: 0 6px 16px rgba(38, 85, 189, 0.16);
+}
+
+.dashboard-shell .sidebar-collapse-btn:hover {
+  background: #edf3ff;
+}
+
+.dashboard-shell .sidebar-collapse-btn:active {
+  background: #e4edff;
 }
 
 .sidebar-logo {
@@ -1154,6 +1208,11 @@ h3 {
 
 .main-grid.items-only-view.full-table {
   min-height: calc(100dvh - 150px);
+}
+
+.dashboard-shell.items-view-shell .main-grid.items-only-view.full-table {
+  flex: 1;
+  min-height: 0;
 }
 
 .main-grid.items-only-view.full-table .table-panel {
@@ -2950,6 +3009,28 @@ tbody tr.selected {
   }
 }
 
+@keyframes dashboard-shell-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.995);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes dashboard-section-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes detail-panel-enter {
   from {
     opacity: 0;
@@ -3132,6 +3213,20 @@ tbody tr.selected {
   100% {
     opacity: 0.9;
     transform: scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-layout.is-shell-entering,
+  .dashboard-layout.is-shell-entering .dashboard-sidebar,
+  .dashboard-layout.is-shell-entering .topbar,
+  .dashboard-layout.is-shell-entering .global-grid,
+  .dashboard-layout.is-shell-entering .main-grid,
+  .dashboard-layout.is-shell-entering .flashcards-page,
+  .dashboard-layout.is-shell-entering .colleges-page,
+  .dashboard-layout.is-shell-entering .bottom-grid,
+  .dashboard-layout.is-shell-entering .stats-placeholder {
+    animation: none !important;
   }
 }
 

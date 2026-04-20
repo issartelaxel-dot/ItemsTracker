@@ -376,7 +376,8 @@ app.get('/api/state', async (req, res) => {
         tracking_state AS "trackingState",
         theme,
         focus_mode AS "focusMode",
-        profile
+        profile,
+        updated_at AS "updatedAt"
       FROM user_state
       WHERE user_id = $1
     `,
@@ -433,7 +434,7 @@ app.put('/api/state', async (req, res) => {
     ],
   )
 
-  res.json({ ok: true })
+  res.json({ ok: true, updatedAt: now })
 })
 
 app.post('/api/auth/register/request', authLimiter, async (req, res) => {
