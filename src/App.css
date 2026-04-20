@@ -219,6 +219,22 @@
   display: grid;
   gap: 0.22rem;
   align-content: start;
+  position: relative;
+}
+
+.sidebar-nav-active-bubble {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-radius: 12px;
+  background: rgba(145, 178, 250, 0.34);
+  box-shadow: inset 0 0 0 1px rgba(197, 216, 255, 0.34);
+  z-index: 0;
+  pointer-events: none;
+  transition:
+    transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 0.2s ease;
 }
 
 .sidebar-nav-item {
@@ -239,6 +255,8 @@
     box-shadow 0.2s ease,
     color 0.2s ease,
     transform 0.16s ease;
+  position: relative;
+  z-index: 1;
 }
 
 .sidebar-nav-icon {
@@ -267,6 +285,11 @@
 .sidebar-nav-item.active {
   background: rgba(145, 178, 250, 0.34);
   box-shadow: inset 0 0 0 1px rgba(197, 216, 255, 0.34);
+}
+
+.sidebar-nav.with-active-bubble .sidebar-nav-item.active {
+  background: transparent;
+  box-shadow: none;
 }
 
 .sidebar-nav-item.active .sidebar-nav-icon {

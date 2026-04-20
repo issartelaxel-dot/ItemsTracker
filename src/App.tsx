@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import itemsData from './data/items.json'
 import './App.css'
 
@@ -13,6 +13,7 @@ type QuizResult = 'again' | 'hard' | 'good' | 'easy'
 type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'stats'
 type FlashGeneratorScope = 'items' | 'colleges'
 type FlashFeelingFilter = 'none' | QuizResult
+type SidebarNavBubbleKey = Exclude<NavView, 'stats'>
 
 type ItemBase = {
   itemNumber: number
@@ -729,13 +730,33 @@ function App() {
   const [authExpandStyle, setAuthExpandStyle] = useState<CSSProperties>({})
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const authCardRef = useRef<HTMLDivElement | null>(null)
+  const sidebarNavRef = useRef<HTMLElement | null>(null)
+  const sidebarNavButtonRefs = useRef<Partial<Record<SidebarNavBubbleKey, HTMLButtonElement | null>>>({})
   const sidebarLogoRef = useRef<HTMLSpanElement | null>(null)
   const sidebarLogoOffsetRef = useRef({ x: 0, y: 0 })
+  const [sidebarNavBubble, setSidebarNavBubble] = useState({ top: 0, height: 0, ready: false })
   const passwordStrength = getPasswordStrengthMeta(passwordInput)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
+
+  useLayoutEffect(() => {
+    const activeKey = (activeView === 'stats' ? 'dashboard' : activeView) as SidebarNavBubbleKey
+    const navElement = sidebarNavRef.current
+    const activeButton = sidebarNavButtonRefs.current[activeKey]
+    if (!navElement || !activeButton) {
+      setSidebarNavBubble((current) => ({ ...current, ready: false }))
+      return
+    }
+    const navRect = navElement.getBoundingClientRect()
+    const btnRect = activeButton.getBoundingClientRect()
+    setSidebarNavBubble({
+      top: btnRect.top - navRect.top,
+      height: btnRect.height,
+      ready: true,
+    })
+  }, [activeView, sidebarCollapsed])
 
   useEffect(() => {
     void refreshAuth()
@@ -2842,9 +2863,21 @@ function getPasswordStrengthMeta(password: string) {
             </div>
           </div>
         </div>
-        <nav className="sidebar-nav">
+        <nav ref={sidebarNavRef} className={`sidebar-nav ${sidebarNavBubble.ready ? 'with-active-bubble' : ''}`}>
+          <span
+            className="sidebar-nav-active-bubble"
+            aria-hidden="true"
+            style={{
+              transform: `translateY(${sidebarNavBubble.top}px)`,
+              height: `${sidebarNavBubble.height}px`,
+              opacity: sidebarNavBubble.ready ? 1 : 0,
+            }}
+          />
           <button
             type="button"
+            ref={(node) => {
+              sidebarNavButtonRefs.current.dashboard = node
+            }}
             className={`sidebar-nav-item ${activeView === 'dashboard' ? 'active' : ''}`}
             onClick={() => setActiveView('dashboard')}
           >
@@ -2855,6 +2888,9 @@ function getPasswordStrengthMeta(password: string) {
           </button>
           <button
             type="button"
+            ref={(node) => {
+              sidebarNavButtonRefs.current.items = node
+            }}
             className={`sidebar-nav-item ${activeView === 'items' ? 'active' : ''}`}
             onClick={() => setActiveView('items')}
           >
@@ -2865,6 +2901,9 @@ function getPasswordStrengthMeta(password: string) {
           </button>
           <button
             type="button"
+            ref={(node) => {
+              sidebarNavButtonRefs.current.flashcards = node
+            }}
             className={`sidebar-nav-item ${activeView === 'flashcards' ? 'active' : ''}`}
             onClick={() => setActiveView('flashcards')}
           >
@@ -2875,6 +2914,9 @@ function getPasswordStrengthMeta(password: string) {
           </button>
           <button
             type="button"
+            ref={(node) => {
+              sidebarNavButtonRefs.current.colleges = node
+            }}
             className={`sidebar-nav-item ${activeView === 'colleges' ? 'active' : ''}`}
             onClick={() => setActiveView('colleges')}
           >
