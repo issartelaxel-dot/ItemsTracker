@@ -459,12 +459,12 @@
 
 .auth-shell::before {
   background:
-    radial-gradient(42% 62% at 10% 12%, rgba(38, 83, 228, 0.62), transparent 70%),
-    radial-gradient(45% 48% at 82% 14%, rgba(0, 186, 201, 0.54), transparent 72%),
-    radial-gradient(38% 52% at 68% 86%, rgba(109, 72, 255, 0.52), transparent 68%),
-    linear-gradient(130deg, #0a1224, #10284f 34%, #0f2f46 62%, #26134f 100%);
+    radial-gradient(44% 64% at 10% 12%, rgba(66, 128, 255, 0.68), transparent 70%),
+    radial-gradient(46% 50% at 84% 12%, rgba(35, 170, 255, 0.58), transparent 72%),
+    radial-gradient(40% 54% at 66% 86%, rgba(57, 98, 245, 0.56), transparent 68%),
+    linear-gradient(130deg, #0b1c49, #153f9d 34%, #1c53b8 62%, #244cb0 100%);
   transform: scale(1.05);
-  filter: saturate(118%);
+  filter: saturate(126%);
   animation: auth-bg-drift 24s ease-in-out infinite alternate;
 }
 
