@@ -10,6 +10,7 @@ type SheetKind = 'lisaSheets' | 'platformSheets'
 type QuizAnimationStyle = 'flip' | 'fade'
 type RewardIntensity = 'low' | 'medium' | 'high'
 type QuizResult = 'again' | 'hard' | 'good' | 'easy'
+type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'stats'
 
 type ItemBase = {
   itemNumber: number
@@ -119,6 +120,24 @@ type ItemComputed = ItemBase & {
   lastReviewDate: string | null
 }
 
+type GlobalFlashcard = {
+  itemNumber: number
+  cardId: string
+  question: string
+  answer: string
+  lastResult: QuizResult | null
+  colleges: string[]
+  quizCount: number
+  lastReviewedAt: string | null
+}
+
+type CollegeViewRow = {
+  college: string
+  items: Array<{ itemNumber: number; shortDescription: string; reviews: number; mastery: Mastery }>
+  completion: number
+  totalReviews: number
+}
+
 type AuthStatus = 'loading' | 'guest' | 'authed'
 type AuthView = 'login' | 'register'
 type AuthUser = {
@@ -166,6 +185,13 @@ const QUIZ_RESULT_META: Record<
   hard: { label: 'Difficile', mastery: 'Moyen', icon: '⚠️', actionVerb: 'difficile', rewardTone: 'neutral' },
   good: { label: 'Bon', mastery: 'Bon', icon: '✅', actionVerb: 'bon', rewardTone: 'good' },
   easy: { label: 'Parfait', mastery: 'Parfait', icon: '⚡', actionVerb: 'parfait', rewardTone: 'easy' },
+}
+
+const FLASH_RESULT_PRIORITY: Record<QuizResult, number> = {
+  again: 0,
+  hard: 1,
+  good: 2,
+  easy: 3,
 }
 
 const COLLEGES = [
@@ -643,9 +669,17 @@ function App() {
   const [collegeFilter, setCollegeFilter] = useState<string>('ALL')
   const [masteryFilter, setMasteryFilter] = useState<string>('ALL')
   const [sortKey, setSortKey] = useState<SortKey>('reviews')
+  const [activeView, setActiveView] = useState<NavView>('dashboard')
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [flashCollegeFilter, setFlashCollegeFilter] = useState<string>('ALL')
+  const [flashItemFilter, setFlashItemFilter] = useState<string>('ALL')
+  const [flashResultFilter, setFlashResultFilter] = useState<'ALL' | QuizResult>('ALL')
+  const [flashMode, setFlashMode] = useState<'review' | 'discover' | 'catchup'>('review')
+  const [flashIndex, setFlashIndex] = useState(0)
+  const [flashSide, setFlashSide] = useState<'front' | 'back'>('front')
+  const [flashFeedback, setFlashFeedback] = useState<QuizResult | null>(null)
   const backupInputRef = useRef<HTMLInputElement | null>(null)
   const hasLoadedRemoteStateRef = useRef(false)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
@@ -1387,6 +1421,105 @@ function getPasswordStrengthMeta(password: string) {
     }
   }, [activeQuizCard])
 
+  const globalFlashcards = useMemo<GlobalFlashcard[]>(() => {
+    const pool = items.flatMap((item) =>
+      item.tracking.quiz.cards.map((card) => ({
+        itemNumber: item.itemNumber,
+        cardId: card.id,
+        question: card.question.trim() || getAutoQuizQuestion(item),
+        answer: card.answer.trim() || item.shortDescription,
+        lastResult: card.lastResult,
+        colleges: item.tracking.assignedColleges,
+        quizCount: card.quizCount,
+        lastReviewedAt: card.lastReviewedAt,
+      })),
+    )
+    const filtered = pool.filter((entry) => {
+      if (flashCollegeFilter !== 'ALL' && !entry.colleges.includes(flashCollegeFilter)) {
+        return false
+      }
+      if (flashItemFilter !== 'ALL' && entry.itemNumber !== Number(flashItemFilter)) {
+        return false
+      }
+      if (flashResultFilter !== 'ALL' && entry.lastResult !== flashResultFilter) {
+        return false
+      }
+      return true
+    })
+
+    return filtered.sort((a, b) => {
+      if (flashMode === 'discover') {
+        const aSeen = a.quizCount > 0 ? 1 : 0
+        const bSeen = b.quizCount > 0 ? 1 : 0
+        return aSeen - bSeen || a.itemNumber - b.itemNumber
+      }
+
+      if (flashMode === 'catchup') {
+        const aTime = a.lastReviewedAt ? new Date(a.lastReviewedAt).getTime() : 0
+        const bTime = b.lastReviewedAt ? new Date(b.lastReviewedAt).getTime() : 0
+        return aTime - bTime || a.quizCount - b.quizCount || a.itemNumber - b.itemNumber
+      }
+
+      const aPriority = a.lastResult ? FLASH_RESULT_PRIORITY[a.lastResult] : -1
+      const bPriority = b.lastResult ? FLASH_RESULT_PRIORITY[b.lastResult] : -1
+      return aPriority - bPriority || a.quizCount - b.quizCount || a.itemNumber - b.itemNumber
+    })
+  }, [items, flashCollegeFilter, flashItemFilter, flashResultFilter, flashMode])
+
+  const activeGlobalFlashcard = globalFlashcards[flashIndex] ?? null
+
+  const flashSessionStats = useMemo(() => {
+    const reviewed = globalFlashcards.filter((card) => card.quizCount > 0).length
+    const difficult = globalFlashcards.filter((card) => card.lastResult === 'again' || card.lastResult === 'hard').length
+    const good = globalFlashcards.filter((card) => card.lastResult === 'good' || card.lastResult === 'easy').length
+    const completion = globalFlashcards.length === 0 ? 0 : Math.round((reviewed / globalFlashcards.length) * 100)
+    return { reviewed, difficult, good, completion }
+  }, [globalFlashcards])
+
+  useEffect(() => {
+    if (globalFlashcards.length === 0) {
+      setFlashIndex(0)
+      return
+    }
+    if (flashIndex >= globalFlashcards.length) {
+      setFlashIndex(globalFlashcards.length - 1)
+    }
+  }, [globalFlashcards.length, flashIndex])
+
+  useEffect(() => {
+    setFlashSide('front')
+    setFlashFeedback(null)
+  }, [flashIndex, flashCollegeFilter, flashItemFilter, flashResultFilter, flashMode])
+
+  useEffect(() => {
+    if (activeView !== 'flashcards') {
+      return
+    }
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (!activeGlobalFlashcard) {
+        return
+      }
+      if (event.key === ' ') {
+        event.preventDefault()
+        setFlashSide((current) => (current === 'front' ? 'back' : 'front'))
+      } else if (event.key === '1') {
+        handleGlobalFlashResult('again')
+      } else if (event.key === '2') {
+        handleGlobalFlashResult('hard')
+      } else if (event.key === '3') {
+        handleGlobalFlashResult('good')
+      } else if (event.key === '4') {
+        handleGlobalFlashResult('easy')
+      } else if (event.key === 'ArrowLeft') {
+        setFlashIndex((current) => (current - 1 + globalFlashcards.length) % globalFlashcards.length)
+      } else if (event.key === 'ArrowRight') {
+        setFlashIndex((current) => (current + 1) % globalFlashcards.length)
+      }
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [activeView, activeGlobalFlashcard, globalFlashcards.length])
+
   const globalStats = useMemo(() => {
     const completedCount = items.filter(
       (item) => item.tracking.assignedColleges.length > 0 && item.progress >= 0.999,
@@ -1426,6 +1559,35 @@ function getPasswordStrengthMeta(password: string) {
       overallProgress: (completedCount / rawItems.length) * 100,
       byCollege,
     }
+  }, [items])
+
+  const collegesViewRows = useMemo<CollegeViewRow[]>(() => {
+    return COLLEGES.map((college) => {
+      const collegeItems = items
+        .filter((item) => item.tracking.assignedColleges.includes(college))
+        .map((item) => {
+          const entry = item.tracking.byCollege[college] ?? getDefaultCollegeTracking()
+          return {
+            itemNumber: item.itemNumber,
+            shortDescription: item.shortDescription,
+            reviews: entry.reviews,
+            mastery: entry.mastery,
+          }
+        })
+
+      const completed = collegeItems.filter(
+        (entry) => entry.reviews > 0 && MASTERY_SCORE[entry.mastery] >= MASTERY_SCORE.Bon,
+      ).length
+      const completion = collegeItems.length === 0 ? 0 : Math.round((completed / collegeItems.length) * 100)
+      const totalReviews = collegeItems.reduce((sum, entry) => sum + entry.reviews, 0)
+
+      return {
+        college,
+        items: collegeItems,
+        completion,
+        totalReviews,
+      }
+    })
   }, [items])
 
   const weeklyReviewSeries = useMemo(() => {
@@ -1576,15 +1738,23 @@ function getPasswordStrengthMeta(password: string) {
       return
     }
 
-    const meta = QUIZ_RESULT_META[result]
-    const reviewedAt = new Date().toISOString()
-    const activeCardId = quizItem.tracking.quiz.activeCardId
     setQuizFeedback(result)
 
+    applyQuizResultToCard(quizItem.itemNumber, quizItem.tracking.quiz.activeCardId, result)
+
+    window.setTimeout(() => {
+      setQuizFeedback((current) => (current === result ? null : current))
+    }, 1200)
+  }
+
+  function applyQuizResultToCard(itemNumber: number, targetCardId: string | null, result: QuizResult) {
+    const meta = QUIZ_RESULT_META[result]
+    const reviewedAt = new Date().toISOString()
+
     setTrackingState((current) => {
-      const itemTracking = normalizeItemTracking(current.items[quizItem.itemNumber] ?? getDefaultItemTracking())
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
       const nextCards = itemTracking.quiz.cards.map((card, index) => {
-        const isActive = activeCardId ? card.id === activeCardId : index === 0
+        const isActive = targetCardId ? card.id === targetCardId : index === 0
         if (!isActive) {
           return card
         }
@@ -1614,14 +1784,28 @@ function getPasswordStrengthMeta(password: string) {
         ...current,
         items: {
           ...current.items,
-          [quizItem.itemNumber]: nextTracking,
+          [itemNumber]: nextTracking,
         },
       }
     })
+  }
 
+  function handleGlobalFlashResult(result: QuizResult) {
+    if (!activeGlobalFlashcard) {
+      return
+    }
+    applyQuizResultToCard(activeGlobalFlashcard.itemNumber, activeGlobalFlashcard.cardId, result)
+    setFlashFeedback(result)
     window.setTimeout(() => {
-      setQuizFeedback((current) => (current === result ? null : current))
-    }, 1200)
+      setFlashFeedback((current) => (current === result ? null : current))
+      setFlashIndex((current) => {
+        if (globalFlashcards.length <= 1) {
+          return 0
+        }
+        return (current + 1) % globalFlashcards.length
+      })
+      setFlashSide('front')
+    }, 450)
   }
 
   function triggerReviewFx(key: string, delta: number) {
@@ -2416,10 +2600,6 @@ function getPasswordStrengthMeta(password: string) {
     )
   }
 
-  const scrollToSection = (sectionId: string) => {
-    document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-  }
-
   return (
     <div className={`dashboard-layout ${sidebarCollapsed ? 'is-sidebar-collapsed' : ''}`}>
       <aside className="dashboard-sidebar">
@@ -2443,19 +2623,12 @@ function getPasswordStrengthMeta(password: string) {
             </button>
           </div>
         </div>
-        <label className="sidebar-search">
-          <span className="sidebar-search-icon" aria-hidden="true">
-            ⌕
-          </span>
-          <input
-            type="text"
-            placeholder="Search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </label>
         <nav className="sidebar-nav">
-          <button type="button" className="sidebar-nav-item" onClick={() => scrollToSection('dashboard-overview')}>
+          <button
+            type="button"
+            className={`sidebar-nav-item ${activeView === 'dashboard' ? 'active' : ''}`}
+            onClick={() => setActiveView('dashboard')}
+          >
             <span className="sidebar-nav-icon" aria-hidden="true">
               ⌂
             </span>
@@ -2463,21 +2636,39 @@ function getPasswordStrengthMeta(password: string) {
           </button>
           <button
             type="button"
-            className="sidebar-nav-item active"
-            onClick={() => scrollToSection('items-section')}
+            className={`sidebar-nav-item ${activeView === 'items' ? 'active' : ''}`}
+            onClick={() => setActiveView('items')}
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
               ☑
             </span>
             <span className="sidebar-nav-label">Items</span>
           </button>
-          <button type="button" className="sidebar-nav-item" onClick={() => scrollToSection('flashcards-section')}>
+          <button
+            type="button"
+            className={`sidebar-nav-item ${activeView === 'flashcards' ? 'active' : ''}`}
+            onClick={() => setActiveView('flashcards')}
+          >
             <span className="sidebar-nav-icon" aria-hidden="true">
               ▤
             </span>
             <span className="sidebar-nav-label">FlashCards</span>
           </button>
-          <button type="button" className="sidebar-nav-item" onClick={() => scrollToSection('stats-section')}>
+          <button
+            type="button"
+            className={`sidebar-nav-item ${activeView === 'colleges' ? 'active' : ''}`}
+            onClick={() => setActiveView('colleges')}
+          >
+            <span className="sidebar-nav-icon" aria-hidden="true">
+              ⛭
+            </span>
+            <span className="sidebar-nav-label">Colleges</span>
+          </button>
+          <button
+            type="button"
+            className={`sidebar-nav-item ${activeView === 'stats' ? 'active' : ''}`}
+            onClick={() => setActiveView('stats')}
+          >
             <span className="sidebar-nav-icon" aria-hidden="true">
               ◔
             </span>
@@ -2654,6 +2845,7 @@ function getPasswordStrengthMeta(password: string) {
           </div>
         ) : null}
 
+        {activeView === 'dashboard' ? (
         <section id="dashboard-overview" className="global-grid">
         <article className="stat-card">
           <p className="stat-label">Items complétés</p>
@@ -2696,8 +2888,15 @@ function getPasswordStrengthMeta(password: string) {
           </div>
         </article>
         </section>
+        ) : null}
 
-        <section id="items-section" className={`main-grid ${effectiveSelectedItem ? 'has-detail' : 'full-table'}`}>
+        {activeView === 'dashboard' || activeView === 'items' ? (
+        <section
+          id="items-section"
+          className={`main-grid ${effectiveSelectedItem ? 'has-detail' : 'full-table'} ${
+            activeView === 'items' ? 'items-only-view' : ''
+          }`}
+        >
         <article className={`panel table-panel ${effectiveSelectedItem ? '' : 'full-width'}`}>
           <div className="panel-head">
             <h2>Items</h2>
@@ -2705,6 +2904,12 @@ function getPasswordStrengthMeta(password: string) {
           </div>
 
           <div className="filters-row">
+            <input
+              type="text"
+              placeholder="Search item, tags, college"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
             <select value={collegeFilter} onChange={(event) => setCollegeFilter(event.target.value)}>
               <option value="ALL">Tous colleges</option>
               {COLLEGES.map((college) => (
@@ -3666,6 +3871,7 @@ function getPasswordStrengthMeta(password: string) {
           ) : null}
         </article>
       </section>
+      ) : null}
 
       {historyItem ? (
         <div className="history-modal-backdrop" onClick={() => setHistoryItemId(null)}>
@@ -3845,6 +4051,216 @@ function getPasswordStrengthMeta(password: string) {
         </div>
       ) : null}
 
+      {activeView === 'flashcards' ? (
+        <section id="flashcards-section" className="panel flashcards-page">
+          <div className="panel-head">
+            <h2>FlashCards</h2>
+            <p>{globalFlashcards.length} cartes</p>
+          </div>
+          <div className="flashcards-mode-row">
+            <button
+              type="button"
+              className={`ghost-btn ${flashMode === 'review' ? 'active' : ''}`}
+              onClick={() => setFlashMode('review')}
+            >
+              Reviser
+            </button>
+            <button
+              type="button"
+              className={`ghost-btn ${flashMode === 'discover' ? 'active' : ''}`}
+              onClick={() => setFlashMode('discover')}
+            >
+              Decouvrir
+            </button>
+            <button
+              type="button"
+              className={`ghost-btn ${flashMode === 'catchup' ? 'active' : ''}`}
+              onClick={() => setFlashMode('catchup')}
+            >
+              Rattrapage
+            </button>
+          </div>
+          <div className="filters-row flashcards-filters">
+            <select value={flashCollegeFilter} onChange={(event) => setFlashCollegeFilter(event.target.value)}>
+              <option value="ALL">Tous colleges</option>
+              {COLLEGES.map((college) => (
+                <option key={college} value={college}>
+                  {college}
+                </option>
+              ))}
+            </select>
+            <select value={flashItemFilter} onChange={(event) => setFlashItemFilter(event.target.value)}>
+              <option value="ALL">Tous items</option>
+              {items.map((item) => (
+                <option key={item.itemNumber} value={String(item.itemNumber)}>
+                  Item #{item.itemNumber}
+                </option>
+              ))}
+            </select>
+            <select value={flashResultFilter} onChange={(event) => setFlashResultFilter(event.target.value as 'ALL' | QuizResult)}>
+              <option value="ALL">Tous ressentis</option>
+              <option value="again">Revoir</option>
+              <option value="hard">Difficile</option>
+              <option value="good">Bon</option>
+              <option value="easy">Parfait</option>
+            </select>
+          </div>
+          <div className="flashcards-stats-row">
+            <span>Progression session: {flashSessionStats.completion}%</span>
+            <span>Revuees: {flashSessionStats.reviewed}</span>
+            <span>Difficiles: {flashSessionStats.difficult}</span>
+            <span>Bonnes: {flashSessionStats.good}</span>
+            <span className="muted">Raccourcis: Espace / 1-4 / ← →</span>
+          </div>
+          {activeGlobalFlashcard ? (
+            <>
+              <div className="flashcards-session-head">
+                <p>
+                  Item #{activeGlobalFlashcard.itemNumber} • {flashIndex + 1}/{globalFlashcards.length}
+                </p>
+                <p className="muted">
+                  Ressenti actuel:{' '}
+                  {activeGlobalFlashcard.lastResult ? QUIZ_RESULT_META[activeGlobalFlashcard.lastResult].label : 'Non evalue'}
+                </p>
+                <div className="flashcards-session-nav">
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    onClick={() => setFlashIndex((current) => (current - 1 + globalFlashcards.length) % globalFlashcards.length)}
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    onClick={() => setFlashIndex((current) => (current + 1) % globalFlashcards.length)}
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+              <div
+                className={`quiz-flashcard flip ${flashSide === 'back' ? 'is-back' : 'is-front'}`}
+                onClick={() => setFlashSide((current) => (current === 'front' ? 'back' : 'front'))}
+              >
+                <div className="quiz-face quiz-front">
+                  <p className="quiz-face-label">Question</p>
+                  <p className="quiz-face-content">{activeGlobalFlashcard.question}</p>
+                </div>
+                <div className="quiz-face quiz-back">
+                  <p className="quiz-face-label">Réponse</p>
+                  <p className="quiz-face-content">{activeGlobalFlashcard.answer}</p>
+                </div>
+              </div>
+              <div className="quiz-actions">
+                <button type="button" className="ghost-btn" onClick={() => setFlashSide((current) => (current === 'front' ? 'back' : 'front'))}>
+                  Flip
+                </button>
+                <button type="button" className="ghost-btn quiz-rate-btn again" onClick={() => handleGlobalFlashResult('again')}>
+                  ❌ Revoir
+                </button>
+                <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleGlobalFlashResult('hard')}>
+                  ⚠️ Difficile
+                </button>
+                <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleGlobalFlashResult('good')}>
+                  ✅ Bon
+                </button>
+                <button type="button" className="ghost-btn quiz-rate-btn easy" onClick={() => handleGlobalFlashResult('easy')}>
+                  ⚡ Parfait
+                </button>
+              </div>
+              {flashFeedback ? (
+                <div className={`quiz-feedback ${flashFeedback} reward-medium`}>
+                  <span className="quiz-feedback-main">
+                    {QUIZ_RESULT_META[flashFeedback].icon} {QUIZ_RESULT_META[flashFeedback].label}
+                  </span>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <p className="muted">Aucune flashcard pour ces filtres.</p>
+          )}
+        </section>
+      ) : null}
+
+      {activeView === 'colleges' ? (
+        <section className="panel colleges-page">
+          <div className="panel-head">
+            <h2>Colleges</h2>
+            <p>{collegesViewRows.filter((row) => row.items.length > 0).length} colleges actifs</p>
+          </div>
+          <div className="colleges-page-grid">
+            <article className="colleges-list">
+              {collegesViewRows.map((row) => (
+                <details key={row.college} className="college-accordion" open={row.items.length > 0}>
+                  <summary>
+                    <span>{row.college}</span>
+                    <span>
+                      {row.items.length} items • {row.totalReviews} reviews • {row.completion}%
+                    </span>
+                  </summary>
+                  {row.items.length === 0 ? (
+                    <p className="muted">Aucun item assigné.</p>
+                  ) : (
+                    <div className="college-accordion-items">
+                      {row.items.map((entry) => (
+                        <button
+                          key={`${row.college}-${entry.itemNumber}`}
+                          type="button"
+                          className="college-item-chip"
+                          onClick={() => {
+                            setActiveView('items')
+                            setSelectedItemId(entry.itemNumber)
+                          }}
+                          title={`Item #${entry.itemNumber}`}
+                        >
+                          #{entry.itemNumber} • {entry.shortDescription}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </details>
+              ))}
+            </article>
+
+            <article className="colleges-heatmap">
+              <h3>Heatmap progression colleges</h3>
+              <div className="colleges-heatmap-grid">
+                {collegesViewRows.map((row) => {
+                  const tone =
+                    row.completion >= 75
+                      ? 'high'
+                      : row.completion >= 50
+                        ? 'mid-high'
+                        : row.completion >= 25
+                          ? 'mid'
+                          : row.completion > 0
+                            ? 'low'
+                            : 'zero'
+                  return (
+                    <div
+                      key={`heat-${row.college}`}
+                      className={`colleges-heat-cell ${tone}`}
+                      title={`${row.college} • ${row.completion}%`}
+                    >
+                      <span>{row.college}</span>
+                      <strong>{row.completion}%</strong>
+                    </div>
+                  )
+                })}
+              </div>
+              <div className="colleges-heat-legend">
+                <span>0%</span>
+                <span>25%</span>
+                <span>50%</span>
+                <span>75%+</span>
+              </div>
+            </article>
+          </div>
+        </section>
+      ) : null}
+
+      {activeView === 'dashboard' ? (
       <section id="stats-section" className="bottom-grid">
         <article className="panel compact-panel">
           <div className="panel-head">
@@ -3862,6 +4278,14 @@ function getPasswordStrengthMeta(password: string) {
           </div>
         </article>
       </section>
+      ) : null}
+
+      {activeView === 'stats' ? (
+        <section className="panel stats-placeholder">
+          <h2>Stats</h2>
+          <p>En cours de dev.</p>
+        </section>
+      ) : null}
       </div>
     </div>
   )

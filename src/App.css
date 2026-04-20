@@ -1152,6 +1152,22 @@ h3 {
   width: 100%;
 }
 
+.main-grid.items-only-view.full-table {
+  min-height: calc(100dvh - 150px);
+}
+
+.main-grid.items-only-view.full-table .table-panel {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  min-height: 100%;
+}
+
+.main-grid.items-only-view.full-table .table-wrap {
+  height: 100%;
+  max-height: none;
+  min-height: 0;
+}
+
 .detail-panel {
   min-width: 0;
   overflow: hidden;
@@ -1173,6 +1189,174 @@ h3 {
   opacity: 0;
   transform: translateX(14px);
   pointer-events: none;
+}
+
+.flashcards-page {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.flashcards-mode-row {
+  display: flex;
+  gap: 0.45rem;
+  flex-wrap: wrap;
+}
+
+.flashcards-mode-row .ghost-btn.active {
+  background: color-mix(in oklab, var(--accent) 16%, var(--input-bg));
+  border-color: color-mix(in oklab, var(--accent) 45%, var(--border));
+}
+
+.flashcards-filters {
+  grid-template-columns: repeat(3, minmax(140px, 1fr));
+  margin-bottom: 0;
+}
+
+.flashcards-stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem 0.9rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.flashcards-session-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.flashcards-session-head p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.flashcards-session-nav {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.stats-placeholder {
+  min-height: 240px;
+  display: grid;
+  align-content: start;
+  gap: 0.5rem;
+}
+
+.colleges-page-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 0.85fr;
+  gap: 0.9rem;
+}
+
+.colleges-list {
+  display: grid;
+  gap: 0.55rem;
+  max-height: 72vh;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.college-accordion {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
+  padding: 0.45rem;
+}
+
+.college-accordion summary {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.65rem;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.college-accordion summary span:last-child {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.college-accordion-items {
+  margin-top: 0.45rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.college-item-chip {
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--input-bg);
+  color: var(--text);
+  text-align: left;
+  padding: 0.36rem 0.5rem;
+  cursor: pointer;
+}
+
+.colleges-heatmap {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.6rem;
+  background: var(--surface-soft);
+  display: grid;
+  gap: 0.55rem;
+  align-content: start;
+}
+
+.colleges-heatmap h3 {
+  margin: 0;
+}
+
+.colleges-heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  max-height: 62vh;
+  overflow: auto;
+}
+
+.colleges-heat-cell {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.42rem 0.5rem;
+  display: grid;
+  gap: 0.24rem;
+}
+
+.colleges-heat-cell span {
+  font-size: 0.76rem;
+}
+
+.colleges-heat-cell strong {
+  font-size: 0.86rem;
+}
+
+.colleges-heat-cell.zero {
+  background: color-mix(in oklab, var(--surface) 88%, var(--panel-bg));
+}
+
+.colleges-heat-cell.low {
+  background: #fff4df;
+}
+
+.colleges-heat-cell.mid {
+  background: #ffe7bc;
+}
+
+.colleges-heat-cell.mid-high {
+  background: #e4f3d8;
+}
+
+.colleges-heat-cell.high {
+  background: #ccecc0;
+}
+
+.colleges-heat-legend {
+  display: flex;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 0.74rem;
 }
 
 .panel {
@@ -3058,6 +3242,15 @@ tbody tr.selected {
   .meta-grid,
   .suggestion-grid {
     grid-template-columns: 1fr;
+  }
+
+  .colleges-page-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .colleges-heatmap-grid {
+    grid-template-columns: 1fr;
+    max-height: none;
   }
 
   .auth-grid {
