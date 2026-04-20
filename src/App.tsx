@@ -3076,6 +3076,14 @@ function getPasswordStrengthMeta(password: string) {
         ) : null}
 
         {activeView === 'dashboard' ? (
+        <div className="dashboard-greeting">
+          <p className="dashboard-greeting-text">
+            Bonjour, {profile.firstName?.trim() || authUser?.displayName || 'Setup'}.
+          </p>
+        </div>
+        ) : null}
+
+        {activeView === 'dashboard' ? (
         <section id="dashboard-overview" className="global-grid">
         <article className="stat-card">
           <p className="stat-label">Items complétés</p>

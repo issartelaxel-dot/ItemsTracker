@@ -1076,6 +1076,17 @@ h3 {
   align-items: stretch;
 }
 
+.dashboard-greeting {
+  margin-top: 0.1rem;
+}
+
+.dashboard-greeting-text {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+}
+
 .stat-card {
   padding: 0.7rem 0.8rem;
 }
