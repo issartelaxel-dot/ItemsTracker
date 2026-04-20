@@ -1367,12 +1367,15 @@ function getPasswordStrengthMeta(password: string) {
     return quizItem.shortDescription
   }, [quizItem, activeQuizCard])
 
-  const quizCurrentFeeling = useMemo(() => {
-    if (!quizItem) {
+  const quizCurrentCardFeeling = useMemo(() => {
+    if (!activeQuizCard?.lastResult) {
       return null
     }
-    return quizItem.tracking.itemMastery === 'Non évalué' ? null : quizItem.tracking.itemMastery
-  }, [quizItem])
+    return {
+      label: QUIZ_RESULT_META[activeQuizCard.lastResult].label,
+      toneClass: activeQuizCard.lastResult,
+    }
+  }, [activeQuizCard])
 
   const globalStats = useMemo(() => {
     const completedCount = items.filter(
@@ -3677,13 +3680,9 @@ function getPasswordStrengthMeta(password: string) {
               <div className="quiz-face quiz-front">
                 <p className="quiz-face-label">
                   <span>Question</span>
-                  {quizCurrentFeeling ? (
-                    <span
-                      className={`quiz-face-feeling mastery-${normalizeText(quizCurrentFeeling)
-                        .toLowerCase()
-                        .replace(' ', '-')}`}
-                    >
-                      Feeling: {quizCurrentFeeling}
+                  {quizCurrentCardFeeling ? (
+                    <span className={`quiz-face-feeling ${quizCurrentCardFeeling.toneClass}`}>
+                      Feeling: {quizCurrentCardFeeling.label}
                     </span>
                   ) : null}
                 </p>
