@@ -332,6 +332,12 @@
 
 .dashboard-layout.is-sidebar-collapsed .dashboard-sidebar {
   padding-inline: 0.75rem;
+  z-index: 50;
+}
+
+.dashboard-layout.is-sidebar-collapsed .dashboard-shell {
+  position: relative;
+  z-index: 1;
 }
 
 .dashboard-layout.is-sidebar-collapsed .sidebar-head {
