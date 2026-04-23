@@ -774,6 +774,7 @@ function App() {
   const [authExpandStyle, setAuthExpandStyle] = useState<CSSProperties>({})
   const [youtubeInput, setYoutubeInput] = useState('')
   const [youtubeInputError, setYoutubeInputError] = useState('')
+  const [youtubeViewMode, setYoutubeViewMode] = useState<'embed' | 'external'>('embed')
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const authCardRef = useRef<HTMLDivElement | null>(null)
   const sidebarNavRef = useRef<HTMLElement | null>(null)
@@ -3552,14 +3553,43 @@ function getPasswordStrengthMeta(password: string) {
                 </div>
                 {youtubeInputError ? <p className="youtube-error">{youtubeInputError}</p> : null}
                 {selectedYouTubeVideoId ? (
-                  <div className="youtube-embed-wrap">
-                    <iframe
-                      src={`https://www.youtube-nocookie.com/embed/${selectedYouTubeVideoId}`}
-                      title={`Vidéo item ${effectiveSelectedItem.itemNumber}`}
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                      referrerPolicy="strict-origin-when-cross-origin"
-                      allowFullScreen
-                    />
+                  <div className="youtube-preview">
+                    <div className="youtube-view-mode" role="group" aria-label="Mode affichage vidéo">
+                      <button
+                        type="button"
+                        className={`ghost-btn ${youtubeViewMode === 'embed' ? 'active' : ''}`}
+                        onClick={() => setYoutubeViewMode('embed')}
+                      >
+                        Voir
+                      </button>
+                      <button
+                        type="button"
+                        className={`ghost-btn ${youtubeViewMode === 'external' ? 'active' : ''}`}
+                        onClick={() => setYoutubeViewMode('external')}
+                      >
+                        Ouvrir
+                      </button>
+                    </div>
+                    {youtubeViewMode === 'embed' ? (
+                      <div className="youtube-embed-wrap">
+                        <iframe
+                          src={`https://www.youtube-nocookie.com/embed/${selectedYouTubeVideoId}`}
+                          title={`Vidéo item ${effectiveSelectedItem.itemNumber}`}
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          referrerPolicy="strict-origin-when-cross-origin"
+                          allowFullScreen
+                        />
+                      </div>
+                    ) : (
+                      <a
+                        href={makeYouTubeWatchUrl(selectedYouTubeVideoId)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="ghost-btn youtube-open-link"
+                      >
+                        Ouvrir la vidéo dans un nouvel onglet
+                      </a>
+                    )}
                   </div>
                 ) : effectiveSelectedItem.tracking.youtubeUrl ? (
                   <p className="muted">Le lien YouTube sauvegardé est invalide.</p>
