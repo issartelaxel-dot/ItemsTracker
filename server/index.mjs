@@ -79,9 +79,13 @@ async function initDb() {
       tracking_state JSONB NOT NULL,
       theme TEXT NOT NULL DEFAULT 'light',
       focus_mode BOOLEAN NOT NULL DEFAULT FALSE,
+      youtube_mode TEXT NOT NULL DEFAULT 'embed',
       profile JSONB,
       updated_at TEXT NOT NULL
     );
+
+    ALTER TABLE user_state
+      ADD COLUMN IF NOT EXISTS youtube_mode TEXT NOT NULL DEFAULT 'embed';
   `)
 }
 
@@ -279,6 +283,7 @@ const stateUpdateSchema = z.object({
   trackingState: z.unknown(),
   theme: z.enum(['light', 'dark']),
   focusMode: z.boolean(),
+  youtubeDisplayMode: z.enum(['embed', 'external']).optional().default('embed'),
   profile: z.unknown().optional(),
 })
 
@@ -376,6 +381,7 @@ app.get('/api/state', async (req, res) => {
         tracking_state AS "trackingState",
         theme,
         focus_mode AS "focusMode",
+        youtube_mode AS "youtubeDisplayMode",
         profile,
         updated_at AS "updatedAt"
       FROM user_state
@@ -415,12 +421,13 @@ app.put('/api/state', async (req, res) => {
 
   await pool.query(
     `
-      INSERT INTO user_state(user_id, tracking_state, theme, focus_mode, profile, updated_at)
-      VALUES($1, $2::jsonb, $3, $4, $5::jsonb, $6)
+      INSERT INTO user_state(user_id, tracking_state, theme, focus_mode, youtube_mode, profile, updated_at)
+      VALUES($1, $2::jsonb, $3, $4, $5, $6::jsonb, $7)
       ON CONFLICT(user_id) DO UPDATE SET
         tracking_state = EXCLUDED.tracking_state,
         theme = EXCLUDED.theme,
         focus_mode = EXCLUDED.focus_mode,
+        youtube_mode = EXCLUDED.youtube_mode,
         profile = EXCLUDED.profile,
         updated_at = EXCLUDED.updated_at
     `,
@@ -429,6 +436,7 @@ app.put('/api/state', async (req, res) => {
       JSON.stringify(parsed.data.trackingState),
       parsed.data.theme,
       parsed.data.focusMode,
+      parsed.data.youtubeDisplayMode,
       JSON.stringify(parsed.data.profile ?? null),
       now,
     ],

@@ -4,6 +4,7 @@ import './App.css'
 
 type Mastery = 'Mauvais' | 'Moyen' | 'Bon' | 'Très bon' | 'Parfait'
 type Theme = 'light' | 'dark'
+type YouTubeDisplayMode = 'embed' | 'external'
 type SortKey = 'name' | 'reviews' | 'progress'
 type SheetColor = 'jaune' | 'rouge' | 'vert' | 'vertfonce'
 type SheetKind = 'lisaSheets' | 'platformSheets'
@@ -113,6 +114,7 @@ type BackupPayload = {
     trackingState: TrackerState
     theme: Theme
     focusMode: boolean
+    youtubeDisplayMode?: YouTubeDisplayMode
     profile?: ProfileState
   }
 }
@@ -704,6 +706,7 @@ function normalizeProfileInput(rawProfile: unknown, authUser: AuthUser | null): 
 function App() {
   const [trackingState, setTrackingState] = useState<TrackerState>(getInitialTrackingState())
   const [theme, setTheme] = useState<Theme>('light')
+  const [youtubeDisplayMode, setYoutubeDisplayMode] = useState<YouTubeDisplayMode>('embed')
   const [focusMode, setFocusMode] = useState<boolean>(false)
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [search, setSearch] = useState('')
@@ -776,7 +779,6 @@ function App() {
   const [authExpandStyle, setAuthExpandStyle] = useState<CSSProperties>({})
   const [youtubeInput, setYoutubeInput] = useState('')
   const [youtubeInputError, setYoutubeInputError] = useState('')
-  const [youtubeViewMode, setYoutubeViewMode] = useState<'embed' | 'external'>('embed')
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const hasPendingChangesRef = useRef(false)
   const hasInitializedSnapshotRef = useRef(false)
@@ -874,6 +876,7 @@ function App() {
               trackingState?: unknown
               theme?: unknown
               focusMode?: unknown
+              youtubeDisplayMode?: unknown
               profile?: unknown
             }
           | null
@@ -888,12 +891,14 @@ function App() {
 
           setTheme(remoteState.theme === 'dark' ? 'dark' : 'light')
           setFocusMode(Boolean(remoteState.focusMode))
+          setYoutubeDisplayMode(remoteState.youtubeDisplayMode === 'external' ? 'external' : 'embed')
 
           setProfile(normalizeProfileInput(remoteState.profile, authUser))
         } else {
           setTrackingState(getInitialTrackingState())
           setTheme('light')
           setFocusMode(false)
+          setYoutubeDisplayMode('embed')
           setProfile(getProfileFromAuthUser(authUser))
         }
       } catch {
@@ -901,6 +906,7 @@ function App() {
           setTrackingState(getInitialTrackingState())
           setTheme('light')
           setFocusMode(false)
+          setYoutubeDisplayMode('embed')
           setProfile(getProfileFromAuthUser(authUser))
         }
       } finally {
@@ -925,6 +931,7 @@ function App() {
       trackingState,
       theme,
       focusMode,
+      youtubeDisplayMode,
       profile,
     })
     latestStatePayloadRef.current = snapshot
@@ -937,7 +944,7 @@ function App() {
     }
 
     hasPendingChangesRef.current = snapshot !== lastSavedStatePayloadRef.current
-  }, [authStatus, authUser?.id, trackingState, theme, focusMode, profile])
+  }, [authStatus, authUser?.id, trackingState, theme, focusMode, youtubeDisplayMode, profile])
 
   useEffect(() => {
     if (authStatus !== 'authed' || dashboardIntroPhase !== 'entering') {
@@ -1078,6 +1085,7 @@ function App() {
       trackingState,
       theme,
       focusMode,
+      youtubeDisplayMode,
       profile,
     })
     latestStatePayloadRef.current = snapshot
@@ -2744,6 +2752,7 @@ function getPasswordStrengthMeta(password: string) {
         trackingState,
         theme,
         focusMode,
+        youtubeDisplayMode,
         profile,
       },
     }
@@ -2777,6 +2786,7 @@ function getPasswordStrengthMeta(password: string) {
       setTrackingState(parsed.data.trackingState)
       setTheme(parsed.data.theme === 'dark' ? 'dark' : 'light')
       setFocusMode(Boolean(parsed.data.focusMode))
+      setYoutubeDisplayMode(parsed.data.youtubeDisplayMode === 'external' ? 'external' : 'embed')
       if (parsed.data.profile) {
         setProfile({
           firstName: parsed.data.profile.firstName ?? '',
@@ -3135,6 +3145,25 @@ function getPasswordStrengthMeta(password: string) {
                   Focus mode
                   <input type="checkbox" checked={focusMode} onChange={(event) => setFocusMode(event.target.checked)} />
                 </label>
+                <div className="menu-row-input menu-row-highlight">
+                  <span>Affichage vidéo YouTube</span>
+                  <div className="youtube-view-mode" role="group" aria-label="Choix affichage YouTube">
+                    <button
+                      type="button"
+                      className={`ghost-btn ${youtubeDisplayMode === 'embed' ? 'active' : ''}`}
+                      onClick={() => setYoutubeDisplayMode('embed')}
+                    >
+                      Vidéo
+                    </button>
+                    <button
+                      type="button"
+                      className={`ghost-btn ${youtubeDisplayMode === 'external' ? 'active' : ''}`}
+                      onClick={() => setYoutubeDisplayMode('external')}
+                    >
+                      Bouton
+                    </button>
+                  </div>
+                </div>
                 <div className="menu-actions">
                   <button type="button" className="menu-action-btn" onClick={exportBackup}>
                     Exporter sauvegarde
@@ -3585,27 +3614,21 @@ function getPasswordStrengthMeta(password: string) {
                       Supprimer
                     </button>
                   ) : null}
+                  {selectedYouTubeVideoId && youtubeDisplayMode === 'external' ? (
+                    <a
+                      href={makeYouTubeWatchUrl(selectedYouTubeVideoId)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="ghost-btn youtube-open-link"
+                    >
+                      Voir vidéo
+                    </a>
+                  ) : null}
                 </div>
                 {youtubeInputError ? <p className="youtube-error">{youtubeInputError}</p> : null}
                 {selectedYouTubeVideoId ? (
                   <div className="youtube-preview">
-                    <div className="youtube-view-mode" role="group" aria-label="Mode affichage vidéo">
-                      <button
-                        type="button"
-                        className={`ghost-btn ${youtubeViewMode === 'embed' ? 'active' : ''}`}
-                        onClick={() => setYoutubeViewMode('embed')}
-                      >
-                        Voir
-                      </button>
-                      <button
-                        type="button"
-                        className={`ghost-btn ${youtubeViewMode === 'external' ? 'active' : ''}`}
-                        onClick={() => setYoutubeViewMode('external')}
-                      >
-                        Ouvrir
-                      </button>
-                    </div>
-                    {youtubeViewMode === 'embed' ? (
+                    {youtubeDisplayMode === 'embed' ? (
                       <div className="youtube-embed-wrap">
                         <iframe
                           src={`https://www.youtube-nocookie.com/embed/${selectedYouTubeVideoId}`}
@@ -3615,16 +3638,7 @@ function getPasswordStrengthMeta(password: string) {
                           allowFullScreen
                         />
                       </div>
-                    ) : (
-                      <a
-                        href={makeYouTubeWatchUrl(selectedYouTubeVideoId)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ghost-btn youtube-open-link"
-                      >
-                        Ouvrir la vidéo dans un nouvel onglet
-                      </a>
-                    )}
+                    ) : null}
                   </div>
                 ) : effectiveSelectedItem.tracking.youtubeUrl ? (
                   <p className="muted">Le lien YouTube sauvegardé est invalide.</p>

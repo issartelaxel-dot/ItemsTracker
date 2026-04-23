@@ -941,6 +941,19 @@ h3 {
   margin-bottom: 0.42rem;
 }
 
+.menu-row-highlight {
+  border: 1px solid color-mix(in oklab, var(--accent) 30%, var(--border));
+  background: color-mix(in oklab, var(--accent) 9%, var(--panel-bg));
+  border-radius: 10px;
+  padding: 0.45rem;
+}
+
+.menu-row-highlight > span {
+  font-size: 0.74rem;
+  color: var(--text);
+  font-weight: 600;
+}
+
 .menu-row-input input {
   width: 100%;
   padding: 0.3rem 0.45rem;
@@ -2738,7 +2751,7 @@ tbody tr.selected {
 
 .youtube-input-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
   gap: 0.45rem;
 }
 
