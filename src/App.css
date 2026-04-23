@@ -1293,6 +1293,10 @@ h3 {
   transition: grid-template-columns 0.24s ease;
 }
 
+.main-grid.has-detail {
+  grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+}
+
 .main-grid.full-table {
   grid-template-columns: minmax(0, 1fr) minmax(0, 0fr);
 }

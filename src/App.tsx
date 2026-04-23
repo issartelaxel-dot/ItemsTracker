@@ -4,7 +4,7 @@ import './App.css'
 
 type Mastery = 'Mauvais' | 'Moyen' | 'Bon' | 'Très bon' | 'Parfait'
 type Theme = 'light' | 'dark'
-type SortKey = 'reviews' | 'progress'
+type SortKey = 'name' | 'reviews' | 'progress'
 type SheetColor = 'jaune' | 'rouge' | 'vert' | 'vertfonce'
 type SheetKind = 'lisaSheets' | 'platformSheets'
 type QuizAnimationStyle = 'flip' | 'fade'
@@ -1348,6 +1348,11 @@ function getPasswordStrengthMeta(password: string) {
     })
 
     return filtered.sort((a, b) => {
+      if (sortKey === 'name') {
+        const aName = (a.tracking.itemLabel || a.shortDescription).trim()
+        const bName = (b.tracking.itemLabel || b.shortDescription).trim()
+        return aName.localeCompare(bName, 'fr', { sensitivity: 'base' }) || a.itemNumber - b.itemNumber
+      }
       if (sortKey === 'reviews') {
         return b.totalReviews - a.totalReviews || a.itemNumber - b.itemNumber
       }
@@ -3207,8 +3212,9 @@ function getPasswordStrengthMeta(password: string) {
               ))}
             </select>
             <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}>
-              <option value="reviews">Sort: Reviews</option>
-              <option value="progress">Sort: Progress</option>
+              <option value="name">Trier : Nom</option>
+              <option value="reviews">Trier : Révisions</option>
+              <option value="progress">Trier : Progression</option>
             </select>
           </div>
 
@@ -3221,8 +3227,8 @@ function getPasswordStrengthMeta(password: string) {
                   <th>Colleges</th>
                   <th>Fiches LISA</th>
                   <th>Fiches Plateformes</th>
-                  <th>Reviews</th>
-                  <th>Progress</th>
+                  <th>Révisions</th>
+                  <th>Progression</th>
                   <th>Quiz</th>
                 </tr>
               </thead>
