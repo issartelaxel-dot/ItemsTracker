@@ -5,7 +5,7 @@ import './App.css'
 type Mastery = 'Mauvais' | 'Moyen' | 'Bon' | 'Très bon' | 'Parfait'
 type Theme = 'light' | 'dark'
 type YouTubeDisplayMode = 'embed' | 'external'
-type SortKey = 'name' | 'reviews' | 'progress'
+type SortKey = 'itemAsc' | 'itemDesc' | 'reviews' | 'progress'
 type SheetColor = 'jaune' | 'rouge' | 'vert' | 'vertfonce'
 type SheetKind = 'lisaSheets' | 'platformSheets'
 type QuizAnimationStyle = 'flip' | 'fade'
@@ -1439,10 +1439,11 @@ function getPasswordStrengthMeta(password: string) {
     })
 
     return filtered.sort((a, b) => {
-      if (sortKey === 'name') {
-        const aName = (a.tracking.itemLabel || a.shortDescription).trim()
-        const bName = (b.tracking.itemLabel || b.shortDescription).trim()
-        return aName.localeCompare(bName, 'fr', { sensitivity: 'base' }) || a.itemNumber - b.itemNumber
+      if (sortKey === 'itemAsc') {
+        return a.itemNumber - b.itemNumber
+      }
+      if (sortKey === 'itemDesc') {
+        return b.itemNumber - a.itemNumber
       }
       if (sortKey === 'reviews') {
         return b.totalReviews - a.totalReviews || a.itemNumber - b.itemNumber
@@ -3406,7 +3407,8 @@ function getPasswordStrengthMeta(password: string) {
               ))}
             </select>
             <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}>
-              <option value="name">Trier : Nom</option>
+              <option value="itemAsc">Trier : Item croissant</option>
+              <option value="itemDesc">Trier : Item décroissant</option>
               <option value="reviews">Trier : Révisions</option>
               <option value="progress">Trier : Progression</option>
             </select>
@@ -3423,6 +3425,7 @@ function getPasswordStrengthMeta(password: string) {
                   <th>Fiches Plateformes</th>
                   <th>Révisions</th>
                   <th>Progression</th>
+                  <th>Ressenti</th>
                   <th>Quiz</th>
                 </tr>
               </thead>
@@ -3440,6 +3443,10 @@ function getPasswordStrengthMeta(password: string) {
                           : progressPercent >= 30
                             ? 'tier-mid'
                             : 'tier-low'
+                  const masteryToneClass =
+                    item.tracking.itemMastery === 'Non évalué'
+                      ? 'none'
+                      : `mastery-${normalizeText(item.tracking.itemMastery).toLowerCase().replace(' ', '-')}`
                   return (
                     <tr
                       key={item.itemNumber}
@@ -3476,6 +3483,9 @@ function getPasswordStrengthMeta(password: string) {
                           {progressPercent}%
                           {progressPercent >= 100 ? <span className="progress-pill-check">✓</span> : null}
                         </span>
+                      </td>
+                      <td>
+                        <span className={`item-mastery-pill ${masteryToneClass}`}>{item.tracking.itemMastery}</span>
                       </td>
                       <td>
                         <button

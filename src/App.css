@@ -404,11 +404,11 @@
 .dashboard-layout.is-sidebar-collapsed .dashboard-sidebar .menu-popover {
   left: calc(100% + 0.55rem);
   right: auto;
-  top: 50%;
-  bottom: auto;
-  transform: translateY(-50%);
+  top: auto;
+  bottom: 0;
+  transform: none;
   min-width: min(320px, calc(100vw - 120px));
-  max-height: min(72vh, 520px);
+  max-height: min(72vh, calc(100dvh - 24px));
   overflow: auto;
   z-index: 40;
 }
@@ -2647,6 +2647,25 @@ tbody tr.selected {
     border-color 0.2s ease,
     color 0.2s ease,
     box-shadow 0.2s ease;
+}
+
+.item-mastery-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 88px;
+  padding: 0.2rem 0.48rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.74rem;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.item-mastery-pill.none {
+  background: var(--input-bg);
+  color: var(--text);
 }
 
 .manual-item-mastery-select.none {
