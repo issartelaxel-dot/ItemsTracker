@@ -156,6 +156,7 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
 const AUTH_TOKEN_KEY = 'med-auth-token-v1'
 const AUTO_SAVE_INTERVAL_MS = 20_000
+const AUTO_SAVE_DEBOUNCE_MS = 4_000
 const HABIT_TRACKER_YEAR = 2026
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #f90021 0%, #ff8f00 58%, #ffe400 100%)',
@@ -947,6 +948,20 @@ function App() {
   }, [authStatus, authUser?.id, hasLoadedRemoteState, trackingState, theme, focusMode, youtubeDisplayMode, profile])
 
   useEffect(() => {
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState || !hasPendingChangesRef.current) {
+      return
+    }
+
+    const timer = window.setTimeout(() => {
+      if (hasPendingChangesRef.current) {
+        void persistUserState({ silent: true })
+      }
+    }, AUTO_SAVE_DEBOUNCE_MS)
+
+    return () => window.clearTimeout(timer)
+  }, [authStatus, authUser?.id, hasLoadedRemoteState, trackingState, theme, focusMode, youtubeDisplayMode, profile])
+
+  useEffect(() => {
     if (authStatus !== 'authed' || dashboardIntroPhase !== 'entering') {
       return
     }
@@ -1120,8 +1135,8 @@ function App() {
         }
         return true
       } catch (error) {
+        setSaveErrorMessage(error instanceof Error ? error.message : 'Erreur inconnue')
         if (!silent) {
-          setSaveErrorMessage(error instanceof Error ? error.message : 'Erreur inconnue')
           setSaveStatus('error')
           window.setTimeout(() => setSaveStatus('idle'), 2200)
         }
