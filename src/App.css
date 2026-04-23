@@ -1906,6 +1906,16 @@ table {
   font-size: 0.86rem;
 }
 
+.items-table th:nth-child(2),
+.items-table td:nth-child(2) {
+  width: 440px;
+  min-width: 440px;
+}
+
+.items-table .description-cell {
+  max-width: none;
+}
+
 th,
 td {
   text-align: left;

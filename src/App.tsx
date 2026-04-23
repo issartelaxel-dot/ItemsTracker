@@ -3219,7 +3219,7 @@ function getPasswordStrengthMeta(password: string) {
           </div>
 
               <div className="table-wrap">
-            <table>
+            <table className="items-table">
               <thead>
                 <tr>
                   <th>Item</th>
