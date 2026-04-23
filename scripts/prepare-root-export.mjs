@@ -21,8 +21,9 @@ cpSync(resolve(distDir, 'index.html'), rootIndex)
 rmSync(resolve(root, 'assets'), { recursive: true, force: true })
 cpSync(resolve(distDir, 'assets'), resolve(root, 'assets'), { recursive: true })
 
+const publicDir = resolve(root, 'public')
 for (const file of ['favicon.svg', 'icons.svg']) {
-  const src = resolve(distDir, file)
+  const src = resolve(publicDir, file)
   if (existsSync(src)) {
     cpSync(src, resolve(root, file))
   }
