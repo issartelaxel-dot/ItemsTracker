@@ -743,7 +743,7 @@ function App() {
   const [flashSide, setFlashSide] = useState<'front' | 'back'>('front')
   const [flashFeedback, setFlashFeedback] = useState<QuizResult | null>(null)
   const backupInputRef = useRef<HTMLInputElement | null>(null)
-  const hasLoadedRemoteStateRef = useRef(false)
+  const [hasLoadedRemoteState, setHasLoadedRemoteState] = useState(false)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
   const [authView, setAuthView] = useState<AuthView>('login')
   const [authUser, setAuthUser] = useState<AuthUser | null>(null)
@@ -854,7 +854,7 @@ function App() {
 
   useEffect(() => {
     if (authStatus !== 'authed' || !authUser) {
-      hasLoadedRemoteStateRef.current = false
+      setHasLoadedRemoteState(false)
       hasPendingChangesRef.current = false
       hasInitializedSnapshotRef.current = false
       latestStatePayloadRef.current = ''
@@ -911,7 +911,7 @@ function App() {
         }
       } finally {
         if (!cancelled) {
-          hasLoadedRemoteStateRef.current = true
+          setHasLoadedRemoteState(true)
         }
       }
     }
@@ -923,7 +923,7 @@ function App() {
   }, [authStatus, authUser?.id])
 
   useEffect(() => {
-    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteStateRef.current) {
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
       return
     }
 
@@ -944,7 +944,7 @@ function App() {
     }
 
     hasPendingChangesRef.current = snapshot !== lastSavedStatePayloadRef.current
-  }, [authStatus, authUser?.id, trackingState, theme, focusMode, youtubeDisplayMode, profile])
+  }, [authStatus, authUser?.id, hasLoadedRemoteState, trackingState, theme, focusMode, youtubeDisplayMode, profile])
 
   useEffect(() => {
     if (authStatus !== 'authed' || dashboardIntroPhase !== 'entering') {
@@ -955,7 +955,7 @@ function App() {
   }, [authStatus, dashboardIntroPhase])
 
   useEffect(() => {
-    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteStateRef.current) {
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
       return
     }
 
@@ -966,10 +966,10 @@ function App() {
     }, AUTO_SAVE_INTERVAL_MS)
 
     return () => window.clearInterval(interval)
-  }, [authStatus, authUser?.id])
+  }, [authStatus, authUser?.id, hasLoadedRemoteState])
 
   useEffect(() => {
-    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteStateRef.current) {
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
       return
     }
 
@@ -1012,7 +1012,7 @@ function App() {
       window.removeEventListener('beforeunload', flushWithKeepalive)
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
-  }, [authStatus, authUser?.id])
+  }, [authStatus, authUser?.id, hasLoadedRemoteState])
 
   async function apiRequest(url: string, init?: RequestInit) {
     let response: Response | null = null
@@ -1069,7 +1069,7 @@ function App() {
       return false
     }
 
-    if (!force && !hasLoadedRemoteStateRef.current) {
+    if (!force && !hasLoadedRemoteState) {
       return false
     }
 
@@ -1144,7 +1144,7 @@ function App() {
       localStorage.removeItem(AUTH_TOKEN_KEY)
       setAuthUser(null)
       setAuthStatus('guest')
-      hasLoadedRemoteStateRef.current = false
+      setHasLoadedRemoteState(false)
       if (error instanceof Error && error.message.includes('404')) {
         setAuthError(
           "API introuvable (/api/auth/me). Configure `VITE_API_BASE_URL` vers ton backend, puis rebuild/redeploy.",
@@ -1358,7 +1358,7 @@ function getPasswordStrengthMeta(password: string) {
     await persistUserState({ force: true, silent: true })
     await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
     localStorage.removeItem(AUTH_TOKEN_KEY)
-    hasLoadedRemoteStateRef.current = false
+    setHasLoadedRemoteState(false)
     setAuthUser(null)
     setAuthStatus('guest')
     setTrackingState(getInitialTrackingState())
