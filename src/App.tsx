@@ -153,6 +153,7 @@ type AuthUser = {
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '')
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
 const AUTH_TOKEN_KEY = 'med-auth-token-v1'
+const AUTO_SAVE_INTERVAL_MS = 20_000
 const HABIT_TRACKER_YEAR = 2026
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #f90021 0%, #ff8f00 58%, #ffe400 100%)',
@@ -747,6 +748,7 @@ function App() {
   const [authError, setAuthError] = useState('')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
+  const [saveErrorMessage, setSaveErrorMessage] = useState('')
   const [firstNameInput, setFirstNameInput] = useState('')
   const [lastNameInput, setLastNameInput] = useState('')
   const [emailInput, setEmailInput] = useState('')
@@ -776,6 +778,10 @@ function App() {
   const [youtubeInputError, setYoutubeInputError] = useState('')
   const [youtubeViewMode, setYoutubeViewMode] = useState<'embed' | 'external'>('embed')
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
+  const hasPendingChangesRef = useRef(false)
+  const hasInitializedSnapshotRef = useRef(false)
+  const latestStatePayloadRef = useRef('')
+  const lastSavedStatePayloadRef = useRef('')
   const authCardRef = useRef<HTMLDivElement | null>(null)
   const sidebarNavRef = useRef<HTMLElement | null>(null)
   const sidebarNavButtonRefs = useRef<Partial<Record<SidebarNavBubbleKey, HTMLButtonElement | null>>>({})
@@ -847,6 +853,10 @@ function App() {
   useEffect(() => {
     if (authStatus !== 'authed' || !authUser) {
       hasLoadedRemoteStateRef.current = false
+      hasPendingChangesRef.current = false
+      hasInitializedSnapshotRef.current = false
+      latestStatePayloadRef.current = ''
+      lastSavedStatePayloadRef.current = ''
       return
     }
 
@@ -911,11 +921,22 @@ function App() {
       return
     }
 
-    const timer = window.setTimeout(() => {
-      void persistUserState({ silent: true })
-    }, 600)
+    const snapshot = JSON.stringify({
+      trackingState,
+      theme,
+      focusMode,
+      profile,
+    })
+    latestStatePayloadRef.current = snapshot
 
-    return () => window.clearTimeout(timer)
+    if (!hasInitializedSnapshotRef.current) {
+      hasInitializedSnapshotRef.current = true
+      lastSavedStatePayloadRef.current = snapshot
+      hasPendingChangesRef.current = false
+      return
+    }
+
+    hasPendingChangesRef.current = snapshot !== lastSavedStatePayloadRef.current
   }, [authStatus, authUser?.id, trackingState, theme, focusMode, profile])
 
   useEffect(() => {
@@ -932,8 +953,10 @@ function App() {
     }
 
     const interval = window.setInterval(() => {
-      void persistUserState({ silent: true, force: true })
-    }, 30_000)
+      if (hasPendingChangesRef.current) {
+        void persistUserState({ silent: true })
+      }
+    }, AUTO_SAVE_INTERVAL_MS)
 
     return () => window.clearInterval(interval)
   }, [authStatus, authUser?.id])
@@ -943,14 +966,14 @@ function App() {
       return
     }
 
-    const payload = JSON.stringify({
-      trackingState,
-      theme,
-      focusMode,
-      profile,
-    })
-
     const flushWithKeepalive = () => {
+      if (!hasPendingChangesRef.current) {
+        return
+      }
+      const payload = latestStatePayloadRef.current
+      if (!payload) {
+        return
+      }
       const candidates = resolveApiCandidates('/api/state')
       const target = candidates[0]
       if (!target) {
@@ -982,7 +1005,7 @@ function App() {
       window.removeEventListener('beforeunload', flushWithKeepalive)
       document.removeEventListener('visibilitychange', onVisibilityChange)
     }
-  }, [authStatus, authUser?.id, trackingState, theme, focusMode, profile])
+  }, [authStatus, authUser?.id])
 
   async function apiRequest(url: string, init?: RequestInit) {
     let response: Response | null = null
@@ -1043,24 +1066,34 @@ function App() {
       return false
     }
 
+    if (!force && !hasPendingChangesRef.current) {
+      return true
+    }
+
     if (saveInFlightRef.current) {
       return saveInFlightRef.current
     }
 
+    const snapshot = JSON.stringify({
+      trackingState,
+      theme,
+      focusMode,
+      profile,
+    })
+    latestStatePayloadRef.current = snapshot
+
     const savePromise = (async () => {
       if (!silent) {
+        setSaveErrorMessage('')
         setSaveStatus('saving')
       }
       try {
         const payload = await apiRequest('/api/state', {
           method: 'PUT',
-          body: JSON.stringify({
-            trackingState,
-            theme,
-            focusMode,
-            profile,
-          }),
+          body: snapshot,
         })
+        lastSavedStatePayloadRef.current = snapshot
+        hasPendingChangesRef.current = false
         const updatedAtRaw = typeof payload.updatedAt === 'string' ? payload.updatedAt : new Date().toISOString()
         const savedAt = new Date(updatedAtRaw)
         if (!Number.isNaN(savedAt.getTime())) {
@@ -1074,11 +1107,13 @@ function App() {
         }
         if (!silent) {
           setSaveStatus('saved')
+          setSaveErrorMessage('')
           window.setTimeout(() => setSaveStatus('idle'), 1800)
         }
         return true
-      } catch {
+      } catch (error) {
         if (!silent) {
+          setSaveErrorMessage(error instanceof Error ? error.message : 'Erreur inconnue')
           setSaveStatus('error')
           window.setTimeout(() => setSaveStatus('idle'), 2200)
         }
@@ -3248,7 +3283,7 @@ function getPasswordStrengthMeta(password: string) {
               ? 'Sauvegarde en cours...'
               : saveStatus === 'saved'
                 ? `Sauvegarde OK${lastSavedAt ? ` (${lastSavedAt})` : ''}`
-                : 'Erreur de sauvegarde'}
+                : `Erreur de sauvegarde${saveErrorMessage ? `: ${saveErrorMessage}` : ''}`}
           </div>
         ) : null}
 

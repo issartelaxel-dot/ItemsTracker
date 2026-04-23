@@ -104,7 +104,7 @@ app.use(
     credentials: true,
   }),
 )
-app.use(express.json({ limit: '200kb' }))
+app.use(express.json({ limit: '5mb' }))
 app.use(cookieParser())
 
 const authLimiter = rateLimit({
@@ -435,6 +435,14 @@ app.put('/api/state', async (req, res) => {
   )
 
   res.json({ ok: true, updatedAt: now })
+})
+
+app.use((error, _req, res, next) => {
+  if (error?.type === 'entity.too.large') {
+    res.status(413).json({ error: 'Etat trop volumineux pour la sauvegarde (payload trop grand).' })
+    return
+  }
+  next(error)
 })
 
 app.post('/api/auth/register/request', authLimiter, async (req, res) => {
