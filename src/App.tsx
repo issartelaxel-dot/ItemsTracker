@@ -3280,6 +3280,9 @@ function getPasswordStrengthMeta(password: string) {
           {sidebarCollapsed ? '→' : '←'}
         </button>
         <header className="topbar">
+          <div className="topbar-meta" aria-live="polite">
+            {lastSavedAt ? <span>Dernière sauvegarde : {lastSavedAt}</span> : null}
+          </div>
           <div className="topbar-actions">
           <button
             className="ghost-btn icon-btn"

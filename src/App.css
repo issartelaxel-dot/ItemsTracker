@@ -825,15 +825,25 @@
 }
 
 .topbar {
-  display: flex;
-  justify-content: flex-end;
-  gap: 1rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.65rem;
   padding: 0.25rem 0;
   align-items: center;
   border: 0;
   border-radius: 0;
   background: transparent;
   box-shadow: none;
+}
+
+.topbar-meta {
+  min-width: 0;
+  font-size: 0.68rem;
+  color: var(--muted);
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .topbar::after {
@@ -3925,7 +3935,7 @@ tbody tr.selected {
   }
 
   .topbar {
-    justify-content: flex-end;
+    grid-template-columns: minmax(0, 1fr) auto;
     padding: 0.2rem 0;
   }
 
