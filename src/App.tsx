@@ -3594,10 +3594,10 @@ function getPasswordStrengthMeta(password: string) {
               </div>
 
               <label className="block-label">
-                Commentaire item
+                Prochaine(s) lecture(s)
                 <textarea
                   value={effectiveSelectedItem.tracking.itemComment}
-                  placeholder="Commentaire global sur cet item..."
+                  placeholder="Notes pour les prochaines lectures..."
                   onChange={(event) => updateItemComment(effectiveSelectedItem.itemNumber, event.target.value)}
                 />
               </label>
