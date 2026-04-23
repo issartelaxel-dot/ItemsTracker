@@ -74,6 +74,7 @@ type ItemTracking = {
   noLisaSheets: boolean
   noPlatformSheets: boolean
   itemComment: string
+  youtubeUrl: string
   itemMastery: Mastery | 'Non évalué'
   itemIcon: string
   itemColor: string
@@ -245,6 +246,46 @@ function normalizeText(value: string) {
     .toUpperCase()
 }
 
+function extractYouTubeVideoId(rawValue: string): string | null {
+  const raw = rawValue.trim()
+  if (!raw) {
+    return null
+  }
+  if (/^[A-Za-z0-9_-]{11}$/.test(raw)) {
+    return raw
+  }
+
+  try {
+    const url = new URL(raw)
+    const host = url.hostname.replace(/^www\./i, '').replace(/^m\./i, '').toLowerCase()
+
+    if (host === 'youtu.be') {
+      const candidate = url.pathname.slice(1).split('/')[0] ?? ''
+      return /^[A-Za-z0-9_-]{11}$/.test(candidate) ? candidate : null
+    }
+
+    if (host === 'youtube.com' || host === 'youtube-nocookie.com') {
+      if (url.pathname === '/watch') {
+        const candidate = url.searchParams.get('v') ?? ''
+        return /^[A-Za-z0-9_-]{11}$/.test(candidate) ? candidate : null
+      }
+
+      const match = url.pathname.match(/^\/(?:embed|shorts|live)\/([A-Za-z0-9_-]{11})(?:\/|$)/)
+      if (match?.[1]) {
+        return match[1]
+      }
+    }
+  } catch {
+    return null
+  }
+
+  return null
+}
+
+function makeYouTubeWatchUrl(videoId: string): string {
+  return `https://www.youtube.com/watch?v=${videoId}`
+}
+
 function resolveApiCandidates(path: string) {
   if (/^https?:\/\//i.test(path)) {
     return [path]
@@ -311,6 +352,7 @@ function getDefaultItemTracking(): ItemTracking {
     noLisaSheets: false,
     noPlatformSheets: false,
     itemComment: '',
+    youtubeUrl: '',
     itemMastery: 'Non évalué',
     itemIcon: '',
     itemColor: '',
@@ -391,6 +433,7 @@ function normalizeItemTracking(tracking?: Partial<ItemTracking>): ItemTracking {
     noLisaSheets: tracking?.noLisaSheets ?? false,
     noPlatformSheets: tracking?.noPlatformSheets ?? false,
     itemComment: tracking?.itemComment ?? '',
+    youtubeUrl: typeof tracking?.youtubeUrl === 'string' ? tracking.youtubeUrl : '',
     itemMastery:
       tracking?.itemMastery && MASTERY_LEVELS.includes(tracking.itemMastery as Mastery)
         ? (tracking.itemMastery as Mastery)
@@ -592,6 +635,7 @@ function getInitialTrackingState(): TrackerState {
       noLisaSheets: false,
       noPlatformSheets: false,
       itemComment: '',
+      youtubeUrl: '',
       itemMastery: 'Non évalué',
       itemIcon: '',
       itemColor: '',
@@ -728,6 +772,8 @@ function App() {
   const [authTransitionPhase, setAuthTransitionPhase] = useState<'idle' | 'expanding'>('idle')
   const [dashboardIntroPhase, setDashboardIntroPhase] = useState<'idle' | 'entering'>('idle')
   const [authExpandStyle, setAuthExpandStyle] = useState<CSSProperties>({})
+  const [youtubeInput, setYoutubeInput] = useState('')
+  const [youtubeInputError, setYoutubeInputError] = useState('')
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const authCardRef = useRef<HTMLDivElement | null>(null)
   const sidebarNavRef = useRef<HTMLElement | null>(null)
@@ -1320,6 +1366,7 @@ function getPasswordStrengthMeta(password: string) {
             item.tagCodes.join(' '),
             item.tagLabels.join(' '),
             item.tracking.itemLabel,
+            item.tracking.youtubeUrl,
             item.tracking.assignedColleges.join(' '),
             item.tracking.lisaSheets.map((sheet) => `${sheet.name} ${sheet.url}`).join(' '),
             item.tracking.platformSheets.map((sheet) => `${sheet.name} ${sheet.url}`).join(' '),
@@ -1415,6 +1462,21 @@ function getPasswordStrengthMeta(password: string) {
   }, [items, selectedItemId, focusMode, focusCandidates])
 
   const effectiveSelectedItem = selectedItem ?? null
+
+  useEffect(() => {
+    if (!effectiveSelectedItem) {
+      setYoutubeInput('')
+      setYoutubeInputError('')
+      return
+    }
+    setYoutubeInput(effectiveSelectedItem.tracking.youtubeUrl)
+    setYoutubeInputError('')
+  }, [effectiveSelectedItem])
+
+  const selectedYouTubeVideoId = useMemo(
+    () => (effectiveSelectedItem ? extractYouTubeVideoId(effectiveSelectedItem.tracking.youtubeUrl) : null),
+    [effectiveSelectedItem],
+  )
 
   const itemTableList = useMemo(() => {
     if (!focusMode) {
@@ -2163,6 +2225,7 @@ function getPasswordStrengthMeta(password: string) {
           noLisaSheets: currentItemTracking.noLisaSheets,
           noPlatformSheets: currentItemTracking.noPlatformSheets,
           itemComment: currentItemTracking.itemComment,
+          youtubeUrl: currentItemTracking.youtubeUrl,
           itemMastery: currentItemTracking.itemMastery,
           itemIcon: currentItemTracking.itemIcon,
           itemColor: currentItemTracking.itemColor,
@@ -2220,6 +2283,7 @@ function getPasswordStrengthMeta(password: string) {
           noLisaSheets: itemTracking.noLisaSheets,
           noPlatformSheets: itemTracking.noPlatformSheets,
           itemComment: itemTracking.itemComment,
+          youtubeUrl: itemTracking.youtubeUrl,
           itemMastery: itemTracking.itemMastery,
           itemIcon: itemTracking.itemIcon,
           itemColor: itemTracking.itemColor,
@@ -2293,6 +2357,7 @@ function getPasswordStrengthMeta(password: string) {
           noLisaSheets: nextLisaSheets.length > 0 ? false : itemTracking.noLisaSheets,
           noPlatformSheets: nextPlatformSheets.length > 0 ? false : itemTracking.noPlatformSheets,
           itemComment: itemTracking.itemComment,
+          youtubeUrl: itemTracking.youtubeUrl,
           itemMastery: itemTracking.itemMastery,
           itemIcon: itemTracking.itemIcon,
           itemColor: itemTracking.itemColor,
@@ -2327,6 +2392,7 @@ function getPasswordStrengthMeta(password: string) {
           noLisaSheets: key === 'noLisaSheets' ? value : itemTracking.noLisaSheets,
           noPlatformSheets: key === 'noPlatformSheets' ? value : itemTracking.noPlatformSheets,
           itemComment: itemTracking.itemComment,
+          youtubeUrl: itemTracking.youtubeUrl,
           itemMastery: itemTracking.itemMastery,
           itemIcon: itemTracking.itemIcon,
           itemColor: itemTracking.itemColor,
@@ -2368,6 +2434,7 @@ function getPasswordStrengthMeta(password: string) {
             noLisaSheets: itemTracking.noLisaSheets,
             noPlatformSheets: itemTracking.noPlatformSheets,
             itemComment: value,
+            youtubeUrl: itemTracking.youtubeUrl,
             itemMastery: itemTracking.itemMastery,
             itemIcon: itemTracking.itemIcon,
             itemColor: itemTracking.itemColor,
@@ -2378,6 +2445,41 @@ function getPasswordStrengthMeta(password: string) {
             quiz: itemTracking.quiz,
             actionLogs: itemTracking.actionLogs,
           },
+        },
+      }
+    })
+  }
+
+  function updateItemYoutubeUrl(itemNumber: number, value: string) {
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      const previousUrl = itemTracking.youtubeUrl.trim()
+      const nextUrl = value.trim()
+      const actions: string[] = []
+
+      if (nextUrl !== previousUrl) {
+        if (!nextUrl) {
+          actions.push('Vidéo YouTube supprimée')
+        } else if (!previousUrl) {
+          actions.push('Vidéo YouTube ajoutée')
+        } else {
+          actions.push('Vidéo YouTube modifiée')
+        }
+      }
+
+      const nextTracking = appendActionLogs(
+        {
+          ...itemTracking,
+          youtubeUrl: nextUrl,
+        },
+        actions,
+      )
+
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: nextTracking,
         },
       }
     })
@@ -2398,6 +2500,7 @@ function getPasswordStrengthMeta(password: string) {
             noLisaSheets: itemTracking.noLisaSheets,
             noPlatformSheets: itemTracking.noPlatformSheets,
             itemComment: itemTracking.itemComment,
+            youtubeUrl: itemTracking.youtubeUrl,
             itemMastery: value,
             itemIcon: itemTracking.itemIcon,
             itemColor: itemTracking.itemColor,
@@ -2428,6 +2531,7 @@ function getPasswordStrengthMeta(password: string) {
             noLisaSheets: itemTracking.noLisaSheets,
             noPlatformSheets: itemTracking.noPlatformSheets,
             itemComment: itemTracking.itemComment,
+            youtubeUrl: itemTracking.youtubeUrl,
             itemMastery: itemTracking.itemMastery,
             itemIcon: itemTracking.itemIcon,
             itemColor: itemTracking.itemColor,
@@ -2539,6 +2643,7 @@ function getPasswordStrengthMeta(password: string) {
           noLisaSheets: itemTracking.noLisaSheets,
           noPlatformSheets: itemTracking.noPlatformSheets,
           itemComment: itemTracking.itemComment,
+          youtubeUrl: itemTracking.youtubeUrl,
           itemMastery: itemTracking.itemMastery,
           itemIcon: patch.itemIcon ?? itemTracking.itemIcon,
           itemColor: patch.itemColor ?? itemTracking.itemColor,
@@ -2559,6 +2664,30 @@ function getPasswordStrengthMeta(password: string) {
         },
       }
     })
+  }
+
+  function handleYouTubeSave() {
+    if (!effectiveSelectedItem) {
+      return
+    }
+    const videoId = extractYouTubeVideoId(youtubeInput)
+    if (!videoId) {
+      setYoutubeInputError('Lien YouTube invalide. Exemple: https://www.youtube.com/watch?v=...')
+      return
+    }
+    const normalizedUrl = makeYouTubeWatchUrl(videoId)
+    updateItemYoutubeUrl(effectiveSelectedItem.itemNumber, normalizedUrl)
+    setYoutubeInput(normalizedUrl)
+    setYoutubeInputError('')
+  }
+
+  function handleYouTubeClear() {
+    if (!effectiveSelectedItem) {
+      return
+    }
+    updateItemYoutubeUrl(effectiveSelectedItem.itemNumber, '')
+    setYoutubeInput('')
+    setYoutubeInputError('')
   }
 
   function nextFocusItem() {
@@ -2864,7 +2993,7 @@ function getPasswordStrengthMeta(password: string) {
             </span>
             <div className="sidebar-head-titles">
               <p className="sidebar-grade">IVeme annee</p>
-              <p className="sidebar-title">Items Tracker</p>
+              <p className="sidebar-title">ItemsTracker</p>
             </div>
           </div>
         </div>
@@ -3397,6 +3526,45 @@ function getPasswordStrengthMeta(password: string) {
                   onChange={(event) => updateItemComment(effectiveSelectedItem.itemNumber, event.target.value)}
                 />
               </label>
+
+              <h3>Vidéo YouTube</h3>
+              <div className="youtube-editor">
+                <div className="youtube-input-row">
+                  <input
+                    type="url"
+                    placeholder="Coller le lien YouTube ici (ex. https://www.youtube.com/watch?v=...)"
+                    value={youtubeInput}
+                    onChange={(event) => {
+                      setYoutubeInput(event.target.value)
+                      if (youtubeInputError) {
+                        setYoutubeInputError('')
+                      }
+                    }}
+                  />
+                  <button type="button" className="ghost-btn" onClick={handleYouTubeSave}>
+                    {effectiveSelectedItem.tracking.youtubeUrl ? 'Modifier' : 'Ajouter'}
+                  </button>
+                  {effectiveSelectedItem.tracking.youtubeUrl ? (
+                    <button type="button" className="ghost-btn" onClick={handleYouTubeClear}>
+                      Supprimer
+                    </button>
+                  ) : null}
+                </div>
+                {youtubeInputError ? <p className="youtube-error">{youtubeInputError}</p> : null}
+                {selectedYouTubeVideoId ? (
+                  <div className="youtube-embed-wrap">
+                    <iframe
+                      src={`https://www.youtube-nocookie.com/embed/${selectedYouTubeVideoId}`}
+                      title={`Vidéo item ${effectiveSelectedItem.itemNumber}`}
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      referrerPolicy="strict-origin-when-cross-origin"
+                      allowFullScreen
+                    />
+                  </div>
+                ) : effectiveSelectedItem.tracking.youtubeUrl ? (
+                  <p className="muted">Le lien YouTube sauvegardé est invalide.</p>
+                ) : null}
+              </div>
 
               <h3>Marqueur visuel item</h3>
               <div className="item-visual-editor">

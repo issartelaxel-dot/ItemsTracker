@@ -2703,6 +2703,50 @@ tbody tr.selected {
   margin: 0.3rem 0 0.55rem;
 }
 
+.youtube-editor {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.25rem 0 0.8rem;
+}
+
+.youtube-input-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 0.45rem;
+}
+
+.youtube-input-row input {
+  min-width: 0;
+}
+
+.youtube-input-row .ghost-btn {
+  padding: 0.35rem 0.66rem;
+}
+
+.youtube-error {
+  margin: 0;
+  font-size: 0.74rem;
+  color: #cb3e3e;
+}
+
+.youtube-embed-wrap {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  background: #000;
+}
+
+.youtube-embed-wrap iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
 .item-visual-actions {
   display: flex;
   align-items: end;
@@ -3712,6 +3756,10 @@ tbody tr.selected {
 
   .item-visual-editor {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .youtube-input-row {
+    grid-template-columns: 1fr;
   }
 
   .reference-row {
