@@ -2855,7 +2855,41 @@ tbody tr.selected {
 
 .youtube-open-link {
   width: fit-content;
+  min-width: 118px;
+  justify-content: center;
+  text-align: center;
   text-decoration: none;
+  font-weight: 700;
+  border-color: color-mix(in oklab, var(--accent) 46%, var(--border));
+  background: color-mix(in oklab, var(--accent) 18%, var(--input-bg));
+  color: color-mix(in oklab, var(--accent) 66%, var(--text));
+}
+
+.youtube-open-link:hover {
+  background: color-mix(in oklab, var(--accent) 26%, var(--input-bg));
+  border-color: color-mix(in oklab, var(--accent) 62%, var(--border));
+}
+
+.link-icon-btn {
+  width: 46px;
+  min-width: 46px;
+  padding-inline: 0;
+  justify-content: center;
+}
+
+.link-icon-glyph {
+  line-height: 1;
+  font-size: 1.02rem;
+}
+
+.link-icon-btn-danger {
+  border-color: color-mix(in oklab, #d24747 44%, var(--border));
+  background: color-mix(in oklab, #d24747 12%, var(--input-bg));
+}
+
+.link-icon-btn-danger:hover {
+  border-color: color-mix(in oklab, #d24747 58%, var(--border));
+  background: color-mix(in oklab, #d24747 18%, var(--input-bg));
 }
 
 .item-visual-actions {

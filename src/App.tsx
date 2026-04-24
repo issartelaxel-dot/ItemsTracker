@@ -3782,12 +3782,32 @@ function getPasswordStrengthMeta(password: string) {
                       }
                     }}
                   />
-                  <button type="button" className="ghost-btn" onClick={handleUsefulLinkSave}>
-                    {effectiveSelectedItem.tracking.usefulLinkUrl ? 'Modifier' : 'Ajouter'}
+                  <button
+                    type="button"
+                    className={`ghost-btn ${effectiveSelectedItem.tracking.usefulLinkUrl ? 'link-icon-btn' : ''}`}
+                    title={effectiveSelectedItem.tracking.usefulLinkUrl ? 'Modifier le lien utile' : 'Ajouter le lien utile'}
+                    aria-label={effectiveSelectedItem.tracking.usefulLinkUrl ? 'Modifier le lien utile' : 'Ajouter le lien utile'}
+                    onClick={handleUsefulLinkSave}
+                  >
+                    {effectiveSelectedItem.tracking.usefulLinkUrl ? (
+                      <span className="link-icon-glyph" aria-hidden="true">
+                        ✏️
+                      </span>
+                    ) : (
+                      'Ajouter'
+                    )}
                   </button>
                   {effectiveSelectedItem.tracking.usefulLinkUrl ? (
-                    <button type="button" className="ghost-btn" onClick={handleUsefulLinkClear}>
-                      Supprimer
+                    <button
+                      type="button"
+                      className="ghost-btn link-icon-btn link-icon-btn-danger"
+                      title="Supprimer le lien utile"
+                      aria-label="Supprimer le lien utile"
+                      onClick={handleUsefulLinkClear}
+                    >
+                      <span className="link-icon-glyph" aria-hidden="true">
+                        🗑️
+                      </span>
                     </button>
                   ) : null}
                   {effectiveSelectedItem.tracking.usefulLinkUrl ? (
