@@ -2782,6 +2782,12 @@ tbody tr.selected {
   margin: 0.25rem 0 0.8rem;
 }
 
+.useful-link-editor {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.2rem 0 0.85rem;
+}
+
 .youtube-preview {
   display: grid;
   gap: 0.5rem;
