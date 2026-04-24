@@ -846,6 +846,11 @@
   text-overflow: ellipsis;
 }
 
+.topbar-save-warning {
+  color: #b42318;
+  font-weight: 600;
+}
+
 .topbar::after {
   display: none;
 }

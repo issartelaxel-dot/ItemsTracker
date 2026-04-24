@@ -725,6 +725,27 @@ function normalizeProfileInput(rawProfile: unknown, authUser: AuthUser | null): 
   }
 }
 
+function toSaveWarningMessage(error: unknown) {
+  const rawMessage = error instanceof Error ? error.message : 'Erreur inconnue'
+  const message = rawMessage.trim() || 'Erreur inconnue'
+  const lower = message.toLowerCase()
+  const isNetworkOrBackendIssue =
+    lower.includes('api indisponible') ||
+    lower.includes('cloud indisponible') ||
+    lower.includes('failed to fetch') ||
+    lower.includes('load failed') ||
+    lower.includes('network') ||
+    lower.includes('timeout') ||
+    lower.includes('econn') ||
+    /erreur api \(5\d{2}\)/i.test(message)
+
+  if (isNetworkOrBackendIssue) {
+    return 'Sauvegarde en attente: réseau/cloud indisponible. Reprise automatique dès reconnexion.'
+  }
+
+  return `Sauvegarde en attente: ${message}`
+}
+
 function App() {
   const [trackingState, setTrackingState] = useState<TrackerState>(getInitialTrackingState())
   const [theme, setTheme] = useState<Theme>('light')
@@ -1172,14 +1193,14 @@ function App() {
             }).format(savedAt),
           )
         }
+        setSaveErrorMessage('')
         if (!silent) {
           setSaveStatus('saved')
-          setSaveErrorMessage('')
           window.setTimeout(() => setSaveStatus('idle'), 1800)
         }
         return true
       } catch (error) {
-        setSaveErrorMessage(error instanceof Error ? error.message : 'Erreur inconnue')
+        setSaveErrorMessage(toSaveWarningMessage(error))
         if (!silent) {
           setSaveStatus('error')
           window.setTimeout(() => setSaveStatus('idle'), 2200)
@@ -3420,7 +3441,9 @@ function getPasswordStrengthMeta(password: string) {
         </button>
         <header className="topbar">
           <div className="topbar-meta" aria-live="polite">
-            {lastSavedAt ? (
+            {saveErrorMessage ? (
+              <span className="topbar-save-warning">{saveErrorMessage}</span>
+            ) : lastSavedAt ? (
               <span>Dernière sauvegarde : {lastSavedAt}</span>
             ) : authStatus === 'authed' && !hasLoadedRemoteState ? (
               <span>Cloud indisponible, reconnexion...</span>
@@ -3434,7 +3457,7 @@ function getPasswordStrengthMeta(password: string) {
                 ? 'Sauvegarde en cours'
                 : saveStatus === 'saved'
                   ? 'Sauvegarde OK'
-                  : saveStatus === 'error'
+                  : saveStatus === 'error' || Boolean(saveErrorMessage)
                     ? 'Echec sauvegarde'
                     : 'Sauvegarder maintenant'
             }
