@@ -157,7 +157,7 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
 const AUTH_TOKEN_KEY = 'med-auth-token-v1'
 const AUTO_SAVE_INTERVAL_MS = 20_000
-const AUTO_SAVE_DEBOUNCE_MS = 4_000
+const AUTO_SAVE_DEBOUNCE_MS = 3_000
 const HABIT_TRACKER_YEAR = 2026
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #f90021 0%, #ff8f00 58%, #ffe400 100%)',
@@ -879,6 +879,8 @@ function App() {
   useEffect(() => {
     if (authStatus !== 'authed' || !authUser) {
       setHasLoadedRemoteState(false)
+      setLastSavedAt(null)
+      setSaveErrorMessage('')
       hasPendingChangesRef.current = false
       hasInitializedSnapshotRef.current = false
       latestStatePayloadRef.current = ''
@@ -887,6 +889,7 @@ function App() {
     }
 
     let cancelled = false
+    let retryTimer: number | null = null
 
     const loadRemoteState = async () => {
       try {
@@ -902,6 +905,7 @@ function App() {
               focusMode?: unknown
               youtubeDisplayMode?: unknown
               profile?: unknown
+              updatedAt?: unknown
             }
           | null
           | undefined
@@ -918,24 +922,38 @@ function App() {
           setYoutubeDisplayMode(remoteState.youtubeDisplayMode === 'external' ? 'external' : 'embed')
 
           setProfile(normalizeProfileInput(remoteState.profile, authUser))
+          const updatedAtRaw = typeof remoteState.updatedAt === 'string' ? remoteState.updatedAt : null
+          if (updatedAtRaw) {
+            const savedAt = new Date(updatedAtRaw)
+            if (!Number.isNaN(savedAt.getTime())) {
+              setLastSavedAt(
+                new Intl.DateTimeFormat('fr-FR', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                }).format(savedAt),
+              )
+            }
+          } else {
+            setLastSavedAt(null)
+          }
         } else {
           setTrackingState(getInitialTrackingState())
           setTheme('light')
           setFocusMode(false)
           setYoutubeDisplayMode('embed')
           setProfile(getProfileFromAuthUser(authUser))
+          setLastSavedAt(null)
         }
+        setSaveErrorMessage('')
+        setHasLoadedRemoteState(true)
       } catch {
         if (!cancelled) {
-          setTrackingState(getInitialTrackingState())
-          setTheme('light')
-          setFocusMode(false)
-          setYoutubeDisplayMode('embed')
-          setProfile(getProfileFromAuthUser(authUser))
-        }
-      } finally {
-        if (!cancelled) {
-          setHasLoadedRemoteState(true)
+          setHasLoadedRemoteState(false)
+          setSaveErrorMessage('Cloud indisponible, reconnexion automatique...')
+          retryTimer = window.setTimeout(() => {
+            void loadRemoteState()
+          }, 15_000)
         }
       }
     }
@@ -943,6 +961,9 @@ function App() {
     void loadRemoteState()
     return () => {
       cancelled = true
+      if (retryTimer !== null) {
+        window.clearTimeout(retryTimer)
+      }
     }
   }, [authStatus, authUser?.id])
 
@@ -1139,7 +1160,7 @@ function App() {
           body: snapshot,
         })
         lastSavedStatePayloadRef.current = snapshot
-        hasPendingChangesRef.current = false
+        hasPendingChangesRef.current = latestStatePayloadRef.current !== lastSavedStatePayloadRef.current
         const updatedAtRaw = typeof payload.updatedAt === 'string' ? payload.updatedAt : new Date().toISOString()
         const savedAt = new Date(updatedAtRaw)
         if (!Number.isNaN(savedAt.getTime())) {
@@ -1393,7 +1414,15 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   async function handleLogout() {
-    await persistUserState({ force: true, silent: true })
+    const saved = await persistUserState({ force: true, silent: false })
+    if (!saved) {
+      const continueWithoutSave = window.confirm(
+        "La sauvegarde cloud a échoué. Voulez-vous quand même vous déconnecter ?",
+      )
+      if (!continueWithoutSave) {
+        return
+      }
+    }
     await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
     localStorage.removeItem(AUTH_TOKEN_KEY)
     setHasLoadedRemoteState(false)
@@ -3391,7 +3420,11 @@ function getPasswordStrengthMeta(password: string) {
         </button>
         <header className="topbar">
           <div className="topbar-meta" aria-live="polite">
-            {lastSavedAt ? <span>Dernière sauvegarde : {lastSavedAt}</span> : null}
+            {lastSavedAt ? (
+              <span>Dernière sauvegarde : {lastSavedAt}</span>
+            ) : authStatus === 'authed' && !hasLoadedRemoteState ? (
+              <span>Cloud indisponible, reconnexion...</span>
+            ) : null}
           </div>
           <div className="topbar-actions">
           <button
