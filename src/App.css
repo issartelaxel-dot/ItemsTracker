@@ -1783,10 +1783,16 @@ h3 {
 
 .colleges-heatmap-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.45rem;
   max-height: 62vh;
   overflow: auto;
+}
+
+@media (max-width: 1180px) {
+  .colleges-heatmap-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 .colleges-heat-cell {
