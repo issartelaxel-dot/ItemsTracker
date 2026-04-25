@@ -242,7 +242,9 @@ function clearAuthCookie(res) {
 }
 
 function authFromRequest(req) {
-  const token = req.cookies?.[AUTH_COOKIE]
+  const authHeader = req.headers.authorization || ''
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
+  const token = req.cookies?.[AUTH_COOKIE] || bearerToken
   if (!token) {
     return null
   }
@@ -595,6 +597,7 @@ app.post('/api/auth/register/verify', verifyLimiter, async (req, res) => {
 
   res.json({
     ok: true,
+    token,
     user: {
       id: userId,
       email,
@@ -633,6 +636,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 
   res.json({
     ok: true,
+    token,
     user: {
       id: Number(user.id),
       email: user.email,
@@ -751,6 +755,7 @@ app.post('/api/auth/password/confirm', verifyLimiter, async (req, res) => {
 
   res.json({
     ok: true,
+    token,
     user: {
       id: Number(user.id),
       email: user.email,
