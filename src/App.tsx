@@ -1,5 +1,10 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
 import itemsData from './data/items.json'
+import navCollegesIcon from './assets/nav/colleges.svg'
+import navDashboardIcon from './assets/nav/dashboard.svg'
+import navFlashcardsIcon from './assets/nav/flashcards.svg'
+import navInsightsIcon from './assets/nav/insights.svg'
+import navItemsIcon from './assets/nav/items.svg'
 import './App.css'
 
 type Mastery = 'Mauvais' | 'Moyen' | 'Bon' | 'Très bon' | 'Parfait'
@@ -3206,7 +3211,7 @@ function getPasswordStrengthMeta(password: string) {
             onClick={() => setActiveView('dashboard')}
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
-              ⌂
+              <img src={navDashboardIcon} className="sidebar-nav-icon-img" alt="" />
             </span>
             <span className="sidebar-nav-label">Dashboard</span>
           </button>
@@ -3219,7 +3224,7 @@ function getPasswordStrengthMeta(password: string) {
             onClick={() => setActiveView('items')}
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
-              ☑
+              <img src={navItemsIcon} className="sidebar-nav-icon-img" alt="" />
             </span>
             <span className="sidebar-nav-label">Items</span>
           </button>
@@ -3232,7 +3237,7 @@ function getPasswordStrengthMeta(password: string) {
             onClick={() => setActiveView('flashcards')}
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
-              ▤
+              <img src={navFlashcardsIcon} className="sidebar-nav-icon-img" alt="" />
             </span>
             <span className="sidebar-nav-label">FlashCards</span>
           </button>
@@ -3245,7 +3250,7 @@ function getPasswordStrengthMeta(password: string) {
             onClick={() => setActiveView('colleges')}
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
-              ◫
+              <img src={navCollegesIcon} className="sidebar-nav-icon-img" alt="" />
             </span>
             <span className="sidebar-nav-label">Colleges</span>
           </button>
@@ -3257,7 +3262,7 @@ function getPasswordStrengthMeta(password: string) {
             aria-label="Insights bientôt disponible"
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
-              ◔
+              <img src={navInsightsIcon} className="sidebar-nav-icon-img" alt="" />
             </span>
             <span className="sidebar-nav-label">Insights</span>
           </button>

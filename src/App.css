@@ -278,6 +278,12 @@
     color 0.2s ease;
 }
 
+.sidebar-nav-icon-img {
+  width: 14px;
+  height: 14px;
+  display: block;
+}
+
 .sidebar-nav-item:hover {
   background: rgba(167, 195, 255, 0.18);
 }
