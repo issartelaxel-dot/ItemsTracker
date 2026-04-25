@@ -19,6 +19,16 @@ Then rebuild and redeploy the frontend.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Render (frontend)
+
+Use a Render **Static Site** that publishes `dist`:
+
+- Build command: `npm ci && npm run build`
+- Publish directory: `dist`
+- Environment variable: `VITE_BASE_PATH=/`
+
+If you use Render Blueprint, this repo already includes [`render.yaml`](./render.yaml) with this setup.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)

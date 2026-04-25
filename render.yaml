@@ -1,0 +1,10 @@
+services:
+  - type: static_site
+    name: itemstracker-frontend
+    env: static
+    buildCommand: npm ci && npm run build
+    staticPublishPath: dist
+    pullRequestPreviewsEnabled: false
+    envVars:
+      - key: VITE_BASE_PATH
+        value: /
