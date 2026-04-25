@@ -25,7 +25,7 @@ Use a Render **Static Site** that publishes `dist`:
 
 - Build command: `npm ci && npm run build`
 - Publish directory: `dist`
-- Environment variable: `VITE_BASE_PATH=/`
+- Environment variable: `VITE_BASE_PATH=/ItemsTracker/`
 
 If you use Render Blueprint, this repo already includes [`render.yaml`](./render.yaml) with this setup.
 
