@@ -3452,19 +3452,11 @@ function getPasswordStrengthMeta(password: string) {
           <div className="topbar-actions">
           <button
             className="ghost-btn icon-btn"
-            title={
-              saveStatus === 'saving'
-                ? 'Sauvegarde en cours'
-                : saveStatus === 'saved'
-                  ? 'Sauvegarde OK'
-                  : saveStatus === 'error' || Boolean(saveErrorMessage)
-                    ? 'Echec sauvegarde'
-                    : 'Sauvegarder maintenant'
-            }
-            aria-label="Sauvegarder maintenant"
-            onClick={() => void persistUserState({ silent: false, force: true })}
+            title="Déconnexion"
+            aria-label="Déconnexion"
+            onClick={() => void handleLogout()}
           >
-            💾
+            ⎋
           </button>
           <button
             className="ghost-btn icon-btn"
