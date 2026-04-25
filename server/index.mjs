@@ -24,7 +24,7 @@ const DATABASE_URL = process.env.DATABASE_URL || ''
 const JWT_SECRET = process.env.JWT_SECRET || ''
 const NODE_ENV = process.env.NODE_ENV || 'development'
 const DB_SSL_REJECT_UNAUTHORIZED = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
-const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || 'lax').toLowerCase()
+const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || (NODE_ENV === 'production' ? 'none' : 'lax')).toLowerCase()
 const COOKIE_SECURE =
   process.env.COOKIE_SECURE === 'true' ? true : process.env.COOKIE_SECURE === 'false' ? false : NODE_ENV === 'production'
 const ADMIN_APPROVAL_EMAIL = process.env.ADMIN_APPROVAL_EMAIL || 'issartelaxel@gmail.com'
@@ -220,9 +220,10 @@ function signAuthToken(payload) {
 
 function setAuthCookie(res, token) {
   const sameSite = COOKIE_SAMESITE === 'none' ? 'none' : COOKIE_SAMESITE === 'strict' ? 'strict' : 'lax'
+  const secure = sameSite === 'none' ? true : COOKIE_SECURE
   res.cookie(AUTH_COOKIE, token, {
     httpOnly: true,
-    secure: COOKIE_SECURE,
+    secure,
     sameSite,
     maxAge: AUTH_SESSION_TTL_MS,
     path: '/',
@@ -231,9 +232,10 @@ function setAuthCookie(res, token) {
 
 function clearAuthCookie(res) {
   const sameSite = COOKIE_SAMESITE === 'none' ? 'none' : COOKIE_SAMESITE === 'strict' ? 'strict' : 'lax'
+  const secure = sameSite === 'none' ? true : COOKIE_SECURE
   res.clearCookie(AUTH_COOKIE, {
     httpOnly: true,
-    secure: COOKIE_SECURE,
+    secure,
     sameSite,
     path: '/',
   })
@@ -250,6 +252,16 @@ function authFromRequest(req) {
   } catch {
     return null
   }
+}
+
+function refreshAuthCookie(res, auth) {
+  const uid = Number(auth?.uid)
+  const email = typeof auth?.email === 'string' ? auth.email : ''
+  if (!Number.isFinite(uid) || !email) {
+    return
+  }
+  const token = signAuthToken({ uid, email })
+  setAuthCookie(res, token)
 }
 
 const requestSchema = z.object({
@@ -359,6 +371,7 @@ app.get('/api/auth/me', async (req, res) => {
     return
   }
 
+  refreshAuthCookie(res, auth)
   res.json({ user })
 })
 
@@ -390,6 +403,7 @@ app.get('/api/state', async (req, res) => {
     [uid],
   )
 
+  refreshAuthCookie(res, auth)
   res.json({ state: result.rows[0] ?? null })
 })
 
@@ -442,6 +456,7 @@ app.put('/api/state', async (req, res) => {
     ],
   )
 
+  refreshAuthCookie(res, auth)
   res.json({ ok: true, updatedAt: now })
 })
 
