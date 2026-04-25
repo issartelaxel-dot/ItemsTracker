@@ -157,11 +157,13 @@ type AuthUser = {
   email: string
   displayName: string
 }
+type SaveLockReason = 'session-expired' | 'client-stale'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '')
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
 const AUTO_SAVE_INTERVAL_MS = 20_000
 const AUTO_SAVE_DEBOUNCE_MS = 2_000
+const SESSION_HEARTBEAT_MS = 60_000
 const HABIT_TRACKER_YEAR = 2026
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #f90021 0%, #ff8f00 58%, #ffe400 100%)',
@@ -750,6 +752,71 @@ function toSaveWarningMessage(error: unknown) {
   return `Sauvegarde en attente: ${message}`
 }
 
+class ApiRequestError extends Error {
+  status: number
+  code: string
+
+  constructor(message: string, status: number, code?: string) {
+    super(message)
+    this.name = 'ApiRequestError'
+    this.status = status
+    this.code = typeof code === 'string' ? code : ''
+  }
+}
+
+function getSaveLockReason(error: unknown): SaveLockReason | null {
+  if (error instanceof ApiRequestError) {
+    if (error.status === 401 || error.status === 403) {
+      return 'session-expired'
+    }
+    if (error.status === 409 || error.status === 412 || error.status === 426) {
+      return 'client-stale'
+    }
+
+    const lowerCode = error.code.toLowerCase()
+    if (lowerCode.includes('auth') || lowerCode.includes('session') || lowerCode.includes('token')) {
+      return 'session-expired'
+    }
+    if (lowerCode.includes('version') || lowerCode.includes('stale') || lowerCode.includes('upgrade')) {
+      return 'client-stale'
+    }
+  }
+
+  const message = error instanceof Error ? error.message : String(error ?? '')
+  const lower = message.toLowerCase()
+  if (
+    lower.includes('session') ||
+    lower.includes('expired') ||
+    lower.includes('token') ||
+    lower.includes('authentification') ||
+    lower.includes('erreur api (401)') ||
+    lower.includes('erreur api (403)')
+  ) {
+    return 'session-expired'
+  }
+  if (
+    lower.includes('version') ||
+    lower.includes('obsolete') ||
+    lower.includes('obsol') ||
+    lower.includes('client') ||
+    lower.includes('upgrade') ||
+    lower.includes('erreur api (409)') ||
+    lower.includes('erreur api (412)') ||
+    lower.includes('erreur api (426)')
+  ) {
+    return 'client-stale'
+  }
+
+  return null
+}
+
+function getSaveLockMessage(reason: SaveLockReason) {
+  if (reason === 'client-stale') {
+    return 'Sauvegarde bloquée: cette page est obsolète après une mise à jour. Recharge la page.'
+  }
+  return 'Sauvegarde bloquée: session expirée. Reconnecte-toi puis reprends.'
+}
+
 function App() {
   const [trackingState, setTrackingState] = useState<TrackerState>(getInitialTrackingState())
   const [theme, setTheme] = useState<Theme>('light')
@@ -799,6 +866,7 @@ function App() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
   const [saveErrorMessage, setSaveErrorMessage] = useState('')
+  const [saveLockReason, setSaveLockReason] = useState<SaveLockReason | null>(null)
   const [firstNameInput, setFirstNameInput] = useState('')
   const [lastNameInput, setLastNameInput] = useState('')
   const [emailInput, setEmailInput] = useState('')
@@ -838,6 +906,13 @@ function App() {
   const sidebarNavButtonRefs = useRef<Partial<Record<SidebarNavBubbleKey, HTMLButtonElement | null>>>({})
   const sidebarLogoRef = useRef<HTMLSpanElement | null>(null)
   const sidebarLogoOffsetRef = useRef({ x: 0, y: 0 })
+  const isSaveLocked = saveLockReason !== null
+
+  function activateSaveProtection(reason: SaveLockReason) {
+    setSaveLockReason(reason)
+    setSaveErrorMessage(getSaveLockMessage(reason))
+    setSaveStatus('error')
+  }
   const [sidebarNavBubble, setSidebarNavBubble] = useState({ top: 0, height: 0, ready: false })
   const passwordStrength = getPasswordStrengthMeta(passwordInput)
 
@@ -1135,7 +1210,8 @@ function App() {
 
     if (!response.ok) {
       const apiError = String(payload.error ?? '').trim()
-      throw new Error(apiError || `Erreur API (${response.status})`)
+      const apiCode = typeof payload.code === 'string' ? payload.code : ''
+      throw new ApiRequestError(apiError || `Erreur API (${response.status})`, response.status, apiCode)
     }
     return payload
   }
@@ -1154,6 +1230,14 @@ function App() {
 
     if (!force && !hasPendingChangesRef.current) {
       return true
+    }
+
+    if (isSaveLocked) {
+      if (!silent && saveLockReason) {
+        setSaveStatus('error')
+        setSaveErrorMessage(getSaveLockMessage(saveLockReason))
+      }
+      return false
     }
 
     if (saveInFlightRef.current) {
@@ -1199,10 +1283,15 @@ function App() {
         }
         return true
       } catch (error) {
-        setSaveErrorMessage(toSaveWarningMessage(error))
-        if (!silent) {
-          setSaveStatus('error')
-          window.setTimeout(() => setSaveStatus('idle'), 2200)
+        const lockReason = getSaveLockReason(error)
+        if (lockReason) {
+          activateSaveProtection(lockReason)
+        } else {
+          setSaveErrorMessage(toSaveWarningMessage(error))
+          if (!silent) {
+            setSaveStatus('error')
+            window.setTimeout(() => setSaveStatus('idle'), 2200)
+          }
         }
         return false
       } finally {
@@ -1219,14 +1308,47 @@ function App() {
       const payload = await apiRequest('/api/auth/me')
       setAuthUser(payload.user as AuthUser)
       setAuthStatus('authed')
+      setSaveLockReason(null)
+      setSaveErrorMessage('')
     } catch (error) {
       setAuthUser(null)
       setAuthStatus('guest')
       setHasLoadedRemoteState(false)
+      const lockReason = getSaveLockReason(error)
+      if (lockReason) {
+        activateSaveProtection(lockReason)
+      }
       if (error instanceof Error && error.message.includes('404')) {
         setAuthError(
           "API introuvable (/api/auth/me). Configure `VITE_API_BASE_URL` vers ton backend, puis rebuild/redeploy.",
         )
+      }
+    }
+  }
+
+  async function handleRecoveryAction() {
+    if (saveLockReason === 'client-stale') {
+      window.location.reload()
+      return
+    }
+
+    try {
+      const payload = await apiRequest('/api/auth/me')
+      setAuthUser(payload.user as AuthUser)
+      setAuthStatus('authed')
+      setSaveLockReason(null)
+      setSaveStatus('idle')
+      setSaveErrorMessage('')
+      if (hasPendingChangesRef.current) {
+        void persistUserState({ silent: false })
+      }
+    } catch (error) {
+      const lockReason = getSaveLockReason(error)
+      if (lockReason) {
+        activateSaveProtection(lockReason)
+      } else {
+        setSaveStatus('error')
+        setSaveErrorMessage(toSaveWarningMessage(error))
       }
     }
   }
@@ -1437,11 +1559,36 @@ function getPasswordStrengthMeta(password: string) {
     setHasLoadedRemoteState(false)
     setAuthUser(null)
     setAuthStatus('guest')
+    setSaveLockReason(null)
     setTrackingState(getInitialTrackingState())
     setTheme('light')
     setFocusMode(false)
     setProfile(getDefaultProfile())
   }
+
+  useEffect(() => {
+    if (authStatus !== 'authed' || !authUser || isSaveLocked) {
+      return
+    }
+
+    const verifySession = async () => {
+      try {
+        await apiRequest('/api/auth/me')
+      } catch (error) {
+        const lockReason = getSaveLockReason(error)
+        if (lockReason) {
+          activateSaveProtection(lockReason)
+        }
+      }
+    }
+
+    void verifySession()
+    const interval = window.setInterval(() => {
+      void verifySession()
+    }, SESSION_HEARTBEAT_MS)
+
+    return () => window.clearInterval(interval)
+  }, [authStatus, authUser, isSaveLocked])
 
   const items = useMemo<ItemComputed[]>(() => {
     return rawItems.map((item) => {
@@ -3172,8 +3319,23 @@ function getPasswordStrengthMeta(password: string) {
     <div
       className={`dashboard-layout ${sidebarCollapsed ? 'is-sidebar-collapsed' : ''} ${
         dashboardIntroPhase === 'entering' ? 'is-shell-entering' : ''
-      }`}
+      } ${isSaveLocked ? 'is-save-locked' : ''}`}
     >
+      {isSaveLocked ? (
+        <div className="save-lock-banner" role="alert" aria-live="assertive">
+          <p>{saveLockReason ? getSaveLockMessage(saveLockReason) : 'Sauvegarde bloquée.'}</p>
+          <div className="save-lock-actions">
+            <button type="button" className="ghost-btn" onClick={() => void handleRecoveryAction()}>
+              {saveLockReason === 'client-stale' ? 'Recharger la page' : 'Se reconnecter'}
+            </button>
+            {saveLockReason === 'session-expired' ? (
+              <button type="button" className="ghost-btn" onClick={() => window.location.reload()}>
+                Recharger quand même
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
       <aside className="dashboard-sidebar">
         <div className="sidebar-head">
           <div className="sidebar-head-top">

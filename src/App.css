@@ -933,6 +933,62 @@ h3 {
   color: #cb3e3e;
 }
 
+.save-lock-banner {
+  position: fixed;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2100;
+  width: min(760px, calc(100vw - 1.5rem));
+  border-radius: 12px;
+  border: 1px solid #e08f8f;
+  background: rgba(255, 242, 242, 0.98);
+  box-shadow: 0 12px 30px rgba(65, 22, 22, 0.2);
+  padding: 0.7rem 0.85rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.save-lock-banner p {
+  margin: 0;
+  color: #7e1f1f;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.save-lock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.save-lock-actions .ghost-btn {
+  background: #fff;
+  border-color: #d89a9a;
+  color: #6f1d1d;
+  font-weight: 600;
+}
+
+.dashboard-layout.is-save-locked .dashboard-shell {
+  opacity: 0.92;
+}
+
+:root[data-theme='dark'] .save-lock-banner {
+  border-color: #9b5454;
+  background: rgba(59, 27, 27, 0.96);
+  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.42);
+}
+
+:root[data-theme='dark'] .save-lock-banner p {
+  color: #ffd2d2;
+}
+
+:root[data-theme='dark'] .save-lock-actions .ghost-btn {
+  background: rgba(95, 40, 40, 0.78);
+  border-color: #ad6a6a;
+  color: #ffe5e5;
+}
+
 .menu-wrap {
   position: relative;
 }
