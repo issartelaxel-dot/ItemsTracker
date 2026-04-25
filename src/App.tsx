@@ -155,7 +155,6 @@ type AuthUser = {
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '')
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
-const AUTH_TOKEN_KEY = 'med-auth-token-v1'
 const AUTO_SAVE_INTERVAL_MS = 20_000
 const AUTO_SAVE_DEBOUNCE_MS = 2_000
 const HABIT_TRACKER_YEAR = 2026
@@ -1066,14 +1065,12 @@ function App() {
       if (!target) {
         return
       }
-      const token = localStorage.getItem(AUTH_TOKEN_KEY) || ''
       void fetch(target, {
         method: 'PUT',
         credentials: 'include',
         keepalive: true,
         headers: {
           'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: payload,
       }).catch(() => undefined)
@@ -1098,7 +1095,6 @@ function App() {
     let response: Response | null = null
     let lastFetchError: unknown = null
     const candidates = resolveApiCandidates(url)
-    const token = localStorage.getItem(AUTH_TOKEN_KEY) || ''
 
     for (const candidate of candidates) {
       try {
@@ -1107,7 +1103,6 @@ function App() {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
-            ...(token && !('Authorization' in (init?.headers ?? {})) ? { Authorization: `Bearer ${token}` } : {}),
             ...(init?.headers ?? {}),
           },
         })
@@ -1220,7 +1215,6 @@ function App() {
       setAuthUser(payload.user as AuthUser)
       setAuthStatus('authed')
     } catch (error) {
-      localStorage.removeItem(AUTH_TOKEN_KEY)
       setAuthUser(null)
       setAuthStatus('guest')
       setHasLoadedRemoteState(false)
@@ -1324,9 +1318,6 @@ function getPasswordStrengthMeta(password: string) {
           code: codeInput,
         }),
       })
-      if (typeof payload.token === 'string' && payload.token) {
-        localStorage.setItem(AUTH_TOKEN_KEY, payload.token)
-      }
       if (payload.user) {
         setAuthUser(payload.user as AuthUser)
         setAuthStatus('authed')
@@ -1353,9 +1344,6 @@ function getPasswordStrengthMeta(password: string) {
           password: passwordInput,
         }),
       })
-      if (typeof payload.token === 'string' && payload.token) {
-        localStorage.setItem(AUTH_TOKEN_KEY, payload.token)
-      }
       if (payload.user) {
         startAuthSuccessTransition(payload.user as AuthUser)
       } else {
@@ -1415,9 +1403,6 @@ function getPasswordStrengthMeta(password: string) {
           newPassword: resetPasswordInput,
         }),
       })
-      if (typeof payload.token === 'string' && payload.token) {
-        localStorage.setItem(AUTH_TOKEN_KEY, payload.token)
-      }
       setAuthMessage(String(payload.message ?? 'Mot de passe mis à jour.'))
       setResetMode(false)
       setResetCodeInput('')
@@ -1444,7 +1429,6 @@ function getPasswordStrengthMeta(password: string) {
       }
     }
     await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
-    localStorage.removeItem(AUTH_TOKEN_KEY)
     setHasLoadedRemoteState(false)
     setAuthUser(null)
     setAuthStatus('guest')

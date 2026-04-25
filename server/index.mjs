@@ -24,7 +24,7 @@ const DATABASE_URL = process.env.DATABASE_URL || ''
 const JWT_SECRET = process.env.JWT_SECRET || ''
 const NODE_ENV = process.env.NODE_ENV || 'development'
 const DB_SSL_REJECT_UNAUTHORIZED = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
-const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || (NODE_ENV === 'production' ? 'none' : 'lax')).toLowerCase()
+const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || 'lax').toLowerCase()
 const COOKIE_SECURE =
   process.env.COOKIE_SECURE === 'true' ? true : process.env.COOKIE_SECURE === 'false' ? false : NODE_ENV === 'production'
 const ADMIN_APPROVAL_EMAIL = process.env.ADMIN_APPROVAL_EMAIL || 'issartelaxel@gmail.com'
@@ -242,9 +242,7 @@ function clearAuthCookie(res) {
 }
 
 function authFromRequest(req) {
-  const authHeader = req.headers.authorization || ''
-  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
-  const token = req.cookies?.[AUTH_COOKIE] || bearerToken
+  const token = req.cookies?.[AUTH_COOKIE]
   if (!token) {
     return null
   }
@@ -597,7 +595,6 @@ app.post('/api/auth/register/verify', verifyLimiter, async (req, res) => {
 
   res.json({
     ok: true,
-    token,
     user: {
       id: userId,
       email,
@@ -636,7 +633,6 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 
   res.json({
     ok: true,
-    token,
     user: {
       id: Number(user.id),
       email: user.email,
@@ -755,7 +751,6 @@ app.post('/api/auth/password/confirm', verifyLimiter, async (req, res) => {
 
   res.json({
     ok: true,
-    token,
     user: {
       id: Number(user.id),
       email: user.email,
