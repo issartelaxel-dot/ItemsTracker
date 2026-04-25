@@ -23,12 +23,14 @@ const CLIENT_ORIGINS = (process.env.CLIENT_ORIGINS || '')
 const DATABASE_URL = process.env.DATABASE_URL || ''
 const JWT_SECRET = process.env.JWT_SECRET || ''
 const NODE_ENV = process.env.NODE_ENV || 'development'
+const DB_SSL_REJECT_UNAUTHORIZED = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
 const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || 'lax').toLowerCase()
 const COOKIE_SECURE =
   process.env.COOKIE_SECURE === 'true' ? true : process.env.COOKIE_SECURE === 'false' ? false : NODE_ENV === 'production'
 const ADMIN_APPROVAL_EMAIL = process.env.ADMIN_APPROVAL_EMAIL || 'issartelaxel@gmail.com'
 const AUTH_COOKIE = 'med_auth'
 const APPROVAL_CODE_TTL_MS = 15 * 60 * 1000
+const AUTH_SESSION_TTL_MS = 45 * 60 * 1000
 
 if (!JWT_SECRET || JWT_SECRET.length < 32) {
   console.error('JWT_SECRET must be set and at least 32 chars long.')
@@ -43,7 +45,7 @@ if (!DATABASE_URL) {
 const useSsl = !/localhost|127\.0\.0\.1/.test(DATABASE_URL)
 const pool = new Pool({
   connectionString: DATABASE_URL,
-  ssl: useSsl ? { rejectUnauthorized: false } : false,
+  ssl: useSsl ? { rejectUnauthorized: DB_SSL_REJECT_UNAUTHORIZED } : false,
 })
 
 async function initDb() {
@@ -213,7 +215,7 @@ async function ensureBootstrapUser() {
 }
 
 function signAuthToken(payload) {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '7d' })
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '45m' })
 }
 
 function setAuthCookie(res, token) {
@@ -222,7 +224,7 @@ function setAuthCookie(res, token) {
     httpOnly: true,
     secure: COOKIE_SECURE,
     sameSite,
-    maxAge: 7 * 24 * 60 * 60 * 1000,
+    maxAge: AUTH_SESSION_TTL_MS,
     path: '/',
   })
 }
@@ -238,9 +240,7 @@ function clearAuthCookie(res) {
 }
 
 function authFromRequest(req) {
-  const authHeader = req.headers.authorization || ''
-  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : ''
-  const token = bearerToken || req.cookies?.[AUTH_COOKIE]
+  const token = req.cookies?.[AUTH_COOKIE]
   if (!token) {
     return null
   }
@@ -580,7 +580,6 @@ app.post('/api/auth/register/verify', verifyLimiter, async (req, res) => {
 
   res.json({
     ok: true,
-    token,
     user: {
       id: userId,
       email,
@@ -619,7 +618,6 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 
   res.json({
     ok: true,
-    token,
     user: {
       id: Number(user.id),
       email: user.email,
@@ -738,7 +736,6 @@ app.post('/api/auth/password/confirm', verifyLimiter, async (req, res) => {
 
   res.json({
     ok: true,
-    token,
     user: {
       id: Number(user.id),
       email: user.email,
