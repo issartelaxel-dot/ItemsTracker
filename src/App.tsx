@@ -5227,76 +5227,40 @@ function getPasswordStrengthMeta(password: string) {
         <section className="panel colleges-page">
           <div className="panel-head">
             <h2>Colleges</h2>
-            <p>{collegesViewRows.filter((row) => row.items.length > 0).length} colleges actifs</p>
           </div>
-          <div className="colleges-page-grid">
-            <article className="colleges-list">
-              {collegesViewRows.map((row) => (
-                <details key={row.college} className="college-accordion" open={row.items.length > 0}>
-                  <summary>
+          <article className="colleges-heatmap">
+            <h3>Heatmap progression colleges</h3>
+            <div className="colleges-heatmap-grid">
+              {collegesViewRows.map((row) => {
+                const tone =
+                  row.completion >= 75
+                    ? 'high'
+                    : row.completion >= 50
+                      ? 'mid-high'
+                      : row.completion >= 25
+                        ? 'mid'
+                        : row.completion > 0
+                          ? 'low'
+                          : 'zero'
+                return (
+                  <div
+                    key={`heat-${row.college}`}
+                    className={`colleges-heat-cell ${tone}`}
+                    title={`${row.college} • ${row.completion}%`}
+                  >
                     <span>{row.college}</span>
-                    <span>
-                      {row.items.length} items • {row.totalReviews} reviews • {row.completion}%
-                    </span>
-                  </summary>
-                  {row.items.length === 0 ? (
-                    <p className="muted">Aucun item assigné.</p>
-                  ) : (
-                    <div className="college-accordion-items">
-                      {row.items.map((entry) => (
-                        <button
-                          key={`${row.college}-${entry.itemNumber}`}
-                          type="button"
-                          className="college-item-chip"
-                          onClick={() => {
-                            setActiveView('items')
-                            setSelectedItemId(entry.itemNumber)
-                          }}
-                          title={`Item #${entry.itemNumber}`}
-                        >
-                          #{entry.itemNumber} • {entry.shortDescription}
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </details>
-              ))}
-            </article>
-
-            <article className="colleges-heatmap">
-              <h3>Heatmap progression colleges</h3>
-              <div className="colleges-heatmap-grid">
-                {collegesViewRows.map((row) => {
-                  const tone =
-                    row.completion >= 75
-                      ? 'high'
-                      : row.completion >= 50
-                        ? 'mid-high'
-                        : row.completion >= 25
-                          ? 'mid'
-                          : row.completion > 0
-                            ? 'low'
-                            : 'zero'
-                  return (
-                    <div
-                      key={`heat-${row.college}`}
-                      className={`colleges-heat-cell ${tone}`}
-                      title={`${row.college} • ${row.completion}%`}
-                    >
-                      <span>{row.college}</span>
-                      <strong>{row.completion}%</strong>
-                    </div>
-                  )
-                })}
-              </div>
-              <div className="colleges-heat-legend">
-                <span>0%</span>
-                <span>25%</span>
-                <span>50%</span>
-                <span>75%+</span>
-              </div>
-            </article>
-          </div>
+                    <strong>{row.completion}%</strong>
+                  </div>
+                )
+              })}
+            </div>
+            <div className="colleges-heat-legend">
+              <span>0%</span>
+              <span>25%</span>
+              <span>50%</span>
+              <span>75%+</span>
+            </div>
+          </article>
         </section>
       ) : null}
 
