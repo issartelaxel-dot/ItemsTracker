@@ -5,6 +5,7 @@ import navDashboardIcon from './assets/nav/dashboard.svg'
 import navFlashcardsIcon from './assets/nav/flashcards.svg'
 import navInsightsIcon from './assets/nav/insights.svg'
 import navItemsIcon from './assets/nav/items.svg'
+import logoutIcon from './assets/nav/logout.svg'
 import './App.css'
 
 type Mastery = 'Mauvais' | 'Moyen' | 'Bon' | 'Très bon' | 'Parfait'
@@ -59,6 +60,7 @@ type QuizCard = {
   id: string
   question: string
   answer: string
+  imageDataUrl: string
   lastResult: QuizResult | null
   quizCount: number
   lastReviewedAt: string | null
@@ -137,6 +139,7 @@ type GlobalFlashcard = {
   cardId: string
   question: string
   answer: string
+  imageDataUrl: string
   lastResult: QuizResult | null
   colleges: string[]
   quizCount: number
@@ -161,9 +164,12 @@ type SaveLockReason = 'session-expired' | 'client-stale'
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '')
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
+const CLIENT_APP_VERSION = (import.meta.env.VITE_APP_VERSION ?? '').trim()
 const AUTO_SAVE_INTERVAL_MS = 20_000
 const AUTO_SAVE_DEBOUNCE_MS = 2_000
 const SESSION_HEARTBEAT_MS = 60_000
+const VERSION_CHECK_INTERVAL_MS = 5 * 60_000
+const QUIZ_CARD_IMAGE_MAX_BYTES = 1024 * 1024
 const HABIT_TRACKER_YEAR = 2026
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #f90021 0%, #ff8f00 58%, #ffe400 100%)',
@@ -182,6 +188,20 @@ const SHEET_COLORS: Array<{ value: SheetColor; label: string; emoji: string }> =
   { value: 'vert', label: 'Vert', emoji: '🟢' },
   { value: 'vertfonce', label: 'Vert fonce', emoji: '🟢' },
 ]
+
+function getQuizTextSizeClass(text: string): string {
+  const length = text.trim().length
+  if (length > 900) {
+    return 'quiz-face-content is-xsmall'
+  }
+  if (length > 520) {
+    return 'quiz-face-content is-small'
+  }
+  if (length > 300) {
+    return 'quiz-face-content is-medium'
+  }
+  return 'quiz-face-content'
+}
 
 const MASTERY_LEVELS: Mastery[] = ['Mauvais', 'Moyen', 'Bon', 'Très bon', 'Parfait']
 const MASTERY_SCORE: Record<Mastery, number> = {
@@ -365,6 +385,7 @@ function makeQuizCard(partial?: Partial<QuizCard>): QuizCard {
     id: partial?.id ?? `quiz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     question: partial?.question ?? '',
     answer: partial?.answer ?? '',
+    imageDataUrl: typeof partial?.imageDataUrl === 'string' ? partial.imageDataUrl : '',
     lastResult: isQuizResult(partial?.lastResult) ? partial.lastResult : null,
     quizCount: Number.isFinite(rawCount) ? Math.max(0, Math.floor(rawCount)) : 0,
     lastReviewedAt: typeof partial?.lastReviewedAt === 'string' ? partial.lastReviewedAt : null,
@@ -748,6 +769,9 @@ function toSaveWarningMessage(error: unknown) {
   if (isNetworkOrBackendIssue) {
     return 'Sauvegarde en attente: réseau/cloud indisponible. Reprise automatique dès reconnexion.'
   }
+  if (lower.includes('etat modifi') && lower.includes('ailleurs')) {
+    return 'Sauvegarde en attente: état modifié dans une autre session. Recharge la page pour synchroniser.'
+  }
 
   return `Sauvegarde en attente: ${message}`
 }
@@ -885,6 +909,10 @@ function App() {
   const [quizFeedback, setQuizFeedback] = useState<QuizResult | null>(null)
   const [quizEditMode, setQuizEditMode] = useState(false)
   const [quizConfigExpanded, setQuizConfigExpanded] = useState(false)
+  const [quizImageError, setQuizImageError] = useState('')
+  const [quizImageFileName, setQuizImageFileName] = useState('')
+  const [imageLightboxSrc, setImageLightboxSrc] = useState<string | null>(null)
+  const [imageLightboxAlt, setImageLightboxAlt] = useState('Image')
   const [quizPulseByItem, setQuizPulseByItem] = useState<Record<number, number>>({})
   const [reviewFx, setReviewFx] = useState<Record<string, { delta: number; id: number }>>({})
   const [starFx, setStarFx] = useState<Record<string, number>>({})
@@ -907,11 +935,18 @@ function App() {
   const sidebarLogoRef = useRef<HTMLSpanElement | null>(null)
   const sidebarLogoOffsetRef = useRef({ x: 0, y: 0 })
   const isSaveLocked = saveLockReason !== null
+  const isImageLightboxOpen = imageLightboxSrc !== null
 
   function activateSaveProtection(reason: SaveLockReason) {
     setSaveLockReason(reason)
     setSaveErrorMessage(getSaveLockMessage(reason))
     setSaveStatus('error')
+  }
+
+  function clearSaveProtection() {
+    setSaveLockReason(null)
+    setSaveErrorMessage('')
+    setSaveStatus('idle')
   }
   const [sidebarNavBubble, setSidebarNavBubble] = useState({ top: 0, height: 0, ready: false })
   const passwordStrength = getPasswordStrengthMeta(passwordInput)
@@ -949,11 +984,16 @@ function App() {
   }, [authView])
 
   useEffect(() => {
-    if (historyItemId === null && quizItemId === null) {
+    if (historyItemId === null && quizItemId === null && !isImageLightboxOpen) {
       return
     }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        if (isImageLightboxOpen) {
+          setImageLightboxSrc(null)
+          setImageLightboxAlt('Image')
+          return
+        }
         setHistoryItemId(null)
         setQuizItemId(null)
         setQuizFeedback(null)
@@ -961,7 +1001,7 @@ function App() {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [historyItemId, quizItemId])
+  }, [historyItemId, quizItemId, isImageLightboxOpen])
 
   useEffect(() => {
     if (!flashGeneratorModalOpen) {
@@ -1020,7 +1060,6 @@ function App() {
           setTheme(remoteState.theme === 'dark' ? 'dark' : 'light')
           setFocusMode(Boolean(remoteState.focusMode))
           setYoutubeDisplayMode(remoteState.youtubeDisplayMode === 'external' ? 'external' : 'embed')
-
           setProfile(normalizeProfileInput(remoteState.profile, authUser))
           const updatedAtRaw = typeof remoteState.updatedAt === 'string' ? remoteState.updatedAt : null
           if (updatedAtRaw) {
@@ -1151,6 +1190,7 @@ function App() {
         keepalive: true,
         headers: {
           'Content-Type': 'application/json',
+          ...(CLIENT_APP_VERSION ? { 'x-client-version': CLIENT_APP_VERSION } : {}),
         },
         body: payload,
       }).catch(() => undefined)
@@ -1183,6 +1223,7 @@ function App() {
           credentials: 'include',
           headers: {
             'Content-Type': 'application/json',
+            ...(CLIENT_APP_VERSION ? { 'x-client-version': CLIENT_APP_VERSION } : {}),
             ...(init?.headers ?? {}),
           },
         })
@@ -1197,6 +1238,18 @@ function App() {
         throw new Error(`API indisponible: ${lastFetchError.message}`)
       }
       throw new Error("API indisponible. Lance aussi le serveur backend (`npm run dev:full`) et vérifie la connexion.")
+    }
+
+    const serverAppVersion = (response.headers.get('x-app-version') ?? '').trim()
+    if (CLIENT_APP_VERSION && serverAppVersion && serverAppVersion !== CLIENT_APP_VERSION) {
+      if (typeof window !== 'undefined') {
+        window.location.reload()
+      }
+      throw new ApiRequestError(
+        'Client obsolète. Recharge la page pour appliquer la dernière mise à jour.',
+        426,
+        'CLIENT_STALE',
+      )
     }
 
     let payload: Record<string, unknown> = {}
@@ -1308,15 +1361,19 @@ function App() {
       const payload = await apiRequest('/api/auth/me')
       setAuthUser(payload.user as AuthUser)
       setAuthStatus('authed')
-      setSaveLockReason(null)
-      setSaveErrorMessage('')
+      clearSaveProtection()
     } catch (error) {
+      const hadActiveSession = authStatus === 'authed'
       setAuthUser(null)
       setAuthStatus('guest')
       setHasLoadedRemoteState(false)
-      const lockReason = getSaveLockReason(error)
-      if (lockReason) {
-        activateSaveProtection(lockReason)
+      if (hadActiveSession) {
+        const lockReason = getSaveLockReason(error)
+        if (lockReason) {
+          activateSaveProtection(lockReason)
+        }
+      } else {
+        clearSaveProtection()
       }
       if (error instanceof Error && error.message.includes('404')) {
         setAuthError(
@@ -1355,6 +1412,7 @@ function App() {
 
   function startAuthSuccessTransition(user: AuthUser) {
     setAuthUser(user)
+    clearSaveProtection()
 
     const cardRect = authCardRef.current?.getBoundingClientRect()
     if (!cardRect) {
@@ -1448,6 +1506,7 @@ function getPasswordStrengthMeta(password: string) {
       if (payload.user) {
         setAuthUser(payload.user as AuthUser)
         setAuthStatus('authed')
+        clearSaveProtection()
       } else {
         await refreshAuth()
       }
@@ -1537,6 +1596,7 @@ function getPasswordStrengthMeta(password: string) {
       if (payload.user) {
         setAuthUser(payload.user as AuthUser)
         setAuthStatus('authed')
+        clearSaveProtection()
       } else {
         await refreshAuth()
       }
@@ -1566,6 +1626,21 @@ function getPasswordStrengthMeta(password: string) {
     setProfile(getDefaultProfile())
   }
 
+  async function forceLogoutForStaleClient() {
+    await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
+    setHasLoadedRemoteState(false)
+    setAuthUser(null)
+    setAuthStatus('guest')
+    setSaveLockReason(null)
+    setSaveStatus('idle')
+    setSaveErrorMessage('')
+    setTrackingState(getInitialTrackingState())
+    setTheme('light')
+    setFocusMode(false)
+    setProfile(getDefaultProfile())
+    setAuthError('Nouvelle version disponible: reconnecte-toi pour charger la dernière mise à jour.')
+  }
+
   useEffect(() => {
     if (authStatus !== 'authed' || !authUser || isSaveLocked) {
       return
@@ -1576,7 +1651,7 @@ function getPasswordStrengthMeta(password: string) {
         await apiRequest('/api/auth/me')
       } catch (error) {
         const lockReason = getSaveLockReason(error)
-        if (lockReason) {
+        if (lockReason === 'session-expired') {
           activateSaveProtection(lockReason)
         }
       }
@@ -1589,6 +1664,37 @@ function getPasswordStrengthMeta(password: string) {
 
     return () => window.clearInterval(interval)
   }, [authStatus, authUser, isSaveLocked])
+
+  useEffect(() => {
+    if (authStatus !== 'authed' || !authUser) {
+      return
+    }
+
+    let checking = false
+
+    const checkClientVersion = async () => {
+      if (checking) {
+        return
+      }
+      checking = true
+      try {
+        await apiRequest('/api/auth/me')
+      } catch (error) {
+        const lockReason = getSaveLockReason(error)
+        if (lockReason === 'client-stale') {
+          await forceLogoutForStaleClient()
+        }
+      } finally {
+        checking = false
+      }
+    }
+
+    const interval = window.setInterval(() => {
+      void checkClientVersion()
+    }, VERSION_CHECK_INTERVAL_MS)
+
+    return () => window.clearInterval(interval)
+  }, [authStatus, authUser])
 
   const items = useMemo<ItemComputed[]>(() => {
     return rawItems.map((item) => {
@@ -1828,6 +1934,7 @@ function getPasswordStrengthMeta(password: string) {
         cardId: card.id,
         question: card.question.trim() || getAutoQuizQuestion(item),
         answer: card.answer.trim() || item.shortDescription,
+        imageDataUrl: card.imageDataUrl,
         lastResult: card.lastResult,
         colleges: item.tracking.assignedColleges,
         quizCount: card.quizCount,
@@ -1935,7 +2042,7 @@ function getPasswordStrengthMeta(password: string) {
   }, [flashGeneratorModalOpen, flashGeneratorStep, generatedRecap.completed])
 
   useEffect(() => {
-    if (activeView !== 'flashcards' || flashGeneratorModalOpen) {
+    if (activeView !== 'flashcards' || flashGeneratorModalOpen || isImageLightboxOpen) {
       return
     }
     const onKeyDown = (event: KeyboardEvent) => {
@@ -1961,7 +2068,7 @@ function getPasswordStrengthMeta(password: string) {
     }
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
-  }, [activeView, activeGlobalFlashcard, filteredFlashcards.length, flashGeneratorModalOpen])
+  }, [activeView, activeGlobalFlashcard, filteredFlashcards.length, flashGeneratorModalOpen, isImageLightboxOpen])
 
   const globalStats = useMemo(() => {
     const completedCount = items.filter(
@@ -2064,16 +2171,33 @@ function getPasswordStrengthMeta(password: string) {
         for (const event of entry.reviewHistory) {
           applyEvent(event)
         }
+        if (entry.reviewHistory.length === 0 && entry.reviews > 0 && entry.lastReviewedAt) {
+          applyEvent({ date: entry.lastReviewedAt, delta: entry.reviews })
+        }
       }
 
       for (const sheet of item.tracking.lisaSheets) {
         for (const event of sheet.tracking.reviewHistory) {
           applyEvent(event)
         }
+        if (
+          sheet.tracking.reviewHistory.length === 0 &&
+          sheet.tracking.reviews > 0 &&
+          sheet.tracking.lastReviewedAt
+        ) {
+          applyEvent({ date: sheet.tracking.lastReviewedAt, delta: sheet.tracking.reviews })
+        }
       }
       for (const sheet of item.tracking.platformSheets) {
         for (const event of sheet.tracking.reviewHistory) {
           applyEvent(event)
+        }
+        if (
+          sheet.tracking.reviewHistory.length === 0 &&
+          sheet.tracking.reviews > 0 &&
+          sheet.tracking.lastReviewedAt
+        ) {
+          applyEvent({ date: sheet.tracking.lastReviewedAt, delta: sheet.tracking.reviews })
         }
       }
     }
@@ -2157,6 +2281,16 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSide('front')
     setQuizFeedback(null)
     setQuizEditMode(false)
+  }
+
+  function openImageLightbox(src: string, alt: string) {
+    setImageLightboxSrc(src)
+    setImageLightboxAlt(alt || 'Image')
+  }
+
+  function closeImageLightbox() {
+    setImageLightboxSrc(null)
+    setImageLightboxAlt('Image')
   }
 
   function navigateQuizCard(direction: 'prev' | 'next') {
@@ -2908,6 +3042,45 @@ function getPasswordStrengthMeta(password: string) {
     setQuizEditMode(false)
   }
 
+  function fileToDataUrl(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.onload = () => {
+        const result = typeof reader.result === 'string' ? reader.result : ''
+        if (!result) {
+          reject(new Error('Lecture image impossible.'))
+          return
+        }
+        resolve(result)
+      }
+      reader.onerror = () => reject(new Error('Lecture image impossible.'))
+      reader.readAsDataURL(file)
+    })
+  }
+
+  async function handleQuizCardImageUpload(itemNumber: number, cardId: string, files: FileList | null) {
+    setQuizImageError('')
+    const file = files?.[0]
+    if (!file) {
+      return
+    }
+    if (!file.type.startsWith('image/')) {
+      setQuizImageError('Fichier invalide: choisis une image.')
+      return
+    }
+    if (file.size > QUIZ_CARD_IMAGE_MAX_BYTES) {
+      setQuizImageError('Image trop lourde: maximum 1 MB.')
+      return
+    }
+    try {
+      const imageDataUrl = await fileToDataUrl(file)
+      updateQuizCard(itemNumber, cardId, { imageDataUrl })
+      setQuizImageError('')
+    } catch {
+      setQuizImageError("Impossible d'importer l'image.")
+    }
+  }
+
   function updateItemVisual(
     itemNumber: number,
     patch: Partial<Pick<ItemTracking, 'itemIcon' | 'itemColor' | 'itemLabel'>>,
@@ -3606,7 +3779,7 @@ function getPasswordStrengthMeta(password: string) {
             aria-label="Déconnexion"
             onClick={() => void handleLogout()}
           >
-            ⎋
+            <img src={logoutIcon} className="logout-icon-img" alt="" aria-hidden="true" />
           </button>
           <button
             className="ghost-btn icon-btn"
@@ -4226,6 +4399,39 @@ function getPasswordStrengthMeta(password: string) {
                               }
                             />
                           </label>
+                          <label className="block-label">
+                            Image carte active (max 1 MB)
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(event) => {
+                                const fileName = event.target.files?.[0]?.name ?? ''
+                                setQuizImageFileName(fileName)
+                                void handleQuizCardImageUpload(
+                                  effectiveSelectedItem.itemNumber,
+                                  activeCard.id,
+                                  event.target.files,
+                                )
+                              }}
+                            />
+                            {quizImageFileName ? <span className="quiz-file-name">{quizImageFileName}</span> : null}
+                          </label>
+                          <div className="quiz-card-media-actions">
+                            <button
+                              type="button"
+                              className="ghost-btn"
+                              onClick={() => {
+                                setQuizImageFileName('')
+                                updateQuizCard(effectiveSelectedItem.itemNumber, activeCard.id, {
+                                  imageDataUrl: '',
+                                })
+                              }}
+                              disabled={!activeCard.imageDataUrl}
+                            >
+                              Retirer image
+                            </button>
+                          </div>
+                          {quizImageError ? <p className="quiz-image-error">{quizImageError}</p> : null}
                         </div>
                       ))}
                     <label className="block-label">
@@ -4879,11 +5085,26 @@ function getPasswordStrengthMeta(password: string) {
                     </span>
                   ) : null}
                 </p>
-                <p className="quiz-face-content">{quizQuestion}</p>
+                <p className={getQuizTextSizeClass(quizQuestion)}>{quizQuestion}</p>
               </div>
               <div className="quiz-face quiz-back">
                 <p className="quiz-face-label">Réponse</p>
-                <p className="quiz-face-content">{quizAnswer}</p>
+                <div className="quiz-face-body">
+                  <p className={getQuizTextSizeClass(quizAnswer)}>{quizAnswer}</p>
+                  {activeQuizCard?.imageDataUrl ? (
+                    <img
+                      className="quiz-face-media"
+                      src={activeQuizCard.imageDataUrl}
+                      alt="Illustration de la carte"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        openImageLightbox(activeQuizCard.imageDataUrl, 'Illustration de la carte')
+                      }}
+                    />
+                  ) : (
+                    <span className="quiz-face-media-placeholder" aria-hidden="true">IMG</span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -4910,6 +5131,33 @@ function getPasswordStrengthMeta(password: string) {
                     }
                   />
                 </label>
+                <label className="block-label">
+                  Image (max 1 MB)
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(event) => {
+                      const fileName = event.target.files?.[0]?.name ?? ''
+                      setQuizImageFileName(fileName)
+                      void handleQuizCardImageUpload(quizItem.itemNumber, activeQuizCard.id, event.target.files)
+                    }}
+                  />
+                  {quizImageFileName ? <span className="quiz-file-name">{quizImageFileName}</span> : null}
+                </label>
+                <div className="quiz-card-media-actions">
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    onClick={() => {
+                      setQuizImageFileName('')
+                      updateQuizCard(quizItem.itemNumber, activeQuizCard.id, { imageDataUrl: '' })
+                    }}
+                    disabled={!activeQuizCard.imageDataUrl}
+                  >
+                    Retirer image
+                  </button>
+                </div>
+                {quizImageError ? <p className="quiz-image-error">{quizImageError}</p> : null}
               </div>
             ) : null}
 
@@ -5191,11 +5439,30 @@ function getPasswordStrengthMeta(password: string) {
                         >
                           <div className="quiz-face quiz-front">
                             <p className="quiz-face-label">Question</p>
-                            <p className="quiz-face-content">{activeGeneratedFlashcard.question}</p>
+                            <p className={getQuizTextSizeClass(activeGeneratedFlashcard.question)}>
+                              {activeGeneratedFlashcard.question}
+                            </p>
                           </div>
                           <div className="quiz-face quiz-back">
                             <p className="quiz-face-label">Réponse</p>
-                            <p className="quiz-face-content">{activeGeneratedFlashcard.answer}</p>
+                            <div className="quiz-face-body">
+                              <p className={getQuizTextSizeClass(activeGeneratedFlashcard.answer)}>
+                                {activeGeneratedFlashcard.answer}
+                              </p>
+                              {activeGeneratedFlashcard.imageDataUrl ? (
+                                <img
+                                  className="quiz-face-media"
+                                  src={activeGeneratedFlashcard.imageDataUrl}
+                                  alt="Illustration de la carte"
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    openImageLightbox(activeGeneratedFlashcard.imageDataUrl, 'Illustration de la carte')
+                                  }}
+                                />
+                              ) : (
+                                <span className="quiz-face-media-placeholder" aria-hidden="true">IMG</span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="quiz-actions">
@@ -5335,11 +5602,30 @@ function getPasswordStrengthMeta(password: string) {
               >
                 <div className="quiz-face quiz-front">
                   <p className="quiz-face-label">Question</p>
-                  <p className="quiz-face-content">{activeGlobalFlashcard.question}</p>
+                  <p className={getQuizTextSizeClass(activeGlobalFlashcard.question)}>
+                    {activeGlobalFlashcard.question}
+                  </p>
                 </div>
                 <div className="quiz-face quiz-back">
                   <p className="quiz-face-label">Réponse</p>
-                  <p className="quiz-face-content">{activeGlobalFlashcard.answer}</p>
+                  <div className="quiz-face-body">
+                    <p className={getQuizTextSizeClass(activeGlobalFlashcard.answer)}>
+                      {activeGlobalFlashcard.answer}
+                    </p>
+                    {activeGlobalFlashcard.imageDataUrl ? (
+                      <img
+                        className="quiz-face-media"
+                        src={activeGlobalFlashcard.imageDataUrl}
+                        alt="Illustration de la carte"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          openImageLightbox(activeGlobalFlashcard.imageDataUrl, 'Illustration de la carte')
+                        }}
+                      />
+                    ) : (
+                      <span className="quiz-face-media-placeholder" aria-hidden="true">IMG</span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="quiz-actions">
@@ -5371,6 +5657,17 @@ function getPasswordStrengthMeta(password: string) {
             <p className="muted">Aucune flashcard pour cette configuration de quiz.</p>
           )}
         </section>
+      ) : null}
+
+      {isImageLightboxOpen && imageLightboxSrc ? (
+        <div className="image-lightbox-backdrop" onClick={closeImageLightbox}>
+          <div className="image-lightbox-modal" onClick={(event) => event.stopPropagation()}>
+            <button type="button" className="ghost-btn image-lightbox-close" onClick={closeImageLightbox}>
+              Fermer
+            </button>
+            <img className="image-lightbox-media" src={imageLightboxSrc} alt={imageLightboxAlt} />
+          </div>
+        </div>
       ) : null}
 
       {activeView === 'colleges' ? (

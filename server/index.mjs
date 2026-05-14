@@ -27,10 +27,13 @@ const DB_SSL_REJECT_UNAUTHORIZED = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'f
 const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || 'lax').toLowerCase()
 const COOKIE_SECURE =
   process.env.COOKIE_SECURE === 'true' ? true : process.env.COOKIE_SECURE === 'false' ? false : NODE_ENV === 'production'
+const APP_VERSION = (process.env.APP_VERSION || 'dev').trim()
+const MIN_CLIENT_VERSION = (process.env.MIN_CLIENT_VERSION || '').trim()
 const ADMIN_APPROVAL_EMAIL = process.env.ADMIN_APPROVAL_EMAIL || 'issartelaxel@gmail.com'
 const AUTH_COOKIE = 'med_auth'
 const APPROVAL_CODE_TTL_MS = 15 * 60 * 1000
 const AUTH_SESSION_TTL_MS = 45 * 60 * 1000
+const JSON_BODY_LIMIT = (process.env.JSON_BODY_LIMIT || '12mb').trim() || '12mb'
 
 if (!JWT_SECRET || JWT_SECRET.length < 32) {
   console.error('JWT_SECRET must be set and at least 32 chars long.')
@@ -110,7 +113,7 @@ app.use(
     credentials: true,
   }),
 )
-app.use(express.json({ limit: '5mb' }))
+app.use(express.json({ limit: JSON_BODY_LIMIT }))
 app.use(cookieParser())
 
 const authLimiter = rateLimit({
@@ -264,6 +267,68 @@ function refreshAuthCookie(res, auth) {
   setAuthCookie(res, token)
 }
 
+function parseVersion(rawValue) {
+  const value = String(rawValue || '').trim()
+  if (!value) {
+    return null
+  }
+  const normalized = value.replace(/^v/i, '')
+  const segments = normalized.split('.')
+  const numbers = []
+  for (const segment of segments) {
+    const match = segment.match(/^(\d+)/)
+    if (!match) {
+      break
+    }
+    numbers.push(Number(match[1]))
+  }
+  return numbers.length > 0 ? numbers : null
+}
+
+function compareVersions(a, b) {
+  const maxLen = Math.max(a.length, b.length)
+  for (let index = 0; index < maxLen; index += 1) {
+    const left = a[index] ?? 0
+    const right = b[index] ?? 0
+    if (left > right) {
+      return 1
+    }
+    if (left < right) {
+      return -1
+    }
+  }
+  return 0
+}
+
+const parsedMinClientVersion = parseVersion(MIN_CLIENT_VERSION)
+
+function enforceClientVersion(req, res, next) {
+  res.setHeader('x-app-version', APP_VERSION)
+  if (parsedMinClientVersion) {
+    res.setHeader('x-min-client-version', MIN_CLIENT_VERSION)
+  }
+
+  if (!parsedMinClientVersion) {
+    next()
+    return
+  }
+
+  const clientVersionRaw = req.get('x-client-version') || ''
+  const parsedClientVersion = parseVersion(clientVersionRaw)
+
+  if (!parsedClientVersion || compareVersions(parsedClientVersion, parsedMinClientVersion) < 0) {
+    res.status(426).json({
+      error: 'Client obsolète. Recharge la page pour appliquer la dernière mise à jour.',
+      code: 'CLIENT_STALE',
+      minClientVersion: MIN_CLIENT_VERSION,
+      serverVersion: APP_VERSION,
+    })
+    return
+  }
+
+  next()
+}
+
 const requestSchema = z.object({
   email: z.string().email(),
   password: z.string().min(12).max(256),
@@ -345,7 +410,7 @@ app.get('/api/health', (_req, res) => {
   res.json({ ok: true })
 })
 
-app.get('/api/auth/me', async (req, res) => {
+app.get('/api/auth/me', enforceClientVersion, async (req, res) => {
   const auth = authFromRequest(req)
   if (!auth) {
     res.status(401).json({ error: 'Unauthorized' })
@@ -375,7 +440,7 @@ app.get('/api/auth/me', async (req, res) => {
   res.json({ user })
 })
 
-app.get('/api/state', async (req, res) => {
+app.get('/api/state', enforceClientVersion, async (req, res) => {
   const auth = authFromRequest(req)
   if (!auth) {
     res.status(401).json({ error: 'Unauthorized' })
@@ -407,7 +472,7 @@ app.get('/api/state', async (req, res) => {
   res.json({ state: result.rows[0] ?? null })
 })
 
-app.put('/api/state', async (req, res) => {
+app.put('/api/state', enforceClientVersion, async (req, res) => {
   const auth = authFromRequest(req)
   if (!auth) {
     res.status(401).json({ error: 'Unauthorized' })
@@ -432,7 +497,6 @@ app.put('/api/state', async (req, res) => {
   }
 
   const now = new Date().toISOString()
-
   await pool.query(
     `
       INSERT INTO user_state(user_id, tracking_state, theme, focus_mode, youtube_mode, profile, updated_at)
