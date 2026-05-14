@@ -1204,6 +1204,16 @@ h3 {
   transform: scale(0.96);
 }
 
+.logout-icon-img {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
+:root[data-theme='dark'] .logout-icon-img {
+  filter: brightness(0) invert(1);
+}
+
 .profile-trigger-btn {
   padding: 0;
   overflow: hidden;
@@ -2317,8 +2327,9 @@ tbody tr.selected {
   border-radius: inherit;
   padding: 0.9rem;
   display: grid;
-  align-content: start;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 0.5rem;
+  overflow: hidden;
 }
 
 .quiz-face-label {
@@ -2399,6 +2410,67 @@ tbody tr.selected {
   font-weight: 600;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
+  min-width: 0;
+  max-height: 100%;
+  overflow: auto;
+}
+
+.quiz-face-content.is-medium {
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.quiz-face-content.is-small {
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.quiz-face-content.is-xsmall {
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.quiz-face-body {
+  display: flex;
+  align-items: stretch;
+  gap: 0.85rem;
+  min-width: 0;
+  min-height: 0;
+}
+
+.quiz-face-body .quiz-face-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.quiz-face-media {
+  width: min(40%, 240px);
+  height: 100%;
+  max-height: none;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--panel-bg);
+  padding: 0.25rem;
+  flex: none;
+  display: block;
+  cursor: zoom-in;
+}
+
+.quiz-face-media-placeholder {
+  width: min(40%, 120px);
+  min-width: 88px;
+  height: 100%;
+  border: 2px dashed color-mix(in oklab, var(--border) 76%, transparent);
+  border-radius: 12px;
+  background: var(--surface-soft);
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex: none;
 }
 
 .quiz-face-meta {
@@ -2445,6 +2517,24 @@ tbody tr.selected {
   background: var(--surface-soft);
   display: grid;
   gap: 0.35rem;
+}
+
+.quiz-card-media-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.quiz-image-error {
+  margin: 0;
+  font-size: 0.76rem;
+  color: #cb3e3e;
+}
+
+.quiz-file-name {
+  font-size: 0.72rem;
+  color: var(--muted);
+  overflow-wrap: anywhere;
 }
 
 .quiz-rate-btn {
@@ -2597,6 +2687,42 @@ tbody tr.selected {
   font-size: 0.9rem;
   letter-spacing: 0.03em;
   animation: quiz-sparkle 0.6s ease;
+}
+
+.image-lightbox-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1700;
+  background: rgba(7, 13, 23, 0.82);
+  backdrop-filter: blur(2px);
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.image-lightbox-modal {
+  width: min(1200px, 100%);
+  max-height: calc(100vh - 2rem);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 0.6rem;
+}
+
+.image-lightbox-close {
+  justify-self: end;
+  background: rgba(255, 255, 255, 0.12);
+  color: #f5f8ff;
+  border-color: rgba(255, 255, 255, 0.28);
+}
+
+.image-lightbox-media {
+  width: 100%;
+  height: 100%;
+  max-height: calc(100vh - 7.5rem);
+  object-fit: contain;
+  border-radius: 12px;
+  border: 1px solid rgba(198, 217, 255, 0.26);
+  background: rgba(3, 10, 18, 0.72);
 }
 
 .history-modal {
@@ -2865,6 +2991,7 @@ tbody tr.selected {
 .youtube-preview {
   display: grid;
   gap: 0.5rem;
+  max-width: 560px;
 }
 
 .youtube-view-mode {
@@ -2911,7 +3038,7 @@ tbody tr.selected {
 
 .youtube-embed-wrap {
   position: relative;
-  width: 100%;
+  width: min(100%, 560px);
   padding-top: 56.25%;
   border-radius: 12px;
   overflow: hidden;
@@ -2925,6 +3052,16 @@ tbody tr.selected {
   width: 100%;
   height: 100%;
   border: 0;
+}
+
+.youtube-embed-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.youtube-embed-actions .ghost-btn {
+  padding: 0.32rem 0.58rem;
 }
 
 .youtube-open-link {
@@ -4088,6 +4225,18 @@ tbody tr.selected {
 
   .auth-grid {
     grid-template-columns: 1fr;
+  }
+
+  .quiz-face-body {
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .quiz-face-media,
+  .quiz-face-media-placeholder {
+    width: min(100%, 260px);
+    max-width: 100%;
+    max-height: 200px;
   }
 
   .item-visual-editor {
