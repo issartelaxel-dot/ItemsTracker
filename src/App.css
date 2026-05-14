@@ -2976,6 +2976,47 @@ tbody tr.selected {
   margin: 0.3rem 0 0.55rem;
 }
 
+.inline-accordion {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.3rem 0.45rem 0.45rem;
+  margin: 0.42rem 0 0.7rem;
+  background: var(--surface-soft);
+}
+
+.inline-accordion-head {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.45rem;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  padding: 0.18rem 0;
+  cursor: pointer;
+}
+
+.inline-accordion-head h3 {
+  margin: 0;
+}
+
+.inline-accordion-chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--input-bg);
+  transition: transform 0.2s ease;
+}
+
+.inline-accordion-head.open .inline-accordion-chevron {
+  transform: rotate(180deg);
+}
+
 .youtube-editor {
   display: grid;
   gap: 0.5rem;

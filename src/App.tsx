@@ -924,6 +924,9 @@ function App() {
   const [youtubeInputError, setYoutubeInputError] = useState('')
   const [usefulLinkInput, setUsefulLinkInput] = useState('')
   const [usefulLinkInputError, setUsefulLinkInputError] = useState('')
+  const [youtubeSectionOpen, setYoutubeSectionOpen] = useState(true)
+  const [usefulLinkSectionOpen, setUsefulLinkSectionOpen] = useState(true)
+  const [itemVisualSectionOpen, setItemVisualSectionOpen] = useState(true)
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const hasPendingChangesRef = useRef(false)
   const hasInitializedSnapshotRef = useRef(false)
@@ -4086,117 +4089,157 @@ function getPasswordStrengthMeta(password: string) {
                 />
               </label>
 
-              <h3>Vidéo YouTube</h3>
-              <div className="youtube-editor">
-                <div className="youtube-input-row">
-                  <input
-                    type="url"
-                    placeholder="Coller le lien YouTube ici (ex. https://www.youtube.com/watch?v=...)"
-                    value={youtubeInput}
-                    onChange={(event) => {
-                      setYoutubeInput(event.target.value)
-                      if (youtubeInputError) {
-                        setYoutubeInputError('')
-                      }
-                    }}
-                  />
-                  <button type="button" className="ghost-btn" onClick={handleYouTubeSave}>
-                    {effectiveSelectedItem.tracking.youtubeUrl ? 'Modifier' : 'Ajouter'}
-                  </button>
-                  {effectiveSelectedItem.tracking.youtubeUrl ? (
-                    <button type="button" className="ghost-btn" onClick={handleYouTubeClear}>
-                      Supprimer
-                    </button>
-                  ) : null}
-                  {selectedYouTubeVideoId && youtubeDisplayMode === 'external' ? (
-                    <a
-                      href={makeYouTubeWatchUrl(selectedYouTubeVideoId)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ghost-btn youtube-open-link"
-                    >
-                      Voir vidéo
-                    </a>
-                  ) : null}
-                </div>
-                {youtubeInputError ? <p className="youtube-error">{youtubeInputError}</p> : null}
-                {selectedYouTubeVideoId ? (
-                  <div className="youtube-preview">
-                    {youtubeDisplayMode === 'embed' ? (
-                      <div className="youtube-embed-wrap">
-                        <iframe
-                          src={`https://www.youtube-nocookie.com/embed/${selectedYouTubeVideoId}`}
-                          title={`Vidéo item ${effectiveSelectedItem.itemNumber}`}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          referrerPolicy="strict-origin-when-cross-origin"
-                          allowFullScreen
-                        />
+              <div className="inline-accordion">
+                <button
+                  type="button"
+                  className={`inline-accordion-head ${youtubeSectionOpen ? 'open' : ''}`}
+                  aria-expanded={youtubeSectionOpen}
+                  onClick={() => setYoutubeSectionOpen((current) => !current)}
+                >
+                  <h3>Vidéo YouTube</h3>
+                  <span className="inline-accordion-chevron" aria-hidden="true">
+                    ▾
+                  </span>
+                </button>
+                {youtubeSectionOpen ? (
+                  <div className="youtube-editor">
+                    <div className="youtube-input-row">
+                      <input
+                        type="url"
+                        placeholder="Coller le lien YouTube ici (ex. https://www.youtube.com/watch?v=...)"
+                        value={youtubeInput}
+                        onChange={(event) => {
+                          setYoutubeInput(event.target.value)
+                          if (youtubeInputError) {
+                            setYoutubeInputError('')
+                          }
+                        }}
+                      />
+                      <button type="button" className="ghost-btn" onClick={handleYouTubeSave}>
+                        {effectiveSelectedItem.tracking.youtubeUrl ? 'Modifier' : 'Ajouter'}
+                      </button>
+                      {effectiveSelectedItem.tracking.youtubeUrl ? (
+                        <button type="button" className="ghost-btn" onClick={handleYouTubeClear}>
+                          Supprimer
+                        </button>
+                      ) : null}
+                      {selectedYouTubeVideoId && youtubeDisplayMode === 'external' ? (
+                        <a
+                          href={makeYouTubeWatchUrl(selectedYouTubeVideoId)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ghost-btn youtube-open-link"
+                        >
+                          Voir vidéo
+                        </a>
+                      ) : null}
+                    </div>
+                    {youtubeInputError ? <p className="youtube-error">{youtubeInputError}</p> : null}
+                    {selectedYouTubeVideoId ? (
+                      <div className="youtube-preview">
+                        {youtubeDisplayMode === 'embed' ? (
+                          <div className="youtube-embed-wrap">
+                            <iframe
+                              src={`https://www.youtube-nocookie.com/embed/${selectedYouTubeVideoId}`}
+                              title={`Vidéo item ${effectiveSelectedItem.itemNumber}`}
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              referrerPolicy="strict-origin-when-cross-origin"
+                              allowFullScreen
+                            />
+                          </div>
+                        ) : null}
                       </div>
+                    ) : effectiveSelectedItem.tracking.youtubeUrl ? (
+                      <p className="muted">Le lien YouTube sauvegardé est invalide.</p>
                     ) : null}
                   </div>
-                ) : effectiveSelectedItem.tracking.youtubeUrl ? (
-                  <p className="muted">Le lien YouTube sauvegardé est invalide.</p>
                 ) : null}
               </div>
 
-              <h3>Lien utile</h3>
-              <div className="useful-link-editor">
-                <div className="youtube-input-row">
-                  <input
-                    type="url"
-                    placeholder="Coller un lien utile (ex. https://example.com)"
-                    value={usefulLinkInput}
-                    onChange={(event) => {
-                      setUsefulLinkInput(event.target.value)
-                      if (usefulLinkInputError) {
-                        setUsefulLinkInputError('')
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className={`ghost-btn ${effectiveSelectedItem.tracking.usefulLinkUrl ? 'link-icon-btn' : ''}`}
-                    title={effectiveSelectedItem.tracking.usefulLinkUrl ? 'Modifier le lien utile' : 'Ajouter le lien utile'}
-                    aria-label={effectiveSelectedItem.tracking.usefulLinkUrl ? 'Modifier le lien utile' : 'Ajouter le lien utile'}
-                    onClick={handleUsefulLinkSave}
-                  >
-                    {effectiveSelectedItem.tracking.usefulLinkUrl ? (
-                      <span className="link-icon-glyph" aria-hidden="true">
-                        ✏️
-                      </span>
-                    ) : (
-                      'Ajouter'
-                    )}
-                  </button>
-                  {effectiveSelectedItem.tracking.usefulLinkUrl ? (
-                    <button
-                      type="button"
-                      className="ghost-btn link-icon-btn link-icon-btn-danger"
-                      title="Supprimer le lien utile"
-                      aria-label="Supprimer le lien utile"
-                      onClick={handleUsefulLinkClear}
-                    >
-                      <span className="link-icon-glyph" aria-hidden="true">
-                        🗑️
-                      </span>
-                    </button>
-                  ) : null}
-                  {effectiveSelectedItem.tracking.usefulLinkUrl ? (
-                    <a
-                      href={effectiveSelectedItem.tracking.usefulLinkUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="ghost-btn youtube-open-link"
-                    >
-                      Voir lien
-                    </a>
-                  ) : null}
-                </div>
-                {usefulLinkInputError ? <p className="youtube-error">{usefulLinkInputError}</p> : null}
+              <div className="inline-accordion">
+                <button
+                  type="button"
+                  className={`inline-accordion-head ${usefulLinkSectionOpen ? 'open' : ''}`}
+                  aria-expanded={usefulLinkSectionOpen}
+                  onClick={() => setUsefulLinkSectionOpen((current) => !current)}
+                >
+                  <h3>Lien utile</h3>
+                  <span className="inline-accordion-chevron" aria-hidden="true">
+                    ▾
+                  </span>
+                </button>
+                {usefulLinkSectionOpen ? (
+                  <div className="useful-link-editor">
+                    <div className="youtube-input-row">
+                      <input
+                        type="url"
+                        placeholder="Coller un lien utile (ex. https://example.com)"
+                        value={usefulLinkInput}
+                        onChange={(event) => {
+                          setUsefulLinkInput(event.target.value)
+                          if (usefulLinkInputError) {
+                            setUsefulLinkInputError('')
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        className={`ghost-btn ${effectiveSelectedItem.tracking.usefulLinkUrl ? 'link-icon-btn' : ''}`}
+                        title={effectiveSelectedItem.tracking.usefulLinkUrl ? 'Modifier le lien utile' : 'Ajouter le lien utile'}
+                        aria-label={effectiveSelectedItem.tracking.usefulLinkUrl ? 'Modifier le lien utile' : 'Ajouter le lien utile'}
+                        onClick={handleUsefulLinkSave}
+                      >
+                        {effectiveSelectedItem.tracking.usefulLinkUrl ? (
+                          <span className="link-icon-glyph" aria-hidden="true">
+                            ✏️
+                          </span>
+                        ) : (
+                          'Ajouter'
+                        )}
+                      </button>
+                      {effectiveSelectedItem.tracking.usefulLinkUrl ? (
+                        <button
+                          type="button"
+                          className="ghost-btn link-icon-btn link-icon-btn-danger"
+                          title="Supprimer le lien utile"
+                          aria-label="Supprimer le lien utile"
+                          onClick={handleUsefulLinkClear}
+                        >
+                          <span className="link-icon-glyph" aria-hidden="true">
+                            🗑️
+                          </span>
+                        </button>
+                      ) : null}
+                      {effectiveSelectedItem.tracking.usefulLinkUrl ? (
+                        <a
+                          href={effectiveSelectedItem.tracking.usefulLinkUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="ghost-btn youtube-open-link"
+                        >
+                          Voir lien
+                        </a>
+                      ) : null}
+                    </div>
+                    {usefulLinkInputError ? <p className="youtube-error">{usefulLinkInputError}</p> : null}
+                  </div>
+                ) : null}
               </div>
 
-              <h3>Marqueur visuel item</h3>
-              <div className="item-visual-editor">
+              <div className="inline-accordion">
+                <button
+                  type="button"
+                  className={`inline-accordion-head ${itemVisualSectionOpen ? 'open' : ''}`}
+                  aria-expanded={itemVisualSectionOpen}
+                  onClick={() => setItemVisualSectionOpen((current) => !current)}
+                >
+                  <h3>Marqueur visuel item</h3>
+                  <span className="inline-accordion-chevron" aria-hidden="true">
+                    ▾
+                  </span>
+                </button>
+                {itemVisualSectionOpen ? (
+                  <div className="item-visual-editor">
                 <label className="block-label">
                   Icône
                   <input
@@ -4274,6 +4317,8 @@ function getPasswordStrengthMeta(password: string) {
                     Effacer marqueur
                   </button>
                 </div>
+                  </div>
+                ) : null}
               </div>
 
               <div id="flashcards-section" className="quiz-config-head">
