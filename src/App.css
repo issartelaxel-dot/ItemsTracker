@@ -2991,7 +2991,7 @@ tbody tr.selected {
 .youtube-preview {
   display: grid;
   gap: 0.5rem;
-  max-width: 560px;
+  max-width: 460px;
 }
 
 .youtube-view-mode {
@@ -3038,7 +3038,7 @@ tbody tr.selected {
 
 .youtube-embed-wrap {
   position: relative;
-  width: min(100%, 560px);
+  width: min(100%, 460px);
   padding-top: 56.25%;
   border-radius: 12px;
   overflow: hidden;
@@ -3052,16 +3052,6 @@ tbody tr.selected {
   width: 100%;
   height: 100%;
   border: 0;
-}
-
-.youtube-embed-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.45rem;
-}
-
-.youtube-embed-actions .ghost-btn {
-  padding: 0.32rem 0.58rem;
 }
 
 .youtube-open-link {

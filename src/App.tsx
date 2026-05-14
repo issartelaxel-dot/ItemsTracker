@@ -929,7 +929,6 @@ function App() {
   const hasInitializedSnapshotRef = useRef(false)
   const latestStatePayloadRef = useRef('')
   const lastSavedStatePayloadRef = useRef('')
-  const youtubeEmbedRef = useRef<HTMLDivElement | null>(null)
   const authCardRef = useRef<HTMLDivElement | null>(null)
   const sidebarNavRef = useRef<HTMLElement | null>(null)
   const sidebarNavButtonRefs = useRef<Partial<Record<SidebarNavBubbleKey, HTMLButtonElement | null>>>({})
@@ -3146,25 +3145,6 @@ function getPasswordStrengthMeta(password: string) {
     setYoutubeInputError('')
   }
 
-  function handleYouTubeFullscreen() {
-    const element = youtubeEmbedRef.current
-    if (!element) {
-      return
-    }
-    const target = element as HTMLDivElement & {
-      webkitRequestFullscreen?: () => Promise<void> | void
-      msRequestFullscreen?: () => Promise<void> | void
-    }
-    const requestFullscreen =
-      target.requestFullscreen?.bind(target) ||
-      target.webkitRequestFullscreen?.bind(target) ||
-      target.msRequestFullscreen?.bind(target)
-    if (!requestFullscreen) {
-      return
-    }
-    void Promise.resolve(requestFullscreen()).catch(() => undefined)
-  }
-
   function updateItemUsefulLinkUrl(itemNumber: number, value: string) {
     setTrackingState((current) => {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
@@ -4143,7 +4123,7 @@ function getPasswordStrengthMeta(password: string) {
                 {selectedYouTubeVideoId ? (
                   <div className="youtube-preview">
                     {youtubeDisplayMode === 'embed' ? (
-                      <div ref={youtubeEmbedRef} className="youtube-embed-wrap">
+                      <div className="youtube-embed-wrap">
                         <iframe
                           src={`https://www.youtube-nocookie.com/embed/${selectedYouTubeVideoId}`}
                           title={`Vidéo item ${effectiveSelectedItem.itemNumber}`}
@@ -4151,13 +4131,6 @@ function getPasswordStrengthMeta(password: string) {
                           referrerPolicy="strict-origin-when-cross-origin"
                           allowFullScreen
                         />
-                      </div>
-                    ) : null}
-                    {youtubeDisplayMode === 'embed' ? (
-                      <div className="youtube-embed-actions">
-                        <button type="button" className="ghost-btn" onClick={handleYouTubeFullscreen}>
-                          Plein écran
-                        </button>
                       </div>
                     ) : null}
                   </div>
