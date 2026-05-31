@@ -3686,14 +3686,16 @@ function getPasswordStrengthMeta(password: string) {
     }
   }
 
-  if (authStatus !== 'authed') {
+  const isAuthBootstrapping = authStatus === 'authed' && !hasLoadedRemoteState
+
+  if (authStatus !== 'authed' || isAuthBootstrapping) {
     return (
       <div className={`auth-shell ${authTransitionPhase === 'expanding' ? 'is-auth-expanding' : ''}`}>
         <div className="auth-layout">
           <aside className="auth-brand">
             <div className="auth-brand-inner">
               <p className="auth-brand-kicker">ItemsTracker</p>
-              {authView === 'login' ? (
+              {isAuthBootstrapping || authView === 'login' ? (
                 <>
                   <h1>Bienvenue</h1>
                   <p>Accède à ton dashboard EDN et optimise tes révisions</p>
@@ -3709,23 +3711,45 @@ function getPasswordStrengthMeta(password: string) {
 
           <div ref={authCardRef} className="auth-card">
             <h2 className="auth-title">Authentification</h2>
-            <div className="auth-switch">
-              <button
-                className={`ghost-btn auth-switch-btn ${authView === 'login' ? 'active' : ''}`}
-                onClick={() => setAuthView('login')}
-              >
-                Connexion
-              </button>
-              <button
-                className={`ghost-btn auth-switch-btn ${authView === 'register' ? 'active' : ''}`}
-                onClick={() => setAuthView('register')}
-              >
-                Inscription
-              </button>
-            </div>
+            {isAuthBootstrapping ? null : (
+              <div className="auth-switch">
+                <button
+                  className={`ghost-btn auth-switch-btn ${authView === 'login' ? 'active' : ''}`}
+                  onClick={() => setAuthView('login')}
+                >
+                  Connexion
+                </button>
+                <button
+                  className={`ghost-btn auth-switch-btn ${authView === 'register' ? 'active' : ''}`}
+                  onClick={() => setAuthView('register')}
+                >
+                  Inscription
+                </button>
+              </div>
+            )}
 
-            <div key={authView} className="auth-panel-content">
-              {authView === 'login' ? (
+            <div key={isAuthBootstrapping ? 'bootstrap' : authView} className="auth-panel-content">
+              {isAuthBootstrapping ? (
+                <>
+                  <p className="auth-sub">Connexion réussie. Synchronisation cloud en cours...</p>
+                  <p className="auth-sub">Le dashboard s’ouvrira automatiquement dès que la session sera validée.</p>
+                  {saveErrorMessage ? <p className="auth-error">{saveErrorMessage}</p> : <p className="auth-sub">Chargement...</p>}
+                  <div className="auth-actions">
+                    <button
+                      className="ghost-btn"
+                      onClick={() => {
+                        setSaveErrorMessage('')
+                        setRemoteBootstrapNonce((value) => value + 1)
+                      }}
+                    >
+                      Réessayer maintenant
+                    </button>
+                    <button className="ghost-btn" onClick={() => void disconnectToAuth()}>
+                      Se déconnecter
+                    </button>
+                  </div>
+                </>
+              ) : authView === 'login' ? (
                 <>
                   <p className="auth-sub">Connecte-toi avec ton email et ton mot de passe.</p>
                   <p className="auth-sub">Mot de passe oublié: demande un code puis valide le nouveau mot de passe.</p>
@@ -3887,7 +3911,7 @@ function getPasswordStrengthMeta(password: string) {
 
             {authMessage ? <p className="auth-success">{authMessage}</p> : null}
             {authError ? <p className="auth-error">{authError}</p> : null}
-            {authStatus === 'loading' ? <p className="auth-sub">Chargement...</p> : null}
+            {authStatus === 'loading' && !isAuthBootstrapping ? <p className="auth-sub">Chargement...</p> : null}
           </div>
         </div>
         {authTransitionPhase === 'expanding' ? (
@@ -3898,42 +3922,6 @@ function getPasswordStrengthMeta(password: string) {
             </div>
           </div>
         ) : null}
-      </div>
-    )
-  }
-
-  if (!hasLoadedRemoteState) {
-    return (
-      <div className="auth-shell">
-        <div className="auth-layout">
-          <aside className="auth-brand">
-            <div className="auth-brand-inner">
-              <p className="auth-brand-kicker">ItemsTracker</p>
-              <h1>Synchronisation cloud</h1>
-              <p>Validation de session et chargement de la sauvegarde en ligne avant accès au dashboard.</p>
-            </div>
-          </aside>
-
-          <div className="auth-card">
-            <h2 className="auth-title">Connexion sécurisée</h2>
-            <p className="auth-sub">Merci de patienter pendant la vérification serveur.</p>
-            {saveErrorMessage ? <p className="auth-error">{saveErrorMessage}</p> : <p className="auth-sub">Chargement...</p>}
-            <div className="auth-actions">
-              <button
-                className="ghost-btn"
-                onClick={() => {
-                  setSaveErrorMessage('')
-                  setRemoteBootstrapNonce((value) => value + 1)
-                }}
-              >
-                Réessayer maintenant
-              </button>
-              <button className="ghost-btn" onClick={() => void disconnectToAuth()}>
-                Se déconnecter
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
     )
   }
