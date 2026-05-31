@@ -166,6 +166,7 @@ const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
 const CLIENT_APP_VERSION = (import.meta.env.VITE_APP_VERSION ?? '').trim()
 const AUTH_TOKEN_STORAGE_KEY = 'med_auth_token'
+const LOCAL_CLOUD_SHADOW_PREFIX = 'med_cloud_shadow_v1'
 const AUTO_SAVE_INTERVAL_MS = 20_000
 const AUTO_SAVE_DEBOUNCE_MS = 2_000
 const SESSION_HEARTBEAT_MS = 60_000
@@ -213,6 +214,59 @@ function storeAuthToken(token: string) {
     window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token)
   } else {
     window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
+  }
+}
+
+function getLocalCloudShadowKey(userId: number) {
+  return `${LOCAL_CLOUD_SHADOW_PREFIX}:${userId}`
+}
+
+function readLocalCloudShadow(userId: number): { body: string; savedAtMs: number } | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+  try {
+    const raw = window.localStorage.getItem(getLocalCloudShadowKey(userId))
+    if (!raw) {
+      return null
+    }
+    const parsed = JSON.parse(raw) as { body?: unknown; savedAtMs?: unknown }
+    const body = typeof parsed.body === 'string' ? parsed.body : ''
+    const savedAtMs = Number(parsed.savedAtMs)
+    if (!body || !Number.isFinite(savedAtMs) || savedAtMs <= 0) {
+      return null
+    }
+    return { body, savedAtMs }
+  } catch {
+    return null
+  }
+}
+
+function writeLocalCloudShadow(userId: number, body: string) {
+  if (typeof window === 'undefined' || !body) {
+    return
+  }
+  try {
+    window.localStorage.setItem(
+      getLocalCloudShadowKey(userId),
+      JSON.stringify({
+        body,
+        savedAtMs: Date.now(),
+      }),
+    )
+  } catch {
+    // Ignore local quota/privacy errors, cloud save still continues.
+  }
+}
+
+function clearLocalCloudShadow(userId: number) {
+  if (typeof window === 'undefined') {
+    return
+  }
+  try {
+    window.localStorage.removeItem(getLocalCloudShadowKey(userId))
+  } catch {
+    // Ignore local storage errors.
   }
 }
 
@@ -844,6 +898,27 @@ function buildRemotePersistPayload(payload: PersistStatePayload): { body: string
   return null
 }
 
+function parsePersistStatePayloadBody(body: string, authUser: AuthUser | null): PersistStatePayload | null {
+  try {
+    const parsed = JSON.parse(body) as Partial<PersistStatePayload>
+    if (!parsed || typeof parsed !== 'object') {
+      return null
+    }
+    if (!parsed.trackingState || typeof parsed.trackingState !== 'object') {
+      return null
+    }
+    return {
+      trackingState: parsed.trackingState as TrackerState,
+      theme: parsed.theme === 'dark' ? 'dark' : 'light',
+      focusMode: Boolean(parsed.focusMode),
+      youtubeDisplayMode: parsed.youtubeDisplayMode === 'external' ? 'external' : 'embed',
+      profile: normalizeProfileInput(parsed.profile, authUser),
+    }
+  } catch {
+    return null
+  }
+}
+
 function toSaveWarningMessage(error: unknown) {
   const rawMessage = error instanceof Error ? error.message : 'Erreur inconnue'
   const message = rawMessage.trim() || 'Erreur inconnue'
@@ -1021,6 +1096,7 @@ function App() {
   const [itemVisualSectionOpen, setItemVisualSectionOpen] = useState(true)
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const lastPayloadTooLargeWarningRef = useRef(0)
+  const shouldForceFirstSyncRef = useRef(false)
   const hasPendingChangesRef = useRef(false)
   const hasInitializedSnapshotRef = useRef(false)
   const latestStatePayloadRef = useRef('')
@@ -1130,6 +1206,7 @@ function App() {
       setSaveErrorMessage('')
       hasPendingChangesRef.current = false
       hasInitializedSnapshotRef.current = false
+      shouldForceFirstSyncRef.current = false
       latestStatePayloadRef.current = ''
       lastSavedStatePayloadRef.current = ''
       return
@@ -1157,41 +1234,61 @@ function App() {
           | null
           | undefined
 
+        let nextTrackingState = getInitialTrackingState()
+        let nextTheme: Theme = 'light'
+        let nextFocusMode = false
+        let nextYoutubeDisplayMode: YouTubeDisplayMode = 'embed'
+        let nextProfile = getProfileFromAuthUser(authUser)
+        let remoteUpdatedAtMs = 0
+        let nextLastSavedAt: string | null = null
+
         if (remoteState && typeof remoteState === 'object') {
           if (remoteState.trackingState && typeof remoteState.trackingState === 'object') {
-            setTrackingState(remoteState.trackingState as TrackerState)
-          } else {
-            setTrackingState(getInitialTrackingState())
+            nextTrackingState = remoteState.trackingState as TrackerState
           }
-
-          setTheme(remoteState.theme === 'dark' ? 'dark' : 'light')
-          setFocusMode(Boolean(remoteState.focusMode))
-          setYoutubeDisplayMode(remoteState.youtubeDisplayMode === 'external' ? 'external' : 'embed')
-          setProfile(normalizeProfileInput(remoteState.profile, authUser))
+          nextTheme = remoteState.theme === 'dark' ? 'dark' : 'light'
+          nextFocusMode = Boolean(remoteState.focusMode)
+          nextYoutubeDisplayMode = remoteState.youtubeDisplayMode === 'external' ? 'external' : 'embed'
+          nextProfile = normalizeProfileInput(remoteState.profile, authUser)
           const updatedAtRaw = typeof remoteState.updatedAt === 'string' ? remoteState.updatedAt : null
           if (updatedAtRaw) {
             const savedAt = new Date(updatedAtRaw)
             if (!Number.isNaN(savedAt.getTime())) {
-              setLastSavedAt(
-                new Intl.DateTimeFormat('fr-FR', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                  second: '2-digit',
-                }).format(savedAt),
-              )
+              remoteUpdatedAtMs = savedAt.getTime()
+              nextLastSavedAt = new Intl.DateTimeFormat('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              }).format(savedAt)
             }
-          } else {
-            setLastSavedAt(null)
           }
-        } else {
-          setTrackingState(getInitialTrackingState())
-          setTheme('light')
-          setFocusMode(false)
-          setYoutubeDisplayMode('embed')
-          setProfile(getProfileFromAuthUser(authUser))
-          setLastSavedAt(null)
         }
-        setSaveErrorMessage('')
+
+        let restoredFromShadow = false
+        const shadow = readLocalCloudShadow(authUser.id)
+        if (shadow) {
+          const parsedShadow = parsePersistStatePayloadBody(shadow.body, authUser)
+          const isShadowNewerThanRemote = shadow.savedAtMs > remoteUpdatedAtMs + 1_000
+          if (parsedShadow && (remoteUpdatedAtMs === 0 || isShadowNewerThanRemote)) {
+            nextTrackingState = parsedShadow.trackingState
+            nextTheme = parsedShadow.theme
+            nextFocusMode = parsedShadow.focusMode
+            nextYoutubeDisplayMode = parsedShadow.youtubeDisplayMode
+            nextProfile = parsedShadow.profile
+            shouldForceFirstSyncRef.current = true
+            restoredFromShadow = true
+            nextLastSavedAt = null
+          }
+        }
+
+        setTrackingState(nextTrackingState)
+        setTheme(nextTheme)
+        setFocusMode(nextFocusMode)
+        setYoutubeDisplayMode(nextYoutubeDisplayMode)
+        setProfile(nextProfile)
+        setLastSavedAt(nextLastSavedAt)
+        setSaveErrorMessage(restoredFromShadow ? 'Restauration locale appliquée. Synchronisation cloud en cours...' : '')
+        setSaveStatus('idle')
         setHasLoadedRemoteState(true)
       } catch {
         if (!cancelled) {
@@ -1220,11 +1317,20 @@ function App() {
 
     const snapshot = remotePayload?.body ?? ''
     latestStatePayloadRef.current = snapshot
+    if (snapshot) {
+      writeLocalCloudShadow(authUser.id, snapshot)
+    }
 
     if (!hasInitializedSnapshotRef.current) {
       hasInitializedSnapshotRef.current = true
-      lastSavedStatePayloadRef.current = snapshot
-      hasPendingChangesRef.current = false
+      if (shouldForceFirstSyncRef.current) {
+        shouldForceFirstSyncRef.current = false
+        lastSavedStatePayloadRef.current = ''
+        hasPendingChangesRef.current = true
+      } else {
+        lastSavedStatePayloadRef.current = snapshot
+        hasPendingChangesRef.current = false
+      }
       return
     }
 
@@ -1473,6 +1579,7 @@ function App() {
           )
         }
         setSaveErrorMessage('')
+        clearLocalCloudShadow(authUser.id)
         if (!silent) {
           setSaveStatus('saved')
           window.setTimeout(() => setSaveStatus('idle'), 1800)
