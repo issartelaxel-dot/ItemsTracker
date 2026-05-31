@@ -1337,7 +1337,12 @@ function App() {
           },
         })
         const hasMoreCandidates = index < candidates.length - 1
+        const candidateContentType = (candidateResponse.headers.get('content-type') ?? '').toLowerCase()
+        const candidateLooksJson = candidateContentType.includes('application/json')
         if (!candidateResponse.ok && hasMoreCandidates && isRetryableApiCandidateStatus(candidateResponse.status)) {
+          continue
+        }
+        if (candidateResponse.ok && hasMoreCandidates && !candidateLooksJson) {
           continue
         }
         response = candidateResponse
@@ -1367,12 +1372,17 @@ function App() {
     }
 
     let payload: Record<string, unknown> = {}
-    const contentType = response.headers.get('content-type') ?? ''
-    if (contentType.includes('application/json')) {
+    const contentType = (response.headers.get('content-type') ?? '').toLowerCase()
+    const looksJson = contentType.includes('application/json')
+    if (looksJson) {
       payload = (await response.json().catch(() => ({}))) as Record<string, unknown>
     } else {
       const text = await response.text().catch(() => '')
       payload = { error: text.slice(0, 180) }
+    }
+
+    if (response.ok && !looksJson) {
+      throw new Error('Réponse API invalide: format non JSON.')
     }
 
     const nextToken = typeof payload.token === 'string' ? payload.token.trim() : ''
@@ -1483,7 +1493,11 @@ function App() {
   async function refreshAuth() {
     try {
       const payload = await apiRequest('/api/auth/me')
-      setAuthUser(payload.user as AuthUser)
+      const user = payload.user as AuthUser | undefined
+      if (!user || !Number.isFinite(Number(user.id))) {
+        throw new Error('Session utilisateur invalide.')
+      }
+      setAuthUser(user)
       setAuthStatus('authed')
       clearSaveProtection()
     } catch (error) {
@@ -1518,7 +1532,11 @@ function App() {
 
     try {
       const payload = await apiRequest('/api/auth/me')
-      setAuthUser(payload.user as AuthUser)
+      const user = payload.user as AuthUser | undefined
+      if (!user || !Number.isFinite(Number(user.id))) {
+        throw new Error('Session utilisateur invalide.')
+      }
+      setAuthUser(user)
       setAuthStatus('authed')
       setSaveLockReason(null)
       setSaveStatus('idle')
