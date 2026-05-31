@@ -1831,12 +1831,21 @@ function App() {
       return
     }
 
+    const viewportWidth = Math.max(window.innerWidth, 1)
+    const viewportHeight = Math.max(window.innerHeight, 1)
+    const scaleX = Math.min(1, Math.max(0.06, cardRect.width / viewportWidth))
+    const scaleY = Math.min(1, Math.max(0.06, cardRect.height / viewportHeight))
+
     setAuthExpandStyle(
       {
-        '--auth-start-top': `${cardRect.top}px`,
-        '--auth-start-left': `${cardRect.left}px`,
-        '--auth-start-width': `${cardRect.width}px`,
-        '--auth-start-height': `${cardRect.height}px`,
+        '--auth-start-top': `${cardRect.top.toFixed(2)}px`,
+        '--auth-start-left': `${cardRect.left.toFixed(2)}px`,
+        '--auth-start-width': `${cardRect.width.toFixed(2)}px`,
+        '--auth-start-height': `${cardRect.height.toFixed(2)}px`,
+        '--auth-translate-x': `${cardRect.left.toFixed(2)}px`,
+        '--auth-translate-y': `${cardRect.top.toFixed(2)}px`,
+        '--auth-scale-x': scaleX.toFixed(4),
+        '--auth-scale-y': scaleY.toFixed(4),
         '--auth-start-radius': '22px',
       } as CSSProperties,
     )
@@ -1847,7 +1856,7 @@ function App() {
       setDashboardIntroPhase('entering')
       setAuthStatus('authed')
       setLoginPending(false)
-    }, 780)
+    }, 650)
   }
 
   useEffect(() => {

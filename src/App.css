@@ -785,21 +785,25 @@
 }
 
 .auth-shell.is-auth-expanding .auth-layout {
-  opacity: 0.1;
+  opacity: 0.06;
+  transition: opacity 0.2s ease;
 }
 
 .auth-expand-card {
   position: fixed;
-  top: var(--auth-start-top);
-  left: var(--auth-start-left);
-  width: var(--auth-start-width);
-  height: var(--auth-start-height);
-  border-radius: var(--auth-start-radius);
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100dvh;
+  border-radius: 0;
   background: #fff;
   box-shadow: 0 26px 65px rgba(0, 0, 0, 0.28);
   z-index: 9;
-  animation: auth-card-expand 0.78s cubic-bezier(0.2, 0.82, 0.23, 1) forwards;
+  animation: auth-card-expand 0.64s cubic-bezier(0.22, 1, 0.36, 1) forwards;
   overflow: hidden;
+  will-change: transform, border-radius, opacity;
+  transform-origin: top left;
+  backface-visibility: hidden;
 }
 
 .auth-expand-content {
@@ -811,6 +815,8 @@
   color: #11243a;
   font-weight: 600;
   font-size: 1rem;
+  animation: auth-expand-content-in 0.2s ease-out both;
+  animation-delay: 80ms;
 }
 
 .auth-expand-content .auth-inline-spinner {
@@ -3842,18 +3848,26 @@ tbody tr.selected {
 
 @keyframes auth-card-expand {
   0% {
-    top: var(--auth-start-top);
-    left: var(--auth-start-left);
-    width: var(--auth-start-width);
-    height: var(--auth-start-height);
+    transform: translate3d(var(--auth-translate-x), var(--auth-translate-y), 0)
+      scale(var(--auth-scale-x), var(--auth-scale-y));
     border-radius: var(--auth-start-radius);
+    opacity: 0.96;
   }
   100% {
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
+    transform: translate3d(0, 0, 0) scale(1, 1);
     border-radius: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes auth-expand-content-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
