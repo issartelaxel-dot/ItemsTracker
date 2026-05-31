@@ -29,6 +29,16 @@ Use a Render **Static Site** that publishes `dist`:
 
 If you use Render Blueprint, this repo already includes [`render.yaml`](./render.yaml) with this setup.
 
+## Deploy all files (manual upload)
+
+If you want to upload the whole project each time (not only `dist`), run:
+
+```bash
+npm run package:full
+```
+
+Then upload the **contents** of `deploy-full/` to `/ItemsTracker/`.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)

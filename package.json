@@ -10,6 +10,7 @@
     "build": "tsc -b && vite build",
     "build:deploy": "npm run build && cp .htaccess dist/.htaccess",
     "package:deploy": "npm run build:deploy && node scripts/prepare-deploy.mjs",
+    "package:full": "npm run export:ready && node scripts/prepare-full-deploy.mjs",
     "export:ready": "npm run dev:restore-index && npm run build && node scripts/prepare-root-export.mjs",
     "export:zip": "npm run export:ready",
     "dev:restore-index": "node scripts/restore-dev-index.mjs",
