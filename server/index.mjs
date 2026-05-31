@@ -250,16 +250,28 @@ function clearAuthCookie(res) {
 function authFromRequest(req) {
   const authHeader = req.get('authorization') || req.get('Authorization') || ''
   const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i)
-  const token = (bearerMatch?.[1] || req.cookies?.[AUTH_COOKIE] || '').trim()
-  if (!token) {
+  const cookieToken = String(req.cookies?.[AUTH_COOKIE] || '').trim()
+  const bearerToken = String(bearerMatch?.[1] || '').trim()
+  if (!cookieToken && !bearerToken) {
     return null
   }
 
   try {
-    return jwt.verify(token, JWT_SECRET)
+    if (cookieToken) {
+      return jwt.verify(cookieToken, JWT_SECRET)
+    }
+  } catch {
+    // Try bearer fallback when cookie is invalid/expired.
+  }
+
+  try {
+    if (bearerToken) {
+      return jwt.verify(bearerToken, JWT_SECRET)
+    }
   } catch {
     return null
   }
+  return null
 }
 
 function refreshAuthCookie(res, auth) {
