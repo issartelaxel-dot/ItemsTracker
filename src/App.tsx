@@ -1498,6 +1498,40 @@ function App() {
     }
   }
 
+  async function confirmSessionAfterAuth(options?: { withTransition?: boolean; fallbackUser?: AuthUser }) {
+    const withTransition = Boolean(options?.withTransition)
+    const fallbackUser = options?.fallbackUser ?? null
+    try {
+      const payload = await apiRequest('/api/auth/me')
+      const resolvedUser = ((payload.user as AuthUser | undefined) ?? fallbackUser) as AuthUser | null
+      if (!resolvedUser) {
+        throw new Error('Session utilisateur introuvable après connexion.')
+      }
+      if (withTransition) {
+        startAuthSuccessTransition(resolvedUser)
+      } else {
+        setAuthUser(resolvedUser)
+        setAuthStatus('authed')
+        clearSaveProtection()
+      }
+      return true
+    } catch (error) {
+      if (withTransition) {
+        setLoginPending(false)
+      }
+      setAuthUser(null)
+      setAuthStatus('guest')
+      setHasLoadedRemoteState(false)
+      clearSaveProtection()
+      if (getSaveLockReason(error) === 'session-expired') {
+        setAuthError('Connexion réussie mais session non conservée. Autorise les cookies puis réessaie.')
+      } else {
+        setAuthError(error instanceof Error ? error.message : 'Impossible de valider la session.')
+      }
+      return false
+    }
+  }
+
   function startAuthSuccessTransition(user: AuthUser) {
     setAuthUser(user)
     clearSaveProtection()
@@ -1591,13 +1625,7 @@ function getPasswordStrengthMeta(password: string) {
           code: codeInput,
         }),
       })
-      if (payload.user) {
-        setAuthUser(payload.user as AuthUser)
-        setAuthStatus('authed')
-        clearSaveProtection()
-      } else {
-        await refreshAuth()
-      }
+      await confirmSessionAfterAuth({ fallbackUser: payload.user as AuthUser | undefined })
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Erreur lors de la vérification.')
     }
@@ -1618,20 +1646,14 @@ function getPasswordStrengthMeta(password: string) {
           password: passwordInput,
         }),
       })
-      if (payload.user) {
-        startAuthSuccessTransition(payload.user as AuthUser)
-      } else {
-        const mePayload = await apiRequest('/api/auth/me')
-        if (mePayload.user) {
-          startAuthSuccessTransition(mePayload.user as AuthUser)
-        } else {
-          setLoginPending(false)
-          await refreshAuth()
-        }
-      }
+      await confirmSessionAfterAuth({ withTransition: true, fallbackUser: payload.user as AuthUser | undefined })
     } catch (error) {
       setLoginPending(false)
-      setAuthError(error instanceof Error ? error.message : 'Erreur de connexion.')
+      if (getSaveLockReason(error) === 'session-expired') {
+        setAuthError('Connexion refusée: session non conservée. Autorise les cookies puis réessaie.')
+      } else {
+        setAuthError(error instanceof Error ? error.message : 'Erreur de connexion.')
+      }
     }
   }
 
@@ -1681,13 +1703,7 @@ function getPasswordStrengthMeta(password: string) {
       setResetMode(false)
       setResetCodeInput('')
       setResetPasswordInput('')
-      if (payload.user) {
-        setAuthUser(payload.user as AuthUser)
-        setAuthStatus('authed')
-        clearSaveProtection()
-      } else {
-        await refreshAuth()
-      }
+      await confirmSessionAfterAuth({ fallbackUser: payload.user as AuthUser | undefined })
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Erreur lors de la réinitialisation du mot de passe.')
     }
