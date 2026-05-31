@@ -1534,7 +1534,7 @@ function App() {
       setHasLoadedRemoteState(false)
       clearSaveProtection()
       if (getSaveLockReason(error) === 'session-expired') {
-        setAuthError('Connexion réussie mais session non conservée. Autorise les cookies puis réessaie.')
+        setAuthError('Connexion réussie mais session non conservée. Vérifie la config de session serveur puis réessaie.')
       } else {
         setAuthError(error instanceof Error ? error.message : 'Impossible de valider la session.')
       }
@@ -1660,7 +1660,7 @@ function getPasswordStrengthMeta(password: string) {
     } catch (error) {
       setLoginPending(false)
       if (getSaveLockReason(error) === 'session-expired') {
-        setAuthError('Connexion refusée: session non conservée. Autorise les cookies puis réessaie.')
+        setAuthError('Connexion refusée: session non conservée. Vérifie la config de session serveur puis réessaie.')
       } else {
         setAuthError(error instanceof Error ? error.message : 'Erreur de connexion.')
       }
