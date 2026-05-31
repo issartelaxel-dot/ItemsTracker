@@ -167,6 +167,9 @@ const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
 const CLIENT_APP_VERSION = (import.meta.env.VITE_APP_VERSION ?? '').trim()
 const AUTH_TOKEN_STORAGE_KEY = 'med_auth_token'
 const LOCAL_CLOUD_SHADOW_PREFIX = 'med_cloud_shadow_v1'
+const ALLOW_SAME_ORIGIN_API_FALLBACK = String(import.meta.env.VITE_ALLOW_SAME_ORIGIN_API_FALLBACK ?? '')
+  .trim()
+  .toLowerCase() === 'true'
 const AUTO_SAVE_INTERVAL_MS = 20_000
 const AUTO_SAVE_DEBOUNCE_MS = 2_000
 const SESSION_HEARTBEAT_MS = 60_000
@@ -422,21 +425,45 @@ function resolveApiCandidates(path: string) {
 
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   const candidates = new Set<string>()
-
-  if (typeof window !== 'undefined') {
-    candidates.add(`${window.location.origin}${normalizedPath}`)
-    if (APP_BASE_URL && APP_BASE_URL !== '/') {
-      candidates.add(`${window.location.origin}${APP_BASE_URL}${normalizedPath}`)
+  let apiBaseOrigin = ''
+  if (API_BASE_URL) {
+    try {
+      apiBaseOrigin = new URL(API_BASE_URL).origin
+    } catch {
+      apiBaseOrigin = ''
     }
-  } else {
-    candidates.add(normalizedPath)
   }
 
   if (API_BASE_URL) {
     candidates.add(`${API_BASE_URL}${normalizedPath}`)
   }
 
+  if (typeof window !== 'undefined') {
+    const currentOrigin = window.location.origin
+    const isExplicitExternalApi = Boolean(apiBaseOrigin && apiBaseOrigin !== currentOrigin)
+    const canTrySameOrigin = !isExplicitExternalApi || ALLOW_SAME_ORIGIN_API_FALLBACK
+    if (canTrySameOrigin) {
+      candidates.add(`${currentOrigin}${normalizedPath}`)
+      if (APP_BASE_URL && APP_BASE_URL !== '/') {
+        candidates.add(`${currentOrigin}${APP_BASE_URL}${normalizedPath}`)
+      }
+    }
+  } else if (!API_BASE_URL) {
+    candidates.add(normalizedPath)
+  }
+
   return Array.from(candidates)
+}
+
+function shouldSkipAuthTokenForRequest(url: string) {
+  const normalized = url.toLowerCase()
+  return (
+    normalized.includes('/api/auth/login') ||
+    normalized.includes('/api/auth/register/request') ||
+    normalized.includes('/api/auth/register/verify') ||
+    normalized.includes('/api/auth/password/request') ||
+    normalized.includes('/api/auth/password/confirm')
+  )
 }
 
 function isRetryableApiCandidateStatus(status: number) {
@@ -1428,6 +1455,7 @@ function App() {
     let lastFetchError: unknown = null
     const candidates = resolveApiCandidates(url)
     const authToken = getStoredAuthToken()
+    const shouldAttachAuthToken = Boolean(authToken) && !shouldSkipAuthTokenForRequest(url)
 
     for (let index = 0; index < candidates.length; index += 1) {
       const candidate = candidates[index]
@@ -1438,7 +1466,7 @@ function App() {
           headers: {
             'Content-Type': 'application/json',
             ...(CLIENT_APP_VERSION ? { 'x-client-version': CLIENT_APP_VERSION } : {}),
-            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+            ...(shouldAttachAuthToken ? { Authorization: `Bearer ${authToken}` } : {}),
             ...(init?.headers ?? {}),
           },
         })
