@@ -2542,6 +2542,27 @@ tbody tr.selected {
   font-weight: 600;
 }
 
+.quiz-file-input-control {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.quiz-file-input-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.2rem;
+}
+
+.quiz-file-picker-btn {
+  padding: 0.35rem 0.6rem;
+  line-height: 1.1;
+}
+
 .quiz-rate-btn {
   font-weight: 700;
   transition:

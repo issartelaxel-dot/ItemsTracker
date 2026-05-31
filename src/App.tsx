@@ -1002,6 +1002,8 @@ function App() {
   const [itemVisualSectionOpen, setItemVisualSectionOpen] = useState(true)
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const lastPayloadTooLargeWarningRef = useRef(0)
+  const detailQuizImageInputRef = useRef<HTMLInputElement | null>(null)
+  const modalQuizImageInputRef = useRef<HTMLInputElement | null>(null)
   const hasPendingChangesRef = useRef(false)
   const hasInitializedSnapshotRef = useRef(false)
   const latestStatePayloadRef = useRef('')
@@ -4537,6 +4539,8 @@ function getPasswordStrengthMeta(password: string) {
                           <label className="block-label">
                             Image carte active (max 1 MB)
                             <input
+                              ref={detailQuizImageInputRef}
+                              className="quiz-file-input-control"
                               type="file"
                               accept="image/*"
                               onChange={(event) => {
@@ -4547,13 +4551,23 @@ function getPasswordStrengthMeta(password: string) {
                                   activeCard.id,
                                   event.target.files,
                                 )
+                                event.target.value = ''
                               }}
                             />
-                            {showInlineQuizFileError ? (
-                              <span className="quiz-file-name quiz-file-name-error">{quizImageError}</span>
-                            ) : quizImageFileName ? (
-                              <span className="quiz-file-name">{quizImageFileName}</span>
-                            ) : null}
+                            <div className="quiz-file-input-row">
+                              <button
+                                type="button"
+                                className="ghost-btn quiz-file-picker-btn"
+                                onClick={() => detailQuizImageInputRef.current?.click()}
+                              >
+                                Choose File
+                              </button>
+                              {showInlineQuizFileError ? (
+                                <span className="quiz-file-name quiz-file-name-error">{quizImageError}</span>
+                              ) : quizImageFileName ? (
+                                <span className="quiz-file-name">{quizImageFileName}</span>
+                              ) : null}
+                            </div>
                           </label>
                           <div className="quiz-card-media-actions">
                             <button
@@ -5273,19 +5287,31 @@ function getPasswordStrengthMeta(password: string) {
                 <label className="block-label">
                   Image (max 1 MB)
                   <input
+                    ref={modalQuizImageInputRef}
+                    className="quiz-file-input-control"
                     type="file"
                     accept="image/*"
                     onChange={(event) => {
                       const fileName = event.target.files?.[0]?.name ?? ''
                       setQuizImageFileName(fileName)
                       void handleQuizCardImageUpload(quizItem.itemNumber, activeQuizCard.id, event.target.files)
+                      event.target.value = ''
                     }}
                   />
-                  {showInlineQuizFileError ? (
-                    <span className="quiz-file-name quiz-file-name-error">{quizImageError}</span>
-                  ) : quizImageFileName ? (
-                    <span className="quiz-file-name">{quizImageFileName}</span>
-                  ) : null}
+                  <div className="quiz-file-input-row">
+                    <button
+                      type="button"
+                      className="ghost-btn quiz-file-picker-btn"
+                      onClick={() => modalQuizImageInputRef.current?.click()}
+                    >
+                      Choose File
+                    </button>
+                    {showInlineQuizFileError ? (
+                      <span className="quiz-file-name quiz-file-name-error">{quizImageError}</span>
+                    ) : quizImageFileName ? (
+                      <span className="quiz-file-name">{quizImageFileName}</span>
+                    ) : null}
+                  </div>
                 </label>
                 <div className="quiz-card-media-actions">
                   <button
