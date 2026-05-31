@@ -21,6 +21,9 @@ Auth session note:
 - Backend still sets an httpOnly cookie.
 - Frontend also stores a rotating auth token from API responses and sends it as `Authorization: Bearer ...`.
 - This reduces login/session issues when some browsers block or drop cross-site cookies.
+- Backend CORS must allow and expose auth/version headers:
+  - `allowedHeaders`: `Content-Type, Authorization, X-Client-Version`
+  - `exposedHeaders`: `x-app-version, x-min-client-version`
 
 ### Session reliability (recommended)
 

@@ -111,6 +111,9 @@ app.use(
       callback(new Error('Origin not allowed by CORS'))
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Client-Version'],
+    exposedHeaders: ['x-app-version', 'x-min-client-version'],
   }),
 )
 app.use(express.json({ limit: JSON_BODY_LIMIT }))
