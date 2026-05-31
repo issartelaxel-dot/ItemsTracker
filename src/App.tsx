@@ -845,10 +845,6 @@ function toSaveWarningMessage(error: unknown) {
   return `Sauvegarde en attente: ${message}`
 }
 
-function isInlineQuizFileError(errorMessage: string) {
-  return /image trop lourde/i.test(errorMessage)
-}
-
 class ApiRequestError extends Error {
   status: number
   code: string
@@ -1029,7 +1025,6 @@ function App() {
   }
   const [sidebarNavBubble, setSidebarNavBubble] = useState({ top: 0, height: 0, ready: false })
   const passwordStrength = getPasswordStrengthMeta(passwordInput)
-  const showInlineQuizFileError = Boolean(quizImageError) && isInlineQuizFileError(quizImageError)
   const remotePayload = useMemo(
     () =>
       buildRemotePersistPayload({
@@ -3160,18 +3155,22 @@ function getPasswordStrengthMeta(password: string) {
       return
     }
     if (!file.type.startsWith('image/')) {
+      setQuizImageFileName('')
       setQuizImageError('Fichier invalide: choisis une image.')
       return
     }
     if (file.size > QUIZ_CARD_IMAGE_MAX_BYTES) {
+      setQuizImageFileName('')
       setQuizImageError('Image trop lourde: maximum 1 MB.')
       return
     }
     try {
       const imageDataUrl = await fileToDataUrl(file)
       updateQuizCard(itemNumber, cardId, { imageDataUrl })
+      setQuizImageFileName(file.name)
       setQuizImageError('')
     } catch {
+      setQuizImageFileName('')
       setQuizImageError("Impossible d'importer l'image.")
     }
   }
@@ -4544,8 +4543,6 @@ function getPasswordStrengthMeta(password: string) {
                               type="file"
                               accept="image/*"
                               onChange={(event) => {
-                                const fileName = event.target.files?.[0]?.name ?? ''
-                                setQuizImageFileName(fileName)
                                 void handleQuizCardImageUpload(
                                   effectiveSelectedItem.itemNumber,
                                   activeCard.id,
@@ -4562,7 +4559,7 @@ function getPasswordStrengthMeta(password: string) {
                               >
                                 Choose File
                               </button>
-                              {showInlineQuizFileError ? (
+                              {quizImageError ? (
                                 <span className="quiz-file-name quiz-file-name-error">{quizImageError}</span>
                               ) : quizImageFileName ? (
                                 <span className="quiz-file-name">{quizImageFileName}</span>
@@ -4584,7 +4581,6 @@ function getPasswordStrengthMeta(password: string) {
                               Retirer image
                             </button>
                           </div>
-                          {quizImageError && !showInlineQuizFileError ? <p className="quiz-image-error">{quizImageError}</p> : null}
                         </div>
                       ))}
                     <label className="block-label">
@@ -5292,8 +5288,6 @@ function getPasswordStrengthMeta(password: string) {
                     type="file"
                     accept="image/*"
                     onChange={(event) => {
-                      const fileName = event.target.files?.[0]?.name ?? ''
-                      setQuizImageFileName(fileName)
                       void handleQuizCardImageUpload(quizItem.itemNumber, activeQuizCard.id, event.target.files)
                       event.target.value = ''
                     }}
@@ -5306,7 +5300,7 @@ function getPasswordStrengthMeta(password: string) {
                     >
                       Choose File
                     </button>
-                    {showInlineQuizFileError ? (
+                    {quizImageError ? (
                       <span className="quiz-file-name quiz-file-name-error">{quizImageError}</span>
                     ) : quizImageFileName ? (
                       <span className="quiz-file-name">{quizImageFileName}</span>
@@ -5326,7 +5320,6 @@ function getPasswordStrengthMeta(password: string) {
                     Retirer image
                   </button>
                 </div>
-                {quizImageError && !showInlineQuizFileError ? <p className="quiz-image-error">{quizImageError}</p> : null}
               </div>
             ) : null}
 
