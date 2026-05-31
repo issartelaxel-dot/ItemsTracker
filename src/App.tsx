@@ -1111,6 +1111,7 @@ function App() {
   const [reviewFx, setReviewFx] = useState<Record<string, { delta: number; id: number }>>({})
   const [starFx, setStarFx] = useState<Record<string, number>>({})
   const [masteryFx, setMasteryFx] = useState<Record<string, number>>({})
+  const [remoteBootstrapNonce, setRemoteBootstrapNonce] = useState(0)
   const [authTransitionPhase, setAuthTransitionPhase] = useState<'idle' | 'expanding'>('idle')
   const [dashboardIntroPhase, setDashboardIntroPhase] = useState<'idle' | 'entering'>('idle')
   const [authExpandStyle, setAuthExpandStyle] = useState<CSSProperties>({})
@@ -1317,10 +1318,19 @@ function App() {
         setSaveErrorMessage(restoredFromShadow ? 'Restauration locale appliquée. Synchronisation cloud en cours...' : '')
         setSaveStatus('idle')
         setHasLoadedRemoteState(true)
-      } catch {
+      } catch (error) {
+        const lockReason = getSaveLockReason(error)
+        if (!cancelled && lockReason === 'session-expired') {
+          resetSessionToGuest('Session expirée pendant le chargement cloud. Reconnecte-toi.')
+          return
+        }
+        if (!cancelled && lockReason === 'client-stale') {
+          void forceLogoutForStaleClient()
+          return
+        }
         if (!cancelled) {
           setHasLoadedRemoteState(false)
-          setSaveErrorMessage('Cloud indisponible, reconnexion automatique...')
+          setSaveErrorMessage('Cloud indisponible. Vérifie Render puis réessaie.')
           retryTimer = window.setTimeout(() => {
             void loadRemoteState()
           }, 15_000)
@@ -1335,7 +1345,7 @@ function App() {
         window.clearTimeout(retryTimer)
       }
     }
-  }, [authStatus, authUser?.id])
+  }, [authStatus, authUser?.id, remoteBootstrapNonce])
 
   useEffect(() => {
     if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
@@ -1634,6 +1644,30 @@ function App() {
     return savePromise
   }
 
+  function resetSessionToGuest(authMessage?: string) {
+    storeAuthToken('')
+    setHasLoadedRemoteState(false)
+    setAuthUser(null)
+    setAuthStatus('guest')
+    setSaveLockReason(null)
+    setSaveStatus('idle')
+    setSaveErrorMessage('')
+    hasPendingChangesRef.current = false
+    hasInitializedSnapshotRef.current = false
+    shouldForceFirstSyncRef.current = false
+    latestStatePayloadRef.current = ''
+    lastSavedStatePayloadRef.current = ''
+    setTrackingState(getInitialTrackingState())
+    setTheme('light')
+    setFocusMode(false)
+    setYoutubeDisplayMode('embed')
+    setProfile(getDefaultProfile())
+    setLastSavedAt(null)
+    if (authMessage) {
+      setAuthError(authMessage)
+    }
+  }
+
   async function refreshAuth() {
     try {
       const payload = await apiRequest('/api/auth/me', undefined, { requireServerAppHeader: true })
@@ -1913,6 +1947,11 @@ function getPasswordStrengthMeta(password: string) {
     }
   }
 
+  async function disconnectToAuth(authMessage?: string) {
+    await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
+    resetSessionToGuest(authMessage)
+  }
+
   async function handleLogout() {
     const saved = await persistUserState({ force: true, silent: false })
     if (!saved) {
@@ -1923,32 +1962,11 @@ function getPasswordStrengthMeta(password: string) {
         return
       }
     }
-    await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
-    storeAuthToken('')
-    setHasLoadedRemoteState(false)
-    setAuthUser(null)
-    setAuthStatus('guest')
-    setSaveLockReason(null)
-    setTrackingState(getInitialTrackingState())
-    setTheme('light')
-    setFocusMode(false)
-    setProfile(getDefaultProfile())
+    await disconnectToAuth()
   }
 
   async function forceLogoutForStaleClient() {
-    await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
-    storeAuthToken('')
-    setHasLoadedRemoteState(false)
-    setAuthUser(null)
-    setAuthStatus('guest')
-    setSaveLockReason(null)
-    setSaveStatus('idle')
-    setSaveErrorMessage('')
-    setTrackingState(getInitialTrackingState())
-    setTheme('light')
-    setFocusMode(false)
-    setProfile(getDefaultProfile())
-    setAuthError('Nouvelle version disponible: reconnecte-toi pour charger la dernière mise à jour.')
+    await disconnectToAuth('Nouvelle version disponible: reconnecte-toi pour charger la dernière mise à jour.')
   }
 
   useEffect(() => {
@@ -3823,6 +3841,42 @@ function getPasswordStrengthMeta(password: string) {
             </div>
           </div>
         ) : null}
+      </div>
+    )
+  }
+
+  if (!hasLoadedRemoteState) {
+    return (
+      <div className="auth-shell">
+        <div className="auth-layout">
+          <aside className="auth-brand">
+            <div className="auth-brand-inner">
+              <p className="auth-brand-kicker">ItemsTracker</p>
+              <h1>Synchronisation cloud</h1>
+              <p>Validation de session et chargement de la sauvegarde en ligne avant accès au dashboard.</p>
+            </div>
+          </aside>
+
+          <div className="auth-card">
+            <h2 className="auth-title">Connexion sécurisée</h2>
+            <p className="auth-sub">Merci de patienter pendant la vérification serveur.</p>
+            {saveErrorMessage ? <p className="auth-error">{saveErrorMessage}</p> : <p className="auth-sub">Chargement...</p>}
+            <div className="auth-actions">
+              <button
+                className="ghost-btn"
+                onClick={() => {
+                  setSaveErrorMessage('')
+                  setRemoteBootstrapNonce((value) => value + 1)
+                }}
+              >
+                Réessayer maintenant
+              </button>
+              <button className="ghost-btn" onClick={() => void disconnectToAuth()}>
+                Se déconnecter
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     )
   }
