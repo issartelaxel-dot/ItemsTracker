@@ -171,6 +171,14 @@ const SESSION_HEARTBEAT_MS = 60_000
 const VERSION_CHECK_INTERVAL_MS = 5 * 60_000
 const QUIZ_CARD_IMAGE_MAX_BYTES = 1024 * 1024
 const HABIT_TRACKER_YEAR = 2026
+const REMOTE_STATE_MAX_BYTES = 1_800_000
+const REMOTE_MAX_PROFILE_PHOTO_URL_LENGTH = 120_000
+const REMOTE_PAYLOAD_FALLBACKS = [
+  { maxActionLogsPerItem: 80, allowProfilePhoto: true },
+  { maxActionLogsPerItem: 40, allowProfilePhoto: false },
+  { maxActionLogsPerItem: 15, allowProfilePhoto: false },
+  { maxActionLogsPerItem: 0, allowProfilePhoto: false },
+] as const
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #f90021 0%, #ff8f00 58%, #ffe400 100%)',
   'linear-gradient(135deg, #1d976c 0%, #93f9b9 100%)',
@@ -752,6 +760,67 @@ function normalizeProfileInput(rawProfile: unknown, authUser: AuthUser | null): 
   }
 }
 
+type PersistStatePayload = {
+  trackingState: TrackerState
+  theme: Theme
+  focusMode: boolean
+  youtubeDisplayMode: YouTubeDisplayMode
+  profile: ProfileState
+}
+
+function getUtf8ByteLength(value: string) {
+  return new TextEncoder().encode(value).byteLength
+}
+
+function trimTrackingStateForRemote(trackingState: TrackerState, maxActionLogsPerItem: number): TrackerState {
+  const nextItems: Record<number, ItemTracking> = {}
+
+  for (const [itemNumberRaw, trackingRaw] of Object.entries(trackingState.items)) {
+    const itemNumber = Number(itemNumberRaw)
+    const tracking = normalizeItemTracking(trackingRaw)
+    nextItems[itemNumber] = {
+      ...tracking,
+      actionLogs: maxActionLogsPerItem > 0 ? tracking.actionLogs.slice(-maxActionLogsPerItem) : [],
+    }
+  }
+
+  return { items: nextItems }
+}
+
+function sanitizeProfileForRemote(profile: ProfileState, allowPhoto: boolean): ProfileState {
+  const keepPhoto =
+    allowPhoto &&
+    typeof profile.photoUrl === 'string' &&
+    profile.photoUrl.length > 0 &&
+    profile.photoUrl.length <= REMOTE_MAX_PROFILE_PHOTO_URL_LENGTH
+
+  return {
+    ...profile,
+    photoUrl: keepPhoto ? profile.photoUrl : '',
+    password: '',
+  }
+}
+
+function buildRemotePersistPayload(payload: PersistStatePayload): { body: string; bytes: number } | null {
+  for (const strategy of REMOTE_PAYLOAD_FALLBACKS) {
+    const candidatePayload: PersistStatePayload = {
+      trackingState: trimTrackingStateForRemote(payload.trackingState, strategy.maxActionLogsPerItem),
+      theme: payload.theme,
+      focusMode: payload.focusMode,
+      youtubeDisplayMode: payload.youtubeDisplayMode,
+      profile: sanitizeProfileForRemote(payload.profile, strategy.allowProfilePhoto),
+    }
+
+    const body = JSON.stringify(candidatePayload)
+    const bytes = getUtf8ByteLength(body)
+    if (bytes <= REMOTE_STATE_MAX_BYTES) {
+      return { body, bytes }
+    }
+  }
+
+  return null
+}
+
 function toSaveWarningMessage(error: unknown) {
   const rawMessage = error instanceof Error ? error.message : 'Erreur inconnue'
   const message = rawMessage.trim() || 'Erreur inconnue'
@@ -928,6 +997,7 @@ function App() {
   const [usefulLinkSectionOpen, setUsefulLinkSectionOpen] = useState(true)
   const [itemVisualSectionOpen, setItemVisualSectionOpen] = useState(true)
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
+  const lastPayloadTooLargeWarningRef = useRef(0)
   const hasPendingChangesRef = useRef(false)
   const hasInitializedSnapshotRef = useRef(false)
   const latestStatePayloadRef = useRef('')
@@ -953,6 +1023,17 @@ function App() {
   }
   const [sidebarNavBubble, setSidebarNavBubble] = useState({ top: 0, height: 0, ready: false })
   const passwordStrength = getPasswordStrengthMeta(passwordInput)
+  const remotePayload = useMemo(
+    () =>
+      buildRemotePersistPayload({
+        trackingState,
+        theme,
+        focusMode,
+        youtubeDisplayMode,
+        profile,
+      }),
+    [trackingState, theme, focusMode, youtubeDisplayMode, profile],
+  )
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -1114,13 +1195,7 @@ function App() {
       return
     }
 
-    const snapshot = JSON.stringify({
-      trackingState,
-      theme,
-      focusMode,
-      youtubeDisplayMode,
-      profile,
-    })
+    const snapshot = remotePayload?.body ?? ''
     latestStatePayloadRef.current = snapshot
 
     if (!hasInitializedSnapshotRef.current) {
@@ -1130,8 +1205,13 @@ function App() {
       return
     }
 
+    if (!remotePayload) {
+      hasPendingChangesRef.current = true
+      return
+    }
+
     hasPendingChangesRef.current = snapshot !== lastSavedStatePayloadRef.current
-  }, [authStatus, authUser?.id, hasLoadedRemoteState, trackingState, theme, focusMode, youtubeDisplayMode, profile])
+  }, [authStatus, authUser?.id, hasLoadedRemoteState, remotePayload])
 
   useEffect(() => {
     if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState || !hasPendingChangesRef.current) {
@@ -1300,13 +1380,18 @@ function App() {
       return saveInFlightRef.current
     }
 
-    const snapshot = JSON.stringify({
-      trackingState,
-      theme,
-      focusMode,
-      youtubeDisplayMode,
-      profile,
-    })
+    if (!remotePayload) {
+      const now = Date.now()
+      if (now - lastPayloadTooLargeWarningRef.current > 15_000) {
+        setSaveErrorMessage('Payload trop volumineux pour la sauvegarde automatique. Réduis la taille des données/images.')
+        setSaveStatus('error')
+        window.setTimeout(() => setSaveStatus('idle'), 2800)
+        lastPayloadTooLargeWarningRef.current = now
+      }
+      return false
+    }
+
+    const snapshot = remotePayload.body
     latestStatePayloadRef.current = snapshot
 
     const savePromise = (async () => {
