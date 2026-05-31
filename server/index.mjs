@@ -33,7 +33,7 @@ const ADMIN_APPROVAL_EMAIL = process.env.ADMIN_APPROVAL_EMAIL || 'issartelaxel@g
 const AUTH_COOKIE = 'med_auth'
 const APPROVAL_CODE_TTL_MS = 15 * 60 * 1000
 const AUTH_SESSION_TTL_MS = 45 * 60 * 1000
-const JSON_BODY_LIMIT = (process.env.JSON_BODY_LIMIT || '40mb').trim() || '40mb'
+const JSON_BODY_LIMIT = (process.env.JSON_BODY_LIMIT || '80mb').trim() || '80mb'
 
 if (!JWT_SECRET || JWT_SECRET.length < 32) {
   console.error('JWT_SECRET must be set and at least 32 chars long.')

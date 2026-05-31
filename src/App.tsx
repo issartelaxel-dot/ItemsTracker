@@ -176,14 +176,15 @@ const SESSION_HEARTBEAT_MS = 60_000
 const VERSION_CHECK_INTERVAL_MS = 5 * 60_000
 const QUIZ_CARD_IMAGE_MAX_BYTES = 1024 * 1024
 const HABIT_TRACKER_YEAR = 2026
-const REMOTE_STATE_MAX_BYTES = 12_000_000
-const REMOTE_MAX_PROFILE_PHOTO_URL_LENGTH = 400_000
+const REMOTE_STATE_MAX_BYTES = 24_000_000
+const REMOTE_MAX_PROFILE_PHOTO_URL_LENGTH = 1_000_000
 const REMOTE_PAYLOAD_FALLBACKS = [
-  { maxActionLogsPerItem: 120, allowProfilePhoto: true, maxQuizImagesPerItem: 60 },
-  { maxActionLogsPerItem: 80, allowProfilePhoto: true, maxQuizImagesPerItem: 36 },
-  { maxActionLogsPerItem: 50, allowProfilePhoto: true, maxQuizImagesPerItem: 20 },
-  { maxActionLogsPerItem: 20, allowProfilePhoto: false, maxQuizImagesPerItem: 8 },
-  { maxActionLogsPerItem: 0, allowProfilePhoto: false, maxQuizImagesPerItem: 2 },
+  { maxActionLogsPerItem: 220, allowProfilePhoto: true, maxQuizImagesPerItem: 120 },
+  { maxActionLogsPerItem: 140, allowProfilePhoto: true, maxQuizImagesPerItem: 80 },
+  { maxActionLogsPerItem: 80, allowProfilePhoto: true, maxQuizImagesPerItem: 50 },
+  { maxActionLogsPerItem: 40, allowProfilePhoto: true, maxQuizImagesPerItem: 24 },
+  { maxActionLogsPerItem: 20, allowProfilePhoto: false, maxQuizImagesPerItem: 10 },
+  { maxActionLogsPerItem: 0, allowProfilePhoto: false, maxQuizImagesPerItem: 4 },
   { maxActionLogsPerItem: 0, allowProfilePhoto: false, maxQuizImagesPerItem: 0 },
 ] as const
 const AVATAR_GRADIENTS = [
