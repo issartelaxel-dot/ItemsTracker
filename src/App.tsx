@@ -1789,8 +1789,7 @@ function App() {
     }
   }
 
-  async function confirmSessionAfterAuth(options?: { withTransition?: boolean; fallbackUser?: AuthUser }) {
-    const withTransition = Boolean(options?.withTransition)
+  async function confirmSessionAfterAuth(options?: { fallbackUser?: AuthUser }) {
     const fallbackUser = options?.fallbackUser ?? null
     try {
       const payload = await apiRequest('/api/auth/me', undefined, { requireServerAppHeader: true })
@@ -1798,18 +1797,12 @@ function App() {
       if (!resolvedUser) {
         throw new Error('Session utilisateur introuvable après connexion.')
       }
-      if (withTransition) {
-        startAuthSuccessTransition(resolvedUser)
-      } else {
-        setAuthUser(resolvedUser)
-        setAuthStatus('authed')
-        clearSaveProtection()
-      }
+      setAuthUser(resolvedUser)
+      setAuthStatus('authed')
+      clearSaveProtection()
       return true
     } catch (error) {
-      if (withTransition) {
-        setLoginPending(false)
-      }
+      setLoginPending(false)
       if (getSaveLockReason(error) === 'session-expired') {
         storeAuthToken('')
       }
@@ -1856,6 +1849,16 @@ function App() {
       setLoginPending(false)
     }, 780)
   }
+
+  useEffect(() => {
+    if (!loginPending || authTransitionPhase !== 'idle') {
+      return
+    }
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
+      return
+    }
+    startAuthSuccessTransition(authUser)
+  }, [loginPending, authTransitionPhase, authStatus, authUser, hasLoadedRemoteState])
 
 function getPasswordStrengthError(password: string) {
   if (password.length < 12 || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
@@ -1940,7 +1943,7 @@ function getPasswordStrengthMeta(password: string) {
           password: passwordInput,
         }),
       })
-      await confirmSessionAfterAuth({ withTransition: true, fallbackUser: payload.user as AuthUser | undefined })
+      await confirmSessionAfterAuth({ fallbackUser: payload.user as AuthUser | undefined })
     } catch (error) {
       setLoginPending(false)
       if (getSaveLockReason(error) === 'session-expired') {
