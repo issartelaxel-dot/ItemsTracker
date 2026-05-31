@@ -165,6 +165,7 @@ type SaveLockReason = 'session-expired' | 'client-stale'
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '')
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
 const CLIENT_APP_VERSION = (import.meta.env.VITE_APP_VERSION ?? '').trim()
+const AUTH_TOKEN_STORAGE_KEY = 'med_auth_token'
 const AUTO_SAVE_INTERVAL_MS = 20_000
 const AUTO_SAVE_DEBOUNCE_MS = 2_000
 const SESSION_HEARTBEAT_MS = 60_000
@@ -196,6 +197,24 @@ const SHEET_COLORS: Array<{ value: SheetColor; label: string; emoji: string }> =
   { value: 'vert', label: 'Vert', emoji: '🟢' },
   { value: 'vertfonce', label: 'Vert fonce', emoji: '🟢' },
 ]
+
+function getStoredAuthToken() {
+  if (typeof window === 'undefined') {
+    return ''
+  }
+  return window.localStorage.getItem(AUTH_TOKEN_STORAGE_KEY) ?? ''
+}
+
+function storeAuthToken(token: string) {
+  if (typeof window === 'undefined') {
+    return
+  }
+  if (token) {
+    window.localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, token)
+  } else {
+    window.localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
+  }
+}
 
 function getQuizTextSizeClass(text: string): string {
   const length = text.trim().length
@@ -1302,6 +1321,7 @@ function App() {
     let response: Response | null = null
     let lastFetchError: unknown = null
     const candidates = resolveApiCandidates(url)
+    const authToken = getStoredAuthToken()
 
     for (let index = 0; index < candidates.length; index += 1) {
       const candidate = candidates[index]
@@ -1312,6 +1332,7 @@ function App() {
           headers: {
             'Content-Type': 'application/json',
             ...(CLIENT_APP_VERSION ? { 'x-client-version': CLIENT_APP_VERSION } : {}),
+            ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
             ...(init?.headers ?? {}),
           },
         })
@@ -1352,6 +1373,11 @@ function App() {
     } else {
       const text = await response.text().catch(() => '')
       payload = { error: text.slice(0, 180) }
+    }
+
+    const nextToken = typeof payload.token === 'string' ? payload.token.trim() : ''
+    if (nextToken) {
+      storeAuthToken(nextToken)
     }
 
     if (!response.ok) {
@@ -1462,11 +1488,14 @@ function App() {
       clearSaveProtection()
     } catch (error) {
       const hadActiveSession = authStatus === 'authed'
+      const lockReason = getSaveLockReason(error)
+      if (lockReason === 'session-expired') {
+        storeAuthToken('')
+      }
       setAuthUser(null)
       setAuthStatus('guest')
       setHasLoadedRemoteState(false)
       if (hadActiveSession) {
-        const lockReason = getSaveLockReason(error)
         if (lockReason) {
           activateSaveProtection(lockReason)
         }
@@ -1528,6 +1557,9 @@ function App() {
     } catch (error) {
       if (withTransition) {
         setLoginPending(false)
+      }
+      if (getSaveLockReason(error) === 'session-expired') {
+        storeAuthToken('')
       }
       setAuthUser(null)
       setAuthStatus('guest')
@@ -1730,6 +1762,7 @@ function getPasswordStrengthMeta(password: string) {
       }
     }
     await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
+    storeAuthToken('')
     setHasLoadedRemoteState(false)
     setAuthUser(null)
     setAuthStatus('guest')
@@ -1742,6 +1775,7 @@ function getPasswordStrengthMeta(password: string) {
 
   async function forceLogoutForStaleClient() {
     await apiRequest('/api/auth/logout', { method: 'POST' }).catch(() => undefined)
+    storeAuthToken('')
     setHasLoadedRemoteState(false)
     setAuthUser(null)
     setAuthStatus('guest')

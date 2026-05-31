@@ -245,7 +245,9 @@ function clearAuthCookie(res) {
 }
 
 function authFromRequest(req) {
-  const token = req.cookies?.[AUTH_COOKIE]
+  const authHeader = req.get('authorization') || req.get('Authorization') || ''
+  const bearerMatch = authHeader.match(/^Bearer\s+(.+)$/i)
+  const token = (bearerMatch?.[1] || req.cookies?.[AUTH_COOKIE] || '').trim()
   if (!token) {
     return null
   }
@@ -261,10 +263,11 @@ function refreshAuthCookie(res, auth) {
   const uid = Number(auth?.uid)
   const email = typeof auth?.email === 'string' ? auth.email : ''
   if (!Number.isFinite(uid) || !email) {
-    return
+    return null
   }
   const token = signAuthToken({ uid, email })
   setAuthCookie(res, token)
+  return token
 }
 
 function parseVersion(rawValue) {
@@ -436,8 +439,8 @@ app.get('/api/auth/me', enforceClientVersion, async (req, res) => {
     return
   }
 
-  refreshAuthCookie(res, auth)
-  res.json({ user })
+  const refreshedToken = refreshAuthCookie(res, auth)
+  res.json({ user, ...(refreshedToken ? { token: refreshedToken } : {}) })
 })
 
 app.get('/api/state', enforceClientVersion, async (req, res) => {
@@ -468,8 +471,8 @@ app.get('/api/state', enforceClientVersion, async (req, res) => {
     [uid],
   )
 
-  refreshAuthCookie(res, auth)
-  res.json({ state: result.rows[0] ?? null })
+  const refreshedToken = refreshAuthCookie(res, auth)
+  res.json({ state: result.rows[0] ?? null, ...(refreshedToken ? { token: refreshedToken } : {}) })
 })
 
 app.put('/api/state', enforceClientVersion, async (req, res) => {
@@ -520,8 +523,8 @@ app.put('/api/state', enforceClientVersion, async (req, res) => {
     ],
   )
 
-  refreshAuthCookie(res, auth)
-  res.json({ ok: true, updatedAt: now })
+  const refreshedToken = refreshAuthCookie(res, auth)
+  res.json({ ok: true, updatedAt: now, ...(refreshedToken ? { token: refreshedToken } : {}) })
 })
 
 app.use((error, _req, res, next) => {
@@ -659,6 +662,7 @@ app.post('/api/auth/register/verify', verifyLimiter, async (req, res) => {
 
   res.json({
     ok: true,
+    token,
     user: {
       id: userId,
       email,
@@ -697,6 +701,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 
   res.json({
     ok: true,
+    token,
     user: {
       id: Number(user.id),
       email: user.email,
@@ -815,6 +820,7 @@ app.post('/api/auth/password/confirm', verifyLimiter, async (req, res) => {
 
   res.json({
     ok: true,
+    token,
     user: {
       id: Number(user.id),
       email: user.email,

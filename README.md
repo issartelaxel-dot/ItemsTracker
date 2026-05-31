@@ -17,6 +17,11 @@ VITE_API_BASE_URL=http://localhost:8787
 
 Then rebuild and redeploy the frontend.
 
+Auth session note:
+- Backend still sets an httpOnly cookie.
+- Frontend also stores a rotating auth token from API responses and sends it as `Authorization: Bearer ...`.
+- This reduces login/session issues when some browsers block or drop cross-site cookies.
+
 ### Session reliability (recommended)
 
 For the most reliable auth cookies, serve API on the same site (for example `https://setup-hub.com/api` via reverse proxy).
