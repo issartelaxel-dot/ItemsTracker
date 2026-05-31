@@ -998,8 +998,6 @@ function App() {
   const [itemVisualSectionOpen, setItemVisualSectionOpen] = useState(true)
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const lastPayloadTooLargeWarningRef = useRef(0)
-  const detailQuizImageInputRef = useRef<HTMLInputElement | null>(null)
-  const modalQuizImageInputRef = useRef<HTMLInputElement | null>(null)
   const hasPendingChangesRef = useRef(false)
   const hasInitializedSnapshotRef = useRef(false)
   const latestStatePayloadRef = useRef('')
@@ -3175,6 +3173,31 @@ function getPasswordStrengthMeta(password: string) {
     }
   }
 
+  function openQuizCardImagePicker(itemNumber: number, cardId: string) {
+    setQuizImageError('')
+    const picker = document.createElement('input')
+    picker.type = 'file'
+    picker.accept = 'image/*'
+    picker.style.position = 'fixed'
+    picker.style.width = '1px'
+    picker.style.height = '1px'
+    picker.style.opacity = '0'
+    picker.style.pointerEvents = 'none'
+    picker.style.left = '-9999px'
+    document.body.appendChild(picker)
+    picker.addEventListener(
+      'change',
+      () => {
+        setQuizImageFileName('')
+        setQuizImageError('')
+        void handleQuizCardImageUpload(itemNumber, cardId, picker.files)
+        picker.remove()
+      },
+      { once: true },
+    )
+    picker.click()
+  }
+
   function updateItemVisual(
     itemNumber: number,
     patch: Partial<Pick<ItemTracking, 'itemIcon' | 'itemColor' | 'itemLabel'>>,
@@ -4537,28 +4560,13 @@ function getPasswordStrengthMeta(password: string) {
                           </label>
                           <label className="block-label">
                             Image carte active (max 1 MB)
-                            <input
-                              ref={detailQuizImageInputRef}
-                              className="quiz-file-input-control"
-                              type="file"
-                              accept="image/*"
-                              hidden
-                              onChange={(event) => {
-                                setQuizImageFileName('')
-                                setQuizImageError('')
-                                void handleQuizCardImageUpload(
-                                  effectiveSelectedItem.itemNumber,
-                                  activeCard.id,
-                                  event.target.files,
-                                )
-                                event.target.value = ''
-                              }}
-                            />
                             <div className="quiz-file-input-row">
                               <button
                                 type="button"
                                 className="ghost-btn quiz-file-picker-btn"
-                                onClick={() => detailQuizImageInputRef.current?.click()}
+                                onClick={() =>
+                                  openQuizCardImagePicker(effectiveSelectedItem.itemNumber, activeCard.id)
+                                }
                               >
                                 Choose File
                               </button>
@@ -5285,24 +5293,11 @@ function getPasswordStrengthMeta(password: string) {
                 </label>
                 <label className="block-label">
                   Image (max 1 MB)
-                  <input
-                    ref={modalQuizImageInputRef}
-                    className="quiz-file-input-control"
-                    type="file"
-                    accept="image/*"
-                    hidden
-                    onChange={(event) => {
-                      setQuizImageFileName('')
-                      setQuizImageError('')
-                      void handleQuizCardImageUpload(quizItem.itemNumber, activeQuizCard.id, event.target.files)
-                      event.target.value = ''
-                    }}
-                  />
                   <div className="quiz-file-input-row">
                     <button
                       type="button"
                       className="ghost-btn quiz-file-picker-btn"
-                      onClick={() => modalQuizImageInputRef.current?.click()}
+                      onClick={() => openQuizCardImagePicker(quizItem.itemNumber, activeQuizCard.id)}
                     >
                       Choose File
                     </button>
