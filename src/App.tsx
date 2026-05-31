@@ -1140,7 +1140,7 @@ function App() {
 
     const loadRemoteState = async () => {
       try {
-        const payload = await apiRequest('/api/state')
+        const payload = await apiRequest('/api/state', undefined, { requireServerAppHeader: true })
         if (cancelled) {
           return
         }
@@ -1317,7 +1317,7 @@ function App() {
     }
   }, [authStatus, authUser?.id, hasLoadedRemoteState])
 
-  async function apiRequest(url: string, init?: RequestInit) {
+  async function apiRequest(url: string, init?: RequestInit, options?: { requireServerAppHeader?: boolean }) {
     let response: Response | null = null
     let lastFetchError: unknown = null
     const candidates = resolveApiCandidates(url)
@@ -1339,7 +1339,12 @@ function App() {
         const hasMoreCandidates = index < candidates.length - 1
         const candidateContentType = (candidateResponse.headers.get('content-type') ?? '').toLowerCase()
         const candidateLooksJson = candidateContentType.includes('application/json')
+        const candidateServerVersion = (candidateResponse.headers.get('x-app-version') ?? '').trim()
+        const requireServerAppHeader = Boolean(options?.requireServerAppHeader)
         if (!candidateResponse.ok && hasMoreCandidates && isRetryableApiCandidateStatus(candidateResponse.status)) {
+          continue
+        }
+        if (candidateResponse.ok && hasMoreCandidates && requireServerAppHeader && !candidateServerVersion) {
           continue
         }
         if (candidateResponse.ok && hasMoreCandidates && !candidateLooksJson) {
@@ -1446,10 +1451,14 @@ function App() {
         setSaveStatus('saving')
       }
       try {
-        const payload = await apiRequest('/api/state', {
-          method: 'PUT',
-          body: snapshot,
-        })
+        const payload = await apiRequest(
+          '/api/state',
+          {
+            method: 'PUT',
+            body: snapshot,
+          },
+          { requireServerAppHeader: true },
+        )
         lastSavedStatePayloadRef.current = snapshot
         hasPendingChangesRef.current = latestStatePayloadRef.current !== lastSavedStatePayloadRef.current
         const updatedAtRaw = typeof payload.updatedAt === 'string' ? payload.updatedAt : new Date().toISOString()
@@ -1492,7 +1501,7 @@ function App() {
 
   async function refreshAuth() {
     try {
-      const payload = await apiRequest('/api/auth/me')
+      const payload = await apiRequest('/api/auth/me', undefined, { requireServerAppHeader: true })
       const user = payload.user as AuthUser | undefined
       if (!user || !Number.isFinite(Number(user.id))) {
         throw new Error('Session utilisateur invalide.')
@@ -1531,7 +1540,7 @@ function App() {
     }
 
     try {
-      const payload = await apiRequest('/api/auth/me')
+      const payload = await apiRequest('/api/auth/me', undefined, { requireServerAppHeader: true })
       const user = payload.user as AuthUser | undefined
       if (!user || !Number.isFinite(Number(user.id))) {
         throw new Error('Session utilisateur invalide.')
@@ -1559,7 +1568,7 @@ function App() {
     const withTransition = Boolean(options?.withTransition)
     const fallbackUser = options?.fallbackUser ?? null
     try {
-      const payload = await apiRequest('/api/auth/me')
+      const payload = await apiRequest('/api/auth/me', undefined, { requireServerAppHeader: true })
       const resolvedUser = ((payload.user as AuthUser | undefined) ?? fallbackUser) as AuthUser | null
       if (!resolvedUser) {
         throw new Error('Session utilisateur introuvable après connexion.')
@@ -1814,7 +1823,7 @@ function getPasswordStrengthMeta(password: string) {
 
     const verifySession = async () => {
       try {
-        await apiRequest('/api/auth/me')
+        await apiRequest('/api/auth/me', undefined, { requireServerAppHeader: true })
       } catch (error) {
         const lockReason = getSaveLockReason(error)
         if (lockReason === 'session-expired') {
@@ -1844,7 +1853,7 @@ function getPasswordStrengthMeta(password: string) {
       }
       checking = true
       try {
-        await apiRequest('/api/auth/me')
+        await apiRequest('/api/auth/me', undefined, { requireServerAppHeader: true })
       } catch (error) {
         const lockReason = getSaveLockReason(error)
         if (lockReason === 'client-stale') {
