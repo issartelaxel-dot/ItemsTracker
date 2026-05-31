@@ -176,13 +176,14 @@ const SESSION_HEARTBEAT_MS = 60_000
 const VERSION_CHECK_INTERVAL_MS = 5 * 60_000
 const QUIZ_CARD_IMAGE_MAX_BYTES = 1024 * 1024
 const HABIT_TRACKER_YEAR = 2026
-const REMOTE_STATE_MAX_BYTES = 1_800_000
+const REMOTE_STATE_MAX_BYTES = 5_500_000
 const REMOTE_MAX_PROFILE_PHOTO_URL_LENGTH = 120_000
 const REMOTE_PAYLOAD_FALLBACKS = [
-  { maxActionLogsPerItem: 80, allowProfilePhoto: true },
-  { maxActionLogsPerItem: 40, allowProfilePhoto: false },
-  { maxActionLogsPerItem: 15, allowProfilePhoto: false },
-  { maxActionLogsPerItem: 0, allowProfilePhoto: false },
+  { maxActionLogsPerItem: 80, allowProfilePhoto: true, maxQuizImagesPerItem: 24 },
+  { maxActionLogsPerItem: 50, allowProfilePhoto: false, maxQuizImagesPerItem: 10 },
+  { maxActionLogsPerItem: 20, allowProfilePhoto: false, maxQuizImagesPerItem: 4 },
+  { maxActionLogsPerItem: 0, allowProfilePhoto: false, maxQuizImagesPerItem: 1 },
+  { maxActionLogsPerItem: 0, allowProfilePhoto: false, maxQuizImagesPerItem: 0 },
 ] as const
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #f90021 0%, #ff8f00 58%, #ffe400 100%)',
@@ -876,15 +877,64 @@ function getUtf8ByteLength(value: string) {
   return new TextEncoder().encode(value).byteLength
 }
 
-function trimTrackingStateForRemote(trackingState: TrackerState, maxActionLogsPerItem: number): TrackerState {
+function trimTrackingStateForRemote(
+  trackingState: TrackerState,
+  options: {
+    maxActionLogsPerItem: number
+    maxQuizImagesPerItem: number
+  },
+): TrackerState {
+  const { maxActionLogsPerItem, maxQuizImagesPerItem } = options
   const nextItems: Record<number, ItemTracking> = {}
 
   for (const [itemNumberRaw, trackingRaw] of Object.entries(trackingState.items)) {
     const itemNumber = Number(itemNumberRaw)
     const tracking = normalizeItemTracking(trackingRaw)
+    const cardsWithImage = tracking.quiz.cards.filter((card) => card.imageDataUrl.trim().length > 0)
+    const preservedImageCardIds = new Set<string>()
+
+    if (maxQuizImagesPerItem > 0) {
+      const activeCard =
+        tracking.quiz.activeCardId && cardsWithImage.find((card) => card.id === tracking.quiz.activeCardId)
+          ? cardsWithImage.find((card) => card.id === tracking.quiz.activeCardId) ?? null
+          : null
+      if (activeCard) {
+        preservedImageCardIds.add(activeCard.id)
+      }
+
+      const remainingSlots = Math.max(0, maxQuizImagesPerItem - preservedImageCardIds.size)
+      const remainingCards = cardsWithImage
+        .filter((card) => !preservedImageCardIds.has(card.id))
+        .sort((left, right) => {
+          const leftTs = left.lastReviewedAt ? Date.parse(left.lastReviewedAt) : 0
+          const rightTs = right.lastReviewedAt ? Date.parse(right.lastReviewedAt) : 0
+          return rightTs - leftTs
+        })
+      for (const card of remainingCards.slice(0, remainingSlots)) {
+        preservedImageCardIds.add(card.id)
+      }
+    }
+
+    const trimmedCards = tracking.quiz.cards.map((card) => {
+      if (!card.imageDataUrl.trim()) {
+        return card
+      }
+      if (preservedImageCardIds.has(card.id)) {
+        return card
+      }
+      return {
+        ...card,
+        imageDataUrl: '',
+      }
+    })
+
     nextItems[itemNumber] = {
       ...tracking,
       actionLogs: maxActionLogsPerItem > 0 ? tracking.actionLogs.slice(-maxActionLogsPerItem) : [],
+      quiz: {
+        ...tracking.quiz,
+        cards: trimmedCards,
+      },
     }
   }
 
@@ -908,7 +958,10 @@ function sanitizeProfileForRemote(profile: ProfileState, allowPhoto: boolean): P
 function buildRemotePersistPayload(payload: PersistStatePayload): { body: string; bytes: number } | null {
   for (const strategy of REMOTE_PAYLOAD_FALLBACKS) {
     const candidatePayload: PersistStatePayload = {
-      trackingState: trimTrackingStateForRemote(payload.trackingState, strategy.maxActionLogsPerItem),
+      trackingState: trimTrackingStateForRemote(payload.trackingState, {
+        maxActionLogsPerItem: strategy.maxActionLogsPerItem,
+        maxQuizImagesPerItem: strategy.maxQuizImagesPerItem,
+      }),
       theme: payload.theme,
       focusMode: payload.focusMode,
       youtubeDisplayMode: payload.youtubeDisplayMode,
@@ -1578,7 +1631,9 @@ function App() {
     if (!remotePayload) {
       const now = Date.now()
       if (now - lastPayloadTooLargeWarningRef.current > 15_000) {
-        setSaveErrorMessage('Payload trop volumineux pour la sauvegarde automatique. Réduis la taille des données/images.')
+        setSaveErrorMessage(
+          'Payload cloud encore trop volumineux après réduction automatique. Supprime quelques images/cartes puis réessaie.',
+        )
         setSaveStatus('error')
         window.setTimeout(() => setSaveStatus('idle'), 2800)
         lastPayloadTooLargeWarningRef.current = now
