@@ -845,6 +845,10 @@ function toSaveWarningMessage(error: unknown) {
   return `Sauvegarde en attente: ${message}`
 }
 
+function isInlineQuizFileError(errorMessage: string) {
+  return /image trop lourde/i.test(errorMessage)
+}
+
 class ApiRequestError extends Error {
   status: number
   code: string
@@ -1023,6 +1027,7 @@ function App() {
   }
   const [sidebarNavBubble, setSidebarNavBubble] = useState({ top: 0, height: 0, ready: false })
   const passwordStrength = getPasswordStrengthMeta(passwordInput)
+  const showInlineQuizFileError = Boolean(quizImageError) && isInlineQuizFileError(quizImageError)
   const remotePayload = useMemo(
     () =>
       buildRemotePersistPayload({
@@ -4544,7 +4549,11 @@ function getPasswordStrengthMeta(password: string) {
                                 )
                               }}
                             />
-                            {quizImageFileName ? <span className="quiz-file-name">{quizImageFileName}</span> : null}
+                            {showInlineQuizFileError ? (
+                              <span className="quiz-file-name quiz-file-name-error">{quizImageError}</span>
+                            ) : quizImageFileName ? (
+                              <span className="quiz-file-name">{quizImageFileName}</span>
+                            ) : null}
                           </label>
                           <div className="quiz-card-media-actions">
                             <button
@@ -4561,7 +4570,7 @@ function getPasswordStrengthMeta(password: string) {
                               Retirer image
                             </button>
                           </div>
-                          {quizImageError ? <p className="quiz-image-error">{quizImageError}</p> : null}
+                          {quizImageError && !showInlineQuizFileError ? <p className="quiz-image-error">{quizImageError}</p> : null}
                         </div>
                       ))}
                     <label className="block-label">
@@ -5272,7 +5281,11 @@ function getPasswordStrengthMeta(password: string) {
                       void handleQuizCardImageUpload(quizItem.itemNumber, activeQuizCard.id, event.target.files)
                     }}
                   />
-                  {quizImageFileName ? <span className="quiz-file-name">{quizImageFileName}</span> : null}
+                  {showInlineQuizFileError ? (
+                    <span className="quiz-file-name quiz-file-name-error">{quizImageError}</span>
+                  ) : quizImageFileName ? (
+                    <span className="quiz-file-name">{quizImageFileName}</span>
+                  ) : null}
                 </label>
                 <div className="quiz-card-media-actions">
                   <button
@@ -5287,7 +5300,7 @@ function getPasswordStrengthMeta(password: string) {
                     Retirer image
                   </button>
                 </div>
-                {quizImageError ? <p className="quiz-image-error">{quizImageError}</p> : null}
+                {quizImageError && !showInlineQuizFileError ? <p className="quiz-image-error">{quizImageError}</p> : null}
               </div>
             ) : null}
 

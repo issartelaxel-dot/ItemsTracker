@@ -2537,6 +2537,11 @@ tbody tr.selected {
   overflow-wrap: anywhere;
 }
 
+.quiz-file-name-error {
+  color: #cb3e3e;
+  font-weight: 600;
+}
+
 .quiz-rate-btn {
   font-weight: 700;
   transition:
