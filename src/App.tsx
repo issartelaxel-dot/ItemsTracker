@@ -4542,7 +4542,10 @@ function getPasswordStrengthMeta(password: string) {
                               className="quiz-file-input-control"
                               type="file"
                               accept="image/*"
+                              hidden
                               onChange={(event) => {
+                                setQuizImageFileName('')
+                                setQuizImageError('')
                                 void handleQuizCardImageUpload(
                                   effectiveSelectedItem.itemNumber,
                                   activeCard.id,
@@ -5287,7 +5290,10 @@ function getPasswordStrengthMeta(password: string) {
                     className="quiz-file-input-control"
                     type="file"
                     accept="image/*"
+                    hidden
                     onChange={(event) => {
+                      setQuizImageFileName('')
+                      setQuizImageError('')
                       void handleQuizCardImageUpload(quizItem.itemNumber, activeQuizCard.id, event.target.files)
                       event.target.value = ''
                     }}

@@ -1,4 +1,4 @@
-import { cpSync, existsSync, rmSync } from 'node:fs'
+import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const root = process.cwd()
@@ -18,6 +18,13 @@ if (!existsSync(distDir)) {
 
 cpSync(resolve(distDir, 'index.html'), rootIndex)
 
+const cacheVersion = Date.now().toString()
+const rootIndexContent = readFileSync(rootIndex, 'utf8')
+const cacheBustedRootIndex = rootIndexContent
+  .replace(/assets\/main\.js(\?v=\d+)?/g, `assets/main.js?v=${cacheVersion}`)
+  .replace(/assets\/main\.css(\?v=\d+)?/g, `assets/main.css?v=${cacheVersion}`)
+writeFileSync(rootIndex, cacheBustedRootIndex, 'utf8')
+
 rmSync(resolve(root, 'assets'), { recursive: true, force: true })
 cpSync(resolve(distDir, 'assets'), resolve(root, 'assets'), { recursive: true })
 
@@ -29,5 +36,5 @@ for (const file of ['favicon.svg', 'icons.svg']) {
   }
 }
 
-console.log('Root export prepared: index.html + /assets now point to production bundle.')
+console.log(`Root export prepared: index.html + /assets now point to production bundle (v=${cacheVersion}).`)
 console.log('You can zip the whole project folder and upload it as-is.')

@@ -2534,7 +2534,11 @@ tbody tr.selected {
 .quiz-file-name {
   font-size: 0.72rem;
   color: var(--muted);
-  overflow-wrap: anywhere;
+  display: inline-block;
+  max-width: min(100%, 420px);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .quiz-file-name-error {
@@ -2554,7 +2558,7 @@ tbody tr.selected {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   margin-top: 0.2rem;
 }
 
