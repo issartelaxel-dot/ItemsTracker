@@ -350,20 +350,24 @@ function resolveApiCandidates(path: string) {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   const candidates = new Set<string>()
 
-  if (API_BASE_URL) {
-    candidates.add(`${API_BASE_URL}${normalizedPath}`)
-  } else {
-    candidates.add(normalizedPath)
-  }
-
   if (typeof window !== 'undefined') {
     candidates.add(`${window.location.origin}${normalizedPath}`)
     if (APP_BASE_URL && APP_BASE_URL !== '/') {
       candidates.add(`${window.location.origin}${APP_BASE_URL}${normalizedPath}`)
     }
+  } else {
+    candidates.add(normalizedPath)
+  }
+
+  if (API_BASE_URL) {
+    candidates.add(`${API_BASE_URL}${normalizedPath}`)
   }
 
   return Array.from(candidates)
+}
+
+function isRetryableApiCandidateStatus(status: number) {
+  return status === 404 || status === 405 || status === 500 || status === 502 || status === 503 || status === 504
 }
 
 function getDefaultCollegeTracking(): CollegeTracking {
@@ -1299,9 +1303,10 @@ function App() {
     let lastFetchError: unknown = null
     const candidates = resolveApiCandidates(url)
 
-    for (const candidate of candidates) {
+    for (let index = 0; index < candidates.length; index += 1) {
+      const candidate = candidates[index]
       try {
-        response = await fetch(candidate, {
+        const candidateResponse = await fetch(candidate, {
           ...init,
           credentials: 'include',
           headers: {
@@ -1310,6 +1315,11 @@ function App() {
             ...(init?.headers ?? {}),
           },
         })
+        const hasMoreCandidates = index < candidates.length - 1
+        if (!candidateResponse.ok && hasMoreCandidates && isRetryableApiCandidateStatus(candidateResponse.status)) {
+          continue
+        }
+        response = candidateResponse
         break
       } catch (error) {
         lastFetchError = error

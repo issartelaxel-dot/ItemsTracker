@@ -17,6 +17,15 @@ VITE_API_BASE_URL=http://localhost:8787
 
 Then rebuild and redeploy the frontend.
 
+### Session reliability (recommended)
+
+For the most reliable auth cookies, serve API on the same site (for example `https://setup-hub.com/api` via reverse proxy).
+
+- Preferred: frontend uses same-origin `/api`
+- Fallback: set `VITE_API_BASE_URL=https://your-backend-domain.com`
+
+The app now tries same-origin first, then falls back to `VITE_API_BASE_URL` if the proxy route is unavailable.
+
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
 ## Render (frontend)
