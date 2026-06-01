@@ -179,13 +179,12 @@ const HABIT_TRACKER_YEAR = 2026
 const REMOTE_STATE_MAX_BYTES = 24_000_000
 const REMOTE_MAX_PROFILE_PHOTO_URL_LENGTH = 1_000_000
 const REMOTE_PAYLOAD_FALLBACKS = [
-  { maxActionLogsPerItem: 220, allowProfilePhoto: true, maxQuizImagesPerItem: 120 },
-  { maxActionLogsPerItem: 140, allowProfilePhoto: true, maxQuizImagesPerItem: 80 },
-  { maxActionLogsPerItem: 80, allowProfilePhoto: true, maxQuizImagesPerItem: 50 },
-  { maxActionLogsPerItem: 40, allowProfilePhoto: true, maxQuizImagesPerItem: 24 },
-  { maxActionLogsPerItem: 20, allowProfilePhoto: false, maxQuizImagesPerItem: 10 },
-  { maxActionLogsPerItem: 0, allowProfilePhoto: false, maxQuizImagesPerItem: 4 },
-  { maxActionLogsPerItem: 0, allowProfilePhoto: false, maxQuizImagesPerItem: 0 },
+  { maxActionLogsPerItem: 220, allowProfilePhoto: true },
+  { maxActionLogsPerItem: 140, allowProfilePhoto: true },
+  { maxActionLogsPerItem: 80, allowProfilePhoto: true },
+  { maxActionLogsPerItem: 40, allowProfilePhoto: true },
+  { maxActionLogsPerItem: 20, allowProfilePhoto: false },
+  { maxActionLogsPerItem: 0, allowProfilePhoto: false },
 ] as const
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #f90021 0%, #ff8f00 58%, #ffe400 100%)',
@@ -883,45 +882,16 @@ function trimTrackingStateForRemote(
   trackingState: TrackerState,
   options: {
     maxActionLogsPerItem: number
-    maxQuizImagesPerItem: number
   },
 ): TrackerState {
-  const { maxActionLogsPerItem, maxQuizImagesPerItem } = options
+  const { maxActionLogsPerItem } = options
   const nextItems: Record<number, ItemTracking> = {}
 
   for (const [itemNumberRaw, trackingRaw] of Object.entries(trackingState.items)) {
     const itemNumber = Number(itemNumberRaw)
     const tracking = normalizeItemTracking(trackingRaw)
-    const cardsWithImage = tracking.quiz.cards.filter((card) => card.imageDataUrl.trim().length > 0)
-    const preservedImageCardIds = new Set<string>()
-
-    if (maxQuizImagesPerItem > 0) {
-      const activeCard =
-        tracking.quiz.activeCardId && cardsWithImage.find((card) => card.id === tracking.quiz.activeCardId)
-          ? cardsWithImage.find((card) => card.id === tracking.quiz.activeCardId) ?? null
-          : null
-      if (activeCard) {
-        preservedImageCardIds.add(activeCard.id)
-      }
-
-      const remainingSlots = Math.max(0, maxQuizImagesPerItem - preservedImageCardIds.size)
-      const remainingCards = cardsWithImage
-        .filter((card) => !preservedImageCardIds.has(card.id))
-        .sort((left, right) => {
-          const leftTs = left.lastReviewedAt ? Date.parse(left.lastReviewedAt) : 0
-          const rightTs = right.lastReviewedAt ? Date.parse(right.lastReviewedAt) : 0
-          return rightTs - leftTs
-        })
-      for (const card of remainingCards.slice(0, remainingSlots)) {
-        preservedImageCardIds.add(card.id)
-      }
-    }
-
     const trimmedCards = tracking.quiz.cards.map((card) => {
-      if (!card.imageDataUrl.trim()) {
-        return card
-      }
-      if (preservedImageCardIds.has(card.id)) {
+      if (!card.imageDataUrl) {
         return card
       }
       return {
@@ -962,7 +932,6 @@ function buildRemotePersistPayload(payload: PersistStatePayload): { body: string
     const candidatePayload: PersistStatePayload = {
       trackingState: trimTrackingStateForRemote(payload.trackingState, {
         maxActionLogsPerItem: strategy.maxActionLogsPerItem,
-        maxQuizImagesPerItem: strategy.maxQuizImagesPerItem,
       }),
       theme: payload.theme,
       focusMode: payload.focusMode,
@@ -999,6 +968,112 @@ function parsePersistStatePayloadBody(body: string, authUser: AuthUser | null): 
   } catch {
     return null
   }
+}
+
+function areValuesDeepEqual(left: unknown, right: unknown): boolean {
+  if (left === right) {
+    return true
+  }
+  if (typeof left !== typeof right) {
+    return false
+  }
+  if (left === null || right === null) {
+    return left === right
+  }
+  if (Array.isArray(left) || Array.isArray(right)) {
+    if (!Array.isArray(left) || !Array.isArray(right) || left.length !== right.length) {
+      return false
+    }
+    for (let index = 0; index < left.length; index += 1) {
+      if (!areValuesDeepEqual(left[index], right[index])) {
+        return false
+      }
+    }
+    return true
+  }
+  if (typeof left !== 'object' || typeof right !== 'object') {
+    return false
+  }
+
+  const leftRecord = left as Record<string, unknown>
+  const rightRecord = right as Record<string, unknown>
+  const leftKeys = Object.keys(leftRecord)
+  const rightKeys = Object.keys(rightRecord)
+  if (leftKeys.length !== rightKeys.length) {
+    return false
+  }
+  for (const key of leftKeys) {
+    if (!Object.prototype.hasOwnProperty.call(rightRecord, key)) {
+      return false
+    }
+    if (!areValuesDeepEqual(leftRecord[key], rightRecord[key])) {
+      return false
+    }
+  }
+  return true
+}
+
+function buildMergePatch(previousValue: unknown, nextValue: unknown): unknown {
+  if (areValuesDeepEqual(previousValue, nextValue)) {
+    return undefined
+  }
+  if (
+    !previousValue ||
+    !nextValue ||
+    typeof previousValue !== 'object' ||
+    typeof nextValue !== 'object' ||
+    Array.isArray(previousValue) ||
+    Array.isArray(nextValue)
+  ) {
+    return nextValue
+  }
+
+  const previousRecord = previousValue as Record<string, unknown>
+  const nextRecord = nextValue as Record<string, unknown>
+  const keys = new Set([...Object.keys(previousRecord), ...Object.keys(nextRecord)])
+  const patch: Record<string, unknown> = {}
+
+  for (const key of keys) {
+    const hasPrev = Object.prototype.hasOwnProperty.call(previousRecord, key)
+    const hasNext = Object.prototype.hasOwnProperty.call(nextRecord, key)
+    if (!hasNext) {
+      patch[key] = null
+      continue
+    }
+    if (!hasPrev) {
+      patch[key] = nextRecord[key]
+      continue
+    }
+    const childPatch = buildMergePatch(previousRecord[key], nextRecord[key])
+    if (childPatch !== undefined) {
+      patch[key] = childPatch
+    }
+  }
+
+  return Object.keys(patch).length > 0 ? patch : undefined
+}
+
+function generateRequestId(prefix: string) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+function collectQuizImageMap(trackingState: TrackerState): Record<string, string> {
+  const images: Record<string, string> = {}
+  for (const [itemNumberRaw, trackingRaw] of Object.entries(trackingState.items)) {
+    const itemNumber = Number(itemNumberRaw)
+    if (!Number.isFinite(itemNumber)) {
+      continue
+    }
+    const tracking = normalizeItemTracking(trackingRaw)
+    for (const card of tracking.quiz.cards) {
+      const imageDataUrl = card.imageDataUrl.trim()
+      if (!imageDataUrl) {
+        continue
+      }
+      images[`${itemNumber}:${card.id}`] = imageDataUrl
+    }
+  }
+  return images
 }
 
 function toSaveWarningMessage(error: unknown) {
@@ -1177,12 +1252,16 @@ function App() {
   const [usefulLinkSectionOpen, setUsefulLinkSectionOpen] = useState(true)
   const [itemVisualSectionOpen, setItemVisualSectionOpen] = useState(true)
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
+  const imageSyncInFlightRef = useRef<Promise<boolean> | null>(null)
   const lastPayloadTooLargeWarningRef = useRef(0)
   const shouldForceFirstSyncRef = useRef(false)
   const hasPendingChangesRef = useRef(false)
+  const hasPendingImageChangesRef = useRef(false)
   const hasInitializedSnapshotRef = useRef(false)
   const latestStatePayloadRef = useRef('')
   const lastSavedStatePayloadRef = useRef('')
+  const lastSavedStateVersionRef = useRef(0)
+  const lastSyncedQuizImagesRef = useRef<Record<string, string>>({})
   const authCardRef = useRef<HTMLDivElement | null>(null)
   const sidebarNavRef = useRef<HTMLElement | null>(null)
   const sidebarNavButtonRefs = useRef<Partial<Record<SidebarNavBubbleKey, HTMLButtonElement | null>>>({})
@@ -1291,6 +1370,9 @@ function App() {
       shouldForceFirstSyncRef.current = false
       latestStatePayloadRef.current = ''
       lastSavedStatePayloadRef.current = ''
+      lastSavedStateVersionRef.current = 0
+      lastSyncedQuizImagesRef.current = {}
+      hasPendingImageChangesRef.current = false
       return
     }
 
@@ -1371,6 +1453,15 @@ function App() {
         setLastSavedAt(nextLastSavedAt)
         setSaveErrorMessage(restoredFromShadow ? 'Restauration locale appliquée. Synchronisation cloud en cours...' : '')
         setSaveStatus('idle')
+        const remoteVersion = Number((payload as Record<string, unknown>).version)
+        lastSavedStateVersionRef.current = Number.isFinite(remoteVersion) ? remoteVersion : 0
+        if (restoredFromShadow) {
+          lastSyncedQuizImagesRef.current = {}
+          hasPendingImageChangesRef.current = true
+        } else {
+          lastSyncedQuizImagesRef.current = collectQuizImageMap(nextTrackingState)
+          hasPendingImageChangesRef.current = false
+        }
         setHasLoadedRemoteState(true)
       } catch (error) {
         const lockReason = getSaveLockReason(error)
@@ -1434,12 +1525,25 @@ function App() {
   }, [authStatus, authUser?.id, hasLoadedRemoteState, remotePayload])
 
   useEffect(() => {
-    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState || !hasPendingChangesRef.current) {
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
+      return
+    }
+    const currentImages = collectQuizImageMap(trackingState)
+    hasPendingImageChangesRef.current = !areValuesDeepEqual(lastSyncedQuizImagesRef.current, currentImages)
+  }, [authStatus, authUser?.id, hasLoadedRemoteState, trackingState])
+
+  useEffect(() => {
+    if (
+      authStatus !== 'authed' ||
+      !authUser ||
+      !hasLoadedRemoteState ||
+      (!hasPendingChangesRef.current && !hasPendingImageChangesRef.current)
+    ) {
       return
     }
 
     const timer = window.setTimeout(() => {
-      if (hasPendingChangesRef.current) {
+      if (hasPendingChangesRef.current || hasPendingImageChangesRef.current) {
         void persistUserState({ silent: true })
       }
     }, AUTO_SAVE_DEBOUNCE_MS)
@@ -1461,7 +1565,7 @@ function App() {
     }
 
     const interval = window.setInterval(() => {
-      if (hasPendingChangesRef.current) {
+      if (hasPendingChangesRef.current || hasPendingImageChangesRef.current) {
         void persistUserState({ silent: true })
       }
     }, AUTO_SAVE_INTERVAL_MS)
@@ -1601,6 +1705,84 @@ function App() {
     return payload
   }
 
+  async function persistQuizImages(options?: { silent?: boolean }) {
+    const silent = Boolean(options?.silent)
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
+      return false
+    }
+    if (!hasPendingImageChangesRef.current) {
+      return true
+    }
+    if (imageSyncInFlightRef.current) {
+      return imageSyncInFlightRef.current
+    }
+
+    const syncPromise = (async () => {
+      const previousMap = lastSyncedQuizImagesRef.current
+      const currentMap = collectQuizImageMap(trackingState)
+      const upsert: Array<{ itemNumber: number; cardId: string; imageDataUrl: string }> = []
+      const removed: Array<{ itemNumber: number; cardId: string }> = []
+
+      for (const [key, value] of Object.entries(currentMap)) {
+        if (previousMap[key] === value) {
+          continue
+        }
+        const [itemRaw, cardId] = key.split(':')
+        const itemNumber = Number(itemRaw)
+        if (!Number.isFinite(itemNumber) || !cardId) {
+          continue
+        }
+        upsert.push({ itemNumber, cardId, imageDataUrl: value })
+      }
+
+      for (const key of Object.keys(previousMap)) {
+        if (currentMap[key]) {
+          continue
+        }
+        const [itemRaw, cardId] = key.split(':')
+        const itemNumber = Number(itemRaw)
+        if (!Number.isFinite(itemNumber) || !cardId) {
+          continue
+        }
+        removed.push({ itemNumber, cardId })
+      }
+
+      if (upsert.length === 0 && removed.length === 0) {
+        hasPendingImageChangesRef.current = false
+        return true
+      }
+
+      try {
+        await apiRequest('/api/state/images', {
+          method: 'POST',
+          body: JSON.stringify({
+            upsert,
+            removed,
+            requestId: generateRequestId('imgsync'),
+          }),
+        })
+        lastSyncedQuizImagesRef.current = currentMap
+        hasPendingImageChangesRef.current = false
+        return true
+      } catch (error) {
+        const lockReason = getSaveLockReason(error)
+        if (lockReason) {
+          activateSaveProtection(lockReason)
+        } else if (!silent) {
+          setSaveErrorMessage(toSaveWarningMessage(error))
+          setSaveStatus('error')
+          window.setTimeout(() => setSaveStatus('idle'), 2200)
+        }
+        return false
+      } finally {
+        imageSyncInFlightRef.current = null
+      }
+    })()
+
+    imageSyncInFlightRef.current = syncPromise
+    return syncPromise
+  }
+
   async function persistUserState(options?: { silent?: boolean; force?: boolean }) {
     const silent = Boolean(options?.silent)
     const force = Boolean(options?.force)
@@ -1613,7 +1795,10 @@ function App() {
       return false
     }
 
-    if (!force && !hasPendingChangesRef.current) {
+    const shouldSaveState = force || hasPendingChangesRef.current
+    const shouldSaveImages = hasPendingImageChangesRef.current
+
+    if (!shouldSaveState && !shouldSaveImages) {
       return true
     }
 
@@ -1629,7 +1814,7 @@ function App() {
       return saveInFlightRef.current
     }
 
-    if (!remotePayload) {
+    if (shouldSaveState && !remotePayload) {
       const now = Date.now()
       if (now - lastPayloadTooLargeWarningRef.current > 15_000) {
         setSaveErrorMessage(
@@ -1642,8 +1827,9 @@ function App() {
       return false
     }
 
-    const snapshot = remotePayload.body
-    latestStatePayloadRef.current = snapshot
+    if (remotePayload?.body) {
+      latestStatePayloadRef.current = remotePayload.body
+    }
 
     const savePromise = (async () => {
       if (!silent) {
@@ -1651,17 +1837,59 @@ function App() {
         setSaveStatus('saving')
       }
       try {
-        const payload = await apiRequest(
-          '/api/state',
-          {
-            method: 'PUT',
-            body: snapshot,
-          },
-          { requireServerAppHeader: true },
-        )
-        lastSavedStatePayloadRef.current = snapshot
-        hasPendingChangesRef.current = latestStatePayloadRef.current !== lastSavedStatePayloadRef.current
-        const updatedAtRaw = typeof payload.updatedAt === 'string' ? payload.updatedAt : new Date().toISOString()
+        let updatedAtRaw = new Date().toISOString()
+        if (shouldSaveState && remotePayload?.body) {
+          const previousPayload = parsePersistStatePayloadBody(lastSavedStatePayloadRef.current, authUser)
+          const nextPayload = parsePersistStatePayloadBody(remotePayload.body, authUser)
+          if (!nextPayload) {
+            throw new Error('Etat cloud invalide: payload local non parsable.')
+          }
+
+          const mergePatch = previousPayload ? buildMergePatch(previousPayload, nextPayload) : undefined
+          const requestId = generateRequestId(mergePatch ? 'patch' : 'full')
+          const payload =
+            mergePatch && typeof mergePatch === 'object'
+              ? await apiRequest(
+                  '/api/state',
+                  {
+                    method: 'PATCH',
+                    body: JSON.stringify({
+                      patch: mergePatch,
+                      baseVersion: lastSavedStateVersionRef.current,
+                      requestId,
+                    }),
+                  },
+                  { requireServerAppHeader: true },
+                )
+              : await apiRequest(
+                  '/api/state',
+                  {
+                    method: 'PUT',
+                    body: JSON.stringify({
+                      ...nextPayload,
+                      baseVersion: lastSavedStateVersionRef.current,
+                      requestId,
+                    }),
+                  },
+                  { requireServerAppHeader: true },
+                )
+
+          lastSavedStatePayloadRef.current = remotePayload.body
+          hasPendingChangesRef.current = latestStatePayloadRef.current !== lastSavedStatePayloadRef.current
+          const nextVersion = Number(payload.version)
+          if (Number.isFinite(nextVersion)) {
+            lastSavedStateVersionRef.current = nextVersion
+          }
+          updatedAtRaw = typeof payload.updatedAt === 'string' ? payload.updatedAt : updatedAtRaw
+        }
+
+        if (shouldSaveImages) {
+          const imagesSaved = await persistQuizImages({ silent: true })
+          if (!imagesSaved) {
+            return false
+          }
+        }
+
         const savedAt = new Date(updatedAtRaw)
         if (!Number.isNaN(savedAt.getTime())) {
           setLastSavedAt(
@@ -1713,6 +1941,9 @@ function App() {
     shouldForceFirstSyncRef.current = false
     latestStatePayloadRef.current = ''
     lastSavedStatePayloadRef.current = ''
+    lastSavedStateVersionRef.current = 0
+    lastSyncedQuizImagesRef.current = {}
+    hasPendingImageChangesRef.current = false
     setTrackingState(getInitialTrackingState())
     setTheme('light')
     setFocusMode(false)

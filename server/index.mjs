@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import process from 'node:process'
 import 'dotenv/config'
 import argon2 from 'argon2'
+import compression from 'compression'
 import cookieParser from 'cookie-parser'
 import cors from 'cors'
 import express from 'express'
@@ -34,6 +35,11 @@ const AUTH_COOKIE = 'med_auth'
 const APPROVAL_CODE_TTL_MS = 15 * 60 * 1000
 const AUTH_SESSION_TTL_MS = 45 * 60 * 1000
 const JSON_BODY_LIMIT = (process.env.JSON_BODY_LIMIT || '80mb').trim() || '80mb'
+const STATE_SNAPSHOT_INTERVAL_MS = 24 * 60 * 60 * 1000
+const STATE_WRITE_LIMIT_PER_MIN = Number(process.env.STATE_WRITE_LIMIT_PER_MIN || 120)
+const STATE_MAX_IMAGE_UPSERT_PER_REQUEST = Number(process.env.STATE_MAX_IMAGE_UPSERT_PER_REQUEST || 80)
+const STATE_MAX_TOTAL_IMAGES_PER_USER = Number(process.env.STATE_MAX_TOTAL_IMAGES_PER_USER || 5000)
+const STATE_MAX_IMAGE_DATA_LENGTH = Number(process.env.STATE_MAX_IMAGE_DATA_LENGTH || 1_800_000)
 
 if (!JWT_SECRET || JWT_SECRET.length < 32) {
   console.error('JWT_SECRET must be set and at least 32 chars long.')
@@ -86,11 +92,51 @@ async function initDb() {
       focus_mode BOOLEAN NOT NULL DEFAULT FALSE,
       youtube_mode TEXT NOT NULL DEFAULT 'embed',
       profile JSONB,
-      updated_at TEXT NOT NULL
+      updated_at TEXT NOT NULL,
+      version BIGINT NOT NULL DEFAULT 0,
+      last_snapshot_at TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS user_state_idempotency (
+      user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      endpoint TEXT NOT NULL,
+      request_id TEXT NOT NULL,
+      response JSONB NOT NULL,
+      created_at TEXT NOT NULL,
+      PRIMARY KEY(user_id, endpoint, request_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS user_state_snapshots (
+      id BIGSERIAL PRIMARY KEY,
+      user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      version BIGINT NOT NULL,
+      state JSONB NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS user_quiz_images (
+      user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      item_number INTEGER NOT NULL,
+      card_id TEXT NOT NULL,
+      image_data TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      PRIMARY KEY(user_id, item_number, card_id)
     );
 
     ALTER TABLE user_state
       ADD COLUMN IF NOT EXISTS youtube_mode TEXT NOT NULL DEFAULT 'embed';
+
+    ALTER TABLE user_state
+      ADD COLUMN IF NOT EXISTS version BIGINT NOT NULL DEFAULT 0;
+
+    ALTER TABLE user_state
+      ADD COLUMN IF NOT EXISTS last_snapshot_at TEXT;
+
+    CREATE INDEX IF NOT EXISTS idx_user_state_snapshots_user_created
+      ON user_state_snapshots(user_id, created_at DESC);
+
+    CREATE INDEX IF NOT EXISTS idx_user_state_idempotency_created
+      ON user_state_idempotency(created_at);
   `)
 }
 
@@ -111,11 +157,12 @@ app.use(
       callback(new Error('Origin not allowed by CORS'))
     },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'OPTIONS'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'X-Client-Version'],
     exposedHeaders: ['x-app-version', 'x-min-client-version'],
   }),
 )
+app.use(compression({ threshold: 1024 }))
 app.use(express.json({ limit: JSON_BODY_LIMIT }))
 app.use(cookieParser())
 
@@ -129,6 +176,13 @@ const authLimiter = rateLimit({
 const verifyLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 30,
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+const stateWriteLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: Math.max(20, STATE_WRITE_LIMIT_PER_MIN),
   standardHeaders: true,
   legacyHeaders: false,
 })
@@ -347,6 +401,287 @@ function enforceClientVersion(req, res, next) {
   next()
 }
 
+const runtimeStateMetrics = {
+  fullSaveCount: 0,
+  patchSaveCount: 0,
+  imageSyncCount: 0,
+  fullSaveBytes: 0,
+  patchBytes: 0,
+  imageBytes: 0,
+}
+
+function recordStateMetric(kind, bytes) {
+  const safeBytes = Number.isFinite(bytes) ? Math.max(0, Math.floor(bytes)) : 0
+  if (kind === 'full') {
+    runtimeStateMetrics.fullSaveCount += 1
+    runtimeStateMetrics.fullSaveBytes += safeBytes
+    return
+  }
+  if (kind === 'patch') {
+    runtimeStateMetrics.patchSaveCount += 1
+    runtimeStateMetrics.patchBytes += safeBytes
+    return
+  }
+  if (kind === 'images') {
+    runtimeStateMetrics.imageSyncCount += 1
+    runtimeStateMetrics.imageBytes += safeBytes
+  }
+}
+
+function getDefaultPersistState() {
+  return {
+    trackingState: { items: {} },
+    theme: 'light',
+    focusMode: false,
+    youtubeDisplayMode: 'embed',
+    profile: null,
+  }
+}
+
+function extractQuizImagesFromTrackingState(trackingState) {
+  const clonedTrackingState = JSON.parse(JSON.stringify(trackingState ?? { items: {} }))
+  const images = []
+  const items = clonedTrackingState && typeof clonedTrackingState === 'object' ? clonedTrackingState.items : null
+  if (!items || typeof items !== 'object') {
+    return { trackingState: { items: {} }, images }
+  }
+
+  for (const [itemNumberRaw, itemTracking] of Object.entries(items)) {
+    const itemNumber = Number(itemNumberRaw)
+    if (!Number.isFinite(itemNumber) || !itemTracking || typeof itemTracking !== 'object') {
+      continue
+    }
+    const cards = itemTracking?.quiz?.cards
+    if (!Array.isArray(cards)) {
+      continue
+    }
+    for (const card of cards) {
+      if (!card || typeof card !== 'object') {
+        continue
+      }
+      const cardId = typeof card.id === 'string' ? card.id.trim() : ''
+      const imageDataUrl = typeof card.imageDataUrl === 'string' ? card.imageDataUrl.trim() : ''
+      if (!cardId) {
+        continue
+      }
+      if (imageDataUrl) {
+        images.push({ itemNumber, cardId, imageDataUrl })
+      }
+      card.imageDataUrl = ''
+    }
+  }
+
+  return { trackingState: clonedTrackingState, images }
+}
+
+function applyQuizImagesToTrackingState(trackingState, imageRows) {
+  const clonedTrackingState = JSON.parse(JSON.stringify(trackingState ?? { items: {} }))
+  if (!Array.isArray(imageRows) || imageRows.length === 0) {
+    return clonedTrackingState
+  }
+  const items = clonedTrackingState && typeof clonedTrackingState === 'object' ? clonedTrackingState.items : null
+  if (!items || typeof items !== 'object') {
+    return clonedTrackingState
+  }
+
+  for (const row of imageRows) {
+    const itemNumber = Number(row.item_number)
+    const cardId = typeof row.card_id === 'string' ? row.card_id : ''
+    const imageDataUrl = typeof row.image_data === 'string' ? row.image_data : ''
+    if (!Number.isFinite(itemNumber) || !cardId || !imageDataUrl) {
+      continue
+    }
+    const itemTracking = items[itemNumber]
+    const cards = itemTracking?.quiz?.cards
+    if (!Array.isArray(cards)) {
+      continue
+    }
+    const card = cards.find((entry) => entry && entry.id === cardId)
+    if (!card || typeof card !== 'object') {
+      continue
+    }
+    card.imageDataUrl = imageDataUrl
+  }
+
+  return clonedTrackingState
+}
+
+function normalizeRequestId(rawValue) {
+  const requestId = String(rawValue || '').trim()
+  if (!requestId) {
+    return ''
+  }
+  return requestId.slice(0, 120)
+}
+
+function createGeneratedRequestId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
+}
+
+async function consumeIdempotentResponse({ userId, endpoint, requestId }) {
+  if (!requestId) {
+    return null
+  }
+  const existing = await pool.query(
+    `SELECT response FROM user_state_idempotency WHERE user_id = $1 AND endpoint = $2 AND request_id = $3`,
+    [userId, endpoint, requestId],
+  )
+  return (existing.rows[0]?.response ?? null) || null
+}
+
+async function storeIdempotentResponse({ userId, endpoint, requestId, response }) {
+  if (!requestId) {
+    return
+  }
+  await pool.query(
+    `
+      INSERT INTO user_state_idempotency(user_id, endpoint, request_id, response, created_at)
+      VALUES($1, $2, $3, $4::jsonb, $5)
+      ON CONFLICT(user_id, endpoint, request_id) DO NOTHING
+    `,
+    [userId, endpoint, requestId, JSON.stringify(response), new Date().toISOString()],
+  )
+}
+
+function applyMergePatch(baseValue, patchValue) {
+  if (patchValue === null || patchValue === undefined) {
+    return null
+  }
+  if (Array.isArray(patchValue)) {
+    return JSON.parse(JSON.stringify(patchValue))
+  }
+  if (typeof patchValue !== 'object') {
+    return patchValue
+  }
+
+  const baseObject = baseValue && typeof baseValue === 'object' && !Array.isArray(baseValue) ? baseValue : {}
+  const nextValue = JSON.parse(JSON.stringify(baseObject))
+  for (const [key, value] of Object.entries(patchValue)) {
+    if (value === null) {
+      delete nextValue[key]
+      continue
+    }
+    nextValue[key] = applyMergePatch(nextValue[key], value)
+  }
+  return nextValue
+}
+
+async function loadUserStateRow(userId) {
+  const result = await pool.query(
+    `
+      SELECT
+        tracking_state AS "trackingState",
+        theme,
+        focus_mode AS "focusMode",
+        youtube_mode AS "youtubeDisplayMode",
+        profile,
+        updated_at AS "updatedAt",
+        version,
+        last_snapshot_at AS "lastSnapshotAt"
+      FROM user_state
+      WHERE user_id = $1
+    `,
+    [userId],
+  )
+  return result.rows[0] ?? null
+}
+
+function rowToPersistPayload(row) {
+  if (!row) {
+    return getDefaultPersistState()
+  }
+  return {
+    trackingState: row.trackingState && typeof row.trackingState === 'object' ? row.trackingState : { items: {} },
+    theme: row.theme === 'dark' ? 'dark' : 'light',
+    focusMode: Boolean(row.focusMode),
+    youtubeDisplayMode: row.youtubeDisplayMode === 'external' ? 'external' : 'embed',
+    profile: row.profile ?? null,
+  }
+}
+
+async function maybeCreateStateSnapshot({ userId, version, payload, lastSnapshotAt }) {
+  const lastSnapshotMs = typeof lastSnapshotAt === 'string' ? Date.parse(lastSnapshotAt) : 0
+  const nowMs = Date.now()
+  const needsSnapshot = !Number.isFinite(lastSnapshotMs) || lastSnapshotMs <= 0 || nowMs - lastSnapshotMs >= STATE_SNAPSHOT_INTERVAL_MS
+  if (!needsSnapshot) {
+    return null
+  }
+  const createdAt = new Date(nowMs).toISOString()
+  await pool.query(
+    `INSERT INTO user_state_snapshots(user_id, version, state, created_at) VALUES($1, $2, $3::jsonb, $4)`,
+    [userId, version, JSON.stringify(payload), createdAt],
+  )
+  return createdAt
+}
+
+async function upsertQuizImages(userId, upsertRows, removedRows) {
+  const safeUpserts = Array.isArray(upsertRows) ? upsertRows : []
+  const safeRemoved = Array.isArray(removedRows) ? removedRows : []
+
+  if (safeUpserts.length > STATE_MAX_IMAGE_UPSERT_PER_REQUEST) {
+    throw new Error(`Too many images in one request (${safeUpserts.length}).`)
+  }
+
+  const normalizedUpserts = []
+  for (const row of safeUpserts) {
+    const itemNumber = Number(row?.itemNumber)
+    const cardId = typeof row?.cardId === 'string' ? row.cardId.trim() : ''
+    const imageDataUrl = typeof row?.imageDataUrl === 'string' ? row.imageDataUrl.trim() : ''
+    if (!Number.isFinite(itemNumber) || !cardId || !imageDataUrl) {
+      continue
+    }
+    if (imageDataUrl.length > STATE_MAX_IMAGE_DATA_LENGTH) {
+      throw new Error(`Image too large for card ${cardId}.`)
+    }
+    normalizedUpserts.push({ itemNumber, cardId, imageDataUrl })
+  }
+
+  const normalizedRemoved = []
+  for (const row of safeRemoved) {
+    const itemNumber = Number(row?.itemNumber)
+    const cardId = typeof row?.cardId === 'string' ? row.cardId.trim() : ''
+    if (!Number.isFinite(itemNumber) || !cardId) {
+      continue
+    }
+    normalizedRemoved.push({ itemNumber, cardId })
+  }
+
+  const currentCountResult = await pool.query('SELECT COUNT(*)::int AS count FROM user_quiz_images WHERE user_id = $1', [userId])
+  const currentCount = Number(currentCountResult.rows[0]?.count || 0)
+  const estimatedFinalCount = Math.max(0, currentCount - normalizedRemoved.length + normalizedUpserts.length)
+  if (estimatedFinalCount > STATE_MAX_TOTAL_IMAGES_PER_USER) {
+    throw new Error(`Image quota exceeded (${STATE_MAX_TOTAL_IMAGES_PER_USER}).`)
+  }
+
+  for (const row of normalizedRemoved) {
+    await pool.query('DELETE FROM user_quiz_images WHERE user_id = $1 AND item_number = $2 AND card_id = $3', [
+      userId,
+      row.itemNumber,
+      row.cardId,
+    ])
+  }
+
+  const now = new Date().toISOString()
+  for (const row of normalizedUpserts) {
+    await pool.query(
+      `
+        INSERT INTO user_quiz_images(user_id, item_number, card_id, image_data, updated_at)
+        VALUES($1, $2, $3, $4, $5)
+        ON CONFLICT(user_id, item_number, card_id) DO UPDATE SET
+          image_data = EXCLUDED.image_data,
+          updated_at = EXCLUDED.updated_at
+      `,
+      [userId, row.itemNumber, row.cardId, row.imageDataUrl, now],
+    )
+  }
+
+  return {
+    upserted: normalizedUpserts.length,
+    removed: normalizedRemoved.length,
+    total: estimatedFinalCount,
+  }
+}
+
 const requestSchema = z.object({
   email: z.string().email(),
   password: z.string().min(12).max(256),
@@ -380,6 +715,39 @@ const stateUpdateSchema = z.object({
   focusMode: z.boolean(),
   youtubeDisplayMode: z.enum(['embed', 'external']).optional().default('embed'),
   profile: z.unknown().optional(),
+  baseVersion: z.number().int().nonnegative().optional(),
+  requestId: z.string().trim().min(6).max(120).optional(),
+})
+
+const statePatchSchema = z.object({
+  patch: z.unknown(),
+  baseVersion: z.number().int().nonnegative().optional(),
+  requestId: z.string().trim().min(6).max(120).optional(),
+})
+
+const stateImageSyncSchema = z.object({
+  upsert: z
+    .array(
+      z.object({
+        itemNumber: z.number().int(),
+        cardId: z.string().trim().min(1).max(120),
+        imageDataUrl: z.string().trim().min(1).max(STATE_MAX_IMAGE_DATA_LENGTH),
+      }),
+    )
+    .max(STATE_MAX_IMAGE_UPSERT_PER_REQUEST)
+    .optional()
+    .default([]),
+  removed: z
+    .array(
+      z.object({
+        itemNumber: z.number().int(),
+        cardId: z.string().trim().min(1).max(120),
+      }),
+    )
+    .max(STATE_MAX_IMAGE_UPSERT_PER_REQUEST * 2)
+    .optional()
+    .default([]),
+  requestId: z.string().trim().min(6).max(120).optional(),
 })
 
 async function sendApprovalEmail({ requesterEmail, displayName, code }) {
@@ -471,26 +839,43 @@ app.get('/api/state', enforceClientVersion, async (req, res) => {
     return
   }
 
-  const result = await pool.query(
-    `
-      SELECT
-        tracking_state AS "trackingState",
-        theme,
-        focus_mode AS "focusMode",
-        youtube_mode AS "youtubeDisplayMode",
-        profile,
-        updated_at AS "updatedAt"
-      FROM user_state
-      WHERE user_id = $1
-    `,
-    [uid],
-  )
+  const row = await loadUserStateRow(uid)
+  if (!row) {
+    const refreshedToken = refreshAuthCookie(res, auth)
+    res.json({ state: null, version: 0, ...(refreshedToken ? { token: refreshedToken } : {}) })
+    return
+  }
 
+  const extractedLegacyImages = extractQuizImagesFromTrackingState(row.trackingState)
+  if (extractedLegacyImages.images.length > 0) {
+    try {
+      await upsertQuizImages(uid, extractedLegacyImages.images, [])
+      await pool.query('UPDATE user_state SET tracking_state = $2::jsonb WHERE user_id = $1', [
+        uid,
+        JSON.stringify(extractedLegacyImages.trackingState),
+      ])
+      row.trackingState = extractedLegacyImages.trackingState
+    } catch (error) {
+      console.error('Legacy image migration failed:', error)
+    }
+  }
+
+  const imageRows = await pool.query(`SELECT item_number, card_id, image_data FROM user_quiz_images WHERE user_id = $1`, [uid])
+  const hydratedTrackingState = applyQuizImagesToTrackingState(row.trackingState, imageRows.rows)
+
+  const state = {
+    trackingState: hydratedTrackingState,
+    theme: row.theme,
+    focusMode: row.focusMode,
+    youtubeDisplayMode: row.youtubeDisplayMode,
+    profile: row.profile,
+    updatedAt: row.updatedAt,
+  }
   const refreshedToken = refreshAuthCookie(res, auth)
-  res.json({ state: result.rows[0] ?? null, ...(refreshedToken ? { token: refreshedToken } : {}) })
+  res.json({ state, version: Number(row.version || 0), ...(refreshedToken ? { token: refreshedToken } : {}) })
 })
 
-app.put('/api/state', enforceClientVersion, async (req, res) => {
+app.put('/api/state', enforceClientVersion, stateWriteLimiter, async (req, res) => {
   const auth = authFromRequest(req)
   if (!auth) {
     res.status(401).json({ error: 'Unauthorized' })
@@ -509,37 +894,244 @@ app.put('/api/state', enforceClientVersion, async (req, res) => {
     return
   }
 
+  const requestId = normalizeRequestId(parsed.data.requestId) || createGeneratedRequestId('full')
+  const existingIdempotent = await consumeIdempotentResponse({ userId: uid, endpoint: 'state-full', requestId })
+  if (existingIdempotent) {
+    const refreshedToken = refreshAuthCookie(res, auth)
+    res.json({ ...existingIdempotent, ...(refreshedToken ? { token: refreshedToken } : {}) })
+    return
+  }
+
   if (!parsed.data.trackingState || typeof parsed.data.trackingState !== 'object') {
     res.status(400).json({ error: 'Etat invalide.' })
     return
   }
 
+  const existingRow = await loadUserStateRow(uid)
+  const currentVersion = Number(existingRow?.version || 0)
+  const baseVersion = Number.isFinite(parsed.data.baseVersion) ? Number(parsed.data.baseVersion) : null
+  if (baseVersion !== null && baseVersion !== currentVersion) {
+    res.status(409).json({ error: 'Etat modifié ailleurs.', code: 'STATE_CONFLICT', version: currentVersion })
+    return
+  }
+
+  const extracted = extractQuizImagesFromTrackingState(parsed.data.trackingState)
+  try {
+    await upsertQuizImages(uid, extracted.images, [])
+  } catch (error) {
+    res.status(413).json({ error: error instanceof Error ? error.message : 'Erreur quota images.' })
+    return
+  }
+
   const now = new Date().toISOString()
+  const nextVersion = currentVersion + 1
+  const snapshotPayload = {
+    trackingState: extracted.trackingState,
+    theme: parsed.data.theme,
+    focusMode: parsed.data.focusMode,
+    youtubeDisplayMode: parsed.data.youtubeDisplayMode,
+    profile: parsed.data.profile ?? null,
+  }
+  const nextSnapshotAt = await maybeCreateStateSnapshot({
+    userId: uid,
+    version: nextVersion,
+    payload: snapshotPayload,
+    lastSnapshotAt: existingRow?.lastSnapshotAt,
+  })
+
   await pool.query(
     `
-      INSERT INTO user_state(user_id, tracking_state, theme, focus_mode, youtube_mode, profile, updated_at)
-      VALUES($1, $2::jsonb, $3, $4, $5, $6::jsonb, $7)
+      INSERT INTO user_state(user_id, tracking_state, theme, focus_mode, youtube_mode, profile, updated_at, version, last_snapshot_at)
+      VALUES($1, $2::jsonb, $3, $4, $5, $6::jsonb, $7, $8, $9)
       ON CONFLICT(user_id) DO UPDATE SET
         tracking_state = EXCLUDED.tracking_state,
         theme = EXCLUDED.theme,
         focus_mode = EXCLUDED.focus_mode,
         youtube_mode = EXCLUDED.youtube_mode,
         profile = EXCLUDED.profile,
-        updated_at = EXCLUDED.updated_at
+        updated_at = EXCLUDED.updated_at,
+        version = EXCLUDED.version,
+        last_snapshot_at = COALESCE(EXCLUDED.last_snapshot_at, user_state.last_snapshot_at)
     `,
     [
       uid,
-      JSON.stringify(parsed.data.trackingState),
+      JSON.stringify(extracted.trackingState),
       parsed.data.theme,
       parsed.data.focusMode,
       parsed.data.youtubeDisplayMode,
       JSON.stringify(parsed.data.profile ?? null),
       now,
+      nextVersion,
+      nextSnapshotAt,
     ],
   )
 
+  const bodyBytes = Buffer.byteLength(JSON.stringify(req.body), 'utf8')
+  recordStateMetric('full', bodyBytes)
+
+  const responsePayload = { ok: true, updatedAt: now, version: nextVersion }
+  await storeIdempotentResponse({ userId: uid, endpoint: 'state-full', requestId, response: responsePayload })
+
   const refreshedToken = refreshAuthCookie(res, auth)
-  res.json({ ok: true, updatedAt: now, ...(refreshedToken ? { token: refreshedToken } : {}) })
+  res.json({ ...responsePayload, ...(refreshedToken ? { token: refreshedToken } : {}) })
+})
+
+app.patch('/api/state', enforceClientVersion, stateWriteLimiter, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  const uid = Number(auth.uid)
+  if (!Number.isFinite(uid)) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  const parsed = statePatchSchema.safeParse(req.body)
+  if (!parsed.success || !parsed.data.patch || typeof parsed.data.patch !== 'object') {
+    res.status(400).json({ error: 'Patch invalide.' })
+    return
+  }
+
+  const requestId = normalizeRequestId(parsed.data.requestId) || createGeneratedRequestId('patch')
+  const existingIdempotent = await consumeIdempotentResponse({ userId: uid, endpoint: 'state-patch', requestId })
+  if (existingIdempotent) {
+    const refreshedToken = refreshAuthCookie(res, auth)
+    res.json({ ...existingIdempotent, ...(refreshedToken ? { token: refreshedToken } : {}) })
+    return
+  }
+
+  const existingRow = await loadUserStateRow(uid)
+  const currentVersion = Number(existingRow?.version || 0)
+  const baseVersion = Number.isFinite(parsed.data.baseVersion) ? Number(parsed.data.baseVersion) : null
+  if (baseVersion !== null && baseVersion !== currentVersion) {
+    res.status(409).json({ error: 'Etat modifié ailleurs.', code: 'STATE_CONFLICT', version: currentVersion })
+    return
+  }
+
+  const currentPayload = rowToPersistPayload(existingRow)
+  const mergedPayload = applyMergePatch(currentPayload, parsed.data.patch)
+  const validated = stateUpdateSchema.safeParse(mergedPayload)
+  if (!validated.success || !validated.data.trackingState || typeof validated.data.trackingState !== 'object') {
+    res.status(400).json({ error: 'Patch invalide (état final non valide).' })
+    return
+  }
+
+  const extracted = extractQuizImagesFromTrackingState(validated.data.trackingState)
+  try {
+    await upsertQuizImages(uid, extracted.images, [])
+  } catch (error) {
+    res.status(413).json({ error: error instanceof Error ? error.message : 'Erreur quota images.' })
+    return
+  }
+
+  const now = new Date().toISOString()
+  const nextVersion = currentVersion + 1
+  const snapshotPayload = {
+    trackingState: extracted.trackingState,
+    theme: validated.data.theme,
+    focusMode: validated.data.focusMode,
+    youtubeDisplayMode: validated.data.youtubeDisplayMode,
+    profile: validated.data.profile ?? null,
+  }
+  const nextSnapshotAt = await maybeCreateStateSnapshot({
+    userId: uid,
+    version: nextVersion,
+    payload: snapshotPayload,
+    lastSnapshotAt: existingRow?.lastSnapshotAt,
+  })
+
+  await pool.query(
+    `
+      INSERT INTO user_state(user_id, tracking_state, theme, focus_mode, youtube_mode, profile, updated_at, version, last_snapshot_at)
+      VALUES($1, $2::jsonb, $3, $4, $5, $6::jsonb, $7, $8, $9)
+      ON CONFLICT(user_id) DO UPDATE SET
+        tracking_state = EXCLUDED.tracking_state,
+        theme = EXCLUDED.theme,
+        focus_mode = EXCLUDED.focus_mode,
+        youtube_mode = EXCLUDED.youtube_mode,
+        profile = EXCLUDED.profile,
+        updated_at = EXCLUDED.updated_at,
+        version = EXCLUDED.version,
+        last_snapshot_at = COALESCE(EXCLUDED.last_snapshot_at, user_state.last_snapshot_at)
+    `,
+    [
+      uid,
+      JSON.stringify(extracted.trackingState),
+      validated.data.theme,
+      validated.data.focusMode,
+      validated.data.youtubeDisplayMode,
+      JSON.stringify(validated.data.profile ?? null),
+      now,
+      nextVersion,
+      nextSnapshotAt,
+    ],
+  )
+
+  const patchBytes = Buffer.byteLength(JSON.stringify(parsed.data.patch), 'utf8')
+  recordStateMetric('patch', patchBytes)
+
+  const responsePayload = { ok: true, updatedAt: now, version: nextVersion }
+  await storeIdempotentResponse({ userId: uid, endpoint: 'state-patch', requestId, response: responsePayload })
+
+  const refreshedToken = refreshAuthCookie(res, auth)
+  res.json({ ...responsePayload, ...(refreshedToken ? { token: refreshedToken } : {}) })
+})
+
+app.post('/api/state/images', enforceClientVersion, stateWriteLimiter, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  const uid = Number(auth.uid)
+  if (!Number.isFinite(uid)) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  const parsed = stateImageSyncSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Payload images invalide.' })
+    return
+  }
+
+  const requestId = normalizeRequestId(parsed.data.requestId) || createGeneratedRequestId('images')
+  const existingIdempotent = await consumeIdempotentResponse({ userId: uid, endpoint: 'state-images', requestId })
+  if (existingIdempotent) {
+    const refreshedToken = refreshAuthCookie(res, auth)
+    res.json({ ...existingIdempotent, ...(refreshedToken ? { token: refreshedToken } : {}) })
+    return
+  }
+
+  let syncResult = null
+  try {
+    syncResult = await upsertQuizImages(uid, parsed.data.upsert, parsed.data.removed)
+  } catch (error) {
+    res.status(413).json({ error: error instanceof Error ? error.message : 'Erreur synchronisation images.' })
+    return
+  }
+
+  const payloadBytes = Buffer.byteLength(JSON.stringify(req.body), 'utf8')
+  recordStateMetric('images', payloadBytes)
+
+  const responsePayload = { ok: true, ...syncResult }
+  await storeIdempotentResponse({ userId: uid, endpoint: 'state-images', requestId, response: responsePayload })
+
+  const refreshedToken = refreshAuthCookie(res, auth)
+  res.json({ ...responsePayload, ...(refreshedToken ? { token: refreshedToken } : {}) })
+})
+
+app.get('/api/state/metrics', enforceClientVersion, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+  res.json({ ok: true, metrics: runtimeStateMetrics })
 })
 
 app.use((error, _req, res, next) => {
