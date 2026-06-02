@@ -2080,14 +2080,17 @@ function App() {
         '--auth-start-radius': '22px',
       } as CSSProperties,
     )
-    setAuthTransitionPhase('expanding')
+
+    window.requestAnimationFrame(() => {
+      setAuthTransitionPhase('expanding')
+    })
 
     window.setTimeout(() => {
       setAuthTransitionPhase('idle')
       setDashboardIntroPhase('entering')
       setAuthStatus('authed')
       setLoginPending(false)
-    }, 650)
+    }, 720)
   }
 
   useEffect(() => {

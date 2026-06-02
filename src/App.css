@@ -785,8 +785,13 @@
 }
 
 .auth-shell.is-auth-expanding .auth-layout {
-  opacity: 0.06;
-  transition: opacity 0.2s ease;
+  opacity: 0.03;
+  transform: scale(0.992);
+  filter: blur(1px);
+  transition:
+    opacity 0.28s ease,
+    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.28s ease;
 }
 
 .auth-expand-card {
@@ -799,11 +804,12 @@
   background: #fff;
   box-shadow: 0 26px 65px rgba(0, 0, 0, 0.28);
   z-index: 9;
-  animation: auth-card-expand 0.64s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: auth-card-expand 0.72s cubic-bezier(0.2, 0.9, 0.24, 1) forwards;
   overflow: hidden;
   will-change: transform, border-radius, opacity;
   transform-origin: top left;
   backface-visibility: hidden;
+  contain: layout paint style;
 }
 
 .auth-expand-content {
@@ -815,8 +821,8 @@
   color: #11243a;
   font-weight: 600;
   font-size: 1rem;
-  animation: auth-expand-content-in 0.2s ease-out both;
-  animation-delay: 80ms;
+  animation: auth-expand-content-in 0.24s ease-out both;
+  animation-delay: 120ms;
 }
 
 .auth-expand-content .auth-inline-spinner {
@@ -3849,12 +3855,17 @@ tbody tr.selected {
 @keyframes auth-card-expand {
   0% {
     transform: translate3d(var(--auth-translate-x), var(--auth-translate-y), 0)
-      scale(var(--auth-scale-x), var(--auth-scale-y));
+      scale3d(var(--auth-scale-x), var(--auth-scale-y), 1);
     border-radius: var(--auth-start-radius);
-    opacity: 0.96;
+    opacity: 0.94;
+  }
+  58% {
+    transform: translate3d(0, 0, 0) scale3d(1.008, 1.008, 1);
+    border-radius: 10px;
+    opacity: 1;
   }
   100% {
-    transform: translate3d(0, 0, 0) scale(1, 1);
+    transform: translate3d(0, 0, 0) scale3d(1, 1, 1);
     border-radius: 0;
     opacity: 1;
   }
