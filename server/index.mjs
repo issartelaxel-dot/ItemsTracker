@@ -474,21 +474,35 @@ function extractQuizImagesFromTrackingState(trackingState) {
   return { trackingState: clonedTrackingState, images }
 }
 
-function applyQuizImagesToTrackingState(trackingState, imageRows) {
+function applyQuizImageMetadataToTrackingState(trackingState, imageRows) {
   const clonedTrackingState = JSON.parse(JSON.stringify(trackingState ?? { items: {} }))
-  if (!Array.isArray(imageRows) || imageRows.length === 0) {
-    return clonedTrackingState
-  }
   const items = clonedTrackingState && typeof clonedTrackingState === 'object' ? clonedTrackingState.items : null
   if (!items || typeof items !== 'object') {
+    return clonedTrackingState
+  }
+
+  for (const itemTracking of Object.values(items)) {
+    const cards = itemTracking?.quiz?.cards
+    if (!Array.isArray(cards)) {
+      continue
+    }
+    for (const card of cards) {
+      if (!card || typeof card !== 'object') {
+        continue
+      }
+      card.imageDataUrl = ''
+      card.hasImageDataUrl = false
+    }
+  }
+
+  if (!Array.isArray(imageRows) || imageRows.length === 0) {
     return clonedTrackingState
   }
 
   for (const row of imageRows) {
     const itemNumber = Number(row.item_number)
     const cardId = typeof row.card_id === 'string' ? row.card_id : ''
-    const imageDataUrl = typeof row.image_data === 'string' ? row.image_data : ''
-    if (!Number.isFinite(itemNumber) || !cardId || !imageDataUrl) {
+    if (!Number.isFinite(itemNumber) || !cardId) {
       continue
     }
     const itemTracking = items[itemNumber]
@@ -500,7 +514,8 @@ function applyQuizImagesToTrackingState(trackingState, imageRows) {
     if (!card || typeof card !== 'object') {
       continue
     }
-    card.imageDataUrl = imageDataUrl
+    card.imageDataUrl = ''
+    card.hasImageDataUrl = true
   }
 
   return clonedTrackingState
@@ -871,8 +886,8 @@ app.get('/api/state', enforceClientVersion, async (req, res) => {
     }
   }
 
-  const imageRows = await pool.query(`SELECT item_number, card_id, image_data FROM user_quiz_images WHERE user_id = $1`, [uid])
-  const hydratedTrackingState = applyQuizImagesToTrackingState(row.trackingState, imageRows.rows)
+  const imageRows = await pool.query(`SELECT item_number, card_id FROM user_quiz_images WHERE user_id = $1`, [uid])
+  const hydratedTrackingState = applyQuizImageMetadataToTrackingState(row.trackingState, imageRows.rows)
 
   const state = {
     trackingState: hydratedTrackingState,
@@ -884,6 +899,30 @@ app.get('/api/state', enforceClientVersion, async (req, res) => {
   }
   const refreshedToken = refreshAuthCookie(res, auth)
   res.json({ state, version: Number(row.version || 0), ...(refreshedToken ? { token: refreshedToken } : {}) })
+})
+
+app.get('/api/state/images/:itemNumber/:cardId', enforceClientVersion, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  const uid = Number(auth.uid)
+  const itemNumber = Number(req.params.itemNumber)
+  const cardId = typeof req.params.cardId === 'string' ? req.params.cardId.trim() : ''
+  if (!Number.isFinite(uid) || !Number.isFinite(itemNumber) || !cardId || cardId.length > 120) {
+    res.status(400).json({ error: 'Image invalide.' })
+    return
+  }
+
+  const result = await pool.query(
+    `SELECT image_data FROM user_quiz_images WHERE user_id = $1 AND item_number = $2 AND card_id = $3`,
+    [uid, itemNumber, cardId],
+  )
+  const imageDataUrl = typeof result.rows[0]?.image_data === 'string' ? result.rows[0].image_data : ''
+  const refreshedToken = refreshAuthCookie(res, auth)
+  res.json({ imageDataUrl, ...(refreshedToken ? { token: refreshedToken } : {}) })
 })
 
 app.put('/api/state', enforceClientVersion, stateWriteLimiter, async (req, res) => {

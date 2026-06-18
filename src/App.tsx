@@ -61,6 +61,7 @@ type QuizCard = {
   question: string
   answer: string
   imageDataUrl: string
+  hasImageDataUrl: boolean
   lastResult: QuizResult | null
   quizCount: number
   lastReviewedAt: string | null
@@ -140,6 +141,7 @@ type GlobalFlashcard = {
   question: string
   answer: string
   imageDataUrl: string
+  hasImageDataUrl: boolean
   lastResult: QuizResult | null
   colleges: string[]
   quizCount: number
@@ -190,6 +192,7 @@ const QUIZ_CARD_IMAGE_MAX_BYTES = 1024 * 1024
 const HABIT_TRACKER_YEAR = 2026
 const REMOTE_STATE_MAX_BYTES = 24_000_000
 const REMOTE_MAX_PROFILE_PHOTO_URL_LENGTH = 1_000_000
+const REMOTE_QUIZ_IMAGE_PLACEHOLDER = '__remote_quiz_image__'
 const REMOTE_PAYLOAD_FALLBACKS = [
   { maxActionLogsPerItem: 220, allowProfilePhoto: true },
   { maxActionLogsPerItem: 140, allowProfilePhoto: true },
@@ -577,11 +580,13 @@ function getDefaultQuizConfig(): QuizConfig {
 
 function makeQuizCard(partial?: Partial<QuizCard>): QuizCard {
   const rawCount = typeof partial?.quizCount === 'number' ? partial.quizCount : 0
+  const imageDataUrl = typeof partial?.imageDataUrl === 'string' ? partial.imageDataUrl : ''
   return {
     id: partial?.id ?? `quiz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     question: partial?.question ?? '',
     answer: partial?.answer ?? '',
-    imageDataUrl: typeof partial?.imageDataUrl === 'string' ? partial.imageDataUrl : '',
+    imageDataUrl,
+    hasImageDataUrl: Boolean(partial?.hasImageDataUrl) || Boolean(imageDataUrl),
     lastResult: isQuizResult(partial?.lastResult) ? partial.lastResult : null,
     quizCount: Number.isFinite(rawCount) ? Math.max(0, Math.floor(rawCount)) : 0,
     lastReviewedAt: typeof partial?.lastReviewedAt === 'string' ? partial.lastReviewedAt : null,
@@ -1014,6 +1019,7 @@ function trimTrackingStateForRemote(
       return {
         ...card,
         imageDataUrl: '',
+        hasImageDataUrl: true,
       }
     })
 
@@ -1191,6 +1197,40 @@ function collectQuizImageMap(trackingState: TrackerState): Record<string, string
     }
   }
   return images
+}
+
+function collectQuizImagePresenceMap(trackingState: TrackerState): Record<string, string> {
+  const images: Record<string, string> = {}
+  for (const [itemNumberRaw, trackingRaw] of Object.entries(trackingState.items)) {
+    const itemNumber = Number(itemNumberRaw)
+    if (!Number.isFinite(itemNumber)) {
+      continue
+    }
+    const tracking = normalizeItemTracking(trackingRaw)
+    for (const card of tracking.quiz.cards) {
+      if (!card.hasImageDataUrl && !card.imageDataUrl.trim()) {
+        continue
+      }
+      images[`${itemNumber}:${card.id}`] = card.imageDataUrl.trim() || REMOTE_QUIZ_IMAGE_PLACEHOLDER
+    }
+  }
+  return images
+}
+
+function hasUnsyncedQuizImageChanges(previousImages: Record<string, string>, trackingState: TrackerState) {
+  const currentImages = collectQuizImageMap(trackingState)
+  const currentPresence = collectQuizImagePresenceMap(trackingState)
+  for (const [key, value] of Object.entries(currentImages)) {
+    if (previousImages[key] !== value) {
+      return true
+    }
+  }
+  for (const key of Object.keys(previousImages)) {
+    if (!currentPresence[key]) {
+      return true
+    }
+  }
+  return false
 }
 
 function toSaveWarningMessage(error: unknown) {
@@ -1373,6 +1413,8 @@ function App() {
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const imageSyncInFlightRef = useRef<Promise<{ updatedAt: string | null } | false> | null>(null)
   const trackingStateRef = useRef(trackingState)
+  const lazyImageLoadInFlightRef = useRef(new Set<string>())
+  const missingLazyImageKeysRef = useRef(new Set<string>())
   const lastPayloadTooLargeWarningRef = useRef(0)
   const shouldForceFirstSyncRef = useRef(false)
   const hasPendingChangesRef = useRef(false)
@@ -1538,6 +1580,8 @@ function App() {
       lastSavedStatePayloadRef.current = ''
       lastSavedStateVersionRef.current = 0
       lastSyncedQuizImagesRef.current = {}
+      lazyImageLoadInFlightRef.current.clear()
+      missingLazyImageKeysRef.current.clear()
       hasPendingImageChangesRef.current = false
       return
     }
@@ -1623,7 +1667,8 @@ function App() {
         setSaveStatus('idle')
         const remoteVersion = Number((payload as Record<string, unknown>).version)
         lastSavedStateVersionRef.current = Number.isFinite(remoteVersion) ? remoteVersion : 0
-        lastSyncedQuizImagesRef.current = collectQuizImageMap(nextTrackingState)
+        lastSyncedQuizImagesRef.current = collectQuizImagePresenceMap(nextTrackingState)
+        missingLazyImageKeysRef.current.clear()
         hasPendingImageChangesRef.current = false
         setHasLoadedRemoteState(true)
       } catch (error) {
@@ -1691,8 +1736,7 @@ function App() {
     if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
       return
     }
-    const currentImages = collectQuizImageMap(trackingState)
-    hasPendingImageChangesRef.current = !areValuesDeepEqual(lastSyncedQuizImagesRef.current, currentImages)
+    hasPendingImageChangesRef.current = hasUnsyncedQuizImageChanges(lastSyncedQuizImagesRef.current, trackingState)
   }, [authStatus, authUser?.id, hasLoadedRemoteState, trackingState])
 
   useEffect(() => {
@@ -2011,6 +2055,7 @@ function App() {
     const syncPromise = (async () => {
       const previousMap = lastSyncedQuizImagesRef.current
       const currentMap = collectQuizImageMap(trackingStateRef.current)
+      const currentPresenceMap = collectQuizImagePresenceMap(trackingStateRef.current)
       const upsert: Array<{ itemNumber: number; cardId: string; imageDataUrl: string }> = []
       const removed: Array<{ itemNumber: number; cardId: string }> = []
 
@@ -2027,7 +2072,7 @@ function App() {
       }
 
       for (const key of Object.keys(previousMap)) {
-        if (currentMap[key]) {
+        if (currentPresenceMap[key]) {
           continue
         }
         const [itemRaw, cardId] = key.split(':')
@@ -2059,10 +2104,13 @@ function App() {
           method: 'POST',
           body: imageRequestBody,
         })
-        lastSyncedQuizImagesRef.current = currentMap
-        hasPendingImageChangesRef.current = !areValuesDeepEqual(
+        lastSyncedQuizImagesRef.current = {
+          ...currentPresenceMap,
+          ...currentMap,
+        }
+        hasPendingImageChangesRef.current = hasUnsyncedQuizImageChanges(
           lastSyncedQuizImagesRef.current,
-          collectQuizImageMap(trackingStateRef.current),
+          trackingStateRef.current,
         )
         return {
           updatedAt: typeof payload.updatedAt === 'string' ? payload.updatedAt : null,
@@ -2283,6 +2331,8 @@ function App() {
     lastSavedStatePayloadRef.current = ''
     lastSavedStateVersionRef.current = 0
     lastSyncedQuizImagesRef.current = {}
+    lazyImageLoadInFlightRef.current.clear()
+    missingLazyImageKeysRef.current.clear()
     hasPendingImageChangesRef.current = false
     setTrackingState(getInitialTrackingState())
     setTheme('light')
@@ -2952,6 +3002,7 @@ function getPasswordStrengthMeta(password: string) {
         question: card.question.trim() || getAutoQuizQuestion(item),
         answer: card.answer.trim() || item.shortDescription,
         imageDataUrl: card.imageDataUrl,
+        hasImageDataUrl: card.hasImageDataUrl,
         lastResult: card.lastResult,
         colleges: item.tracking.assignedColleges,
         quizCount: card.quizCount,
@@ -3021,6 +3072,45 @@ function getPasswordStrengthMeta(password: string) {
     const completion = filteredFlashcards.length === 0 ? 0 : Math.round((reviewed / filteredFlashcards.length) * 100)
     return { reviewed, difficult, good, completion }
   }, [filteredFlashcards])
+
+  useEffect(() => {
+    if (!quizItem || !activeQuizCard) {
+      return
+    }
+    void loadQuizCardImageOnDemand(quizItem.itemNumber, activeQuizCard)
+  }, [quizItem?.itemNumber, activeQuizCard?.id, activeQuizCard?.imageDataUrl, activeQuizCard?.hasImageDataUrl])
+
+  useEffect(() => {
+    if (!activeGeneratedFlashcard) {
+      return
+    }
+    void loadQuizCardImageOnDemand(activeGeneratedFlashcard.itemNumber, {
+      id: activeGeneratedFlashcard.cardId,
+      imageDataUrl: activeGeneratedFlashcard.imageDataUrl,
+      hasImageDataUrl: activeGeneratedFlashcard.hasImageDataUrl,
+    })
+  }, [
+    activeGeneratedFlashcard?.itemNumber,
+    activeGeneratedFlashcard?.cardId,
+    activeGeneratedFlashcard?.imageDataUrl,
+    activeGeneratedFlashcard?.hasImageDataUrl,
+  ])
+
+  useEffect(() => {
+    if (!activeGlobalFlashcard) {
+      return
+    }
+    void loadQuizCardImageOnDemand(activeGlobalFlashcard.itemNumber, {
+      id: activeGlobalFlashcard.cardId,
+      imageDataUrl: activeGlobalFlashcard.imageDataUrl,
+      hasImageDataUrl: activeGlobalFlashcard.hasImageDataUrl,
+    })
+  }, [
+    activeGlobalFlashcard?.itemNumber,
+    activeGlobalFlashcard?.cardId,
+    activeGlobalFlashcard?.imageDataUrl,
+    activeGlobalFlashcard?.hasImageDataUrl,
+  ])
 
   useEffect(() => {
     if (filteredFlashcards.length === 0) {
@@ -4022,6 +4112,79 @@ function getPasswordStrengthMeta(password: string) {
     })
   }
 
+  function getQuizImageKey(itemNumber: number, cardId: string) {
+    return `${itemNumber}:${cardId}`
+  }
+
+  function applyLazyLoadedQuizImage(itemNumber: number, cardId: string, imageDataUrl: string) {
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      let changed = false
+      const cards = itemTracking.quiz.cards.map((card) => {
+        if (card.id !== cardId) {
+          return card
+        }
+        if (card.imageDataUrl) {
+          return card
+        }
+        changed = true
+        return {
+          ...card,
+          imageDataUrl,
+          hasImageDataUrl: Boolean(imageDataUrl),
+        }
+      })
+      if (!changed) {
+        return current
+      }
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: {
+            ...itemTracking,
+            quiz: {
+              ...itemTracking.quiz,
+              cards,
+            },
+          },
+        },
+      }
+    })
+  }
+
+  async function loadQuizCardImageOnDemand(itemNumber: number, card: Pick<QuizCard, 'id' | 'imageDataUrl' | 'hasImageDataUrl'>) {
+    if (!card.hasImageDataUrl || card.imageDataUrl) {
+      return
+    }
+    const key = getQuizImageKey(itemNumber, card.id)
+    if (lazyImageLoadInFlightRef.current.has(key) || missingLazyImageKeysRef.current.has(key)) {
+      return
+    }
+
+    lazyImageLoadInFlightRef.current.add(key)
+    try {
+      const payload = await apiRequest(`/api/state/images/${itemNumber}/${encodeURIComponent(card.id)}`, undefined, {
+        requireServerAppHeader: true,
+      })
+      const imageDataUrl = typeof payload.imageDataUrl === 'string' ? payload.imageDataUrl : ''
+      if (imageDataUrl) {
+        lastSyncedQuizImagesRef.current = {
+          ...lastSyncedQuizImagesRef.current,
+          [key]: imageDataUrl,
+        }
+        applyLazyLoadedQuizImage(itemNumber, card.id, imageDataUrl)
+      } else {
+        missingLazyImageKeysRef.current.add(key)
+        updateQuizCard(itemNumber, card.id, { imageDataUrl: '', hasImageDataUrl: false })
+      }
+    } catch {
+      missingLazyImageKeysRef.current.add(key)
+    } finally {
+      lazyImageLoadInFlightRef.current.delete(key)
+    }
+  }
+
   function removeQuizCard(itemNumber: number, cardId: string) {
     setTrackingState((current) => {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
@@ -4093,7 +4256,7 @@ function getPasswordStrengthMeta(password: string) {
     }
     try {
       const imageDataUrl = await fileToDataUrl(file)
-      updateQuizCard(itemNumber, cardId, { imageDataUrl })
+      updateQuizCard(itemNumber, cardId, { imageDataUrl, hasImageDataUrl: true })
       setQuizImageFileName(file.name)
       setQuizImageError('')
     } catch {
@@ -5522,12 +5685,13 @@ function getPasswordStrengthMeta(password: string) {
                               type="button"
                               className="ghost-btn"
                               onClick={() => {
-                                setQuizImageFileName('')
-                                updateQuizCard(effectiveSelectedItem.itemNumber, activeCard.id, {
-                                  imageDataUrl: '',
-                                })
-                              }}
-                              disabled={!activeCard.imageDataUrl}
+                                  setQuizImageFileName('')
+                                  updateQuizCard(effectiveSelectedItem.itemNumber, activeCard.id, {
+                                    imageDataUrl: '',
+                                    hasImageDataUrl: false,
+                                  })
+                                }}
+                              disabled={!activeCard.imageDataUrl && !activeCard.hasImageDataUrl}
                             >
                               Retirer image
                             </button>
@@ -6254,9 +6418,12 @@ function getPasswordStrengthMeta(password: string) {
                     className="ghost-btn"
                     onClick={() => {
                       setQuizImageFileName('')
-                      updateQuizCard(quizItem.itemNumber, activeQuizCard.id, { imageDataUrl: '' })
+                      updateQuizCard(quizItem.itemNumber, activeQuizCard.id, {
+                        imageDataUrl: '',
+                        hasImageDataUrl: false,
+                      })
                     }}
-                    disabled={!activeQuizCard.imageDataUrl}
+                    disabled={!activeQuizCard.imageDataUrl && !activeQuizCard.hasImageDataUrl}
                   >
                     Retirer image
                   </button>
