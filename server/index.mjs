@@ -614,6 +614,17 @@ async function maybeCreateStateSnapshot({ userId, version, payload, lastSnapshot
   return createdAt
 }
 
+async function touchUserStateUpdatedAt(userId, updatedAt) {
+  await pool.query(
+    `
+      UPDATE user_state
+      SET updated_at = $2
+      WHERE user_id = $1
+    `,
+    [userId, updatedAt],
+  )
+}
+
 async function upsertQuizImages(userId, upsertRows, removedRows) {
   const safeUpserts = Array.isArray(upsertRows) ? upsertRows : []
   const safeRemoved = Array.isArray(removedRows) ? removedRows : []
@@ -1115,10 +1126,13 @@ app.post('/api/state/images', enforceClientVersion, stateWriteLimiter, async (re
     return
   }
 
+  const updatedAt = new Date().toISOString()
+  await touchUserStateUpdatedAt(uid, updatedAt)
+
   const payloadBytes = Buffer.byteLength(JSON.stringify(req.body), 'utf8')
   recordStateMetric('images', payloadBytes)
 
-  const responsePayload = { ok: true, ...syncResult }
+  const responsePayload = { ok: true, updatedAt, ...syncResult }
   await storeIdempotentResponse({ userId: uid, endpoint: 'state-images', requestId, response: responsePayload })
 
   const refreshedToken = refreshAuthCookie(res, auth)

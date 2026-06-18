@@ -857,16 +857,21 @@
 
 .topbar-meta {
   min-width: 0;
+  display: grid;
+  gap: 0.16rem;
   font-size: 0.68rem;
   color: var(--muted);
   line-height: 1.1;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: normal;
 }
 
 .topbar-save-warning {
   color: #b42318;
+  font-weight: 600;
+}
+
+.topbar-save-note {
+  color: #8a5a00;
   font-weight: 600;
 }
 

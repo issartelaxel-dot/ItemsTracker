@@ -161,17 +161,29 @@ type AuthUser = {
   displayName: string
 }
 type SaveLockReason = 'session-expired' | 'client-stale'
+type IdleLogoutPending = {
+  userId: number
+  requestedAtMs: number
+}
+type LocalShadowNotice = {
+  savedAtLabel: string
+}
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '')
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
 const CLIENT_APP_VERSION = (import.meta.env.VITE_APP_VERSION ?? '').trim()
 const AUTH_TOKEN_STORAGE_KEY = 'med_auth_token'
 const LOCAL_CLOUD_SHADOW_PREFIX = 'med_cloud_shadow_v1'
+const IDLE_LOGOUT_PENDING_STORAGE_KEY = 'med_idle_logout_pending_v1'
+const LAST_ACTIVITY_AT_STORAGE_KEY = 'med_last_activity_at_v1'
 const ALLOW_SAME_ORIGIN_API_FALLBACK = String(import.meta.env.VITE_ALLOW_SAME_ORIGIN_API_FALLBACK ?? '')
   .trim()
   .toLowerCase() === 'true'
 const AUTO_SAVE_INTERVAL_MS = 20_000
 const AUTO_SAVE_DEBOUNCE_MS = 2_000
+const IDLE_AUTO_LOGOUT_MS = 15 * 60_000
+const IDLE_CHECK_INTERVAL_MS = 5_000
+const IDLE_LOGOUT_RETRY_INTERVAL_MS = 15_000
 const SESSION_HEARTBEAT_MS = 60_000
 const VERSION_CHECK_INTERVAL_MS = 5 * 60_000
 const QUIZ_CARD_IMAGE_MAX_BYTES = 1024 * 1024
@@ -270,6 +282,76 @@ function clearLocalCloudShadow(userId: number) {
   }
   try {
     window.localStorage.removeItem(getLocalCloudShadowKey(userId))
+  } catch {
+    // Ignore local storage errors.
+  }
+}
+
+function readIdleLogoutPending(): IdleLogoutPending | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+  try {
+    const raw = window.localStorage.getItem(IDLE_LOGOUT_PENDING_STORAGE_KEY)
+    if (!raw) {
+      return null
+    }
+    const parsed = JSON.parse(raw) as { userId?: unknown; requestedAtMs?: unknown }
+    const userId = Number(parsed.userId)
+    const requestedAtMs = Number(parsed.requestedAtMs)
+    if (!Number.isFinite(userId) || userId <= 0 || !Number.isFinite(requestedAtMs) || requestedAtMs <= 0) {
+      return null
+    }
+    return { userId, requestedAtMs }
+  } catch {
+    return null
+  }
+}
+
+function writeIdleLogoutPending(pending: IdleLogoutPending) {
+  if (typeof window === 'undefined') {
+    return
+  }
+  try {
+    window.localStorage.setItem(IDLE_LOGOUT_PENDING_STORAGE_KEY, JSON.stringify(pending))
+  } catch {
+    // Ignore local storage errors.
+  }
+}
+
+function clearIdleLogoutPending() {
+  if (typeof window === 'undefined') {
+    return
+  }
+  try {
+    window.localStorage.removeItem(IDLE_LOGOUT_PENDING_STORAGE_KEY)
+  } catch {
+    // Ignore local storage errors.
+  }
+}
+
+function readLastUserActivityAt() {
+  if (typeof window === 'undefined') {
+    return 0
+  }
+  try {
+    const raw = window.localStorage.getItem(LAST_ACTIVITY_AT_STORAGE_KEY)
+    const parsed = Number(raw)
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      return 0
+    }
+    return parsed
+  } catch {
+    return 0
+  }
+}
+
+function writeLastUserActivityAt(timestampMs: number) {
+  if (typeof window === 'undefined' || !Number.isFinite(timestampMs) || timestampMs <= 0) {
+    return
+  }
+  try {
+    window.localStorage.setItem(LAST_ACTIVITY_AT_STORAGE_KEY, String(timestampMs))
   } catch {
     // Ignore local storage errors.
   }
@@ -859,7 +941,10 @@ function normalizeProfileInput(rawProfile: unknown, authUser: AuthUser | null): 
     firstName: typeof profile.firstName === 'string' && profile.firstName.trim() ? profile.firstName.trim() : base.firstName,
     lastName: typeof profile.lastName === 'string' && profile.lastName.trim() ? profile.lastName.trim() : base.lastName,
     email: typeof profile.email === 'string' && profile.email.trim() ? profile.email.trim() : base.email,
-    photoUrl: '',
+    photoUrl:
+      typeof profile.photoUrl === 'string' && profile.photoUrl.length <= REMOTE_MAX_PROFILE_PHOTO_URL_LENGTH
+        ? profile.photoUrl
+        : '',
     password: '',
     avatarGradient:
       typeof profile.avatarGradient === 'string' && profile.avatarGradient ? profile.avatarGradient : base.avatarGradient,
@@ -876,6 +961,38 @@ type PersistStatePayload = {
 
 function getUtf8ByteLength(value: string) {
   return new TextEncoder().encode(value).byteLength
+}
+
+function formatByteSize(bytes: number) {
+  if (!Number.isFinite(bytes) || bytes <= 0) {
+    return '0 B'
+  }
+
+  if (bytes < 1024) {
+    return `${bytes} B`
+  }
+
+  const units = ['KB', 'MB', 'GB']
+  let size = bytes / 1024
+  let unitIndex = 0
+
+  while (size >= 1024 && unitIndex < units.length - 1) {
+    size /= 1024
+    unitIndex += 1
+  }
+
+  return `${size.toFixed(size >= 10 ? 1 : 2)} ${units[unitIndex]}`
+}
+
+function logOutgoingSavePayload(
+  kind: 'patch' | 'full' | 'images',
+  requestBytes: number,
+  details?: Record<string, unknown>,
+) {
+  const suffix = details ? ` ${JSON.stringify(details)}` : ''
+  console.info(
+    `[cloud-save] ${kind} -> ${formatByteSize(requestBytes)} (${requestBytes.toLocaleString('fr-FR')} bytes)${suffix}`,
+  )
 }
 
 function trimTrackingStateForRemote(
@@ -1214,7 +1331,9 @@ function App() {
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
   const [saveErrorMessage, setSaveErrorMessage] = useState('')
+  const [localShadowNotice, setLocalShadowNotice] = useState<LocalShadowNotice | null>(null)
   const [saveLockReason, setSaveLockReason] = useState<SaveLockReason | null>(null)
+  const [idleLogoutPending, setIdleLogoutPending] = useState<IdleLogoutPending | null>(null)
   const [firstNameInput, setFirstNameInput] = useState('')
   const [lastNameInput, setLastNameInput] = useState('')
   const [emailInput, setEmailInput] = useState('')
@@ -1252,7 +1371,8 @@ function App() {
   const [usefulLinkSectionOpen, setUsefulLinkSectionOpen] = useState(true)
   const [itemVisualSectionOpen, setItemVisualSectionOpen] = useState(true)
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
-  const imageSyncInFlightRef = useRef<Promise<boolean> | null>(null)
+  const imageSyncInFlightRef = useRef<Promise<{ updatedAt: string | null } | false> | null>(null)
+  const trackingStateRef = useRef(trackingState)
   const lastPayloadTooLargeWarningRef = useRef(0)
   const shouldForceFirstSyncRef = useRef(false)
   const hasPendingChangesRef = useRef(false)
@@ -1262,6 +1382,9 @@ function App() {
   const lastSavedStatePayloadRef = useRef('')
   const lastSavedStateVersionRef = useRef(0)
   const lastSyncedQuizImagesRef = useRef<Record<string, string>>({})
+  const idleLogoutTimerRef = useRef<number | null>(null)
+  const idleLogoutInFlightRef = useRef(false)
+  const lastUserActivityAtRef = useRef(Date.now())
   const authCardRef = useRef<HTMLDivElement | null>(null)
   const sidebarNavRef = useRef<HTMLElement | null>(null)
   const sidebarNavButtonRefs = useRef<Partial<Record<SidebarNavBubbleKey, HTMLButtonElement | null>>>({})
@@ -1281,6 +1404,24 @@ function App() {
     setSaveErrorMessage('')
     setSaveStatus('idle')
   }
+
+  function setIdleLogoutPendingState(nextPending: IdleLogoutPending | null) {
+    setIdleLogoutPending(nextPending)
+    if (nextPending) {
+      writeIdleLogoutPending(nextPending)
+    } else {
+      clearIdleLogoutPending()
+    }
+  }
+
+  function markUserActivity() {
+    if (idleLogoutInFlightRef.current || idleLogoutPending) {
+      return
+    }
+    const now = Date.now()
+    lastUserActivityAtRef.current = now
+    writeLastUserActivityAt(now)
+  }
   const [sidebarNavBubble, setSidebarNavBubble] = useState({ top: 0, height: 0, ready: false })
   const passwordStrength = getPasswordStrengthMeta(passwordInput)
   const remotePayload = useMemo(
@@ -1294,10 +1435,19 @@ function App() {
       }),
     [trackingState, theme, focusMode, youtubeDisplayMode, profile],
   )
+  const remotePayloadRef = useRef(remotePayload)
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
   }, [theme])
+
+  useEffect(() => {
+    trackingStateRef.current = trackingState
+  }, [trackingState])
+
+  useEffect(() => {
+    remotePayloadRef.current = remotePayload
+  }, [remotePayload])
 
   useLayoutEffect(() => {
     const activeKey = (activeView === 'stats' ? 'dashboard' : activeView) as SidebarNavBubbleKey
@@ -1318,6 +1468,14 @@ function App() {
 
   useEffect(() => {
     void refreshAuth()
+  }, [])
+
+  useEffect(() => {
+    setIdleLogoutPending(readIdleLogoutPending())
+    const storedActivityAt = readLastUserActivityAt()
+    if (storedActivityAt > 0) {
+      lastUserActivityAtRef.current = storedActivityAt
+    }
   }, [])
 
   useEffect(() => {
@@ -1362,9 +1520,17 @@ function App() {
 
   useEffect(() => {
     if (authStatus !== 'authed' || !authUser) {
+      if (idleLogoutTimerRef.current !== null) {
+        window.clearTimeout(idleLogoutTimerRef.current)
+        idleLogoutTimerRef.current = null
+      }
+      const now = Date.now()
+      lastUserActivityAtRef.current = now
+      writeLastUserActivityAt(now)
       setHasLoadedRemoteState(false)
       setLastSavedAt(null)
       setSaveErrorMessage('')
+      setLocalShadowNotice(null)
       hasPendingChangesRef.current = false
       hasInitializedSnapshotRef.current = false
       shouldForceFirstSyncRef.current = false
@@ -1428,20 +1594,21 @@ function App() {
           }
         }
 
-        let restoredFromShadow = false
         const shadow = readLocalCloudShadow(authUser.id)
+        let nextLocalShadowNotice: LocalShadowNotice | null = null
         if (shadow) {
           const parsedShadow = parsePersistStatePayloadBody(shadow.body, authUser)
           const isShadowNewerThanRemote = shadow.savedAtMs > remoteUpdatedAtMs + 1_000
-          if (parsedShadow && (remoteUpdatedAtMs === 0 || isShadowNewerThanRemote)) {
-            nextTrackingState = parsedShadow.trackingState
-            nextTheme = parsedShadow.theme
-            nextFocusMode = parsedShadow.focusMode
-            nextYoutubeDisplayMode = parsedShadow.youtubeDisplayMode
-            nextProfile = parsedShadow.profile
-            shouldForceFirstSyncRef.current = true
-            restoredFromShadow = true
-            nextLastSavedAt = null
+          if (parsedShadow && isShadowNewerThanRemote) {
+            nextLocalShadowNotice = {
+              savedAtLabel: new Intl.DateTimeFormat('fr-FR', {
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+              }).format(new Date(shadow.savedAtMs)),
+            }
+          } else {
+            clearLocalCloudShadow(authUser.id)
           }
         }
 
@@ -1451,17 +1618,13 @@ function App() {
         setYoutubeDisplayMode(nextYoutubeDisplayMode)
         setProfile(nextProfile)
         setLastSavedAt(nextLastSavedAt)
-        setSaveErrorMessage(restoredFromShadow ? 'Restauration locale appliquée. Synchronisation cloud en cours...' : '')
+        setSaveErrorMessage('')
+        setLocalShadowNotice(nextLocalShadowNotice)
         setSaveStatus('idle')
         const remoteVersion = Number((payload as Record<string, unknown>).version)
         lastSavedStateVersionRef.current = Number.isFinite(remoteVersion) ? remoteVersion : 0
-        if (restoredFromShadow) {
-          lastSyncedQuizImagesRef.current = {}
-          hasPendingImageChangesRef.current = true
-        } else {
-          lastSyncedQuizImagesRef.current = collectQuizImageMap(nextTrackingState)
-          hasPendingImageChangesRef.current = false
-        }
+        lastSyncedQuizImagesRef.current = collectQuizImageMap(nextTrackingState)
+        hasPendingImageChangesRef.current = false
         setHasLoadedRemoteState(true)
       } catch (error) {
         const lockReason = getSaveLockReason(error)
@@ -1572,6 +1735,130 @@ function App() {
 
     return () => window.clearInterval(interval)
   }, [authStatus, authUser?.id, hasLoadedRemoteState])
+
+  useEffect(() => {
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
+      return
+    }
+    if (idleLogoutPending && idleLogoutPending.userId === authUser.id) {
+      return
+    }
+
+    const checkIdleLogout = () => {
+      const elapsed = Date.now() - lastUserActivityAtRef.current
+      if (elapsed >= IDLE_AUTO_LOGOUT_MS) {
+        console.info('[idle-logout] threshold reached', {
+          elapsedMs: elapsed,
+          lastActivityAt: new Date(lastUserActivityAtRef.current).toISOString(),
+        })
+        void finalizeIdleLogout('timeout')
+        return true
+      }
+      return false
+    }
+
+    const scheduleIdleLogout = () => {
+      if (idleLogoutTimerRef.current !== null) {
+        window.clearTimeout(idleLogoutTimerRef.current)
+      }
+      const elapsed = Date.now() - lastUserActivityAtRef.current
+      const remaining = Math.max(0, IDLE_AUTO_LOGOUT_MS - elapsed)
+      idleLogoutTimerRef.current = window.setTimeout(() => {
+        idleLogoutTimerRef.current = null
+        void finalizeIdleLogout('timeout')
+      }, remaining)
+    }
+
+    const onActivity = () => {
+      if (document.visibilityState === 'hidden') {
+        return
+      }
+      if (checkIdleLogout()) {
+        return
+      }
+      markUserActivity()
+      scheduleIdleLogout()
+    }
+
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        if (checkIdleLogout()) {
+          return
+        }
+        onActivity()
+      }
+    }
+
+    const storedActivityAt = readLastUserActivityAt()
+    const now = Date.now()
+    lastUserActivityAtRef.current =
+      storedActivityAt > 0 && now - storedActivityAt < IDLE_AUTO_LOGOUT_MS * 4 ? storedActivityAt : now
+    writeLastUserActivityAt(lastUserActivityAtRef.current)
+    if (checkIdleLogout()) {
+      return
+    }
+    scheduleIdleLogout()
+    const idleInterval = window.setInterval(() => {
+      checkIdleLogout()
+    }, IDLE_CHECK_INTERVAL_MS)
+
+    window.addEventListener('pointerdown', onActivity)
+    window.addEventListener('pointermove', onActivity)
+    window.addEventListener('wheel', onActivity, { passive: true })
+    window.addEventListener('touchstart', onActivity, { passive: true })
+    window.addEventListener('keydown', onActivity)
+    window.addEventListener('scroll', onActivity, true)
+    window.addEventListener('focus', onActivity)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+
+    return () => {
+      if (idleLogoutTimerRef.current !== null) {
+        window.clearTimeout(idleLogoutTimerRef.current)
+        idleLogoutTimerRef.current = null
+      }
+      window.clearInterval(idleInterval)
+      window.removeEventListener('pointerdown', onActivity)
+      window.removeEventListener('pointermove', onActivity)
+      window.removeEventListener('wheel', onActivity)
+      window.removeEventListener('touchstart', onActivity)
+      window.removeEventListener('keydown', onActivity)
+      window.removeEventListener('scroll', onActivity, true)
+      window.removeEventListener('focus', onActivity)
+      document.removeEventListener('visibilitychange', onVisibilityChange)
+    }
+  }, [authStatus, authUser?.id, hasLoadedRemoteState, idleLogoutPending])
+
+  useEffect(() => {
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState || !idleLogoutPending) {
+      return
+    }
+    if (idleLogoutPending.userId !== authUser.id) {
+      setIdleLogoutPendingState(null)
+      return
+    }
+
+    const retryPendingIdleLogout = () => {
+      if (navigator.onLine === false) {
+        return
+      }
+      void finalizeIdleLogout('resume')
+    }
+
+    retryPendingIdleLogout()
+    const retryInterval = window.setInterval(() => {
+      retryPendingIdleLogout()
+    }, IDLE_LOGOUT_RETRY_INTERVAL_MS)
+    window.addEventListener('online', retryPendingIdleLogout)
+    window.addEventListener('focus', retryPendingIdleLogout)
+    document.addEventListener('visibilitychange', retryPendingIdleLogout)
+
+    return () => {
+      window.clearInterval(retryInterval)
+      window.removeEventListener('online', retryPendingIdleLogout)
+      window.removeEventListener('focus', retryPendingIdleLogout)
+      document.removeEventListener('visibilitychange', retryPendingIdleLogout)
+    }
+  }, [authStatus, authUser?.id, hasLoadedRemoteState, idleLogoutPending])
 
   useEffect(() => {
     if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
@@ -1711,15 +1998,19 @@ function App() {
       return false
     }
     if (!hasPendingImageChangesRef.current) {
-      return true
+      return { updatedAt: null as string | null }
     }
     if (imageSyncInFlightRef.current) {
-      return imageSyncInFlightRef.current
+      const inFlightResult = await imageSyncInFlightRef.current
+      if (inFlightResult && hasPendingImageChangesRef.current) {
+        return persistQuizImages(options)
+      }
+      return inFlightResult
     }
 
     const syncPromise = (async () => {
       const previousMap = lastSyncedQuizImagesRef.current
-      const currentMap = collectQuizImageMap(trackingState)
+      const currentMap = collectQuizImageMap(trackingStateRef.current)
       const upsert: Array<{ itemNumber: number; cardId: string; imageDataUrl: string }> = []
       const removed: Array<{ itemNumber: number; cardId: string }> = []
 
@@ -1749,21 +2040,33 @@ function App() {
 
       if (upsert.length === 0 && removed.length === 0) {
         hasPendingImageChangesRef.current = false
-        return true
+        return { updatedAt: null as string | null }
       }
 
       try {
-        await apiRequest('/api/state/images', {
+        const requestId = generateRequestId('imgsync')
+        const imageRequestBody = JSON.stringify({
+          upsert,
+          removed,
+          requestId,
+        })
+        const imageRequestBytes = getUtf8ByteLength(imageRequestBody)
+        logOutgoingSavePayload('images', imageRequestBytes, {
+          upsertCount: upsert.length,
+          removedCount: removed.length,
+        })
+        const payload = await apiRequest('/api/state/images', {
           method: 'POST',
-          body: JSON.stringify({
-            upsert,
-            removed,
-            requestId: generateRequestId('imgsync'),
-          }),
+          body: imageRequestBody,
         })
         lastSyncedQuizImagesRef.current = currentMap
-        hasPendingImageChangesRef.current = false
-        return true
+        hasPendingImageChangesRef.current = !areValuesDeepEqual(
+          lastSyncedQuizImagesRef.current,
+          collectQuizImageMap(trackingStateRef.current),
+        )
+        return {
+          updatedAt: typeof payload.updatedAt === 'string' ? payload.updatedAt : null,
+        }
       } catch (error) {
         const lockReason = getSaveLockReason(error)
         if (lockReason) {
@@ -1795,8 +2098,11 @@ function App() {
       return false
     }
 
-    const shouldSaveState = force || hasPendingChangesRef.current
+    const mustSeedRemoteStateForImages =
+      hasPendingImageChangesRef.current && (!lastSavedStatePayloadRef.current || lastSavedStateVersionRef.current <= 0)
+    const shouldSaveState = force || hasPendingChangesRef.current || mustSeedRemoteStateForImages
     const shouldSaveImages = hasPendingImageChangesRef.current
+    const currentRemotePayload = remotePayloadRef.current
 
     if (!shouldSaveState && !shouldSaveImages) {
       return true
@@ -1811,10 +2117,17 @@ function App() {
     }
 
     if (saveInFlightRef.current) {
-      return saveInFlightRef.current
+      const inFlightSaved = await saveInFlightRef.current
+      if (!inFlightSaved) {
+        return false
+      }
+      if (hasPendingChangesRef.current || hasPendingImageChangesRef.current) {
+        return persistUserState(options)
+      }
+      return true
     }
 
-    if (shouldSaveState && !remotePayload) {
+    if (shouldSaveState && !currentRemotePayload) {
       const now = Date.now()
       if (now - lastPayloadTooLargeWarningRef.current > 15_000) {
         setSaveErrorMessage(
@@ -1827,8 +2140,8 @@ function App() {
       return false
     }
 
-    if (remotePayload?.body) {
-      latestStatePayloadRef.current = remotePayload.body
+    if (currentRemotePayload?.body) {
+      latestStatePayloadRef.current = currentRemotePayload.body
     }
 
     const savePromise = (async () => {
@@ -1837,27 +2150,50 @@ function App() {
         setSaveStatus('saving')
       }
       try {
-        let updatedAtRaw = new Date().toISOString()
-        if (shouldSaveState && remotePayload?.body) {
+        let updatedAtRaw: string | null = null
+        if (shouldSaveState && currentRemotePayload?.body) {
           const previousPayload = parsePersistStatePayloadBody(lastSavedStatePayloadRef.current, authUser)
-          const nextPayload = parsePersistStatePayloadBody(remotePayload.body, authUser)
+          const nextPayload = parsePersistStatePayloadBody(currentRemotePayload.body, authUser)
           if (!nextPayload) {
             throw new Error('Etat cloud invalide: payload local non parsable.')
           }
 
           const mergePatch = previousPayload ? buildMergePatch(previousPayload, nextPayload) : undefined
           const requestId = generateRequestId(mergePatch ? 'patch' : 'full')
+          const isPatchRequest = mergePatch && typeof mergePatch === 'object'
+          const requestBody = isPatchRequest
+            ? JSON.stringify({
+                patch: mergePatch,
+                baseVersion: lastSavedStateVersionRef.current,
+                requestId,
+              })
+            : JSON.stringify({
+                ...nextPayload,
+                baseVersion: lastSavedStateVersionRef.current,
+                requestId,
+              })
+          const requestBytes = getUtf8ByteLength(requestBody)
+          if (isPatchRequest) {
+            const patchBytes = getUtf8ByteLength(JSON.stringify(mergePatch))
+            logOutgoingSavePayload('patch', requestBytes, {
+              patchBytes,
+              patchSize: formatByteSize(patchBytes),
+              baseVersion: lastSavedStateVersionRef.current,
+            })
+          } else {
+            logOutgoingSavePayload('full', requestBytes, {
+              payloadBytes: currentRemotePayload.bytes,
+              payloadSize: formatByteSize(currentRemotePayload.bytes),
+              baseVersion: lastSavedStateVersionRef.current,
+            })
+          }
           const payload =
-            mergePatch && typeof mergePatch === 'object'
+            isPatchRequest
               ? await apiRequest(
                   '/api/state',
                   {
                     method: 'PATCH',
-                    body: JSON.stringify({
-                      patch: mergePatch,
-                      baseVersion: lastSavedStateVersionRef.current,
-                      requestId,
-                    }),
+                    body: requestBody,
                   },
                   { requireServerAppHeader: true },
                 )
@@ -1865,22 +2201,18 @@ function App() {
                   '/api/state',
                   {
                     method: 'PUT',
-                    body: JSON.stringify({
-                      ...nextPayload,
-                      baseVersion: lastSavedStateVersionRef.current,
-                      requestId,
-                    }),
+                    body: requestBody,
                   },
                   { requireServerAppHeader: true },
                 )
 
-          lastSavedStatePayloadRef.current = remotePayload.body
+          lastSavedStatePayloadRef.current = currentRemotePayload.body
           hasPendingChangesRef.current = latestStatePayloadRef.current !== lastSavedStatePayloadRef.current
           const nextVersion = Number(payload.version)
           if (Number.isFinite(nextVersion)) {
             lastSavedStateVersionRef.current = nextVersion
           }
-          updatedAtRaw = typeof payload.updatedAt === 'string' ? payload.updatedAt : updatedAtRaw
+          updatedAtRaw = typeof payload.updatedAt === 'string' ? payload.updatedAt : null
         }
 
         if (shouldSaveImages) {
@@ -1888,10 +2220,13 @@ function App() {
           if (!imagesSaved) {
             return false
           }
+          if (imagesSaved.updatedAt) {
+            updatedAtRaw = imagesSaved.updatedAt
+          }
         }
 
-        const savedAt = new Date(updatedAtRaw)
-        if (!Number.isNaN(savedAt.getTime())) {
+        const savedAt = updatedAtRaw ? new Date(updatedAtRaw) : null
+        if (savedAt && !Number.isNaN(savedAt.getTime())) {
           setLastSavedAt(
             new Intl.DateTimeFormat('fr-FR', {
               hour: '2-digit',
@@ -1902,6 +2237,7 @@ function App() {
         }
         setSaveErrorMessage('')
         clearLocalCloudShadow(authUser.id)
+        setLocalShadowNotice(null)
         if (!silent) {
           setSaveStatus('saved')
           window.setTimeout(() => setSaveStatus('idle'), 1800)
@@ -1925,7 +2261,11 @@ function App() {
     })()
 
     saveInFlightRef.current = savePromise
-    return savePromise
+    const saved = await savePromise
+    if (saved && (hasPendingChangesRef.current || hasPendingImageChangesRef.current)) {
+      return persistUserState(options)
+    }
+    return saved
   }
 
   function resetSessionToGuest(authMessage?: string) {
@@ -2100,8 +2440,11 @@ function App() {
     if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
       return
     }
+    if (idleLogoutPending && idleLogoutPending.userId === authUser.id) {
+      return
+    }
     startAuthSuccessTransition(authUser)
-  }, [loginPending, authTransitionPhase, authStatus, authUser, hasLoadedRemoteState])
+  }, [loginPending, authTransitionPhase, authStatus, authUser, hasLoadedRemoteState, idleLogoutPending])
 
 function getPasswordStrengthError(password: string) {
   if (password.length < 12 || !/[0-9]/.test(password) || !/[^A-Za-z0-9]/.test(password)) {
@@ -2246,6 +2589,50 @@ function getPasswordStrengthMeta(password: string) {
       await confirmSessionAfterAuth({ fallbackUser: payload.user as AuthUser | undefined })
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Erreur lors de la réinitialisation du mot de passe.')
+    }
+  }
+
+  async function finalizeIdleLogout(trigger: 'timeout' | 'resume') {
+    if (idleLogoutInFlightRef.current || authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
+      return false
+    }
+
+    idleLogoutInFlightRef.current = true
+    const pendingForUser =
+      idleLogoutPending && idleLogoutPending.userId === authUser.id
+        ? idleLogoutPending
+        : {
+            userId: authUser.id,
+            requestedAtMs: Date.now(),
+          }
+
+    setIdleLogoutPendingState(pendingForUser)
+    if (latestStatePayloadRef.current) {
+      writeLocalCloudShadow(authUser.id, latestStatePayloadRef.current)
+    }
+
+    setSaveStatus('saving')
+    setSaveErrorMessage(
+      trigger === 'timeout'
+        ? "15 minutes d'inactivité détectées. Sauvegarde finale puis fermeture de session..."
+        : 'Reconnexion détectée. Finalisation de la sauvegarde avant fermeture de session...',
+    )
+
+    try {
+      const saved = await persistUserState({ force: true, silent: false })
+      if (!saved) {
+        setSaveStatus('error')
+        setSaveErrorMessage(
+          "Inactivité détectée: fermeture différée. Dès que le cloud ou la session revient, la sauvegarde partira puis la session sera fermée.",
+        )
+        return false
+      }
+
+      setIdleLogoutPendingState(null)
+      await disconnectToAuth('Session fermée après 15 minutes d’inactivité.')
+      return true
+    } finally {
+      idleLogoutInFlightRef.current = false
     }
   }
 
@@ -4436,6 +4823,11 @@ function getPasswordStrengthMeta(password: string) {
             ) : authStatus === 'authed' && !hasLoadedRemoteState ? (
               <span>Cloud indisponible, reconnexion...</span>
             ) : null}
+            {localShadowNotice ? (
+              <span className="topbar-save-note">
+                Copie locale plus récente détectée ({localShadowNotice.savedAtLabel}) sur cet appareil. Version cloud confirmée chargée.
+              </span>
+            ) : null}
           </div>
           <div className="topbar-actions">
           <button
@@ -4461,7 +4853,7 @@ function getPasswordStrengthMeta(password: string) {
             {saveStatus === 'saving'
               ? 'Sauvegarde en cours...'
               : saveStatus === 'saved'
-                ? `Sauvegarde OK${lastSavedAt ? ` (${lastSavedAt})` : ''}`
+                ? `Sauvegarde cloud OK${lastSavedAt ? ` (${lastSavedAt})` : ''}`
                 : `Erreur de sauvegarde${saveErrorMessage ? `: ${saveErrorMessage}` : ''}`}
           </div>
         ) : null}
