@@ -1414,7 +1414,6 @@ function App() {
   const imageSyncInFlightRef = useRef<Promise<{ updatedAt: string | null } | false> | null>(null)
   const trackingStateRef = useRef(trackingState)
   const lazyImageLoadInFlightRef = useRef(new Set<string>())
-  const missingLazyImageKeysRef = useRef(new Set<string>())
   const lastPayloadTooLargeWarningRef = useRef(0)
   const shouldForceFirstSyncRef = useRef(false)
   const hasPendingChangesRef = useRef(false)
@@ -1581,7 +1580,6 @@ function App() {
       lastSavedStateVersionRef.current = 0
       lastSyncedQuizImagesRef.current = {}
       lazyImageLoadInFlightRef.current.clear()
-      missingLazyImageKeysRef.current.clear()
       hasPendingImageChangesRef.current = false
       return
     }
@@ -1591,7 +1589,7 @@ function App() {
 
     const loadRemoteState = async () => {
       try {
-        const payload = await apiRequest('/api/state', undefined, { requireServerAppHeader: true })
+        const payload = await apiRequest('/api/state?imageMode=metadata', undefined, { requireServerAppHeader: true })
         if (cancelled) {
           return
         }
@@ -1668,7 +1666,6 @@ function App() {
         const remoteVersion = Number((payload as Record<string, unknown>).version)
         lastSavedStateVersionRef.current = Number.isFinite(remoteVersion) ? remoteVersion : 0
         lastSyncedQuizImagesRef.current = collectQuizImagePresenceMap(nextTrackingState)
-        missingLazyImageKeysRef.current.clear()
         hasPendingImageChangesRef.current = false
         setHasLoadedRemoteState(true)
       } catch (error) {
@@ -2332,7 +2329,6 @@ function App() {
     lastSavedStateVersionRef.current = 0
     lastSyncedQuizImagesRef.current = {}
     lazyImageLoadInFlightRef.current.clear()
-    missingLazyImageKeysRef.current.clear()
     hasPendingImageChangesRef.current = false
     setTrackingState(getInitialTrackingState())
     setTheme('light')
@@ -4158,7 +4154,7 @@ function getPasswordStrengthMeta(password: string) {
       return
     }
     const key = getQuizImageKey(itemNumber, card.id)
-    if (lazyImageLoadInFlightRef.current.has(key) || missingLazyImageKeysRef.current.has(key)) {
+    if (lazyImageLoadInFlightRef.current.has(key)) {
       return
     }
 
@@ -4175,11 +4171,10 @@ function getPasswordStrengthMeta(password: string) {
         }
         applyLazyLoadedQuizImage(itemNumber, card.id, imageDataUrl)
       } else {
-        missingLazyImageKeysRef.current.add(key)
-        updateQuizCard(itemNumber, card.id, { imageDataUrl: '', hasImageDataUrl: false })
+        console.info('[quiz-image] Image introuvable pour la carte', { itemNumber, cardId: card.id })
       }
     } catch {
-      missingLazyImageKeysRef.current.add(key)
+      console.info('[quiz-image] Chargement différé impossible pour le moment', { itemNumber, cardId: card.id })
     } finally {
       lazyImageLoadInFlightRef.current.delete(key)
     }

@@ -474,7 +474,8 @@ function extractQuizImagesFromTrackingState(trackingState) {
   return { trackingState: clonedTrackingState, images }
 }
 
-function applyQuizImageMetadataToTrackingState(trackingState, imageRows) {
+function applyQuizImagesToTrackingState(trackingState, imageRows, options = {}) {
+  const metadataOnly = Boolean(options.metadataOnly)
   const clonedTrackingState = JSON.parse(JSON.stringify(trackingState ?? { items: {} }))
   const items = clonedTrackingState && typeof clonedTrackingState === 'object' ? clonedTrackingState.items : null
   if (!items || typeof items !== 'object') {
@@ -502,6 +503,7 @@ function applyQuizImageMetadataToTrackingState(trackingState, imageRows) {
   for (const row of imageRows) {
     const itemNumber = Number(row.item_number)
     const cardId = typeof row.card_id === 'string' ? row.card_id : ''
+    const imageDataUrl = typeof row.image_data === 'string' ? row.image_data : ''
     if (!Number.isFinite(itemNumber) || !cardId) {
       continue
     }
@@ -514,7 +516,7 @@ function applyQuizImageMetadataToTrackingState(trackingState, imageRows) {
     if (!card || typeof card !== 'object') {
       continue
     }
-    card.imageDataUrl = ''
+    card.imageDataUrl = metadataOnly ? '' : imageDataUrl
     card.hasImageDataUrl = true
   }
 
@@ -886,8 +888,14 @@ app.get('/api/state', enforceClientVersion, async (req, res) => {
     }
   }
 
-  const imageRows = await pool.query(`SELECT item_number, card_id FROM user_quiz_images WHERE user_id = $1`, [uid])
-  const hydratedTrackingState = applyQuizImageMetadataToTrackingState(row.trackingState, imageRows.rows)
+  const metadataOnly = req.query.imageMode === 'metadata'
+  const imageRows = await pool.query(
+    metadataOnly
+      ? `SELECT item_number, card_id FROM user_quiz_images WHERE user_id = $1`
+      : `SELECT item_number, card_id, image_data FROM user_quiz_images WHERE user_id = $1`,
+    [uid],
+  )
+  const hydratedTrackingState = applyQuizImagesToTrackingState(row.trackingState, imageRows.rows, { metadataOnly })
 
   const state = {
     trackingState: hydratedTrackingState,
