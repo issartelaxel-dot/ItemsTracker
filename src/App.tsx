@@ -11,7 +11,7 @@ import './App.css'
 type Mastery = 'Mauvais' | 'Moyen' | 'Bon' | 'Très bon' | 'Parfait'
 type Theme = 'light' | 'dark'
 type YouTubeDisplayMode = 'embed' | 'external'
-type SortKey = 'itemAsc' | 'itemDesc' | 'reviews' | 'progress'
+type SortKey = 'itemAsc' | 'itemDesc' | 'reviews' | 'progress' | 'lastReviewAsc' | 'lastReviewDesc'
 type SheetColor = 'jaune' | 'rouge' | 'vert' | 'vertfonce'
 type SheetKind = 'lisaSheets' | 'platformSheets'
 type QuizAnimationStyle = 'flip' | 'fade'
@@ -3168,6 +3168,9 @@ function getPasswordStrengthMeta(password: string) {
     })
 
     return filtered.sort((a, b) => {
+      const aLastReviewTime = a.lastReviewDate ? new Date(a.lastReviewDate).getTime() : null
+      const bLastReviewTime = b.lastReviewDate ? new Date(b.lastReviewDate).getTime() : null
+
       if (sortKey === 'itemAsc') {
         return a.itemNumber - b.itemNumber
       }
@@ -3179,6 +3182,30 @@ function getPasswordStrengthMeta(password: string) {
       }
       if (sortKey === 'progress') {
         return b.progress - a.progress || b.totalReviews - a.totalReviews || a.itemNumber - b.itemNumber
+      }
+      if (sortKey === 'lastReviewAsc') {
+        if (aLastReviewTime === null && bLastReviewTime === null) {
+          return a.itemNumber - b.itemNumber
+        }
+        if (aLastReviewTime === null) {
+          return 1
+        }
+        if (bLastReviewTime === null) {
+          return -1
+        }
+        return aLastReviewTime - bLastReviewTime || a.itemNumber - b.itemNumber
+      }
+      if (sortKey === 'lastReviewDesc') {
+        if (aLastReviewTime === null && bLastReviewTime === null) {
+          return a.itemNumber - b.itemNumber
+        }
+        if (aLastReviewTime === null) {
+          return 1
+        }
+        if (bLastReviewTime === null) {
+          return -1
+        }
+        return bLastReviewTime - aLastReviewTime || a.itemNumber - b.itemNumber
       }
       return b.totalReviews - a.totalReviews || b.progress - a.progress || a.itemNumber - b.itemNumber
     })
@@ -5501,6 +5528,8 @@ function getPasswordStrengthMeta(password: string) {
               <option value="itemDesc">Trier : Item décroissant</option>
               <option value="reviews">Trier : Révisions</option>
               <option value="progress">Trier : Progression</option>
+              <option value="lastReviewAsc">Trier : Dernière révision croissante</option>
+              <option value="lastReviewDesc">Trier : Dernière révision décroissante</option>
             </select>
           </div>
 
