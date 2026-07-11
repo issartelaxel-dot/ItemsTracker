@@ -2587,12 +2587,19 @@ tbody tr.selected {
 }
 
 .quiz-rich-rendered {
-  display: grid;
-  gap: 0.35rem;
+  display: block;
+  white-space: normal;
 }
 
 .quiz-rich-rendered > * {
   margin: 0;
+}
+
+.quiz-rich-rendered > div + div,
+.quiz-rich-rendered > p + p,
+.quiz-rich-rendered > div + p,
+.quiz-rich-rendered > p + div {
+  margin-top: 0.35rem;
 }
 
 .quiz-rich-rendered strong {
