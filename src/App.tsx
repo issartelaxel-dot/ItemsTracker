@@ -17,6 +17,7 @@ type SheetKind = 'lisaSheets' | 'platformSheets'
 type QuizAnimationStyle = 'flip' | 'fade'
 type RewardIntensity = 'low' | 'medium' | 'high'
 type QuizResult = 'again' | 'hard' | 'good' | 'easy'
+type QuizImageSlot = 'front' | 'back'
 type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'stats'
 type FlashGeneratorScope = 'items' | 'colleges'
 type FlashFeelingFilter = 'none' | QuizResult
@@ -60,8 +61,10 @@ type QuizCard = {
   id: string
   question: string
   answer: string
-  imageDataUrl: string
-  hasImageDataUrl: boolean
+  frontImageDataUrl: string
+  hasFrontImageDataUrl: boolean
+  backImageDataUrl: string
+  hasBackImageDataUrl: boolean
   lastResult: QuizResult | null
   quizCount: number
   lastReviewedAt: string | null
@@ -140,8 +143,10 @@ type GlobalFlashcard = {
   cardId: string
   question: string
   answer: string
-  imageDataUrl: string
-  hasImageDataUrl: boolean
+  frontImageDataUrl: string
+  hasFrontImageDataUrl: boolean
+  backImageDataUrl: string
+  hasBackImageDataUrl: boolean
   lastResult: QuizResult | null
   colleges: string[]
   quizCount: number
@@ -193,6 +198,7 @@ const HABIT_TRACKER_YEAR = 2026
 const REMOTE_STATE_MAX_BYTES = 24_000_000
 const REMOTE_MAX_PROFILE_PHOTO_URL_LENGTH = 1_000_000
 const REMOTE_QUIZ_IMAGE_PLACEHOLDER = '__remote_quiz_image__'
+const QUIZ_IMAGE_SLOTS: QuizImageSlot[] = ['front', 'back']
 const REMOTE_PAYLOAD_FALLBACKS = [
   { maxActionLogsPerItem: 220, allowProfilePhoto: true },
   { maxActionLogsPerItem: 140, allowProfilePhoto: true },
@@ -372,6 +378,280 @@ function getQuizTextSizeClass(text: string): string {
     return 'quiz-face-content is-medium'
   }
   return 'quiz-face-content'
+}
+
+const QUIZ_TEXT_COLOR_OPTIONS = [
+  { label: 'Rouge', value: '#d24747' },
+  { label: 'Orange', value: '#d98d11' },
+  { label: 'Vert', value: '#00895a' },
+  { label: 'Bleu', value: '#2453a3' },
+  { label: 'Violet', value: '#6d3fc7' },
+  { label: 'Brun', value: '#7a4b2f' },
+] as const
+const QUIZ_TEXT_HIGHLIGHT_COLOR = '#fff59d'
+
+function normalizeQuizRichTextColor(value: string) {
+  const normalized = value.trim().toLowerCase()
+  if (!normalized) {
+    return ''
+  }
+  if (typeof document === 'undefined') {
+    return normalized
+  }
+  const sample = document.createElement('span')
+  sample.style.color = ''
+  sample.style.color = normalized
+  return sample.style.color.trim().toLowerCase()
+}
+
+function isAllowedQuizTextColor(value: string) {
+  const normalized = normalizeQuizRichTextColor(value)
+  return QUIZ_TEXT_COLOR_OPTIONS.some((option) => normalizeQuizRichTextColor(option.value) === normalized)
+}
+
+function isAllowedQuizHighlightColor(value: string) {
+  return normalizeQuizRichTextColor(value) === normalizeQuizRichTextColor(QUIZ_TEXT_HIGHLIGHT_COLOR)
+}
+
+function sanitizeQuizRichTextHtml(input: string) {
+  const html = typeof input === 'string' ? input : ''
+  if (!html) {
+    return ''
+  }
+  if (typeof document === 'undefined') {
+    return html.replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '').trim()
+  }
+
+  const source = document.implementation.createHTMLDocument('')
+  const target = document.implementation.createHTMLDocument('')
+  const sourceRoot = source.createElement('div')
+  const targetRoot = target.createElement('div')
+  sourceRoot.innerHTML = html
+
+  const appendSanitizedNode = (parent: HTMLElement, node: ChildNode) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      parent.appendChild(target.createTextNode(node.textContent ?? ''))
+      return
+    }
+    if (node.nodeType !== Node.ELEMENT_NODE) {
+      return
+    }
+
+    const element = node as HTMLElement
+    const tagName = element.tagName.toUpperCase()
+
+    if (tagName === 'BR') {
+      parent.appendChild(target.createElement('br'))
+      return
+    }
+
+    if (tagName === 'B' || tagName === 'STRONG') {
+      const strong = target.createElement('strong')
+      Array.from(element.childNodes).forEach((child) => appendSanitizedNode(strong, child))
+      parent.appendChild(strong)
+      return
+    }
+
+    if (tagName === 'I' || tagName === 'EM') {
+      const em = target.createElement('em')
+      Array.from(element.childNodes).forEach((child) => appendSanitizedNode(em, child))
+      parent.appendChild(em)
+      return
+    }
+
+    if (tagName === 'DIV' || tagName === 'P') {
+      const block = target.createElement('div')
+      Array.from(element.childNodes).forEach((child) => appendSanitizedNode(block, child))
+      parent.appendChild(block)
+      return
+    }
+
+    const hasBoldStyle = element.style.fontWeight === 'bold' || Number(element.style.fontWeight) >= 600
+    const hasItalicStyle = element.style.fontStyle === 'italic'
+    const color = isAllowedQuizTextColor(element.style.color) ? normalizeQuizRichTextColor(element.style.color) : ''
+    const backgroundColor = isAllowedQuizHighlightColor(element.style.backgroundColor)
+      ? normalizeQuizRichTextColor(element.style.backgroundColor)
+      : ''
+
+    if (!hasBoldStyle && !hasItalicStyle && !color && !backgroundColor && tagName === 'SPAN') {
+      Array.from(element.childNodes).forEach((child) => appendSanitizedNode(parent, child))
+      return
+    }
+
+    if (!hasBoldStyle && !hasItalicStyle && !color && !backgroundColor && tagName !== 'SPAN') {
+      Array.from(element.childNodes).forEach((child) => appendSanitizedNode(parent, child))
+      return
+    }
+
+    const inlineWrapper = target.createElement('span')
+
+    if (inlineWrapper) {
+      if (color) {
+        inlineWrapper.style.color = color
+      }
+      if (backgroundColor) {
+        inlineWrapper.style.backgroundColor = backgroundColor
+      }
+    }
+
+    let currentParent: HTMLElement = inlineWrapper ?? parent
+    if (hasBoldStyle) {
+      const strong = target.createElement('strong')
+      currentParent.appendChild(strong)
+      currentParent = strong
+    }
+    if (hasItalicStyle) {
+      const em = target.createElement('em')
+      currentParent.appendChild(em)
+      currentParent = em
+    }
+
+    Array.from(element.childNodes).forEach((child) => appendSanitizedNode(currentParent, child))
+
+    parent.appendChild(inlineWrapper)
+  }
+
+  Array.from(sourceRoot.childNodes).forEach((child) => appendSanitizedNode(targetRoot, child))
+  return targetRoot.innerHTML.trim()
+}
+
+function getQuizRichTextPlainText(value: string) {
+  const sanitized = sanitizeQuizRichTextHtml(value)
+  if (!sanitized) {
+    return ''
+  }
+  if (typeof document === 'undefined') {
+    return sanitized.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim()
+  }
+  const doc = document.implementation.createHTMLDocument('')
+  const root = doc.createElement('div')
+  root.innerHTML = sanitized
+  return (root.textContent ?? '').replace(/\s+/g, ' ').trim()
+}
+
+function hasQuizRichTextContent(value: string) {
+  return getQuizRichTextPlainText(value).length > 0
+}
+
+function applyQuizRichTextCommand(
+  editor: HTMLDivElement,
+  command:
+    | { type: 'bold' | 'italic' | 'normal' | 'highlight' }
+    | { type: 'color'; value: string },
+) {
+  editor.focus()
+  document.execCommand('styleWithCSS', false, 'true')
+  if (command.type === 'bold') {
+    document.execCommand('bold')
+    return
+  }
+  if (command.type === 'italic') {
+    document.execCommand('italic')
+    return
+  }
+  if (command.type === 'normal') {
+    document.execCommand('removeFormat')
+    return
+  }
+  if (command.type === 'highlight') {
+    document.execCommand('hiliteColor', false, QUIZ_TEXT_HIGHLIGHT_COLOR)
+    return
+  }
+  if (command.type === 'color') {
+    document.execCommand('foreColor', false, command.value)
+  }
+}
+
+type QuizRichTextEditorProps = {
+  value: string
+  placeholder: string
+  onChange: (value: string) => void
+}
+
+function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditorProps) {
+  const editorRef = useRef<HTMLDivElement | null>(null)
+  const normalizedValue = sanitizeQuizRichTextHtml(value)
+
+  useEffect(() => {
+    const editor = editorRef.current
+    if (!editor) {
+      return
+    }
+    if (sanitizeQuizRichTextHtml(editor.innerHTML) === normalizedValue) {
+      return
+    }
+    editor.innerHTML = normalizedValue
+  }, [normalizedValue])
+
+  const syncValue = () => {
+    const editor = editorRef.current
+    if (!editor) {
+      return
+    }
+    const nextValue = sanitizeQuizRichTextHtml(editor.innerHTML)
+    if (!nextValue) {
+      if (editor.innerHTML !== '') {
+        editor.innerHTML = ''
+      }
+      onChange('')
+      return
+    }
+    onChange(nextValue)
+  }
+
+  const runCommand = (
+    command:
+      | { type: 'bold' | 'italic' | 'normal' | 'highlight' }
+      | { type: 'color'; value: string },
+  ) => {
+    const editor = editorRef.current
+    if (!editor) {
+      return
+    }
+    applyQuizRichTextCommand(editor, command)
+    syncValue()
+  }
+
+  return (
+    <div className="quiz-rich-editor">
+      <div className="quiz-rich-toolbar">
+        <button type="button" className="ghost-btn" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand({ type: 'bold' })}>
+          Gras
+        </button>
+        <button type="button" className="ghost-btn" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand({ type: 'italic' })}>
+          Italique
+        </button>
+        <button type="button" className="ghost-btn" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand({ type: 'highlight' })}>
+          Surligner
+        </button>
+        <button type="button" className="ghost-btn" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand({ type: 'normal' })}>
+          Normal
+        </button>
+        {QUIZ_TEXT_COLOR_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className="ghost-btn quiz-rich-color-btn"
+            title={option.label}
+            aria-label={option.label}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={() => runCommand({ type: 'color', value: option.value })}
+          >
+            <span className="quiz-rich-color-swatch" style={{ backgroundColor: option.value }} aria-hidden="true" />
+          </button>
+        ))}
+      </div>
+      <div
+        ref={editorRef}
+        className="quiz-rich-editable"
+        contentEditable
+        suppressContentEditableWarning
+        data-placeholder={placeholder}
+        onInput={syncValue}
+        onBlur={syncValue}
+      />
+    </div>
+  )
 }
 
 const MASTERY_LEVELS: Mastery[] = ['Mauvais', 'Moyen', 'Bon', 'Très bon', 'Parfait']
@@ -580,17 +860,44 @@ function getDefaultQuizConfig(): QuizConfig {
 
 function makeQuizCard(partial?: Partial<QuizCard>): QuizCard {
   const rawCount = typeof partial?.quizCount === 'number' ? partial.quizCount : 0
-  const imageDataUrl = typeof partial?.imageDataUrl === 'string' ? partial.imageDataUrl : ''
+  const legacyBackImageDataUrl = typeof (partial as { imageDataUrl?: unknown })?.imageDataUrl === 'string'
+    ? String((partial as { imageDataUrl?: string }).imageDataUrl)
+    : ''
+  const frontImageDataUrl = typeof partial?.frontImageDataUrl === 'string' ? partial.frontImageDataUrl : ''
+  const backImageDataUrl = typeof partial?.backImageDataUrl === 'string' ? partial.backImageDataUrl : legacyBackImageDataUrl
+  const legacyHasBackImageDataUrl = Boolean((partial as { hasImageDataUrl?: unknown })?.hasImageDataUrl)
   return {
     id: partial?.id ?? `quiz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     question: partial?.question ?? '',
     answer: partial?.answer ?? '',
-    imageDataUrl,
-    hasImageDataUrl: Boolean(partial?.hasImageDataUrl) || Boolean(imageDataUrl),
+    frontImageDataUrl,
+    hasFrontImageDataUrl: Boolean(partial?.hasFrontImageDataUrl) || Boolean(frontImageDataUrl),
+    backImageDataUrl,
+    hasBackImageDataUrl: Boolean(partial?.hasBackImageDataUrl) || legacyHasBackImageDataUrl || Boolean(backImageDataUrl),
     lastResult: isQuizResult(partial?.lastResult) ? partial.lastResult : null,
     quizCount: Number.isFinite(rawCount) ? Math.max(0, Math.floor(rawCount)) : 0,
     lastReviewedAt: typeof partial?.lastReviewedAt === 'string' ? partial.lastReviewedAt : null,
   }
+}
+
+function getQuizCardImageDataUrl(
+  card: Pick<QuizCard, 'frontImageDataUrl' | 'backImageDataUrl'>,
+  slot: QuizImageSlot,
+) {
+  return slot === 'front' ? card.frontImageDataUrl : card.backImageDataUrl
+}
+
+function getQuizCardHasImageDataUrl(
+  card: Pick<QuizCard, 'hasFrontImageDataUrl' | 'hasBackImageDataUrl'>,
+  slot: QuizImageSlot,
+) {
+  return slot === 'front' ? card.hasFrontImageDataUrl : card.hasBackImageDataUrl
+}
+
+function getQuizCardImagePatch(slot: QuizImageSlot, imageDataUrl: string, hasImageDataUrl: boolean): Partial<QuizCard> {
+  return slot === 'front'
+    ? { frontImageDataUrl: imageDataUrl, hasFrontImageDataUrl: hasImageDataUrl }
+    : { backImageDataUrl: imageDataUrl, hasBackImageDataUrl: hasImageDataUrl }
 }
 
 function getDefaultItemTracking(): ItemTracking {
@@ -800,6 +1107,22 @@ function computeItemProgress(itemTracking: ItemTracking): number {
   }
 
   return average(axes)
+}
+
+function getLatestIsoDate(...values: Array<string | null | undefined>) {
+  return values.reduce<string | null>((latest, value) => {
+    if (!value) {
+      return latest
+    }
+    if (!latest || new Date(value) > new Date(latest)) {
+      return value
+    }
+    return latest
+  }, null)
+}
+
+function getLatestSheetReviewDate(sheets: ReferenceSheet[]) {
+  return sheets.reduce<string | null>((latest, sheet) => getLatestIsoDate(latest, sheet.tracking.lastReviewedAt), null)
 }
 
 function formatDate(dateString: string | null) {
@@ -1013,13 +1336,15 @@ function trimTrackingStateForRemote(
     const itemNumber = Number(itemNumberRaw)
     const tracking = normalizeItemTracking(trackingRaw)
     const trimmedCards = tracking.quiz.cards.map((card) => {
-      if (!card.imageDataUrl) {
+      if (!card.frontImageDataUrl && !card.backImageDataUrl) {
         return card
       }
       return {
         ...card,
-        imageDataUrl: '',
-        hasImageDataUrl: true,
+        frontImageDataUrl: '',
+        hasFrontImageDataUrl: card.hasFrontImageDataUrl || Boolean(card.frontImageDataUrl),
+        backImageDataUrl: '',
+        hasBackImageDataUrl: card.hasBackImageDataUrl || Boolean(card.backImageDataUrl),
       }
     })
 
@@ -1189,11 +1514,13 @@ function collectQuizImageMap(trackingState: TrackerState): Record<string, string
     }
     const tracking = normalizeItemTracking(trackingRaw)
     for (const card of tracking.quiz.cards) {
-      const imageDataUrl = card.imageDataUrl.trim()
-      if (!imageDataUrl) {
-        continue
+      for (const slot of QUIZ_IMAGE_SLOTS) {
+        const imageDataUrl = getQuizCardImageDataUrl(card, slot).trim()
+        if (!imageDataUrl) {
+          continue
+        }
+        images[`${itemNumber}:${card.id}:${slot}`] = imageDataUrl
       }
-      images[`${itemNumber}:${card.id}`] = imageDataUrl
     }
   }
   return images
@@ -1208,10 +1535,13 @@ function collectQuizImagePresenceMap(trackingState: TrackerState): Record<string
     }
     const tracking = normalizeItemTracking(trackingRaw)
     for (const card of tracking.quiz.cards) {
-      if (!card.hasImageDataUrl && !card.imageDataUrl.trim()) {
-        continue
+      for (const slot of QUIZ_IMAGE_SLOTS) {
+        const imageDataUrl = getQuizCardImageDataUrl(card, slot).trim()
+        if (!getQuizCardHasImageDataUrl(card, slot) && !imageDataUrl) {
+          continue
+        }
+        images[`${itemNumber}:${card.id}:${slot}`] = imageDataUrl || REMOTE_QUIZ_IMAGE_PLACEHOLDER
       }
-      images[`${itemNumber}:${card.id}`] = card.imageDataUrl.trim() || REMOTE_QUIZ_IMAGE_PLACEHOLDER
     }
   }
   return images
@@ -1392,8 +1722,8 @@ function App() {
   const [quizFeedback, setQuizFeedback] = useState<QuizResult | null>(null)
   const [quizEditMode, setQuizEditMode] = useState(false)
   const [quizConfigExpanded, setQuizConfigExpanded] = useState(false)
-  const [quizImageError, setQuizImageError] = useState('')
-  const [quizImageFileName, setQuizImageFileName] = useState('')
+  const [quizImageErrors, setQuizImageErrors] = useState<Record<QuizImageSlot, string>>({ front: '', back: '' })
+  const [quizImageFileNames, setQuizImageFileNames] = useState<Record<QuizImageSlot, string>>({ front: '', back: '' })
   const [imageLightboxSrc, setImageLightboxSrc] = useState<string | null>(null)
   const [imageLightboxAlt, setImageLightboxAlt] = useState('Image')
   const [quizPulseByItem, setQuizPulseByItem] = useState<Record<number, number>>({})
@@ -2053,31 +2383,33 @@ function App() {
       const previousMap = lastSyncedQuizImagesRef.current
       const currentMap = collectQuizImageMap(trackingStateRef.current)
       const currentPresenceMap = collectQuizImagePresenceMap(trackingStateRef.current)
-      const upsert: Array<{ itemNumber: number; cardId: string; imageDataUrl: string }> = []
-      const removed: Array<{ itemNumber: number; cardId: string }> = []
+      const upsert: Array<{ itemNumber: number; cardId: string; imageSlot: QuizImageSlot; imageDataUrl: string }> = []
+      const removed: Array<{ itemNumber: number; cardId: string; imageSlot: QuizImageSlot }> = []
 
       for (const [key, value] of Object.entries(currentMap)) {
         if (previousMap[key] === value) {
           continue
         }
-        const [itemRaw, cardId] = key.split(':')
+        const [itemRaw, cardId, imageSlotRaw] = key.split(':')
         const itemNumber = Number(itemRaw)
-        if (!Number.isFinite(itemNumber) || !cardId) {
+        const imageSlot = imageSlotRaw === 'front' ? 'front' : imageSlotRaw === 'back' ? 'back' : null
+        if (!Number.isFinite(itemNumber) || !cardId || !imageSlot) {
           continue
         }
-        upsert.push({ itemNumber, cardId, imageDataUrl: value })
+        upsert.push({ itemNumber, cardId, imageSlot, imageDataUrl: value })
       }
 
       for (const key of Object.keys(previousMap)) {
         if (currentPresenceMap[key]) {
           continue
         }
-        const [itemRaw, cardId] = key.split(':')
+        const [itemRaw, cardId, imageSlotRaw] = key.split(':')
         const itemNumber = Number(itemRaw)
-        if (!Number.isFinite(itemNumber) || !cardId) {
+        const imageSlot = imageSlotRaw === 'front' ? 'front' : imageSlotRaw === 'back' ? 'back' : null
+        if (!Number.isFinite(itemNumber) || !cardId || !imageSlot) {
           continue
         }
-        removed.push({ itemNumber, cardId })
+        removed.push({ itemNumber, cardId, imageSlot })
       }
 
       if (upsert.length === 0 && removed.length === 0) {
@@ -2776,10 +3108,14 @@ function getPasswordStrengthMeta(password: string) {
         }
         return latest
       }, null)
-      const mergedLastReviewDate =
-        tracking.lastReviewDate && (!lastReviewDate || new Date(tracking.lastReviewDate) > new Date(lastReviewDate))
-          ? tracking.lastReviewDate
-          : lastReviewDate
+      const latestLisaReviewDate = getLatestSheetReviewDate(tracking.lisaSheets)
+      const latestPlatformReviewDate = getLatestSheetReviewDate(tracking.platformSheets)
+      const mergedLastReviewDate = getLatestIsoDate(
+        tracking.lastReviewDate,
+        lastReviewDate,
+        latestLisaReviewDate,
+        latestPlatformReviewDate,
+      )
 
       return {
         ...item,
@@ -2962,9 +3298,9 @@ function getPasswordStrengthMeta(password: string) {
     if (!quizItem) {
       return ''
     }
-    const custom = activeQuizCard?.question.trim() ?? ''
-    if (custom) {
-      return custom
+    const custom = activeQuizCard?.question ?? ''
+    if (hasQuizRichTextContent(custom)) {
+      return sanitizeQuizRichTextHtml(custom)
     }
     return getAutoQuizQuestion(quizItem)
   }, [quizItem, activeQuizCard])
@@ -2973,9 +3309,9 @@ function getPasswordStrengthMeta(password: string) {
     if (!quizItem) {
       return ''
     }
-    const custom = activeQuizCard?.answer.trim() ?? ''
-    if (custom) {
-      return custom
+    const custom = activeQuizCard?.answer ?? ''
+    if (hasQuizRichTextContent(custom)) {
+      return sanitizeQuizRichTextHtml(custom)
     }
     return quizItem.shortDescription
   }, [quizItem, activeQuizCard])
@@ -2995,10 +3331,12 @@ function getPasswordStrengthMeta(password: string) {
       item.tracking.quiz.cards.map((card) => ({
         itemNumber: item.itemNumber,
         cardId: card.id,
-        question: card.question.trim() || getAutoQuizQuestion(item),
-        answer: card.answer.trim() || item.shortDescription,
-        imageDataUrl: card.imageDataUrl,
-        hasImageDataUrl: card.hasImageDataUrl,
+        question: hasQuizRichTextContent(card.question) ? sanitizeQuizRichTextHtml(card.question) : getAutoQuizQuestion(item),
+        answer: hasQuizRichTextContent(card.answer) ? sanitizeQuizRichTextHtml(card.answer) : item.shortDescription,
+        frontImageDataUrl: card.frontImageDataUrl,
+        hasFrontImageDataUrl: card.hasFrontImageDataUrl,
+        backImageDataUrl: card.backImageDataUrl,
+        hasBackImageDataUrl: card.hasBackImageDataUrl,
         lastResult: card.lastResult,
         colleges: item.tracking.assignedColleges,
         quizCount: card.quizCount,
@@ -3073,39 +3411,54 @@ function getPasswordStrengthMeta(password: string) {
     if (!quizItem || !activeQuizCard) {
       return
     }
-    void loadQuizCardImageOnDemand(quizItem.itemNumber, activeQuizCard)
-  }, [quizItem?.itemNumber, activeQuizCard?.id, activeQuizCard?.imageDataUrl, activeQuizCard?.hasImageDataUrl])
+    void loadQuizCardImagesOnDemand(quizItem.itemNumber, activeQuizCard)
+  }, [
+    quizItem?.itemNumber,
+    activeQuizCard?.id,
+    activeQuizCard?.frontImageDataUrl,
+    activeQuizCard?.hasFrontImageDataUrl,
+    activeQuizCard?.backImageDataUrl,
+    activeQuizCard?.hasBackImageDataUrl,
+  ])
 
   useEffect(() => {
     if (!activeGeneratedFlashcard) {
       return
     }
-    void loadQuizCardImageOnDemand(activeGeneratedFlashcard.itemNumber, {
+    void loadQuizCardImagesOnDemand(activeGeneratedFlashcard.itemNumber, {
       id: activeGeneratedFlashcard.cardId,
-      imageDataUrl: activeGeneratedFlashcard.imageDataUrl,
-      hasImageDataUrl: activeGeneratedFlashcard.hasImageDataUrl,
+      frontImageDataUrl: activeGeneratedFlashcard.frontImageDataUrl,
+      hasFrontImageDataUrl: activeGeneratedFlashcard.hasFrontImageDataUrl,
+      backImageDataUrl: activeGeneratedFlashcard.backImageDataUrl,
+      hasBackImageDataUrl: activeGeneratedFlashcard.hasBackImageDataUrl,
     })
   }, [
     activeGeneratedFlashcard?.itemNumber,
     activeGeneratedFlashcard?.cardId,
-    activeGeneratedFlashcard?.imageDataUrl,
-    activeGeneratedFlashcard?.hasImageDataUrl,
+    activeGeneratedFlashcard?.frontImageDataUrl,
+    activeGeneratedFlashcard?.hasFrontImageDataUrl,
+    activeGeneratedFlashcard?.backImageDataUrl,
+    activeGeneratedFlashcard?.hasBackImageDataUrl,
   ])
 
   useEffect(() => {
     if (!activeGlobalFlashcard) {
       return
     }
-    void loadQuizCardImageOnDemand(activeGlobalFlashcard.itemNumber, {
+    void loadQuizCardImagesOnDemand(activeGlobalFlashcard.itemNumber, {
       id: activeGlobalFlashcard.cardId,
-      imageDataUrl: activeGlobalFlashcard.imageDataUrl,
-      hasImageDataUrl: activeGlobalFlashcard.hasImageDataUrl,
+      frontImageDataUrl: activeGlobalFlashcard.frontImageDataUrl,
+      hasFrontImageDataUrl: activeGlobalFlashcard.hasFrontImageDataUrl,
+      backImageDataUrl: activeGlobalFlashcard.backImageDataUrl,
+      hasBackImageDataUrl: activeGlobalFlashcard.hasBackImageDataUrl,
     })
   }, [
     activeGlobalFlashcard?.itemNumber,
     activeGlobalFlashcard?.cardId,
-    activeGlobalFlashcard?.imageDataUrl,
-    activeGlobalFlashcard?.hasImageDataUrl,
+    activeGlobalFlashcard?.frontImageDataUrl,
+    activeGlobalFlashcard?.hasFrontImageDataUrl,
+    activeGlobalFlashcard?.backImageDataUrl,
+    activeGlobalFlashcard?.hasBackImageDataUrl,
   ])
 
   useEffect(() => {
@@ -3372,7 +3725,7 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   function getQuizCardButtonLabel(card: QuizCard, index: number) {
-    const question = card.question.trim()
+    const question = getQuizRichTextPlainText(card.question)
     if (!question) {
       return `Carte ${index + 1}`
     }
@@ -3831,6 +4184,11 @@ function getPasswordStrengthMeta(password: string) {
       const nextSheets = updater(currentSheets)
       const nextLisaSheets = kind === 'lisaSheets' ? nextSheets : itemTracking.lisaSheets
       const nextPlatformSheets = kind === 'platformSheets' ? nextSheets : itemTracking.platformSheets
+      const nextLastReviewDate = getLatestIsoDate(
+        itemTracking.lastReviewDate,
+        getLatestSheetReviewDate(nextLisaSheets),
+        getLatestSheetReviewDate(nextPlatformSheets),
+      )
       const actions: string[] = []
 
       if (nextSheets.length > currentSheets.length) {
@@ -3877,7 +4235,7 @@ function getPasswordStrengthMeta(password: string) {
           itemLabel: itemTracking.itemLabel,
           lastQuizResult: itemTracking.lastQuizResult,
           quizCount: itemTracking.quizCount,
-          lastReviewDate: itemTracking.lastReviewDate,
+          lastReviewDate: nextLastReviewDate,
           quiz: itemTracking.quiz,
           actionLogs: itemTracking.actionLogs,
         },
@@ -4108,11 +4466,15 @@ function getPasswordStrengthMeta(password: string) {
     })
   }
 
-  function getQuizImageKey(itemNumber: number, cardId: string) {
-    return `${itemNumber}:${cardId}`
+  function getQuizImageKey(itemNumber: number, cardId: string, slot?: QuizImageSlot) {
+    return slot ? `${itemNumber}:${cardId}:${slot}` : `${itemNumber}:${cardId}`
   }
 
-  function applyLazyLoadedQuizImage(itemNumber: number, cardId: string, imageDataUrl: string) {
+  function applyLazyLoadedQuizImages(
+    itemNumber: number,
+    cardId: string,
+    images: Partial<Record<QuizImageSlot, string>>,
+  ) {
     setTrackingState((current) => {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
       let changed = false
@@ -4120,15 +4482,19 @@ function getPasswordStrengthMeta(password: string) {
         if (card.id !== cardId) {
           return card
         }
-        if (card.imageDataUrl) {
+        const nextCard = { ...card }
+        for (const slot of QUIZ_IMAGE_SLOTS) {
+          const imageDataUrl = images[slot]?.trim() ?? ''
+          if (!imageDataUrl || getQuizCardImageDataUrl(nextCard, slot)) {
+            continue
+          }
+          Object.assign(nextCard, getQuizCardImagePatch(slot, imageDataUrl, true))
+          changed = true
+        }
+        if (!changed) {
           return card
         }
-        changed = true
-        return {
-          ...card,
-          imageDataUrl,
-          hasImageDataUrl: Boolean(imageDataUrl),
-        }
+        return nextCard
       })
       if (!changed) {
         return current
@@ -4149,8 +4515,16 @@ function getPasswordStrengthMeta(password: string) {
     })
   }
 
-  async function loadQuizCardImageOnDemand(itemNumber: number, card: Pick<QuizCard, 'id' | 'imageDataUrl' | 'hasImageDataUrl'>) {
-    if (!card.hasImageDataUrl || card.imageDataUrl) {
+  async function loadQuizCardImagesOnDemand(
+    itemNumber: number,
+    card: Pick<
+      QuizCard,
+      'id' | 'frontImageDataUrl' | 'hasFrontImageDataUrl' | 'backImageDataUrl' | 'hasBackImageDataUrl'
+    >,
+  ) {
+    const needsFrontImage = card.hasFrontImageDataUrl && !card.frontImageDataUrl
+    const needsBackImage = card.hasBackImageDataUrl && !card.backImageDataUrl
+    if (!needsFrontImage && !needsBackImage) {
       return
     }
     const key = getQuizImageKey(itemNumber, card.id)
@@ -4163,13 +4537,21 @@ function getPasswordStrengthMeta(password: string) {
       const payload = await apiRequest(`/api/state/images/${itemNumber}/${encodeURIComponent(card.id)}`, undefined, {
         requireServerAppHeader: true,
       })
-      const imageDataUrl = typeof payload.imageDataUrl === 'string' ? payload.imageDataUrl : ''
-      if (imageDataUrl) {
-        lastSyncedQuizImagesRef.current = {
-          ...lastSyncedQuizImagesRef.current,
-          [key]: imageDataUrl,
+      const frontImageDataUrl = typeof payload.frontImageDataUrl === 'string' ? payload.frontImageDataUrl : ''
+      const backImageDataUrl = typeof payload.backImageDataUrl === 'string' ? payload.backImageDataUrl : ''
+      if (frontImageDataUrl || backImageDataUrl) {
+        const nextSyncedImages = { ...lastSyncedQuizImagesRef.current }
+        if (frontImageDataUrl) {
+          nextSyncedImages[getQuizImageKey(itemNumber, card.id, 'front')] = frontImageDataUrl
         }
-        applyLazyLoadedQuizImage(itemNumber, card.id, imageDataUrl)
+        if (backImageDataUrl) {
+          nextSyncedImages[getQuizImageKey(itemNumber, card.id, 'back')] = backImageDataUrl
+        }
+        lastSyncedQuizImagesRef.current = nextSyncedImages
+        applyLazyLoadedQuizImages(itemNumber, card.id, {
+          front: frontImageDataUrl,
+          back: backImageDataUrl,
+        })
       } else {
         console.info('[quiz-image] Image introuvable pour la carte', { itemNumber, cardId: card.id })
       }
@@ -4233,35 +4615,45 @@ function getPasswordStrengthMeta(password: string) {
     })
   }
 
-  async function handleQuizCardImageUpload(itemNumber: number, cardId: string, files: FileList | null) {
-    setQuizImageError('')
+  function setQuizImageFeedback(slot: QuizImageSlot, patch: { error?: string; fileName?: string }) {
+    if (patch.error !== undefined) {
+      setQuizImageErrors((current) => ({ ...current, [slot]: patch.error ?? '' }))
+    }
+    if (patch.fileName !== undefined) {
+      setQuizImageFileNames((current) => ({ ...current, [slot]: patch.fileName ?? '' }))
+    }
+  }
+
+  async function handleQuizCardImageUpload(
+    itemNumber: number,
+    cardId: string,
+    slot: QuizImageSlot,
+    files: FileList | null,
+  ) {
+    setQuizImageFeedback(slot, { error: '' })
     const file = files?.[0]
     if (!file) {
       return
     }
     if (!file.type.startsWith('image/')) {
-      setQuizImageFileName('')
-      setQuizImageError('Fichier invalide: choisis une image.')
+      setQuizImageFeedback(slot, { fileName: '', error: 'Fichier invalide: choisis une image.' })
       return
     }
     if (file.size > QUIZ_CARD_IMAGE_MAX_BYTES) {
-      setQuizImageFileName('')
-      setQuizImageError('Image trop lourde: maximum 1 MB.')
+      setQuizImageFeedback(slot, { fileName: '', error: 'Image trop lourde: maximum 1 MB.' })
       return
     }
     try {
       const imageDataUrl = await fileToDataUrl(file)
-      updateQuizCard(itemNumber, cardId, { imageDataUrl, hasImageDataUrl: true })
-      setQuizImageFileName(file.name)
-      setQuizImageError('')
+      updateQuizCard(itemNumber, cardId, getQuizCardImagePatch(slot, imageDataUrl, true))
+      setQuizImageFeedback(slot, { fileName: file.name, error: '' })
     } catch {
-      setQuizImageFileName('')
-      setQuizImageError("Impossible d'importer l'image.")
+      setQuizImageFeedback(slot, { fileName: '', error: "Impossible d'importer l'image." })
     }
   }
 
-  function openQuizCardImagePicker(itemNumber: number, cardId: string) {
-    setQuizImageError('')
+  function openQuizCardImagePicker(itemNumber: number, cardId: string, slot: QuizImageSlot) {
+    setQuizImageFeedback(slot, { error: '' })
     const picker = document.createElement('input')
     picker.type = 'file'
     picker.accept = 'image/*'
@@ -4275,9 +4667,8 @@ function getPasswordStrengthMeta(password: string) {
     picker.addEventListener(
       'change',
       () => {
-        setQuizImageFileName('')
-        setQuizImageError('')
-        void handleQuizCardImageUpload(itemNumber, cardId, picker.files)
+        setQuizImageFeedback(slot, { fileName: '', error: '' })
+        void handleQuizCardImageUpload(itemNumber, cardId, slot, picker.files)
         picker.remove()
       },
       { once: true },
@@ -5582,7 +5973,7 @@ function getPasswordStrengthMeta(password: string) {
                           className={`quiz-card-select ${
                             effectiveSelectedItem.tracking.quiz.activeCardId === card.id ? 'active' : ''
                           }`}
-                          title={card.question.trim() || `Carte ${index + 1}`}
+                          title={getQuizRichTextPlainText(card.question) || `Carte ${index + 1}`}
                           onClick={() => {
                             setQuizSide('front')
                             setQuizEditMode(true)
@@ -5633,45 +6024,63 @@ function getPasswordStrengthMeta(password: string) {
                         <div key={activeCard.id} className="quiz-card-editor">
                           <label className="block-label">
                             Question carte active
-                            <input
-                              type="text"
+                            <QuizRichTextEditor
                               placeholder="Laisser vide pour question auto..."
                               value={activeCard.question}
-                              onChange={(event) =>
+                              onChange={(value) =>
                                 updateQuizCard(effectiveSelectedItem.itemNumber, activeCard.id, {
-                                  question: event.target.value,
+                                  question: value,
                                 })
                               }
                             />
                           </label>
                           <label className="block-label">
                             Réponse carte active
-                            <textarea
+                            <QuizRichTextEditor
                               placeholder="Laisser vide pour utiliser la description de l'item..."
                               value={activeCard.answer}
-                              onChange={(event) =>
+                              onChange={(value) =>
                                 updateQuizCard(effectiveSelectedItem.itemNumber, activeCard.id, {
-                                  answer: event.target.value,
+                                  answer: value,
                                 })
                               }
                             />
                           </label>
                           <label className="block-label">
-                            Image carte active (max 1 MB)
+                            Image recto (max 1 MB)
                             <div className="quiz-file-input-row">
                               <button
                                 type="button"
                                 className="ghost-btn quiz-file-picker-btn"
                                 onClick={() =>
-                                  openQuizCardImagePicker(effectiveSelectedItem.itemNumber, activeCard.id)
+                                  openQuizCardImagePicker(effectiveSelectedItem.itemNumber, activeCard.id, 'front')
                                 }
                               >
                                 Choose File
                               </button>
-                              {quizImageError ? (
-                                <span className="quiz-file-name quiz-file-name-error">{quizImageError}</span>
-                              ) : quizImageFileName ? (
-                                <span className="quiz-file-name">{quizImageFileName}</span>
+                              {quizImageErrors.front ? (
+                                <span className="quiz-file-name quiz-file-name-error">{quizImageErrors.front}</span>
+                              ) : quizImageFileNames.front ? (
+                                <span className="quiz-file-name">{quizImageFileNames.front}</span>
+                              ) : null}
+                            </div>
+                          </label>
+                          <label className="block-label">
+                            Image verso (max 1 MB)
+                            <div className="quiz-file-input-row">
+                              <button
+                                type="button"
+                                className="ghost-btn quiz-file-picker-btn"
+                                onClick={() =>
+                                  openQuizCardImagePicker(effectiveSelectedItem.itemNumber, activeCard.id, 'back')
+                                }
+                              >
+                                Choose File
+                              </button>
+                              {quizImageErrors.back ? (
+                                <span className="quiz-file-name quiz-file-name-error">{quizImageErrors.back}</span>
+                              ) : quizImageFileNames.back ? (
+                                <span className="quiz-file-name">{quizImageFileNames.back}</span>
                               ) : null}
                             </div>
                           </label>
@@ -5680,15 +6089,31 @@ function getPasswordStrengthMeta(password: string) {
                               type="button"
                               className="ghost-btn"
                               onClick={() => {
-                                  setQuizImageFileName('')
-                                  updateQuizCard(effectiveSelectedItem.itemNumber, activeCard.id, {
-                                    imageDataUrl: '',
-                                    hasImageDataUrl: false,
-                                  })
+                                  setQuizImageFeedback('front', { fileName: '', error: '' })
+                                  updateQuizCard(
+                                    effectiveSelectedItem.itemNumber,
+                                    activeCard.id,
+                                    getQuizCardImagePatch('front', '', false),
+                                  )
                                 }}
-                              disabled={!activeCard.imageDataUrl && !activeCard.hasImageDataUrl}
+                              disabled={!activeCard.frontImageDataUrl && !activeCard.hasFrontImageDataUrl}
                             >
-                              Retirer image
+                              Retirer image recto
+                            </button>
+                            <button
+                              type="button"
+                              className="ghost-btn"
+                              onClick={() => {
+                                  setQuizImageFeedback('back', { fileName: '', error: '' })
+                                  updateQuizCard(
+                                    effectiveSelectedItem.itemNumber,
+                                    activeCard.id,
+                                    getQuizCardImagePatch('back', '', false),
+                                  )
+                                }}
+                              disabled={!activeCard.backImageDataUrl && !activeCard.hasBackImageDataUrl}
+                            >
+                              Retirer image verso
                             </button>
                           </div>
                         </div>
@@ -6344,20 +6769,41 @@ function getPasswordStrengthMeta(password: string) {
                     </span>
                   ) : null}
                 </p>
-                <p className={getQuizTextSizeClass(quizQuestion)}>{quizQuestion}</p>
+                <div className="quiz-face-body">
+                  <div
+                    className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizQuestion))} quiz-rich-rendered`}
+                    dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizQuestion) }}
+                  />
+                  {activeQuizCard?.frontImageDataUrl ? (
+                    <img
+                      className="quiz-face-media"
+                      src={activeQuizCard.frontImageDataUrl}
+                      alt="Illustration du recto"
+                      onClick={(event) => {
+                        event.stopPropagation()
+                        openImageLightbox(activeQuizCard.frontImageDataUrl, 'Illustration du recto')
+                      }}
+                    />
+                  ) : (
+                    <span className="quiz-face-media-placeholder" aria-hidden="true">IMG</span>
+                  )}
+                </div>
               </div>
               <div className="quiz-face quiz-back">
                 <p className="quiz-face-label">Réponse</p>
                 <div className="quiz-face-body">
-                  <p className={getQuizTextSizeClass(quizAnswer)}>{quizAnswer}</p>
-                  {activeQuizCard?.imageDataUrl ? (
+                  <div
+                    className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizAnswer))} quiz-rich-rendered`}
+                    dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizAnswer) }}
+                  />
+                  {activeQuizCard?.backImageDataUrl ? (
                     <img
                       className="quiz-face-media"
-                      src={activeQuizCard.imageDataUrl}
-                      alt="Illustration de la carte"
+                      src={activeQuizCard.backImageDataUrl}
+                      alt="Illustration du verso"
                       onClick={(event) => {
                         event.stopPropagation()
-                        openImageLightbox(activeQuizCard.imageDataUrl, 'Illustration de la carte')
+                        openImageLightbox(activeQuizCard.backImageDataUrl, 'Illustration du verso')
                       }}
                     />
                   ) : (
@@ -6371,39 +6817,51 @@ function getPasswordStrengthMeta(password: string) {
               <div className="quiz-modal-editor">
                 <label className="block-label">
                   Question
-                  <input
-                    type="text"
+                  <QuizRichTextEditor
                     placeholder="Question de la flashcard..."
                     value={activeQuizCard.question}
-                    onChange={(event) =>
-                      updateQuizCard(quizItem.itemNumber, activeQuizCard.id, { question: event.target.value })
-                    }
+                    onChange={(value) => updateQuizCard(quizItem.itemNumber, activeQuizCard.id, { question: value })}
                   />
                 </label>
                 <label className="block-label">
                   Réponse
-                  <textarea
+                  <QuizRichTextEditor
                     placeholder="Réponse de la flashcard..."
                     value={activeQuizCard.answer}
-                    onChange={(event) =>
-                      updateQuizCard(quizItem.itemNumber, activeQuizCard.id, { answer: event.target.value })
-                    }
+                    onChange={(value) => updateQuizCard(quizItem.itemNumber, activeQuizCard.id, { answer: value })}
                   />
                 </label>
                 <label className="block-label">
-                  Image (max 1 MB)
+                  Image recto (max 1 MB)
                   <div className="quiz-file-input-row">
                     <button
                       type="button"
                       className="ghost-btn quiz-file-picker-btn"
-                      onClick={() => openQuizCardImagePicker(quizItem.itemNumber, activeQuizCard.id)}
+                      onClick={() => openQuizCardImagePicker(quizItem.itemNumber, activeQuizCard.id, 'front')}
                     >
                       Choose File
                     </button>
-                    {quizImageError ? (
-                      <span className="quiz-file-name quiz-file-name-error">{quizImageError}</span>
-                    ) : quizImageFileName ? (
-                      <span className="quiz-file-name">{quizImageFileName}</span>
+                    {quizImageErrors.front ? (
+                      <span className="quiz-file-name quiz-file-name-error">{quizImageErrors.front}</span>
+                    ) : quizImageFileNames.front ? (
+                      <span className="quiz-file-name">{quizImageFileNames.front}</span>
+                    ) : null}
+                  </div>
+                </label>
+                <label className="block-label">
+                  Image verso (max 1 MB)
+                  <div className="quiz-file-input-row">
+                    <button
+                      type="button"
+                      className="ghost-btn quiz-file-picker-btn"
+                      onClick={() => openQuizCardImagePicker(quizItem.itemNumber, activeQuizCard.id, 'back')}
+                    >
+                      Choose File
+                    </button>
+                    {quizImageErrors.back ? (
+                      <span className="quiz-file-name quiz-file-name-error">{quizImageErrors.back}</span>
+                    ) : quizImageFileNames.back ? (
+                      <span className="quiz-file-name">{quizImageFileNames.back}</span>
                     ) : null}
                   </div>
                 </label>
@@ -6412,15 +6870,23 @@ function getPasswordStrengthMeta(password: string) {
                     type="button"
                     className="ghost-btn"
                     onClick={() => {
-                      setQuizImageFileName('')
-                      updateQuizCard(quizItem.itemNumber, activeQuizCard.id, {
-                        imageDataUrl: '',
-                        hasImageDataUrl: false,
-                      })
+                      setQuizImageFeedback('front', { fileName: '', error: '' })
+                      updateQuizCard(quizItem.itemNumber, activeQuizCard.id, getQuizCardImagePatch('front', '', false))
                     }}
-                    disabled={!activeQuizCard.imageDataUrl && !activeQuizCard.hasImageDataUrl}
+                    disabled={!activeQuizCard.frontImageDataUrl && !activeQuizCard.hasFrontImageDataUrl}
                   >
-                    Retirer image
+                    Retirer image recto
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    onClick={() => {
+                      setQuizImageFeedback('back', { fileName: '', error: '' })
+                      updateQuizCard(quizItem.itemNumber, activeQuizCard.id, getQuizCardImagePatch('back', '', false))
+                    }}
+                    disabled={!activeQuizCard.backImageDataUrl && !activeQuizCard.hasBackImageDataUrl}
+                  >
+                    Retirer image verso
                   </button>
                 </div>
               </div>
@@ -6704,24 +7170,41 @@ function getPasswordStrengthMeta(password: string) {
                         >
                           <div className="quiz-face quiz-front">
                             <p className="quiz-face-label">Question</p>
-                            <p className={getQuizTextSizeClass(activeGeneratedFlashcard.question)}>
-                              {activeGeneratedFlashcard.question}
-                            </p>
+                            <div className="quiz-face-body">
+                              <div
+                                className={`${getQuizTextSizeClass(getQuizRichTextPlainText(activeGeneratedFlashcard.question))} quiz-rich-rendered`}
+                                dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(activeGeneratedFlashcard.question) }}
+                              />
+                              {activeGeneratedFlashcard.frontImageDataUrl ? (
+                                <img
+                                  className="quiz-face-media"
+                                  src={activeGeneratedFlashcard.frontImageDataUrl}
+                                  alt="Illustration du recto"
+                                  onClick={(event) => {
+                                    event.stopPropagation()
+                                    openImageLightbox(activeGeneratedFlashcard.frontImageDataUrl, 'Illustration du recto')
+                                  }}
+                                />
+                              ) : (
+                                <span className="quiz-face-media-placeholder" aria-hidden="true">IMG</span>
+                              )}
+                            </div>
                           </div>
                           <div className="quiz-face quiz-back">
                             <p className="quiz-face-label">Réponse</p>
                             <div className="quiz-face-body">
-                              <p className={getQuizTextSizeClass(activeGeneratedFlashcard.answer)}>
-                                {activeGeneratedFlashcard.answer}
-                              </p>
-                              {activeGeneratedFlashcard.imageDataUrl ? (
+                              <div
+                                className={`${getQuizTextSizeClass(getQuizRichTextPlainText(activeGeneratedFlashcard.answer))} quiz-rich-rendered`}
+                                dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(activeGeneratedFlashcard.answer) }}
+                              />
+                              {activeGeneratedFlashcard.backImageDataUrl ? (
                                 <img
                                   className="quiz-face-media"
-                                  src={activeGeneratedFlashcard.imageDataUrl}
-                                  alt="Illustration de la carte"
+                                  src={activeGeneratedFlashcard.backImageDataUrl}
+                                  alt="Illustration du verso"
                                   onClick={(event) => {
                                     event.stopPropagation()
-                                    openImageLightbox(activeGeneratedFlashcard.imageDataUrl, 'Illustration de la carte')
+                                    openImageLightbox(activeGeneratedFlashcard.backImageDataUrl, 'Illustration du verso')
                                   }}
                                 />
                               ) : (
@@ -6867,24 +7350,41 @@ function getPasswordStrengthMeta(password: string) {
               >
                 <div className="quiz-face quiz-front">
                   <p className="quiz-face-label">Question</p>
-                  <p className={getQuizTextSizeClass(activeGlobalFlashcard.question)}>
-                    {activeGlobalFlashcard.question}
-                  </p>
+                  <div className="quiz-face-body">
+                    <div
+                      className={`${getQuizTextSizeClass(getQuizRichTextPlainText(activeGlobalFlashcard.question))} quiz-rich-rendered`}
+                      dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(activeGlobalFlashcard.question) }}
+                    />
+                    {activeGlobalFlashcard.frontImageDataUrl ? (
+                      <img
+                        className="quiz-face-media"
+                        src={activeGlobalFlashcard.frontImageDataUrl}
+                        alt="Illustration du recto"
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          openImageLightbox(activeGlobalFlashcard.frontImageDataUrl, 'Illustration du recto')
+                        }}
+                      />
+                    ) : (
+                      <span className="quiz-face-media-placeholder" aria-hidden="true">IMG</span>
+                    )}
+                  </div>
                 </div>
                 <div className="quiz-face quiz-back">
                   <p className="quiz-face-label">Réponse</p>
                   <div className="quiz-face-body">
-                    <p className={getQuizTextSizeClass(activeGlobalFlashcard.answer)}>
-                      {activeGlobalFlashcard.answer}
-                    </p>
-                    {activeGlobalFlashcard.imageDataUrl ? (
+                    <div
+                      className={`${getQuizTextSizeClass(getQuizRichTextPlainText(activeGlobalFlashcard.answer))} quiz-rich-rendered`}
+                      dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(activeGlobalFlashcard.answer) }}
+                    />
+                    {activeGlobalFlashcard.backImageDataUrl ? (
                       <img
                         className="quiz-face-media"
-                        src={activeGlobalFlashcard.imageDataUrl}
-                        alt="Illustration de la carte"
+                        src={activeGlobalFlashcard.backImageDataUrl}
+                        alt="Illustration du verso"
                         onClick={(event) => {
                           event.stopPropagation()
-                          openImageLightbox(activeGlobalFlashcard.imageDataUrl, 'Illustration de la carte')
+                          openImageLightbox(activeGlobalFlashcard.backImageDataUrl, 'Illustration du verso')
                         }}
                       />
                     ) : (

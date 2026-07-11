@@ -118,9 +118,10 @@ async function initDb() {
       user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
       item_number INTEGER NOT NULL,
       card_id TEXT NOT NULL,
+      image_slot TEXT NOT NULL DEFAULT 'back',
       image_data TEXT NOT NULL,
       updated_at TEXT NOT NULL,
-      PRIMARY KEY(user_id, item_number, card_id)
+      PRIMARY KEY(user_id, item_number, card_id, image_slot)
     );
 
     ALTER TABLE user_state
@@ -137,6 +138,21 @@ async function initDb() {
 
     CREATE INDEX IF NOT EXISTS idx_user_state_idempotency_created
       ON user_state_idempotency(created_at);
+  `)
+
+  await pool.query(`
+    ALTER TABLE user_quiz_images
+      ADD COLUMN IF NOT EXISTS image_slot TEXT NOT NULL DEFAULT 'back'
+  `)
+
+  await pool.query(`
+    ALTER TABLE user_quiz_images
+      DROP CONSTRAINT IF EXISTS user_quiz_images_pkey
+  `)
+
+  await pool.query(`
+    ALTER TABLE user_quiz_images
+      ADD PRIMARY KEY(user_id, item_number, card_id, image_slot)
   `)
 }
 
@@ -438,6 +454,10 @@ function getDefaultPersistState() {
   }
 }
 
+function normalizeQuizImageSlot(rawValue) {
+  return rawValue === 'front' ? 'front' : 'back'
+}
+
 function extractQuizImagesFromTrackingState(trackingState) {
   const clonedTrackingState = JSON.parse(JSON.stringify(trackingState ?? { items: {} }))
   const images = []
@@ -460,13 +480,21 @@ function extractQuizImagesFromTrackingState(trackingState) {
         continue
       }
       const cardId = typeof card.id === 'string' ? card.id.trim() : ''
-      const imageDataUrl = typeof card.imageDataUrl === 'string' ? card.imageDataUrl.trim() : ''
       if (!cardId) {
         continue
       }
-      if (imageDataUrl) {
-        images.push({ itemNumber, cardId, imageDataUrl })
+      const frontImageDataUrl = typeof card.frontImageDataUrl === 'string' ? card.frontImageDataUrl.trim() : ''
+      const legacyBackImageDataUrl = typeof card.imageDataUrl === 'string' ? card.imageDataUrl.trim() : ''
+      const backImageDataUrl =
+        typeof card.backImageDataUrl === 'string' ? card.backImageDataUrl.trim() : legacyBackImageDataUrl
+      if (frontImageDataUrl) {
+        images.push({ itemNumber, cardId, imageSlot: 'front', imageDataUrl: frontImageDataUrl })
       }
+      if (backImageDataUrl) {
+        images.push({ itemNumber, cardId, imageSlot: 'back', imageDataUrl: backImageDataUrl })
+      }
+      card.frontImageDataUrl = ''
+      card.backImageDataUrl = ''
       card.imageDataUrl = ''
     }
   }
@@ -491,6 +519,10 @@ function applyQuizImagesToTrackingState(trackingState, imageRows, options = {}) 
       if (!card || typeof card !== 'object') {
         continue
       }
+      card.frontImageDataUrl = ''
+      card.hasFrontImageDataUrl = false
+      card.backImageDataUrl = ''
+      card.hasBackImageDataUrl = false
       card.imageDataUrl = ''
       card.hasImageDataUrl = false
     }
@@ -503,6 +535,7 @@ function applyQuizImagesToTrackingState(trackingState, imageRows, options = {}) 
   for (const row of imageRows) {
     const itemNumber = Number(row.item_number)
     const cardId = typeof row.card_id === 'string' ? row.card_id : ''
+    const imageSlot = normalizeQuizImageSlot(row.image_slot)
     const imageDataUrl = typeof row.image_data === 'string' ? row.image_data : ''
     if (!Number.isFinite(itemNumber) || !cardId) {
       continue
@@ -516,6 +549,13 @@ function applyQuizImagesToTrackingState(trackingState, imageRows, options = {}) 
     if (!card || typeof card !== 'object') {
       continue
     }
+    if (imageSlot === 'front') {
+      card.frontImageDataUrl = metadataOnly ? '' : imageDataUrl
+      card.hasFrontImageDataUrl = true
+      continue
+    }
+    card.backImageDataUrl = metadataOnly ? '' : imageDataUrl
+    card.hasBackImageDataUrl = true
     card.imageDataUrl = metadataOnly ? '' : imageDataUrl
     card.hasImageDataUrl = true
   }
@@ -654,6 +694,7 @@ async function upsertQuizImages(userId, upsertRows, removedRows) {
   for (const row of safeUpserts) {
     const itemNumber = Number(row?.itemNumber)
     const cardId = typeof row?.cardId === 'string' ? row.cardId.trim() : ''
+    const imageSlot = normalizeQuizImageSlot(row?.imageSlot)
     const imageDataUrl = typeof row?.imageDataUrl === 'string' ? row.imageDataUrl.trim() : ''
     if (!Number.isFinite(itemNumber) || !cardId || !imageDataUrl) {
       continue
@@ -661,17 +702,18 @@ async function upsertQuizImages(userId, upsertRows, removedRows) {
     if (imageDataUrl.length > STATE_MAX_IMAGE_DATA_LENGTH) {
       throw new Error(`Image too large for card ${cardId}.`)
     }
-    normalizedUpserts.push({ itemNumber, cardId, imageDataUrl })
+    normalizedUpserts.push({ itemNumber, cardId, imageSlot, imageDataUrl })
   }
 
   const normalizedRemoved = []
   for (const row of safeRemoved) {
     const itemNumber = Number(row?.itemNumber)
     const cardId = typeof row?.cardId === 'string' ? row.cardId.trim() : ''
+    const imageSlot = normalizeQuizImageSlot(row?.imageSlot)
     if (!Number.isFinite(itemNumber) || !cardId) {
       continue
     }
-    normalizedRemoved.push({ itemNumber, cardId })
+    normalizedRemoved.push({ itemNumber, cardId, imageSlot })
   }
 
   const currentCountResult = await pool.query('SELECT COUNT(*)::int AS count FROM user_quiz_images WHERE user_id = $1', [userId])
@@ -682,10 +724,11 @@ async function upsertQuizImages(userId, upsertRows, removedRows) {
   }
 
   for (const row of normalizedRemoved) {
-    await pool.query('DELETE FROM user_quiz_images WHERE user_id = $1 AND item_number = $2 AND card_id = $3', [
+    await pool.query('DELETE FROM user_quiz_images WHERE user_id = $1 AND item_number = $2 AND card_id = $3 AND image_slot = $4', [
       userId,
       row.itemNumber,
       row.cardId,
+      row.imageSlot,
     ])
   }
 
@@ -693,13 +736,13 @@ async function upsertQuizImages(userId, upsertRows, removedRows) {
   for (const row of normalizedUpserts) {
     await pool.query(
       `
-        INSERT INTO user_quiz_images(user_id, item_number, card_id, image_data, updated_at)
-        VALUES($1, $2, $3, $4, $5)
-        ON CONFLICT(user_id, item_number, card_id) DO UPDATE SET
+        INSERT INTO user_quiz_images(user_id, item_number, card_id, image_slot, image_data, updated_at)
+        VALUES($1, $2, $3, $4, $5, $6)
+        ON CONFLICT(user_id, item_number, card_id, image_slot) DO UPDATE SET
           image_data = EXCLUDED.image_data,
           updated_at = EXCLUDED.updated_at
       `,
-      [userId, row.itemNumber, row.cardId, row.imageDataUrl, now],
+      [userId, row.itemNumber, row.cardId, row.imageSlot, row.imageDataUrl, now],
     )
   }
 
@@ -759,6 +802,7 @@ const stateImageSyncSchema = z.object({
       z.object({
         itemNumber: z.number().int(),
         cardId: z.string().trim().min(1).max(120),
+        imageSlot: z.enum(['front', 'back']).optional().default('back'),
         imageDataUrl: z.string().trim().min(1).max(STATE_MAX_IMAGE_DATA_LENGTH),
       }),
     )
@@ -770,6 +814,7 @@ const stateImageSyncSchema = z.object({
       z.object({
         itemNumber: z.number().int(),
         cardId: z.string().trim().min(1).max(120),
+        imageSlot: z.enum(['front', 'back']).optional().default('back'),
       }),
     )
     .max(STATE_MAX_IMAGE_UPSERT_PER_REQUEST * 2)
@@ -891,8 +936,8 @@ app.get('/api/state', enforceClientVersion, async (req, res) => {
   const metadataOnly = req.query.imageMode === 'metadata'
   const imageRows = await pool.query(
     metadataOnly
-      ? `SELECT item_number, card_id FROM user_quiz_images WHERE user_id = $1`
-      : `SELECT item_number, card_id, image_data FROM user_quiz_images WHERE user_id = $1`,
+      ? `SELECT item_number, card_id, image_slot FROM user_quiz_images WHERE user_id = $1`
+      : `SELECT item_number, card_id, image_slot, image_data FROM user_quiz_images WHERE user_id = $1`,
     [uid],
   )
   const hydratedTrackingState = applyQuizImagesToTrackingState(row.trackingState, imageRows.rows, { metadataOnly })
@@ -925,12 +970,22 @@ app.get('/api/state/images/:itemNumber/:cardId', enforceClientVersion, async (re
   }
 
   const result = await pool.query(
-    `SELECT image_data FROM user_quiz_images WHERE user_id = $1 AND item_number = $2 AND card_id = $3`,
+    `SELECT image_slot, image_data FROM user_quiz_images WHERE user_id = $1 AND item_number = $2 AND card_id = $3`,
     [uid, itemNumber, cardId],
   )
-  const imageDataUrl = typeof result.rows[0]?.image_data === 'string' ? result.rows[0].image_data : ''
+  let frontImageDataUrl = ''
+  let backImageDataUrl = ''
+  for (const row of result.rows) {
+    const imageSlot = normalizeQuizImageSlot(row.image_slot)
+    const imageDataUrl = typeof row.image_data === 'string' ? row.image_data : ''
+    if (imageSlot === 'front') {
+      frontImageDataUrl = imageDataUrl
+    } else {
+      backImageDataUrl = imageDataUrl
+    }
+  }
   const refreshedToken = refreshAuthCookie(res, auth)
-  res.json({ imageDataUrl, ...(refreshedToken ? { token: refreshedToken } : {}) })
+  res.json({ frontImageDataUrl, backImageDataUrl, ...(refreshedToken ? { token: refreshedToken } : {}) })
 })
 
 app.put('/api/state', enforceClientVersion, stateWriteLimiter, async (req, res) => {

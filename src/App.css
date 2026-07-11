@@ -2536,6 +2536,73 @@ tbody tr.selected {
   gap: 0.35rem;
 }
 
+.quiz-rich-editor {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+}
+
+.quiz-rich-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.quiz-rich-toolbar .ghost-btn {
+  padding: 0.28rem 0.55rem;
+  line-height: 1.1;
+}
+
+.quiz-rich-color-btn {
+  min-width: 2.2rem;
+}
+
+.quiz-rich-color-swatch {
+  display: inline-block;
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 999px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.quiz-rich-editable {
+  min-height: 3.25rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--text);
+  outline: none;
+  white-space: pre-wrap;
+}
+
+.quiz-rich-editable:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 14%, transparent);
+}
+
+.quiz-rich-editable:empty::before {
+  content: attr(data-placeholder);
+  color: var(--muted);
+}
+
+.quiz-rich-rendered {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.quiz-rich-rendered > * {
+  margin: 0;
+}
+
+.quiz-rich-rendered strong {
+  font-weight: 800;
+}
+
+.quiz-rich-rendered em {
+  font-style: italic;
+}
+
 .quiz-card-media-actions {
   display: flex;
   flex-wrap: wrap;
