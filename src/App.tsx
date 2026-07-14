@@ -15,46 +15,46 @@ import navFlashcardsIcon from './assets/nav/flashcards.svg'
 import navInsightsIcon from './assets/nav/insights.svg'
 import navItemsIcon from './assets/nav/items.svg'
 import logoutIcon from './assets/nav/logout.svg'
-import anatomyIcon from 'healthicons/public/icons/svg/outline/devices/microscope.svg?url'
-import anesthesiaIcon from 'healthicons/public/icons/svg/outline/ppe/ppe_face_mask.svg?url'
-import cancerIcon from 'healthicons/public/icons/svg/outline/conditions/ribbon.svg?url'
-import digestiveSurgeryIcon from 'healthicons/public/icons/svg/outline/body/stomach.svg?url'
-import maxillofacialSurgeryIcon from 'healthicons/public/icons/svg/outline/body/head.svg?url'
-import dermatologyIcon from 'healthicons/public/icons/svg/outline/body/body.svg?url'
-import palliativeCareIcon from 'healthicons/public/icons/svg/outline/symbols/palliative-care.svg?url'
-import endocrinologyIcon from 'healthicons/public/icons/svg/outline/body/thyroid.svg?url'
-import geneticsIcon from 'healthicons/public/icons/svg/outline/body/dna.svg?url'
-import geriatricsIcon from 'healthicons/public/icons/svg/outline/people/elderly.svg?url'
-import gynecologyIcon from 'healthicons/public/icons/svg/outline/body/female_reproductive_system.svg?url'
-import obstetricsIcon from 'healthicons/public/icons/svg/outline/people/pregnant.svg?url'
-import hematologyIcon from 'healthicons/public/icons/svg/outline/body/blood_drop.svg?url'
-import hepatologyIcon from 'healthicons/public/icons/svg/outline/body/liver.svg?url'
-import radiologyIcon from 'healthicons/public/icons/svg/outline/devices/xray.svg?url'
-import immunopathologyIcon from 'healthicons/public/icons/svg/outline/symbols/virus-shield.svg?url'
-import infectiologyIcon from 'healthicons/public/icons/svg/outline/symbols/virus.svg?url'
-import cardiovascularIcon from 'healthicons/public/icons/svg/outline/body/heart_organ.svg?url'
-import generalMedicineIcon from 'healthicons/public/icons/svg/outline/devices/stethoscope.svg?url'
-import intensiveCareIcon from 'healthicons/public/icons/svg/outline/devices/defibrillator.svg?url'
-import internalMedicineIcon from 'healthicons/public/icons/svg/outline/body/body.svg?url'
-import occupationalMedicineIcon from 'healthicons/public/icons/svg/outline/specialties/medical_records.svg?url'
-import molecularMedicineIcon from 'healthicons/public/icons/svg/outline/body/enzyme.svg?url'
-import rehabilitationIcon from 'healthicons/public/icons/svg/outline/specialties/physical_therapy.svg?url'
-import vascularMedicineIcon from 'healthicons/public/icons/svg/outline/body/blood_vessel.svg?url'
-import nephrologyIcon from 'healthicons/public/icons/svg/outline/body/kidneys.svg?url'
-import neurosurgeryIcon from 'healthicons/public/icons/svg/outline/people/neuro_surgery.svg?url'
-import neurologyIcon from 'healthicons/public/icons/svg/outline/body/neurology.svg?url'
-import nutritionIcon from 'healthicons/public/icons/svg/outline/nutrition/nutrition.svg?url'
-import ophthalmologyIcon from 'healthicons/public/icons/svg/outline/body/eye.svg?url'
-import entIcon from 'healthicons/public/icons/svg/outline/body/ear.svg?url'
-import orthopedicsIcon from 'healthicons/public/icons/svg/outline/body/skeleton.svg?url'
-import parasitologyIcon from 'healthicons/public/icons/svg/outline/zoonoses/mosquito.svg?url'
-import pediatricsIcon from 'healthicons/public/icons/svg/outline/people/child_care.svg?url'
-import pulmonologyIcon from 'healthicons/public/icons/svg/outline/body/lungs.svg?url'
-import psychiatryIcon from 'healthicons/public/icons/svg/outline/specialties/psychology.svg?url'
-import rheumatologyIcon from 'healthicons/public/icons/svg/outline/body/joints.svg?url'
-import publicHealthIcon from 'healthicons/public/icons/svg/outline/people/people.svg?url'
-import therapeuticIcon from 'healthicons/public/icons/svg/outline/medications/pills_3.svg?url'
-import urologyIcon from 'healthicons/public/icons/svg/outline/body/bladder.svg?url'
+import anatomyIcon from 'healthicons/public/icons/svg/outline/devices/microscope.svg?raw'
+import anesthesiaIcon from 'healthicons/public/icons/svg/outline/ppe/ppe_face_mask.svg?raw'
+import cancerIcon from 'healthicons/public/icons/svg/outline/conditions/ribbon.svg?raw'
+import digestiveSurgeryIcon from 'healthicons/public/icons/svg/outline/body/stomach.svg?raw'
+import maxillofacialSurgeryIcon from 'healthicons/public/icons/svg/outline/body/head.svg?raw'
+import dermatologyIcon from 'healthicons/public/icons/svg/outline/body/body.svg?raw'
+import palliativeCareIcon from 'healthicons/public/icons/svg/outline/symbols/palliative-care.svg?raw'
+import endocrinologyIcon from 'healthicons/public/icons/svg/outline/body/thyroid.svg?raw'
+import geneticsIcon from 'healthicons/public/icons/svg/outline/body/dna.svg?raw'
+import geriatricsIcon from 'healthicons/public/icons/svg/outline/people/elderly.svg?raw'
+import gynecologyIcon from 'healthicons/public/icons/svg/outline/body/female_reproductive_system.svg?raw'
+import obstetricsIcon from 'healthicons/public/icons/svg/outline/people/pregnant.svg?raw'
+import hematologyIcon from 'healthicons/public/icons/svg/outline/body/blood_drop.svg?raw'
+import hepatologyIcon from 'healthicons/public/icons/svg/outline/body/liver.svg?raw'
+import radiologyIcon from 'healthicons/public/icons/svg/outline/devices/xray.svg?raw'
+import immunopathologyIcon from 'healthicons/public/icons/svg/outline/symbols/virus-shield.svg?raw'
+import infectiologyIcon from 'healthicons/public/icons/svg/outline/symbols/virus.svg?raw'
+import cardiovascularIcon from 'healthicons/public/icons/svg/outline/body/heart_organ.svg?raw'
+import generalMedicineIcon from 'healthicons/public/icons/svg/outline/devices/stethoscope.svg?raw'
+import intensiveCareIcon from 'healthicons/public/icons/svg/outline/devices/defibrillator.svg?raw'
+import internalMedicineIcon from 'healthicons/public/icons/svg/outline/body/body.svg?raw'
+import occupationalMedicineIcon from 'healthicons/public/icons/svg/outline/specialties/medical_records.svg?raw'
+import molecularMedicineIcon from 'healthicons/public/icons/svg/outline/body/enzyme.svg?raw'
+import rehabilitationIcon from 'healthicons/public/icons/svg/outline/specialties/physical_therapy.svg?raw'
+import vascularMedicineIcon from 'healthicons/public/icons/svg/outline/body/blood_vessel.svg?raw'
+import nephrologyIcon from 'healthicons/public/icons/svg/outline/body/kidneys.svg?raw'
+import neurosurgeryIcon from 'healthicons/public/icons/svg/outline/people/neuro_surgery.svg?raw'
+import neurologyIcon from 'healthicons/public/icons/svg/outline/body/neurology.svg?raw'
+import nutritionIcon from 'healthicons/public/icons/svg/outline/nutrition/nutrition.svg?raw'
+import ophthalmologyIcon from 'healthicons/public/icons/svg/outline/body/eye.svg?raw'
+import entIcon from 'healthicons/public/icons/svg/outline/body/ear.svg?raw'
+import orthopedicsIcon from 'healthicons/public/icons/svg/outline/body/skeleton.svg?raw'
+import parasitologyIcon from 'healthicons/public/icons/svg/outline/zoonoses/mosquito.svg?raw'
+import pediatricsIcon from 'healthicons/public/icons/svg/outline/people/child_care.svg?raw'
+import pulmonologyIcon from 'healthicons/public/icons/svg/outline/body/lungs.svg?raw'
+import psychiatryIcon from 'healthicons/public/icons/svg/outline/specialties/psychology.svg?raw'
+import rheumatologyIcon from 'healthicons/public/icons/svg/outline/body/joints.svg?raw'
+import publicHealthIcon from 'healthicons/public/icons/svg/outline/people/people.svg?raw'
+import therapeuticIcon from 'healthicons/public/icons/svg/outline/medications/pills_3.svg?raw'
+import urologyIcon from 'healthicons/public/icons/svg/outline/body/bladder.svg?raw'
 import './App.css'
 
 type Mastery = 'Mauvais' | 'Moyen' | 'Bon' | 'Très bon' | 'Parfait'
@@ -821,47 +821,47 @@ const COLLEGES = [
 
 type CollegeName = (typeof COLLEGES)[number]
 
-const COLLEGE_ICON_META: Record<CollegeName, { src: string; label: string }> = {
-  'ANATOMIE ET CYTOLOGIE PATHOLOGIQUES': { src: anatomyIcon, label: 'Microscope' },
-  'ANESTHÉSIE - RÉANIMATION': { src: anesthesiaIcon, label: "Masque d'anesthésie" },
-  CANCÉROLOGIE: { src: cancerIcon, label: 'Ruban de sensibilisation' },
-  'CHIRURGIE DIGESTIVE': { src: digestiveSurgeryIcon, label: 'Estomac' },
-  'CHIRURGIE MAXILLO-FACIALE': { src: maxillofacialSurgeryIcon, label: 'Tête' },
-  DERMATOLOGIE: { src: dermatologyIcon, label: 'Peau' },
-  'DOULEUR - SOINS PALLIATIFS': { src: palliativeCareIcon, label: 'Soins palliatifs' },
-  ENDOCRINOLOGIE: { src: endocrinologyIcon, label: 'Thyroïde' },
-  GÉNÉTIQUE: { src: geneticsIcon, label: 'ADN' },
-  GÉRIATRIE: { src: geriatricsIcon, label: 'Personne âgée' },
-  'GYNÉCOLOGIE MÉDICALE': { src: gynecologyIcon, label: 'Appareil reproducteur féminin' },
-  'GYNÉCOLOGIE OBSTÉTRIQUE': { src: obstetricsIcon, label: 'Grossesse' },
-  HÉMATOLOGIE: { src: hematologyIcon, label: 'Goutte de sang' },
-  'HÉPATO-GASTRO-ENTÉROLOGIE': { src: hepatologyIcon, label: 'Foie' },
-  'IMAGERIE MÉDICALE': { src: radiologyIcon, label: 'Radiographie' },
-  IMMUNOPATHOLOGIE: { src: immunopathologyIcon, label: 'Protection immunitaire' },
-  INFECTIOLOGIE: { src: infectiologyIcon, label: 'Virus' },
-  'MÉDECINE CARDIOVASCULAIRE': { src: cardiovascularIcon, label: 'Cœur' },
-  'MÉDECINE GÉNÉRALE': { src: generalMedicineIcon, label: 'Stéthoscope' },
-  'MÉDECINE INTENSIVE - RÉANIMATION - URGENCES': { src: intensiveCareIcon, label: 'Défibrillateur' },
-  'MÉDECINE INTERNE': { src: internalMedicineIcon, label: 'Corps humain' },
-  'MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL': { src: occupationalMedicineIcon, label: 'Dossier médical' },
-  'MÉDECINE MOLÉCULAIRE': { src: molecularMedicineIcon, label: 'Enzyme' },
-  'MÉDECINE PHYSIQUE ET RÉADAPTATION': { src: rehabilitationIcon, label: 'Rééducation' },
-  'MÉDECINE VASCULAIRE': { src: vascularMedicineIcon, label: 'Vaisseau sanguin' },
-  NÉPHROLOGIE: { src: nephrologyIcon, label: 'Reins' },
-  NEUROCHIRURGIE: { src: neurosurgeryIcon, label: 'Neurochirurgie' },
-  NEUROLOGIE: { src: neurologyIcon, label: 'Neurologie' },
-  NUTRITION: { src: nutritionIcon, label: 'Nutrition' },
-  OPHTALMOLOGIE: { src: ophthalmologyIcon, label: 'Œil' },
-  ORL: { src: entIcon, label: 'Oreille' },
-  'ORTHOPÉDIE - TRAUMATOLOGIE': { src: orthopedicsIcon, label: 'Squelette' },
-  PARASITOLOGIE: { src: parasitologyIcon, label: 'Moustique' },
-  PÉDIATRIE: { src: pediatricsIcon, label: 'Enfant' },
-  PNEUMOLOGIE: { src: pulmonologyIcon, label: 'Poumons' },
-  'PSYCHIATRIE - ADDICTOLOGIE': { src: psychiatryIcon, label: 'Psychologie' },
-  RHUMATOLOGIE: { src: rheumatologyIcon, label: 'Articulation' },
-  'SANTÉ PUBLIQUE': { src: publicHealthIcon, label: 'Groupe de personnes' },
-  THÉRAPEUTIQUE: { src: therapeuticIcon, label: 'Médicaments' },
-  UROLOGIE: { src: urologyIcon, label: 'Vessie' },
+const COLLEGE_ICON_META: Record<CollegeName, { svg: string; label: string }> = {
+  'ANATOMIE ET CYTOLOGIE PATHOLOGIQUES': { svg: anatomyIcon, label: 'Microscope' },
+  'ANESTHÉSIE - RÉANIMATION': { svg: anesthesiaIcon, label: "Masque d'anesthésie" },
+  CANCÉROLOGIE: { svg: cancerIcon, label: 'Ruban de sensibilisation' },
+  'CHIRURGIE DIGESTIVE': { svg: digestiveSurgeryIcon, label: 'Estomac' },
+  'CHIRURGIE MAXILLO-FACIALE': { svg: maxillofacialSurgeryIcon, label: 'Tête' },
+  DERMATOLOGIE: { svg: dermatologyIcon, label: 'Peau' },
+  'DOULEUR - SOINS PALLIATIFS': { svg: palliativeCareIcon, label: 'Soins palliatifs' },
+  ENDOCRINOLOGIE: { svg: endocrinologyIcon, label: 'Thyroïde' },
+  GÉNÉTIQUE: { svg: geneticsIcon, label: 'ADN' },
+  GÉRIATRIE: { svg: geriatricsIcon, label: 'Personne âgée' },
+  'GYNÉCOLOGIE MÉDICALE': { svg: gynecologyIcon, label: 'Appareil reproducteur féminin' },
+  'GYNÉCOLOGIE OBSTÉTRIQUE': { svg: obstetricsIcon, label: 'Grossesse' },
+  HÉMATOLOGIE: { svg: hematologyIcon, label: 'Goutte de sang' },
+  'HÉPATO-GASTRO-ENTÉROLOGIE': { svg: hepatologyIcon, label: 'Foie' },
+  'IMAGERIE MÉDICALE': { svg: radiologyIcon, label: 'Radiographie' },
+  IMMUNOPATHOLOGIE: { svg: immunopathologyIcon, label: 'Protection immunitaire' },
+  INFECTIOLOGIE: { svg: infectiologyIcon, label: 'Virus' },
+  'MÉDECINE CARDIOVASCULAIRE': { svg: cardiovascularIcon, label: 'Cœur' },
+  'MÉDECINE GÉNÉRALE': { svg: generalMedicineIcon, label: 'Stéthoscope' },
+  'MÉDECINE INTENSIVE - RÉANIMATION - URGENCES': { svg: intensiveCareIcon, label: 'Défibrillateur' },
+  'MÉDECINE INTERNE': { svg: internalMedicineIcon, label: 'Corps humain' },
+  'MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL': { svg: occupationalMedicineIcon, label: 'Dossier médical' },
+  'MÉDECINE MOLÉCULAIRE': { svg: molecularMedicineIcon, label: 'Enzyme' },
+  'MÉDECINE PHYSIQUE ET RÉADAPTATION': { svg: rehabilitationIcon, label: 'Rééducation' },
+  'MÉDECINE VASCULAIRE': { svg: vascularMedicineIcon, label: 'Vaisseau sanguin' },
+  NÉPHROLOGIE: { svg: nephrologyIcon, label: 'Reins' },
+  NEUROCHIRURGIE: { svg: neurosurgeryIcon, label: 'Neurochirurgie' },
+  NEUROLOGIE: { svg: neurologyIcon, label: 'Neurologie' },
+  NUTRITION: { svg: nutritionIcon, label: 'Nutrition' },
+  OPHTALMOLOGIE: { svg: ophthalmologyIcon, label: 'Œil' },
+  ORL: { svg: entIcon, label: 'Oreille' },
+  'ORTHOPÉDIE - TRAUMATOLOGIE': { svg: orthopedicsIcon, label: 'Squelette' },
+  PARASITOLOGIE: { svg: parasitologyIcon, label: 'Moustique' },
+  PÉDIATRIE: { svg: pediatricsIcon, label: 'Enfant' },
+  PNEUMOLOGIE: { svg: pulmonologyIcon, label: 'Poumons' },
+  'PSYCHIATRIE - ADDICTOLOGIE': { svg: psychiatryIcon, label: 'Psychologie' },
+  RHUMATOLOGIE: { svg: rheumatologyIcon, label: 'Articulation' },
+  'SANTÉ PUBLIQUE': { svg: publicHealthIcon, label: 'Groupe de personnes' },
+  THÉRAPEUTIQUE: { svg: therapeuticIcon, label: 'Médicaments' },
+  UROLOGIE: { svg: urologyIcon, label: 'Vessie' },
 }
 
 function CollegeHealthIcon({ college, className = '' }: { college: string; className?: string }) {
@@ -877,7 +877,7 @@ function CollegeHealthIcon({ college, className = '' }: { college: string; class
         className="college-health-icon-glyph"
         role="img"
         aria-label={iconMeta.label}
-        style={{ '--college-icon-url': `url(${iconMeta.src})` } as CSSProperties}
+        dangerouslySetInnerHTML={{ __html: iconMeta.svg }}
       />
     </span>
   )
