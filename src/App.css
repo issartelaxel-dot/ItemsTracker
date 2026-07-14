@@ -2648,6 +2648,22 @@ tbody tr.selected {
   font-weight: 800;
 }
 
+.quiz-rich-bold-text {
+  font-weight: 800 !important;
+}
+
+.quiz-rich-normal-text {
+  font-weight: 400 !important;
+}
+
+.quiz-rich-highlight-text {
+  background-color: #fff59d !important;
+}
+
+.quiz-rich-plain-highlight-text {
+  background-color: var(--input-bg) !important;
+}
+
 .quiz-rich-theme-text {
   color: var(--text) !important;
 }

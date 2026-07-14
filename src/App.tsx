@@ -469,6 +469,22 @@ function hasQuizThemeTextColor(element: HTMLElement) {
   return element.classList.contains('quiz-rich-theme-text')
 }
 
+function hasQuizBoldText(element: HTMLElement) {
+  return element.classList.contains('quiz-rich-bold-text')
+}
+
+function hasQuizNormalText(element: HTMLElement) {
+  return element.classList.contains('quiz-rich-normal-text')
+}
+
+function hasQuizHighlightedText(element: HTMLElement) {
+  return element.classList.contains('quiz-rich-highlight-text')
+}
+
+function hasQuizPlainHighlightText(element: HTMLElement) {
+  return element.classList.contains('quiz-rich-plain-highlight-text')
+}
+
 function sanitizeQuizRichTextHtml(input: string) {
   const html = typeof input === 'string' ? input : ''
   if (!html) {
@@ -522,22 +538,28 @@ function sanitizeQuizRichTextHtml(input: string) {
       return
     }
 
-    const hasBoldStyle = element.style.fontWeight === 'bold' || Number(element.style.fontWeight) >= 600
-    const hasNormalWeightStyle = element.style.fontWeight === 'normal' || element.style.fontWeight === '400'
+    const hasBoldStyle =
+      hasQuizBoldText(element) || element.style.fontWeight === 'bold' || Number(element.style.fontWeight) >= 600
+    const hasNormalWeightStyle =
+      hasQuizNormalText(element) || element.style.fontWeight === 'normal' || element.style.fontWeight === '400'
     const hasItalicStyle = element.style.fontStyle === 'italic'
     const hasNormalFontStyle = element.style.fontStyle === 'normal'
     const hasThemeTextColor = hasQuizThemeTextColor(element)
+    const hasHighlightedText = hasQuizHighlightedText(element)
+    const hasPlainHighlightText = hasQuizPlainHighlightText(element)
     const color = isAllowedQuizTextColor(element.style.color) ? normalizeQuizRichTextColor(element.style.color) : ''
-    const backgroundColor = isAllowedQuizHighlightColor(element.style.backgroundColor)
+    const backgroundColor = hasHighlightedText
+      ? QUIZ_TEXT_HIGHLIGHT_COLOR
+      : isAllowedQuizHighlightColor(element.style.backgroundColor)
       ? normalizeQuizRichTextColor(element.style.backgroundColor)
       : ''
 
-    if (!hasBoldStyle && !hasNormalWeightStyle && !hasItalicStyle && !hasNormalFontStyle && !hasThemeTextColor && !color && !backgroundColor && tagName === 'SPAN') {
+    if (!hasBoldStyle && !hasNormalWeightStyle && !hasItalicStyle && !hasNormalFontStyle && !hasThemeTextColor && !hasPlainHighlightText && !color && !backgroundColor && tagName === 'SPAN') {
       Array.from(element.childNodes).forEach((child) => appendSanitizedNode(parent, child))
       return
     }
 
-    if (!hasBoldStyle && !hasNormalWeightStyle && !hasItalicStyle && !hasNormalFontStyle && !hasThemeTextColor && !color && !backgroundColor && tagName !== 'SPAN') {
+    if (!hasBoldStyle && !hasNormalWeightStyle && !hasItalicStyle && !hasNormalFontStyle && !hasThemeTextColor && !hasPlainHighlightText && !color && !backgroundColor && tagName !== 'SPAN') {
       Array.from(element.childNodes).forEach((child) => appendSanitizedNode(parent, child))
       return
     }
@@ -552,10 +574,13 @@ function sanitizeQuizRichTextHtml(input: string) {
         inlineWrapper.className = 'quiz-rich-theme-text'
       }
       if (backgroundColor) {
-        inlineWrapper.style.backgroundColor = backgroundColor
+        inlineWrapper.classList.add('quiz-rich-highlight-text')
+      }
+      if (hasPlainHighlightText) {
+        inlineWrapper.classList.add('quiz-rich-plain-highlight-text')
       }
       if (hasNormalWeightStyle) {
-        inlineWrapper.style.fontWeight = '400'
+        inlineWrapper.classList.add('quiz-rich-normal-text')
       }
       if (hasNormalFontStyle) {
         inlineWrapper.style.fontStyle = 'normal'
@@ -616,6 +641,7 @@ function applyQuizRichTextCommand(
   const selectedContent = range.cloneContents()
   const isSelectionBold = selectionHasBoldFormatting(editor, range)
   const isSelectionItalic = selectionHasItalicFormatting(editor, range)
+  const isSelectionHighlighted = selectionHasHighlightFormatting(editor, range)
   const wrapper =
     command.type === 'bold'
       ? document.createElement('span')
@@ -628,13 +654,13 @@ function applyQuizRichTextCommand(
           : null
 
   if (wrapper && command.type === 'bold') {
-    wrapper.style.fontWeight = isSelectionBold ? '400' : '800'
+    wrapper.className = isSelectionBold ? 'quiz-rich-normal-text' : 'quiz-rich-bold-text'
   }
   if (wrapper && command.type === 'italic' && isSelectionItalic) {
     wrapper.style.fontStyle = 'normal'
   }
   if (wrapper && command.type === 'highlight') {
-    wrapper.style.backgroundColor = QUIZ_TEXT_HIGHLIGHT_COLOR
+    wrapper.className = isSelectionHighlighted ? 'quiz-rich-plain-highlight-text' : 'quiz-rich-highlight-text'
   }
   if (wrapper && command.type === 'color') {
     wrapper.style.color = command.value
@@ -688,6 +714,7 @@ function getClosestElementMatching(
 
 function elementHasBoldFormatting(element: HTMLElement) {
   return (
+    hasQuizBoldText(element) ||
     element.tagName === 'STRONG' ||
     element.tagName === 'B' ||
     element.style.fontWeight === 'bold' ||
@@ -697,6 +724,10 @@ function elementHasBoldFormatting(element: HTMLElement) {
 
 function elementHasItalicFormatting(element: HTMLElement) {
   return element.tagName === 'EM' || element.tagName === 'I' || element.style.fontStyle === 'italic'
+}
+
+function elementHasHighlightFormatting(element: HTMLElement) {
+  return hasQuizHighlightedText(element) || isAllowedQuizHighlightColor(element.style.backgroundColor)
 }
 
 function selectionHasFormatting(
@@ -722,6 +753,10 @@ function selectionHasBoldFormatting(editor: HTMLDivElement, range: Range) {
 
 function selectionHasItalicFormatting(editor: HTMLDivElement, range: Range) {
   return selectionHasFormatting(editor, range, elementHasItalicFormatting)
+}
+
+function selectionHasHighlightFormatting(editor: HTMLDivElement, range: Range) {
+  return selectionHasFormatting(editor, range, elementHasHighlightFormatting)
 }
 
 function hasSelectedEditorText(editor: HTMLDivElement) {
