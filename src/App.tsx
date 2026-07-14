@@ -8,6 +8,7 @@ import {
   type CSSProperties,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
+  type MouseEvent as ReactMouseEvent,
   type PointerEvent,
 } from 'react'
 import itemsData from './data/items.json'
@@ -761,6 +762,7 @@ type QuizRichTextEditorProps = {
 function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null)
   const isFocusedRef = useRef(false)
+  const lastSelectionRangeRef = useRef<Range | null>(null)
   const lastEmittedValueRef = useRef('')
   const lastAppliedValueRef = useRef('')
   const normalizedValue = sanitizeQuizRichTextHtml(value)
@@ -800,6 +802,33 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
     }
   }
 
+  const saveSelectionRange = () => {
+    const editor = editorRef.current
+    if (!editor) {
+      return
+    }
+    const range = getEditorRange(editor)
+    if (!range || range.collapsed) {
+      return
+    }
+    lastSelectionRangeRef.current = range.cloneRange()
+  }
+
+  const restoreSelectionRange = () => {
+    const editor = editorRef.current
+    const range = lastSelectionRangeRef.current
+    const selection = window.getSelection()
+    if (!editor || !range || !selection) {
+      return
+    }
+    if (!editor.contains(range.startContainer) || !editor.contains(range.endContainer)) {
+      lastSelectionRangeRef.current = null
+      return
+    }
+    selection.removeAllRanges()
+    selection.addRange(range)
+  }
+
   const runCommand = (
     command:
       | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' }
@@ -809,13 +838,25 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
     if (!editor) {
       return
     }
+    restoreSelectionRange()
     if (!hasSelectedEditorText(editor)) {
       editor.focus({ preventScroll: true })
       return
     }
     applyQuizRichTextCommand(editor, command)
     syncValue()
+    lastSelectionRangeRef.current = null
     window.getSelection()?.removeAllRanges()
+  }
+
+  const runToolbarCommand = (
+    event: ReactMouseEvent<HTMLButtonElement>,
+    command:
+      | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' }
+      | { type: 'color'; value: string },
+  ) => {
+    event.preventDefault()
+    runCommand(command)
   }
 
   const handlePaste = (event: ClipboardEvent<HTMLDivElement>) => {
@@ -859,13 +900,13 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
   return (
     <div className="quiz-rich-editor">
       <div className="quiz-rich-toolbar">
-        <button type="button" className="ghost-btn" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand({ type: 'bold' })}>
+        <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'bold' })}>
           Gras
         </button>
-        <button type="button" className="ghost-btn" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand({ type: 'italic' })}>
+        <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'italic' })}>
           Italique
         </button>
-        <button type="button" className="ghost-btn" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand({ type: 'highlight' })}>
+        <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'highlight' })}>
           Surligner
         </button>
         <button
@@ -873,8 +914,7 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
           className="ghost-btn quiz-rich-color-btn"
           title="Couleur normale"
           aria-label="Couleur normale"
-          onMouseDown={(event) => event.preventDefault()}
-          onClick={() => runCommand({ type: 'themeColor' })}
+          onMouseDown={(event) => runToolbarCommand(event, { type: 'themeColor' })}
         >
           <span className="quiz-rich-color-swatch quiz-rich-theme-color-swatch" aria-hidden="true" />
         </button>
@@ -885,8 +925,7 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
             className="ghost-btn quiz-rich-color-btn"
             title={option.label}
             aria-label={option.label}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => runCommand({ type: 'color', value: option.value })}
+            onMouseDown={(event) => runToolbarCommand(event, { type: 'color', value: option.value })}
           >
             <span className="quiz-rich-color-swatch" style={{ backgroundColor: option.value }} aria-hidden="true" />
           </button>
@@ -901,7 +940,10 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
         autoCorrect="off"
         autoCapitalize="off"
         data-placeholder={placeholder}
-        onInput={() => syncValue()}
+        onInput={() => {
+          syncValue()
+          saveSelectionRange()
+        }}
         onFocus={() => {
           isFocusedRef.current = true
         }}
@@ -912,8 +954,11 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
         onPaste={handlePaste}
         onBeforeInput={handleBeforeInput}
         onKeyDown={handleKeyDown}
+        onKeyUp={saveSelectionRange}
+        onMouseUp={saveSelectionRange}
         onDoubleClick={(event) => {
           event.stopPropagation()
+          window.requestAnimationFrame(saveSelectionRange)
         }}
       />
     </div>
