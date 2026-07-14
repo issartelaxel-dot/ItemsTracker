@@ -432,8 +432,6 @@ function getQuizTextSizeClass(text: string): string {
 }
 
 const QUIZ_TEXT_COLOR_OPTIONS = [
-  { label: 'Noir', value: '#1c2a36' },
-  { label: 'Blanc', value: '#ffffff' },
   { label: 'Rouge', value: '#d24747' },
   { label: 'Orange', value: '#d98d11' },
   { label: 'Vert', value: '#00895a' },
@@ -520,18 +518,20 @@ function sanitizeQuizRichTextHtml(input: string) {
     }
 
     const hasBoldStyle = element.style.fontWeight === 'bold' || Number(element.style.fontWeight) >= 600
+    const hasNormalWeightStyle = element.style.fontWeight === 'normal' || element.style.fontWeight === '400'
     const hasItalicStyle = element.style.fontStyle === 'italic'
+    const hasNormalFontStyle = element.style.fontStyle === 'normal'
     const color = isAllowedQuizTextColor(element.style.color) ? normalizeQuizRichTextColor(element.style.color) : ''
     const backgroundColor = isAllowedQuizHighlightColor(element.style.backgroundColor)
       ? normalizeQuizRichTextColor(element.style.backgroundColor)
       : ''
 
-    if (!hasBoldStyle && !hasItalicStyle && !color && !backgroundColor && tagName === 'SPAN') {
+    if (!hasBoldStyle && !hasNormalWeightStyle && !hasItalicStyle && !hasNormalFontStyle && !color && !backgroundColor && tagName === 'SPAN') {
       Array.from(element.childNodes).forEach((child) => appendSanitizedNode(parent, child))
       return
     }
 
-    if (!hasBoldStyle && !hasItalicStyle && !color && !backgroundColor && tagName !== 'SPAN') {
+    if (!hasBoldStyle && !hasNormalWeightStyle && !hasItalicStyle && !hasNormalFontStyle && !color && !backgroundColor && tagName !== 'SPAN') {
       Array.from(element.childNodes).forEach((child) => appendSanitizedNode(parent, child))
       return
     }
@@ -544,6 +544,12 @@ function sanitizeQuizRichTextHtml(input: string) {
       }
       if (backgroundColor) {
         inlineWrapper.style.backgroundColor = backgroundColor
+      }
+      if (hasNormalWeightStyle) {
+        inlineWrapper.style.fontWeight = '400'
+      }
+      if (hasNormalFontStyle) {
+        inlineWrapper.style.fontStyle = 'normal'
       }
     }
 
@@ -599,15 +605,27 @@ function applyQuizRichTextCommand(
   }
 
   const selectedContent = range.cloneContents()
+  const isSelectionBold = selectionHasTag(editor, range, 'STRONG') || selectionHasTag(editor, range, 'B')
+  const isSelectionItalic = selectionHasTag(editor, range, 'EM') || selectionHasTag(editor, range, 'I')
   const wrapper =
     command.type === 'bold'
-      ? document.createElement('strong')
+      ? isSelectionBold
+        ? document.createElement('span')
+        : document.createElement('strong')
       : command.type === 'italic'
-        ? document.createElement('em')
+        ? isSelectionItalic
+          ? document.createElement('span')
+          : document.createElement('em')
         : command.type === 'highlight' || command.type === 'color'
           ? document.createElement('span')
           : null
 
+  if (wrapper && command.type === 'bold' && isSelectionBold) {
+    wrapper.style.fontWeight = '400'
+  }
+  if (wrapper && command.type === 'italic' && isSelectionItalic) {
+    wrapper.style.fontStyle = 'normal'
+  }
   if (wrapper && command.type === 'highlight') {
     wrapper.style.backgroundColor = QUIZ_TEXT_HIGHLIGHT_COLOR
   }
@@ -617,10 +635,12 @@ function applyQuizRichTextCommand(
 
   range.deleteContents()
   if (command.type === 'normal') {
-    const plainText = selectedContent.textContent ?? ''
-    const textNode = document.createTextNode(plainText)
-    range.insertNode(textNode)
-    placeCaretAfterNode(textNode)
+    const normalWrapper = document.createElement('span')
+    normalWrapper.style.fontWeight = '400'
+    normalWrapper.style.fontStyle = 'normal'
+    normalWrapper.appendChild(document.createTextNode(selectedContent.textContent ?? ''))
+    range.insertNode(normalWrapper)
+    placeCaretAfterNode(normalWrapper)
     return
   }
 
@@ -649,6 +669,32 @@ function getEditorRange(editor: HTMLDivElement) {
     return null
   }
   return selection.getRangeAt(0)
+}
+
+function getClosestElementWithTag(node: Node | null, editor: HTMLDivElement, tagName: string) {
+  let current: Node | null = node
+  const normalizedTagName = tagName.toUpperCase()
+  while (current && current !== editor) {
+    if (current.nodeType === Node.ELEMENT_NODE && (current as Element).tagName === normalizedTagName) {
+      return current as Element
+    }
+    current = current.parentNode
+  }
+  return null
+}
+
+function selectionHasTag(editor: HTMLDivElement, range: Range, tagName: string) {
+  const normalizedTagName = tagName.toUpperCase()
+  const fragment = range.cloneContents()
+  const fragmentRoot = document.createElement('div')
+  fragmentRoot.appendChild(fragment)
+  if (fragmentRoot.querySelector(normalizedTagName.toLowerCase())) {
+    return true
+  }
+  return Boolean(
+    getClosestElementWithTag(range.startContainer, editor, normalizedTagName) ||
+      getClosestElementWithTag(range.endContainer, editor, normalizedTagName),
+  )
 }
 
 function hasSelectedEditorText(editor: HTMLDivElement) {
