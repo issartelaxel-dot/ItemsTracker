@@ -936,6 +936,8 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
         className="quiz-rich-editable"
         contentEditable
         suppressContentEditableWarning
+        role="textbox"
+        tabIndex={0}
         spellCheck={false}
         autoCorrect="off"
         autoCapitalize="off"
@@ -955,6 +957,12 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
         onBeforeInput={handleBeforeInput}
         onKeyDown={handleKeyDown}
         onKeyUp={saveSelectionRange}
+        onMouseDown={(event) => {
+          event.stopPropagation()
+        }}
+        onClick={(event) => {
+          event.stopPropagation()
+        }}
         onMouseUp={saveSelectionRange}
         onDoubleClick={(event) => {
           event.stopPropagation()
