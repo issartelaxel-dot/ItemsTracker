@@ -2619,6 +2619,12 @@ tbody tr.selected {
   border: 1px solid rgba(0, 0, 0, 0.12);
 }
 
+.quiz-rich-theme-color-swatch {
+  background:
+    linear-gradient(135deg, #1c2a36 0 48%, #fff 52% 100%);
+  border-color: rgba(117, 139, 164, 0.55);
+}
+
 .quiz-rich-editable {
   min-height: 3.25rem;
   padding: 0.7rem 0.85rem;
@@ -2640,6 +2646,10 @@ tbody tr.selected {
 
 .quiz-rich-editable strong {
   font-weight: 800;
+}
+
+.quiz-rich-theme-text {
+  color: var(--text) !important;
 }
 
 :root[data-theme='dark'] .quiz-rich-editable {

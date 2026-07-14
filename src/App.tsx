@@ -464,6 +464,10 @@ function isAllowedQuizHighlightColor(value: string) {
   return normalizeQuizRichTextColor(value) === normalizeQuizRichTextColor(QUIZ_TEXT_HIGHLIGHT_COLOR)
 }
 
+function hasQuizThemeTextColor(element: HTMLElement) {
+  return element.classList.contains('quiz-rich-theme-text')
+}
+
 function sanitizeQuizRichTextHtml(input: string) {
   const html = typeof input === 'string' ? input : ''
   if (!html) {
@@ -521,17 +525,18 @@ function sanitizeQuizRichTextHtml(input: string) {
     const hasNormalWeightStyle = element.style.fontWeight === 'normal' || element.style.fontWeight === '400'
     const hasItalicStyle = element.style.fontStyle === 'italic'
     const hasNormalFontStyle = element.style.fontStyle === 'normal'
+    const hasThemeTextColor = hasQuizThemeTextColor(element)
     const color = isAllowedQuizTextColor(element.style.color) ? normalizeQuizRichTextColor(element.style.color) : ''
     const backgroundColor = isAllowedQuizHighlightColor(element.style.backgroundColor)
       ? normalizeQuizRichTextColor(element.style.backgroundColor)
       : ''
 
-    if (!hasBoldStyle && !hasNormalWeightStyle && !hasItalicStyle && !hasNormalFontStyle && !color && !backgroundColor && tagName === 'SPAN') {
+    if (!hasBoldStyle && !hasNormalWeightStyle && !hasItalicStyle && !hasNormalFontStyle && !hasThemeTextColor && !color && !backgroundColor && tagName === 'SPAN') {
       Array.from(element.childNodes).forEach((child) => appendSanitizedNode(parent, child))
       return
     }
 
-    if (!hasBoldStyle && !hasNormalWeightStyle && !hasItalicStyle && !hasNormalFontStyle && !color && !backgroundColor && tagName !== 'SPAN') {
+    if (!hasBoldStyle && !hasNormalWeightStyle && !hasItalicStyle && !hasNormalFontStyle && !hasThemeTextColor && !color && !backgroundColor && tagName !== 'SPAN') {
       Array.from(element.childNodes).forEach((child) => appendSanitizedNode(parent, child))
       return
     }
@@ -541,6 +546,9 @@ function sanitizeQuizRichTextHtml(input: string) {
     if (inlineWrapper) {
       if (color) {
         inlineWrapper.style.color = color
+      }
+      if (hasThemeTextColor) {
+        inlineWrapper.className = 'quiz-rich-theme-text'
       }
       if (backgroundColor) {
         inlineWrapper.style.backgroundColor = backgroundColor
@@ -595,7 +603,7 @@ function hasQuizRichTextContent(value: string) {
 function applyQuizRichTextCommand(
   editor: HTMLDivElement,
   command:
-    | { type: 'bold' | 'italic' | 'normal' | 'highlight' }
+    | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' }
     | { type: 'color'; value: string },
 ) {
   editor.focus({ preventScroll: true })
@@ -605,23 +613,21 @@ function applyQuizRichTextCommand(
   }
 
   const selectedContent = range.cloneContents()
-  const isSelectionBold = selectionHasTag(editor, range, 'STRONG') || selectionHasTag(editor, range, 'B')
-  const isSelectionItalic = selectionHasTag(editor, range, 'EM') || selectionHasTag(editor, range, 'I')
+  const isSelectionBold = selectionHasBoldFormatting(editor, range)
+  const isSelectionItalic = selectionHasItalicFormatting(editor, range)
   const wrapper =
     command.type === 'bold'
-      ? isSelectionBold
-        ? document.createElement('span')
-        : document.createElement('strong')
+      ? document.createElement('span')
       : command.type === 'italic'
         ? isSelectionItalic
           ? document.createElement('span')
           : document.createElement('em')
-        : command.type === 'highlight' || command.type === 'color'
+        : command.type === 'highlight' || command.type === 'color' || command.type === 'themeColor'
           ? document.createElement('span')
           : null
 
-  if (wrapper && command.type === 'bold' && isSelectionBold) {
-    wrapper.style.fontWeight = '400'
+  if (wrapper && command.type === 'bold') {
+    wrapper.style.fontWeight = isSelectionBold ? '400' : '800'
   }
   if (wrapper && command.type === 'italic' && isSelectionItalic) {
     wrapper.style.fontStyle = 'normal'
@@ -632,18 +638,11 @@ function applyQuizRichTextCommand(
   if (wrapper && command.type === 'color') {
     wrapper.style.color = command.value
   }
-
-  range.deleteContents()
-  if (command.type === 'normal') {
-    const normalWrapper = document.createElement('span')
-    normalWrapper.style.fontWeight = '400'
-    normalWrapper.style.fontStyle = 'normal'
-    normalWrapper.appendChild(document.createTextNode(selectedContent.textContent ?? ''))
-    range.insertNode(normalWrapper)
-    placeCaretAfterNode(normalWrapper)
-    return
+  if (wrapper && command.type === 'themeColor') {
+    wrapper.className = 'quiz-rich-theme-text'
   }
 
+  range.deleteContents()
   if (!wrapper) {
     return
   }
@@ -671,30 +670,57 @@ function getEditorRange(editor: HTMLDivElement) {
   return selection.getRangeAt(0)
 }
 
-function getClosestElementWithTag(node: Node | null, editor: HTMLDivElement, tagName: string) {
+function getClosestElementMatching(
+  node: Node | null,
+  editor: HTMLDivElement,
+  predicate: (element: HTMLElement) => boolean,
+) {
   let current: Node | null = node
-  const normalizedTagName = tagName.toUpperCase()
   while (current && current !== editor) {
-    if (current.nodeType === Node.ELEMENT_NODE && (current as Element).tagName === normalizedTagName) {
-      return current as Element
+    if (current.nodeType === Node.ELEMENT_NODE && predicate(current as HTMLElement)) {
+      return current as HTMLElement
     }
     current = current.parentNode
   }
   return null
 }
 
-function selectionHasTag(editor: HTMLDivElement, range: Range, tagName: string) {
-  const normalizedTagName = tagName.toUpperCase()
+function elementHasBoldFormatting(element: HTMLElement) {
+  return (
+    element.tagName === 'STRONG' ||
+    element.tagName === 'B' ||
+    element.style.fontWeight === 'bold' ||
+    Number(element.style.fontWeight) >= 600
+  )
+}
+
+function elementHasItalicFormatting(element: HTMLElement) {
+  return element.tagName === 'EM' || element.tagName === 'I' || element.style.fontStyle === 'italic'
+}
+
+function selectionHasFormatting(
+  editor: HTMLDivElement,
+  range: Range,
+  predicate: (element: HTMLElement) => boolean,
+) {
   const fragment = range.cloneContents()
   const fragmentRoot = document.createElement('div')
   fragmentRoot.appendChild(fragment)
-  if (fragmentRoot.querySelector(normalizedTagName.toLowerCase())) {
+  if (Array.from(fragmentRoot.querySelectorAll('*')).some((element) => predicate(element as HTMLElement))) {
     return true
   }
   return Boolean(
-    getClosestElementWithTag(range.startContainer, editor, normalizedTagName) ||
-      getClosestElementWithTag(range.endContainer, editor, normalizedTagName),
+    getClosestElementMatching(range.startContainer, editor, predicate) ||
+      getClosestElementMatching(range.endContainer, editor, predicate),
   )
+}
+
+function selectionHasBoldFormatting(editor: HTMLDivElement, range: Range) {
+  return selectionHasFormatting(editor, range, elementHasBoldFormatting)
+}
+
+function selectionHasItalicFormatting(editor: HTMLDivElement, range: Range) {
+  return selectionHasFormatting(editor, range, elementHasItalicFormatting)
 }
 
 function hasSelectedEditorText(editor: HTMLDivElement) {
@@ -776,7 +802,7 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
 
   const runCommand = (
     command:
-      | { type: 'bold' | 'italic' | 'normal' | 'highlight' }
+      | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' }
       | { type: 'color'; value: string },
   ) => {
     const editor = editorRef.current
@@ -842,8 +868,15 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
         <button type="button" className="ghost-btn" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand({ type: 'highlight' })}>
           Surligner
         </button>
-        <button type="button" className="ghost-btn" onMouseDown={(event) => event.preventDefault()} onClick={() => runCommand({ type: 'normal' })}>
-          Normal
+        <button
+          type="button"
+          className="ghost-btn quiz-rich-color-btn"
+          title="Couleur normale"
+          aria-label="Couleur normale"
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => runCommand({ type: 'themeColor' })}
+        >
+          <span className="quiz-rich-color-swatch quiz-rich-theme-color-swatch" aria-hidden="true" />
         </button>
         {QUIZ_TEXT_COLOR_OPTIONS.map((option) => (
           <button
