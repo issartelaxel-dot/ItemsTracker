@@ -1,4 +1,13 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ClipboardEvent,
+  type CSSProperties,
+  type PointerEvent,
+} from 'react'
 import itemsData from './data/items.json'
 import navCollegesIcon from './assets/nav/colleges.svg'
 import navDashboardIcon from './assets/nav/dashboard.svg'
@@ -6,6 +15,46 @@ import navFlashcardsIcon from './assets/nav/flashcards.svg'
 import navInsightsIcon from './assets/nav/insights.svg'
 import navItemsIcon from './assets/nav/items.svg'
 import logoutIcon from './assets/nav/logout.svg'
+import anatomyIcon from 'healthicons/public/icons/svg/outline/devices/microscope.svg?url'
+import anesthesiaIcon from 'healthicons/public/icons/svg/outline/ppe/ppe_face_mask.svg?url'
+import cancerIcon from 'healthicons/public/icons/svg/outline/conditions/ribbon.svg?url'
+import digestiveSurgeryIcon from 'healthicons/public/icons/svg/outline/body/stomach.svg?url'
+import maxillofacialSurgeryIcon from 'healthicons/public/icons/svg/outline/body/head.svg?url'
+import dermatologyIcon from 'healthicons/public/icons/svg/outline/body/body.svg?url'
+import palliativeCareIcon from 'healthicons/public/icons/svg/outline/symbols/palliative-care.svg?url'
+import endocrinologyIcon from 'healthicons/public/icons/svg/outline/body/thyroid.svg?url'
+import geneticsIcon from 'healthicons/public/icons/svg/outline/body/dna.svg?url'
+import geriatricsIcon from 'healthicons/public/icons/svg/outline/people/elderly.svg?url'
+import gynecologyIcon from 'healthicons/public/icons/svg/outline/body/female_reproductive_system.svg?url'
+import obstetricsIcon from 'healthicons/public/icons/svg/outline/people/pregnant.svg?url'
+import hematologyIcon from 'healthicons/public/icons/svg/outline/body/blood_drop.svg?url'
+import hepatologyIcon from 'healthicons/public/icons/svg/outline/body/liver.svg?url'
+import radiologyIcon from 'healthicons/public/icons/svg/outline/devices/xray.svg?url'
+import immunopathologyIcon from 'healthicons/public/icons/svg/outline/symbols/virus-shield.svg?url'
+import infectiologyIcon from 'healthicons/public/icons/svg/outline/symbols/virus.svg?url'
+import cardiovascularIcon from 'healthicons/public/icons/svg/outline/body/heart_organ.svg?url'
+import generalMedicineIcon from 'healthicons/public/icons/svg/outline/devices/stethoscope.svg?url'
+import intensiveCareIcon from 'healthicons/public/icons/svg/outline/devices/defibrillator.svg?url'
+import internalMedicineIcon from 'healthicons/public/icons/svg/outline/body/body.svg?url'
+import occupationalMedicineIcon from 'healthicons/public/icons/svg/outline/specialties/medical_records.svg?url'
+import molecularMedicineIcon from 'healthicons/public/icons/svg/outline/body/enzyme.svg?url'
+import rehabilitationIcon from 'healthicons/public/icons/svg/outline/specialties/physical_therapy.svg?url'
+import vascularMedicineIcon from 'healthicons/public/icons/svg/outline/body/blood_vessel.svg?url'
+import nephrologyIcon from 'healthicons/public/icons/svg/outline/body/kidneys.svg?url'
+import neurosurgeryIcon from 'healthicons/public/icons/svg/outline/people/neuro_surgery.svg?url'
+import neurologyIcon from 'healthicons/public/icons/svg/outline/body/neurology.svg?url'
+import nutritionIcon from 'healthicons/public/icons/svg/outline/nutrition/nutrition.svg?url'
+import ophthalmologyIcon from 'healthicons/public/icons/svg/outline/body/eye.svg?url'
+import entIcon from 'healthicons/public/icons/svg/outline/body/ear.svg?url'
+import orthopedicsIcon from 'healthicons/public/icons/svg/outline/body/skeleton.svg?url'
+import parasitologyIcon from 'healthicons/public/icons/svg/outline/zoonoses/mosquito.svg?url'
+import pediatricsIcon from 'healthicons/public/icons/svg/outline/people/child_care.svg?url'
+import pulmonologyIcon from 'healthicons/public/icons/svg/outline/body/lungs.svg?url'
+import psychiatryIcon from 'healthicons/public/icons/svg/outline/specialties/psychology.svg?url'
+import rheumatologyIcon from 'healthicons/public/icons/svg/outline/body/joints.svg?url'
+import publicHealthIcon from 'healthicons/public/icons/svg/outline/people/people.svg?url'
+import therapeuticIcon from 'healthicons/public/icons/svg/outline/medications/pills_3.svg?url'
+import urologyIcon from 'healthicons/public/icons/svg/outline/body/bladder.svg?url'
 import './App.css'
 
 type Mastery = 'Mauvais' | 'Moyen' | 'Bon' | 'Très bon' | 'Parfait'
@@ -539,13 +588,14 @@ function applyQuizRichTextCommand(
     | { type: 'bold' | 'italic' | 'normal' | 'highlight' }
     | { type: 'color'; value: string },
 ) {
-  editor.focus()
-  document.execCommand('styleWithCSS', false, 'true')
+  editor.focus({ preventScroll: true })
   if (command.type === 'bold') {
+    document.execCommand('styleWithCSS', false, 'false')
     document.execCommand('bold')
     return
   }
   if (command.type === 'italic') {
+    document.execCommand('styleWithCSS', false, 'false')
     document.execCommand('italic')
     return
   }
@@ -554,12 +604,30 @@ function applyQuizRichTextCommand(
     return
   }
   if (command.type === 'highlight') {
+    document.execCommand('styleWithCSS', false, 'true')
     document.execCommand('hiliteColor', false, QUIZ_TEXT_HIGHLIGHT_COLOR)
     return
   }
   if (command.type === 'color') {
+    document.execCommand('styleWithCSS', false, 'true')
     document.execCommand('foreColor', false, command.value)
   }
+}
+
+function getEditorSelection(editor: HTMLDivElement) {
+  const selection = window.getSelection()
+  if (!selection || selection.rangeCount === 0 || !selection.anchorNode || !selection.focusNode) {
+    return null
+  }
+  if (!editor.contains(selection.anchorNode) || !editor.contains(selection.focusNode)) {
+    return null
+  }
+  return selection
+}
+
+function hasSelectedEditorText(editor: HTMLDivElement) {
+  const selection = getEditorSelection(editor)
+  return Boolean(selection && !selection.isCollapsed && selection.toString().length > 0)
 }
 
 type QuizRichTextEditorProps = {
@@ -570,6 +638,9 @@ type QuizRichTextEditorProps = {
 
 function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null)
+  const isFocusedRef = useRef(false)
+  const lastEmittedValueRef = useRef('')
+  const lastAppliedValueRef = useRef('')
   const normalizedValue = sanitizeQuizRichTextHtml(value)
 
   useEffect(() => {
@@ -577,26 +648,34 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
     if (!editor) {
       return
     }
-    if (sanitizeQuizRichTextHtml(editor.innerHTML) === normalizedValue) {
+    if (isFocusedRef.current) {
+      return
+    }
+    if (lastAppliedValueRef.current === normalizedValue && sanitizeQuizRichTextHtml(editor.innerHTML) === normalizedValue) {
       return
     }
     editor.innerHTML = normalizedValue
+    lastAppliedValueRef.current = normalizedValue
+    lastEmittedValueRef.current = normalizedValue
   }, [normalizedValue])
 
-  const syncValue = () => {
+  const syncValue = (options: { commitDom?: boolean } = {}) => {
     const editor = editorRef.current
     if (!editor) {
       return
     }
     const nextValue = sanitizeQuizRichTextHtml(editor.innerHTML)
-    if (!nextValue) {
-      if (editor.innerHTML !== '') {
-        editor.innerHTML = ''
+    if (options.commitDom) {
+      const nextDomValue = nextValue || ''
+      if (editor.innerHTML !== nextDomValue) {
+        editor.innerHTML = nextDomValue
       }
-      onChange('')
-      return
+      lastAppliedValueRef.current = nextValue
     }
-    onChange(nextValue)
+    if (lastEmittedValueRef.current !== nextValue) {
+      lastEmittedValueRef.current = nextValue
+      onChange(nextValue)
+    }
   }
 
   const runCommand = (
@@ -608,7 +687,21 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
     if (!editor) {
       return
     }
+    if (!hasSelectedEditorText(editor)) {
+      editor.focus({ preventScroll: true })
+      return
+    }
     applyQuizRichTextCommand(editor, command)
+    syncValue()
+  }
+
+  const handlePaste = (event: ClipboardEvent<HTMLDivElement>) => {
+    event.preventDefault()
+    const pastedText = event.clipboardData.getData('text/plain')
+    if (!pastedText) {
+      return
+    }
+    document.execCommand('insertText', false, pastedText)
     syncValue()
   }
 
@@ -646,9 +739,19 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
         className="quiz-rich-editable"
         contentEditable
         suppressContentEditableWarning
+        spellCheck={false}
+        autoCorrect="off"
+        autoCapitalize="off"
         data-placeholder={placeholder}
-        onInput={syncValue}
-        onBlur={syncValue}
+        onInput={() => syncValue()}
+        onFocus={() => {
+          isFocusedRef.current = true
+        }}
+        onBlur={() => {
+          isFocusedRef.current = false
+          syncValue({ commitDom: true })
+        }}
+        onPaste={handlePaste}
       />
     </div>
   )
@@ -715,6 +818,70 @@ const COLLEGES = [
   'THÉRAPEUTIQUE',
   'UROLOGIE',
 ] as const
+
+type CollegeName = (typeof COLLEGES)[number]
+
+const COLLEGE_ICON_META: Record<CollegeName, { src: string; label: string }> = {
+  'ANATOMIE ET CYTOLOGIE PATHOLOGIQUES': { src: anatomyIcon, label: 'Microscope' },
+  'ANESTHÉSIE - RÉANIMATION': { src: anesthesiaIcon, label: "Masque d'anesthésie" },
+  CANCÉROLOGIE: { src: cancerIcon, label: 'Ruban de sensibilisation' },
+  'CHIRURGIE DIGESTIVE': { src: digestiveSurgeryIcon, label: 'Estomac' },
+  'CHIRURGIE MAXILLO-FACIALE': { src: maxillofacialSurgeryIcon, label: 'Tête' },
+  DERMATOLOGIE: { src: dermatologyIcon, label: 'Peau' },
+  'DOULEUR - SOINS PALLIATIFS': { src: palliativeCareIcon, label: 'Soins palliatifs' },
+  ENDOCRINOLOGIE: { src: endocrinologyIcon, label: 'Thyroïde' },
+  GÉNÉTIQUE: { src: geneticsIcon, label: 'ADN' },
+  GÉRIATRIE: { src: geriatricsIcon, label: 'Personne âgée' },
+  'GYNÉCOLOGIE MÉDICALE': { src: gynecologyIcon, label: 'Appareil reproducteur féminin' },
+  'GYNÉCOLOGIE OBSTÉTRIQUE': { src: obstetricsIcon, label: 'Grossesse' },
+  HÉMATOLOGIE: { src: hematologyIcon, label: 'Goutte de sang' },
+  'HÉPATO-GASTRO-ENTÉROLOGIE': { src: hepatologyIcon, label: 'Foie' },
+  'IMAGERIE MÉDICALE': { src: radiologyIcon, label: 'Radiographie' },
+  IMMUNOPATHOLOGIE: { src: immunopathologyIcon, label: 'Protection immunitaire' },
+  INFECTIOLOGIE: { src: infectiologyIcon, label: 'Virus' },
+  'MÉDECINE CARDIOVASCULAIRE': { src: cardiovascularIcon, label: 'Cœur' },
+  'MÉDECINE GÉNÉRALE': { src: generalMedicineIcon, label: 'Stéthoscope' },
+  'MÉDECINE INTENSIVE - RÉANIMATION - URGENCES': { src: intensiveCareIcon, label: 'Défibrillateur' },
+  'MÉDECINE INTERNE': { src: internalMedicineIcon, label: 'Corps humain' },
+  'MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL': { src: occupationalMedicineIcon, label: 'Dossier médical' },
+  'MÉDECINE MOLÉCULAIRE': { src: molecularMedicineIcon, label: 'Enzyme' },
+  'MÉDECINE PHYSIQUE ET RÉADAPTATION': { src: rehabilitationIcon, label: 'Rééducation' },
+  'MÉDECINE VASCULAIRE': { src: vascularMedicineIcon, label: 'Vaisseau sanguin' },
+  NÉPHROLOGIE: { src: nephrologyIcon, label: 'Reins' },
+  NEUROCHIRURGIE: { src: neurosurgeryIcon, label: 'Neurochirurgie' },
+  NEUROLOGIE: { src: neurologyIcon, label: 'Neurologie' },
+  NUTRITION: { src: nutritionIcon, label: 'Nutrition' },
+  OPHTALMOLOGIE: { src: ophthalmologyIcon, label: 'Œil' },
+  ORL: { src: entIcon, label: 'Oreille' },
+  'ORTHOPÉDIE - TRAUMATOLOGIE': { src: orthopedicsIcon, label: 'Squelette' },
+  PARASITOLOGIE: { src: parasitologyIcon, label: 'Moustique' },
+  PÉDIATRIE: { src: pediatricsIcon, label: 'Enfant' },
+  PNEUMOLOGIE: { src: pulmonologyIcon, label: 'Poumons' },
+  'PSYCHIATRIE - ADDICTOLOGIE': { src: psychiatryIcon, label: 'Psychologie' },
+  RHUMATOLOGIE: { src: rheumatologyIcon, label: 'Articulation' },
+  'SANTÉ PUBLIQUE': { src: publicHealthIcon, label: 'Groupe de personnes' },
+  THÉRAPEUTIQUE: { src: therapeuticIcon, label: 'Médicaments' },
+  UROLOGIE: { src: urologyIcon, label: 'Vessie' },
+}
+
+function CollegeHealthIcon({ college, className = '' }: { college: string; className?: string }) {
+  const iconMeta = COLLEGE_ICON_META[college as CollegeName]
+
+  if (!iconMeta) {
+    return null
+  }
+
+  return (
+    <span className={`college-health-icon ${className}`} title={iconMeta.label}>
+      <span
+        className="college-health-icon-glyph"
+        role="img"
+        aria-label={iconMeta.label}
+        style={{ '--college-icon-url': `url(${iconMeta.src})` } as CSSProperties}
+      />
+    </span>
+  )
+}
 
 const rawItems = itemsData as ItemBase[]
 
@@ -6203,6 +6370,7 @@ function getPasswordStrengthMeta(password: string) {
                         updateCollegeAssignment(effectiveSelectedItem.itemNumber, college, event.target.checked)
                       }
                     />
+                    <CollegeHealthIcon college={college} className="college-picker-health-icon" />
                     <span>{college}</span>
                   </label>
                 ))}
@@ -6221,7 +6389,10 @@ function getPasswordStrengthMeta(password: string) {
                   return (
                     <section key={college} className={`college-card ${data.favorite ? 'is-favorite' : ''}`}>
                       <div className="college-card-head">
-                        <p>{college}</p>
+                        <p>
+                          <CollegeHealthIcon college={college} className="college-card-health-icon" />
+                          <span>{college}</span>
+                        </p>
                         <button
                           className={`star-btn ${data.favorite ? 'active' : ''}${starFx[collegeFxKey] ? ' pop' : ''}`}
                           onClick={() => {
@@ -7100,6 +7271,7 @@ function getPasswordStrengthMeta(password: string) {
                                   )
                                 }
                               >
+                                <CollegeHealthIcon college={college} className="flash-generator-health-icon" />
                                 {college}
                               </button>
                             )
@@ -7489,7 +7661,10 @@ function getPasswordStrengthMeta(password: string) {
                     className={`colleges-heat-cell ${tone}`}
                     title={`${row.college} • ${row.completion}%`}
                   >
-                    <span>{row.college}</span>
+                    <div className="colleges-heat-cell-head">
+                      <CollegeHealthIcon college={row.college} />
+                      <span>{row.college}</span>
+                    </div>
                     <strong>{row.completion}%</strong>
                   </div>
                 )

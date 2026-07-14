@@ -1747,11 +1747,25 @@ h3 {
   padding: 0.2rem 0.48rem;
   font-size: 0.72rem;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
 }
 
 .flash-generator-chip.active {
   border-color: color-mix(in oklab, var(--accent) 55%, var(--border));
   background: color-mix(in oklab, var(--accent) 16%, var(--input-bg));
+}
+
+.flash-generator-health-icon {
+  width: 21px;
+  height: 21px;
+  border-radius: 7px;
+}
+
+.flash-generator-health-icon .college-health-icon-glyph {
+  width: 14px;
+  height: 14px;
 }
 
 .flash-generator-count-row {
@@ -1893,12 +1907,48 @@ h3 {
   gap: 0.24rem;
 }
 
-.colleges-heat-cell span {
+.colleges-heat-cell-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.42rem;
+  align-items: start;
+}
+
+.colleges-heat-cell-head > span:last-child {
   font-size: 0.76rem;
+  line-height: 1.25;
 }
 
 .colleges-heat-cell strong {
   font-size: 0.86rem;
+}
+
+.college-health-icon {
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  color: #255fc7;
+  background: rgba(47, 101, 209, 0.1);
+  border: 1px solid rgba(47, 101, 209, 0.16);
+}
+
+.college-health-icon-glyph {
+  width: 18px;
+  height: 18px;
+  display: block;
+  background: currentColor;
+  -webkit-mask: var(--college-icon-url) center / contain no-repeat;
+  mask: var(--college-icon-url) center / contain no-repeat;
+}
+
+:root[data-theme='dark'] .college-health-icon {
+  color: #9dbdff;
+  background: rgba(121, 165, 255, 0.15);
+  border-color: rgba(151, 185, 255, 0.22);
 }
 
 .colleges-heat-cell.zero {
@@ -3090,6 +3140,18 @@ tbody tr.selected {
   font-size: 0.8rem;
 }
 
+.college-picker-health-icon {
+  width: 23px;
+  height: 23px;
+  border-radius: 7px;
+  margin-top: -0.08rem;
+}
+
+.college-picker-health-icon .college-health-icon-glyph {
+  width: 15px;
+  height: 15px;
+}
+
 .item-visual-editor {
   display: grid;
   grid-template-columns: 74px 112px minmax(170px, 1fr) auto;
@@ -3648,6 +3710,25 @@ tbody tr.selected {
   margin: 0;
   font-weight: 600;
   font-size: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
+  min-width: 0;
+}
+
+.college-card-head p > span:last-child {
+  min-width: 0;
+}
+
+.college-card-health-icon {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+}
+
+.college-card-health-icon .college-health-icon-glyph {
+  width: 16px;
+  height: 16px;
 }
 
 .star-btn {
