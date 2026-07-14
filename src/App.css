@@ -2624,15 +2624,29 @@ tbody tr.selected {
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--border);
   border-radius: 12px;
-  background: #fff;
+  background: var(--input-bg);
   color: var(--text);
   outline: none;
   white-space: pre-wrap;
+  caret-color: var(--text);
+  color-scheme: light;
+  user-select: text;
+}
+
+:root[data-theme='dark'] .quiz-rich-editable {
+  background: #061a48;
+  color: #eef5ff;
+  color-scheme: dark;
 }
 
 .quiz-rich-editable:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--accent) 14%, transparent);
+}
+
+.quiz-rich-editable::selection,
+.quiz-rich-editable *::selection {
+  background: color-mix(in oklab, var(--accent) 34%, transparent);
 }
 
 .quiz-rich-editable:empty::before {
@@ -2643,6 +2657,7 @@ tbody tr.selected {
 .quiz-rich-rendered {
   display: block;
   white-space: normal;
+  color: var(--text);
 }
 
 .quiz-rich-rendered > * {

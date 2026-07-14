@@ -430,6 +430,8 @@ function getQuizTextSizeClass(text: string): string {
 }
 
 const QUIZ_TEXT_COLOR_OPTIONS = [
+  { label: 'Noir', value: '#1c2a36' },
+  { label: 'Blanc', value: '#ffffff' },
   { label: 'Rouge', value: '#d24747' },
   { label: 'Orange', value: '#d98d11' },
   { label: 'Vert', value: '#00895a' },
@@ -589,28 +591,48 @@ function applyQuizRichTextCommand(
     | { type: 'color'; value: string },
 ) {
   editor.focus({ preventScroll: true })
+  const selection = getEditorSelection(editor)
+  const selectedRange = selection?.rangeCount ? selection.getRangeAt(0).cloneRange() : null
   if (command.type === 'bold') {
     document.execCommand('styleWithCSS', false, 'false')
     document.execCommand('bold')
+    editor.focus({ preventScroll: true })
     return
   }
   if (command.type === 'italic') {
     document.execCommand('styleWithCSS', false, 'false')
     document.execCommand('italic')
+    editor.focus({ preventScroll: true })
     return
   }
   if (command.type === 'normal') {
     document.execCommand('removeFormat')
+    document.execCommand('styleWithCSS', false, 'false')
+    if (document.queryCommandState('bold')) {
+      document.execCommand('bold')
+    }
+    if (document.queryCommandState('italic')) {
+      document.execCommand('italic')
+    }
+    editor.focus({ preventScroll: true })
     return
   }
   if (command.type === 'highlight') {
     document.execCommand('styleWithCSS', false, 'true')
     document.execCommand('hiliteColor', false, QUIZ_TEXT_HIGHLIGHT_COLOR)
+    document.execCommand('styleWithCSS', false, 'false')
+    editor.focus({ preventScroll: true })
     return
   }
   if (command.type === 'color') {
     document.execCommand('styleWithCSS', false, 'true')
     document.execCommand('foreColor', false, command.value)
+    document.execCommand('styleWithCSS', false, 'false')
+    if (selectedRange && selection) {
+      selection.removeAllRanges()
+      selection.addRange(selectedRange)
+    }
+    editor.focus({ preventScroll: true })
   }
 }
 
@@ -693,6 +715,7 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
     }
     applyQuizRichTextCommand(editor, command)
     syncValue()
+    window.getSelection()?.removeAllRanges()
   }
 
   const handlePaste = (event: ClipboardEvent<HTMLDivElement>) => {
@@ -752,6 +775,9 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
           syncValue({ commitDom: true })
         }}
         onPaste={handlePaste}
+        onDoubleClick={(event) => {
+          event.stopPropagation()
+        }}
       />
     </div>
   )
