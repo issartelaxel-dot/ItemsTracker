@@ -6,6 +6,8 @@ import {
   useState,
   type ClipboardEvent,
   type CSSProperties,
+  type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent,
 } from 'react'
 import itemsData from './data/items.json'
@@ -591,49 +593,43 @@ function applyQuizRichTextCommand(
     | { type: 'color'; value: string },
 ) {
   editor.focus({ preventScroll: true })
-  const selection = getEditorSelection(editor)
-  const selectedRange = selection?.rangeCount ? selection.getRangeAt(0).cloneRange() : null
-  if (command.type === 'bold') {
-    document.execCommand('styleWithCSS', false, 'false')
-    document.execCommand('bold')
-    editor.focus({ preventScroll: true })
+  const range = getEditorRange(editor)
+  if (!range || range.collapsed) {
     return
   }
-  if (command.type === 'italic') {
-    document.execCommand('styleWithCSS', false, 'false')
-    document.execCommand('italic')
-    editor.focus({ preventScroll: true })
-    return
+
+  const selectedContent = range.cloneContents()
+  const wrapper =
+    command.type === 'bold'
+      ? document.createElement('strong')
+      : command.type === 'italic'
+        ? document.createElement('em')
+        : command.type === 'highlight' || command.type === 'color'
+          ? document.createElement('span')
+          : null
+
+  if (wrapper && command.type === 'highlight') {
+    wrapper.style.backgroundColor = QUIZ_TEXT_HIGHLIGHT_COLOR
   }
+  if (wrapper && command.type === 'color') {
+    wrapper.style.color = command.value
+  }
+
+  range.deleteContents()
   if (command.type === 'normal') {
-    document.execCommand('removeFormat')
-    document.execCommand('styleWithCSS', false, 'false')
-    if (document.queryCommandState('bold')) {
-      document.execCommand('bold')
-    }
-    if (document.queryCommandState('italic')) {
-      document.execCommand('italic')
-    }
-    editor.focus({ preventScroll: true })
+    const plainText = selectedContent.textContent ?? ''
+    const textNode = document.createTextNode(plainText)
+    range.insertNode(textNode)
+    placeCaretAfterNode(textNode)
     return
   }
-  if (command.type === 'highlight') {
-    document.execCommand('styleWithCSS', false, 'true')
-    document.execCommand('hiliteColor', false, QUIZ_TEXT_HIGHLIGHT_COLOR)
-    document.execCommand('styleWithCSS', false, 'false')
-    editor.focus({ preventScroll: true })
+
+  if (!wrapper) {
     return
   }
-  if (command.type === 'color') {
-    document.execCommand('styleWithCSS', false, 'true')
-    document.execCommand('foreColor', false, command.value)
-    document.execCommand('styleWithCSS', false, 'false')
-    if (selectedRange && selection) {
-      selection.removeAllRanges()
-      selection.addRange(selectedRange)
-    }
-    editor.focus({ preventScroll: true })
-  }
+  wrapper.appendChild(selectedContent)
+  range.insertNode(wrapper)
+  placeCaretAfterNode(wrapper)
 }
 
 function getEditorSelection(editor: HTMLDivElement) {
@@ -647,9 +643,41 @@ function getEditorSelection(editor: HTMLDivElement) {
   return selection
 }
 
+function getEditorRange(editor: HTMLDivElement) {
+  const selection = getEditorSelection(editor)
+  if (!selection || selection.rangeCount === 0) {
+    return null
+  }
+  return selection.getRangeAt(0)
+}
+
 function hasSelectedEditorText(editor: HTMLDivElement) {
   const selection = getEditorSelection(editor)
   return Boolean(selection && !selection.isCollapsed && selection.toString().length > 0)
+}
+
+function placeCaretAfterNode(node: Node) {
+  const selection = window.getSelection()
+  if (!selection) {
+    return
+  }
+  const range = document.createRange()
+  range.setStartAfter(node)
+  range.collapse(true)
+  selection.removeAllRanges()
+  selection.addRange(range)
+}
+
+function insertPlainTextAtEditorSelection(editor: HTMLDivElement, text: string) {
+  const range = getEditorRange(editor)
+  if (!range) {
+    editor.appendChild(document.createTextNode(text))
+    return
+  }
+  range.deleteContents()
+  const textNode = document.createTextNode(text)
+  range.insertNode(textNode)
+  placeCaretAfterNode(textNode)
 }
 
 type QuizRichTextEditorProps = {
@@ -724,8 +752,36 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
     if (!pastedText) {
       return
     }
-    document.execCommand('insertText', false, pastedText)
+    const editor = editorRef.current
+    if (!editor) {
+      return
+    }
+    insertPlainTextAtEditorSelection(editor, pastedText)
     syncValue()
+  }
+
+  const handleBeforeInput = (event: FormEvent<HTMLDivElement>) => {
+    const inputType = (event.nativeEvent as InputEvent).inputType ?? ''
+    if (inputType.startsWith('format')) {
+      event.preventDefault()
+    }
+  }
+
+  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (!(event.metaKey || event.ctrlKey)) {
+      return
+    }
+    const key = event.key.toLowerCase()
+    if (key !== 'b' && key !== 'i' && key !== 'u') {
+      return
+    }
+    event.preventDefault()
+    if (key === 'b') {
+      runCommand({ type: 'bold' })
+    }
+    if (key === 'i') {
+      runCommand({ type: 'italic' })
+    }
   }
 
   return (
@@ -775,6 +831,8 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
           syncValue({ commitDom: true })
         }}
         onPaste={handlePaste}
+        onBeforeInput={handleBeforeInput}
+        onKeyDown={handleKeyDown}
         onDoubleClick={(event) => {
           event.stopPropagation()
         }}
