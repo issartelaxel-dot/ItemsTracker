@@ -2626,11 +2626,20 @@ tbody tr.selected {
   border-radius: 12px;
   background: var(--input-bg);
   color: var(--text);
+  font-weight: 400;
   outline: none;
   white-space: pre-wrap;
   caret-color: var(--text);
   color-scheme: light;
   user-select: text;
+}
+
+.quiz-rich-editable :where(div, p, span, em) {
+  font-weight: 400;
+}
+
+.quiz-rich-editable strong {
+  font-weight: 800;
 }
 
 :root[data-theme='dark'] .quiz-rich-editable {
@@ -2658,6 +2667,7 @@ tbody tr.selected {
   display: block;
   white-space: normal;
   color: var(--text);
+  font-weight: 400;
 }
 
 .quiz-rich-rendered > * {
