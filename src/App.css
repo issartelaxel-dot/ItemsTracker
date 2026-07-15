@@ -1773,10 +1773,203 @@ h3 {
   cursor: pointer;
 }
 
+.flashcards-card-view {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.52rem;
+  border: 1px solid #dfe7f3;
+  border-radius: 8px;
+  background: #f8fbff;
+  color: #526989;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .flashcards-card-launch:hover,
+.flashcards-card-view:hover,
 .flashcards-random-btn:hover {
   border-color: #b9ccf4;
   background: #f6f9ff;
+}
+
+.flashcards-list-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1450;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgba(9, 22, 48, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+.flashcards-list-modal {
+  width: min(920px, 100%);
+  max-height: min(86dvh, 780px);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  border: 1px solid #d7e1ef;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 24px 54px rgba(18, 34, 62, 0.24);
+  overflow: hidden;
+}
+
+.flashcards-list-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.9rem;
+  align-items: center;
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid #e2e9f4;
+  background: linear-gradient(135deg, #fbfdff 0%, #f3f7ff 100%);
+}
+
+.flashcards-list-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  color: var(--flash-college-color, #2f68e8);
+  background: color-mix(in oklab, var(--flash-college-color, #2f68e8) 12%, #fff);
+  border: 0;
+}
+
+.flashcards-list-icon .college-health-icon-glyph {
+  width: 28px;
+  height: 28px;
+}
+
+.flashcards-list-kicker {
+  margin: 0 0 0.12rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #6f82a8;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.flashcards-list-head h3 {
+  margin: 0;
+  color: #132653;
+  font-size: 1.1rem;
+  letter-spacing: 0;
+}
+
+.flashcards-list-head p:last-child {
+  margin: 0.18rem 0 0;
+  color: #7184aa;
+  font-weight: 700;
+}
+
+.flashcards-list-close {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #d9e3f1;
+  border-radius: 8px;
+  background: #fff;
+  color: #1e3159;
+  cursor: pointer;
+}
+
+.flashcards-list-body {
+  min-height: 0;
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.85rem;
+  overflow: auto;
+  background: #f8fbff;
+}
+
+.flashcards-list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.8rem;
+  align-items: center;
+  border: 1px solid #e0e8f3;
+  border-radius: 10px;
+  background: #fff;
+  padding: 0.78rem 0.85rem;
+}
+
+.flashcards-list-row-main {
+  min-width: 0;
+}
+
+.flashcards-list-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  align-items: center;
+  color: #7387ac;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.flashcards-list-result {
+  border: 1px solid #d9e3f1;
+  border-radius: 999px;
+  padding: 0.1rem 0.45rem;
+  color: #657694;
+  background: #f7faff;
+}
+
+.flashcards-list-result.again {
+  color: #a5313f;
+  background: #fff2f3;
+  border-color: #e4a3a8;
+}
+
+.flashcards-list-result.hard {
+  color: #8f5600;
+  background: #fff4e6;
+  border-color: #efbe80;
+}
+
+.flashcards-list-result.good {
+  color: #1e7a42;
+  background: #ebfaf0;
+  border-color: #87cea0;
+}
+
+.flashcards-list-result.easy {
+  color: #3b4ed2;
+  background: #edf1ff;
+  border-color: #92a5ff;
+}
+
+.flashcards-list-row h4 {
+  margin: 0.32rem 0 0.2rem;
+  color: #14294e;
+  font-size: 0.92rem;
+  line-height: 1.32;
+}
+
+.flashcards-list-row p {
+  margin: 0;
+  color: #7082a7;
+  font-size: 0.82rem;
+  line-height: 1.42;
+}
+
+.flashcards-list-row-action {
+  min-height: 34px;
+  border: 1px solid #2f68e8;
+  border-radius: 8px;
+  background: #2f68e8;
+  color: #fff;
+  padding: 0 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.flashcards-list-empty {
+  min-height: 140px;
+  display: grid;
+  place-items: center;
+  color: #7184aa;
+  font-weight: 700;
 }
 
 .flashcards-empty-state {
@@ -4742,6 +4935,31 @@ tbody tr.selected {
 
   .flashcards-generator-btn,
   .flashcards-random-btn {
+    width: 100%;
+  }
+
+  .flashcards-list-modal {
+    max-height: calc(100dvh - 1rem);
+    position: relative;
+  }
+
+  .flashcards-list-head,
+  .flashcards-list-row {
+    grid-template-columns: 1fr;
+  }
+
+  .flashcards-list-icon {
+    width: 44px;
+    height: 44px;
+  }
+
+  .flashcards-list-close {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+  }
+
+  .flashcards-list-row-action {
     width: 100%;
   }
 

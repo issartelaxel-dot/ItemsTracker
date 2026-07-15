@@ -2132,6 +2132,7 @@ function App() {
   const [flashCollegeSearch, setFlashCollegeSearch] = useState('')
   const [flashCollegeLevelFilter, setFlashCollegeLevelFilter] = useState<FlashCollegeLevelFilter>('ALL')
   const [flashCollegeSort, setFlashCollegeSort] = useState<FlashCollegeSort>('progress')
+  const [flashCardsListCollege, setFlashCardsListCollege] = useState<string | null>(null)
   const [flashSelectedItems, setFlashSelectedItems] = useState<number[]>(() => rawItems.map((item) => item.itemNumber))
   const [flashSelectedColleges, setFlashSelectedColleges] = useState<string[]>(() => [...COLLEGES])
   const [flashSelectedFeelings, setFlashSelectedFeelings] = useState<FlashFeelingFilter[]>([
@@ -4138,6 +4139,27 @@ function getPasswordStrengthMeta(password: string) {
       })
   }, [allFlashcards, collegesViewRows, flashCollegeFilter, flashCollegeLevelFilter, flashCollegeSearch, flashCollegeSort])
 
+  const flashCardsListCollegeMeta = useMemo(() => {
+    if (!flashCardsListCollege) {
+      return null
+    }
+    const row = flashCollegeCards.find((entry) => entry.college === flashCardsListCollege)
+    return {
+      college: flashCardsListCollege,
+      displayName: row?.displayName ?? getFlashCollegeDisplayName(flashCardsListCollege),
+      accent: row?.accent ?? '#2f68e8',
+    }
+  }, [flashCardsListCollege, flashCollegeCards])
+
+  const flashCardsForSelectedCollege = useMemo(() => {
+    if (!flashCardsListCollege) {
+      return []
+    }
+    return allFlashcards
+      .filter((card) => card.colleges.includes(flashCardsListCollege))
+      .sort((a, b) => a.itemNumber - b.itemNumber || a.cardId.localeCompare(b.cardId))
+  }, [allFlashcards, flashCardsListCollege])
+
   function setSelectedItem(itemNumber: number) {
     setSelectedItemId((current) => (current === itemNumber ? null : itemNumber))
   }
@@ -4430,6 +4452,25 @@ function getPasswordStrengthMeta(password: string) {
     setFlashSelectedFeelings(selectedFeelings)
     setFlashPrioritizeWeak(false)
     startGeneratedFlashSession(keys)
+    setFlashGeneratorModalOpen(true)
+    setFlashGeneratorStep(3)
+  }
+
+  function openCollegeFlashcardsList(college: string) {
+    setFlashCardsListCollege(college)
+  }
+
+  function closeCollegeFlashcardsList() {
+    setFlashCardsListCollege(null)
+  }
+
+  function startSingleFlashcardQuiz(card: GlobalFlashcard) {
+    startGeneratedFlashSession([`${card.itemNumber}:${card.cardId}`])
+    setFlashGeneratorScope('items')
+    setFlashSelectedItems([card.itemNumber])
+    setFlashSelectedFeelings([(card.lastResult ?? 'none') as FlashFeelingFilter])
+    setFlashPrioritizeWeak(false)
+    setFlashCardsListCollege(null)
     setFlashGeneratorModalOpen(true)
     setFlashGeneratorStep(3)
   }
@@ -7896,6 +7937,10 @@ function getPasswordStrengthMeta(password: string) {
                     <span aria-hidden="true">▶</span>
                     Lancer le quiz
                   </button>
+                  <button type="button" className="flashcards-card-view" onClick={() => openCollegeFlashcardsList(row.college)}>
+                    <span aria-hidden="true">▦</span>
+                    Voir les cartes
+                  </button>
                 </article>
               ))}
             </div>
@@ -7904,6 +7949,63 @@ function getPasswordStrengthMeta(password: string) {
               <p>Aucun collège ne correspond aux filtres sélectionnés.</p>
             </div>
           )}
+          {flashCardsListCollegeMeta ? (
+            <div className="flashcards-list-overlay" role="presentation" onClick={closeCollegeFlashcardsList}>
+              <div
+                className="flashcards-list-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-label={`Cartes ${flashCardsListCollegeMeta.displayName}`}
+                style={{ '--flash-college-color': flashCardsListCollegeMeta.accent } as CSSProperties}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flashcards-list-head">
+                  <CollegeHealthIcon college={flashCardsListCollegeMeta.college} className="flashcards-list-icon" />
+                  <div>
+                    <p className="flashcards-list-kicker">Cartes du collège</p>
+                    <h3>{flashCardsListCollegeMeta.displayName}</h3>
+                    <p>{flashCardsForSelectedCollege.length} cartes</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="flashcards-list-close"
+                    aria-label="Fermer la liste des cartes"
+                    onClick={closeCollegeFlashcardsList}
+                  >
+                    ✕
+                  </button>
+                </div>
+                <div className="flashcards-list-body">
+                  {flashCardsForSelectedCollege.length > 0 ? (
+                    flashCardsForSelectedCollege.map((card) => {
+                      const question = getQuizRichTextPlainText(card.question)
+                      const answer = getQuizRichTextPlainText(card.answer)
+                      const resultLabel = card.lastResult ? QUIZ_RESULT_META[card.lastResult].label : 'Non évalué'
+                      return (
+                        <article key={`college-card-${card.itemNumber}-${card.cardId}`} className="flashcards-list-row">
+                          <div className="flashcards-list-row-main">
+                            <div className="flashcards-list-row-meta">
+                              <span>Item #{card.itemNumber}</span>
+                              <span className={`flashcards-list-result ${card.lastResult ?? 'none'}`}>{resultLabel}</span>
+                            </div>
+                            <h4>{question || `Carte item #${card.itemNumber}`}</h4>
+                            <p>{answer || 'Aucune réponse personnalisée.'}</p>
+                          </div>
+                          <button type="button" className="flashcards-list-row-action" onClick={() => startSingleFlashcardQuiz(card)}>
+                            Lancer
+                          </button>
+                        </article>
+                      )
+                    })
+                  ) : (
+                    <div className="flashcards-list-empty">
+                      <p>Aucune carte associée à ce collège.</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : null}
         </section>
       ) : null}
 
