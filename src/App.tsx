@@ -8444,14 +8444,14 @@ function getPasswordStrengthMeta(password: string) {
                   <h3>Ressenti global</h3>
                   <div className="college-detail-feelings">
                     {[
-                      ['☺', 'Très facile', selectedCollegeDetailData.resultCounts.easy],
-                      ['☺', 'Facile', selectedCollegeDetailData.resultCounts.good],
-                      ['☻', 'Moyen', selectedCollegeDetailData.resultCounts.none],
-                      ['☹', 'Difficile', selectedCollegeDetailData.resultCounts.hard],
-                      ['☹', 'Très difficile', selectedCollegeDetailData.resultCounts.again],
-                    ].map(([icon, label, count]) => (
+                      ['☺', 'Très facile', selectedCollegeDetailData.resultCounts.easy, 'very-easy'],
+                      ['☺', 'Facile', selectedCollegeDetailData.resultCounts.good, 'easy'],
+                      ['☻', 'Moyen', selectedCollegeDetailData.resultCounts.none, 'medium'],
+                      ['☹', 'Difficile', selectedCollegeDetailData.resultCounts.hard, 'hard'],
+                      ['☹', 'Très difficile', selectedCollegeDetailData.resultCounts.again, 'again'],
+                    ].map(([icon, label, count, tone]) => (
                       <div key={label}>
-                        <span>{icon}</span>
+                        <span className={`college-detail-feeling-dot ${tone}`}>{icon}</span>
                         <small>{label}</small>
                         <strong>{count}</strong>
                       </div>
@@ -8476,14 +8476,30 @@ function getPasswordStrengthMeta(password: string) {
                 <article className="college-detail-side-card college-detail-action-card">
                   <h3>Quiz du collège</h3>
                   <p>Testez vos connaissances sur ce collège.</p>
-                  <button type="button" className="college-detail-primary" onClick={() => startCollegeGeneratedQuiz(selectedCollegeDetailData.college)}>
+                  <button
+                    type="button"
+                    className="college-detail-primary"
+                    onClick={() => {
+                      setActiveView('flashcards')
+                      setFlashDisplayMode('colleges')
+                      startCollegeGeneratedQuiz(selectedCollegeDetailData.college)
+                    }}
+                  >
                     ▶ Lancer un quiz
                   </button>
                 </article>
                 <article className="college-detail-side-card college-detail-action-card">
                   <h3>Voir les flashcards</h3>
                   <p>Parcourez les {selectedCollegeDetailData.flashcardCount} flashcards créées pour ce collège.</p>
-                  <button type="button" className="college-detail-secondary" onClick={() => openCollegeFlashcardsList(selectedCollegeDetailData.college)}>
+                  <button
+                    type="button"
+                    className="college-detail-secondary"
+                    onClick={() => {
+                      setActiveView('flashcards')
+                      setFlashDisplayMode('colleges')
+                      openCollegeFlashcardsList(selectedCollegeDetailData.college)
+                    }}
+                  >
                     ▱ Voir les flashcards
                   </button>
                 </article>

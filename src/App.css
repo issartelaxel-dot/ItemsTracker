@@ -2977,9 +2977,26 @@ h3 {
   gap: 0.25rem;
 }
 
-.college-detail-feelings span {
+.college-detail-feeling-dot {
   color: #16a34a;
   font-size: 1.25rem;
+}
+
+.college-detail-feeling-dot.very-easy,
+.college-detail-feeling-dot.easy {
+  color: #16a34a;
+}
+
+.college-detail-feeling-dot.medium {
+  color: #f5a400;
+}
+
+.college-detail-feeling-dot.hard {
+  color: #f97316;
+}
+
+.college-detail-feeling-dot.again {
+  color: #ef4444;
 }
 
 .college-detail-feelings small {
