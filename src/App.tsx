@@ -210,7 +210,14 @@ type GlobalFlashcard = {
 
 type CollegeViewRow = {
   college: string
-  items: Array<{ itemNumber: number; shortDescription: string; reviews: number; mastery: Mastery }>
+  items: Array<{
+    itemNumber: number
+    shortDescription: string
+    reviews: number
+    mastery: Mastery
+    progress: number
+    lastReviewedAt: string | null
+  }>
   completion: number
   totalReviews: number
 }
@@ -2125,6 +2132,7 @@ function App() {
   const [masteryFilter, setMasteryFilter] = useState<string>('ALL')
   const [sortKey, setSortKey] = useState<SortKey>('reviews')
   const [activeView, setActiveView] = useState<NavView>('dashboard')
+  const [selectedCollegeDetail, setSelectedCollegeDetail] = useState<string | null>(null)
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -3980,6 +3988,8 @@ function getPasswordStrengthMeta(password: string) {
             shortDescription: item.shortDescription,
             reviews: entry.reviews,
             mastery: entry.mastery,
+            progress: Math.round((MASTERY_SCORE[entry.mastery] / MASTERY_SCORE.Parfait) * 100),
+            lastReviewedAt: entry.lastReviewedAt,
           }
         })
 
@@ -3997,6 +4007,69 @@ function getPasswordStrengthMeta(password: string) {
       }
     })
   }, [items])
+
+  const selectedCollegeDetailData = useMemo(() => {
+    if (!selectedCollegeDetail) {
+      return null
+    }
+    const row = collegesViewRows.find((entry) => entry.college === selectedCollegeDetail)
+    if (!row) {
+      return null
+    }
+
+    const collegeFlashcards = allFlashcards.filter((card) => card.colleges.includes(selectedCollegeDetail))
+    const resultCounts = {
+      easy: collegeFlashcards.filter((card) => card.lastResult === 'easy').length,
+      good: collegeFlashcards.filter((card) => card.lastResult === 'good').length,
+      none: collegeFlashcards.filter((card) => card.lastResult === null).length,
+      hard: collegeFlashcards.filter((card) => card.lastResult === 'hard').length,
+      again: collegeFlashcards.filter((card) => card.lastResult === 'again').length,
+    }
+    const scoredCards = collegeFlashcards.filter((card) => card.lastResult !== null)
+    const averageResult =
+      scoredCards.length === 0
+        ? null
+        : scoredCards.reduce((sum, card) => {
+            const feeling = card.lastResult ?? 'again'
+            const value: Record<QuizResult, number> = { again: 1, hard: 2, good: 4, easy: 5 }
+            return sum + value[feeling]
+          }, 0) / scoredCards.length
+    const globalFeeling =
+      averageResult === null
+        ? 'Non évalué'
+        : averageResult >= 4.5
+          ? 'Très facile'
+          : averageResult >= 3.2
+            ? 'Facile'
+            : averageResult >= 2.4
+              ? 'Moyen'
+              : averageResult >= 1.6
+                ? 'Difficile'
+                : 'Très difficile'
+
+    const upcomingReviews = [...row.items]
+      .sort((a, b) => {
+        if (a.reviews !== b.reviews) {
+          return a.reviews - b.reviews
+        }
+        return a.progress - b.progress || a.itemNumber - b.itemNumber
+      })
+      .slice(0, 3)
+      .map((item, index) => ({
+        ...item,
+        dueLabel: index === 0 ? "Aujourd'hui" : index === 1 ? 'Demain' : `Dans ${index + 1} jours`,
+      }))
+
+    return {
+      ...row,
+      displayName: getFlashCollegeDisplayName(row.college),
+      flashcardCount: collegeFlashcards.length,
+      averageProgress: row.items.length === 0 ? 0 : Math.round(row.items.reduce((sum, item) => sum + item.progress, 0) / row.items.length),
+      resultCounts,
+      globalFeeling,
+      upcomingReviews,
+    }
+  }, [allFlashcards, collegesViewRows, selectedCollegeDetail])
 
   const weeklyReviewSeries = useMemo(() => {
     const yearStart = new Date(HABIT_TRACKER_YEAR, 0, 1)
@@ -8249,47 +8322,219 @@ function getPasswordStrengthMeta(password: string) {
       ) : null}
 
       {activeView === 'colleges' ? (
-        <section className="panel colleges-page">
-          <div className="panel-head">
-            <h2>Colleges</h2>
-          </div>
-          <article className="colleges-heatmap">
-            <h3>Heatmap progression colleges</h3>
-            <div className="colleges-heatmap-grid">
-              {collegesViewRows.map((row) => {
-                const tone =
-                  row.completion >= 75
-                    ? 'high'
-                    : row.completion >= 50
-                      ? 'mid-high'
-                      : row.completion >= 25
-                        ? 'mid'
-                        : row.completion > 0
-                          ? 'low'
-                          : 'zero'
-                return (
-                  <div
-                    key={`heat-${row.college}`}
-                    className={`colleges-heat-cell ${tone}`}
-                    title={`${row.college} • ${row.completion}%`}
-                  >
-                    <div className="colleges-heat-cell-head">
-                      <CollegeHealthIcon college={row.college} />
-                      <span>{row.college}</span>
-                    </div>
-                    <strong>{row.completion}%</strong>
+        selectedCollegeDetailData ? (
+          <section className="college-detail-page">
+            <button type="button" className="college-detail-back" onClick={() => setSelectedCollegeDetail(null)}>
+              ← Retour aux collèges
+            </button>
+            <header className="college-detail-hero">
+              <div className="college-detail-title">
+                <CollegeHealthIcon college={selectedCollegeDetailData.college} className="college-detail-main-icon" />
+                <div>
+                  <h2>{selectedCollegeDetailData.displayName}</h2>
+                  <p>Vue détaillée du collège</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="college-detail-primary"
+                onClick={() => {
+                  setCollegeFilter(selectedCollegeDetailData.college)
+                  setActiveView('items')
+                  setSelectedCollegeDetail(null)
+                }}
+              >
+                + Ajouter un item
+              </button>
+            </header>
+
+            <div className="college-detail-stats">
+              <article>
+                <span className="college-detail-stat-icon">▤</span>
+                <p>Items</p>
+                <strong>{selectedCollegeDetailData.items.length}</strong>
+                <small>dans ce collège</small>
+              </article>
+              <article>
+                <span className="college-detail-ring" style={{ '--college-progress': `${selectedCollegeDetailData.completion}%` } as CSSProperties} />
+                <p>Progression</p>
+                <strong>{selectedCollegeDetailData.completion}%</strong>
+                <small>{selectedCollegeDetailData.averageProgress}% moyenne globale</small>
+              </article>
+              <article>
+                <span className="college-detail-stat-icon">↻</span>
+                <p>Révisions</p>
+                <strong>{selectedCollegeDetailData.totalReviews}</strong>
+                <small>ce collège</small>
+              </article>
+              <article>
+                <span className="college-detail-stat-icon">▱</span>
+                <p>FlashCards</p>
+                <strong>{selectedCollegeDetailData.flashcardCount}</strong>
+                <small>créées</small>
+              </article>
+              <article>
+                <span className="college-detail-stat-icon">☺</span>
+                <p>Ressenti global</p>
+                <strong className="college-detail-feeling">{selectedCollegeDetailData.globalFeeling}</strong>
+                <small>{selectedCollegeDetailData.flashcardCount} cartes</small>
+              </article>
+            </div>
+
+            <div className="college-detail-layout">
+              <article className="college-detail-items-panel">
+                <div className="college-detail-tabs">
+                  <button type="button" className="active">
+                    Items du collège
+                  </button>
+                  <button type="button">Vue par item</button>
+                </div>
+                <div className="college-detail-filters">
+                  <span className="active">Tous <strong>{selectedCollegeDetailData.items.length}</strong></span>
+                  <span>À revoir <strong>{selectedCollegeDetailData.items.filter((item) => item.mastery === 'Mauvais').length}</strong></span>
+                  <span>Difficiles <strong>{selectedCollegeDetailData.items.filter((item) => item.mastery === 'Moyen').length}</strong></span>
+                  <span>Maîtrisés <strong>{selectedCollegeDetailData.items.filter((item) => MASTERY_SCORE[item.mastery] >= MASTERY_SCORE.Bon).length}</strong></span>
+                </div>
+                <div className="college-detail-table-wrap">
+                  <table className="college-detail-table">
+                    <thead>
+                      <tr>
+                        <th>#</th>
+                        <th>Item</th>
+                        <th>Progression</th>
+                        <th>Révisions</th>
+                        <th>Ressenti</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedCollegeDetailData.items.slice(0, 12).map((item, index) => (
+                        <tr key={`college-detail-item-${item.itemNumber}`} onClick={() => setSelectedItemId(item.itemNumber)}>
+                          <td>{index + 1}</td>
+                          <td>
+                            <strong>{item.shortDescription}</strong>
+                            <span>Item #{item.itemNumber}</span>
+                          </td>
+                          <td>
+                            <div className="college-detail-progress">
+                              <span>{item.progress}%</span>
+                              <div>
+                                <i style={{ width: `${item.progress}%` }} />
+                              </div>
+                            </div>
+                          </td>
+                          <td>{item.reviews}</td>
+                          <td>
+                            <span className={`college-detail-mastery ${getMasteryClass(item.mastery, `detail-${selectedCollegeDetailData.college}-${item.itemNumber}`)}`}>
+                              {item.mastery}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="college-detail-pagination">
+                  <span>1-{Math.min(12, selectedCollegeDetailData.items.length)} sur {selectedCollegeDetailData.items.length} items</span>
+                  <span>‹ 1 2 3 … ›</span>
+                </div>
+              </article>
+
+              <aside className="college-detail-side">
+                <article className="college-detail-side-card">
+                  <h3>Ressenti global</h3>
+                  <div className="college-detail-feelings">
+                    {[
+                      ['☺', 'Très facile', selectedCollegeDetailData.resultCounts.easy],
+                      ['☺', 'Facile', selectedCollegeDetailData.resultCounts.good],
+                      ['☻', 'Moyen', selectedCollegeDetailData.resultCounts.none],
+                      ['☹', 'Difficile', selectedCollegeDetailData.resultCounts.hard],
+                      ['☹', 'Très difficile', selectedCollegeDetailData.resultCounts.again],
+                    ].map(([icon, label, count]) => (
+                      <div key={label}>
+                        <span>{icon}</span>
+                        <small>{label}</small>
+                        <strong>{count}</strong>
+                      </div>
+                    ))}
                   </div>
-                )
-              })}
+                </article>
+                <article className="college-detail-side-card">
+                  <div className="college-detail-card-head">
+                    <h3>Prochaines révisions</h3>
+                    <button type="button">Voir tout</button>
+                  </div>
+                  <div className="college-detail-upcoming">
+                    {selectedCollegeDetailData.upcomingReviews.map((item) => (
+                      <div key={`upcoming-${item.itemNumber}`}>
+                        <span>▣</span>
+                        <strong>{item.shortDescription}</strong>
+                        <small>{item.dueLabel}</small>
+                      </div>
+                    ))}
+                  </div>
+                </article>
+                <article className="college-detail-side-card college-detail-action-card">
+                  <h3>Quiz du collège</h3>
+                  <p>Testez vos connaissances sur ce collège.</p>
+                  <button type="button" className="college-detail-primary" onClick={() => startCollegeGeneratedQuiz(selectedCollegeDetailData.college)}>
+                    ▶ Lancer un quiz
+                  </button>
+                </article>
+                <article className="college-detail-side-card college-detail-action-card">
+                  <h3>Voir les flashcards</h3>
+                  <p>Parcourez les {selectedCollegeDetailData.flashcardCount} flashcards créées pour ce collège.</p>
+                  <button type="button" className="college-detail-secondary" onClick={() => openCollegeFlashcardsList(selectedCollegeDetailData.college)}>
+                    ▱ Voir les flashcards
+                  </button>
+                </article>
+              </aside>
             </div>
-            <div className="colleges-heat-legend">
-              <span>0%</span>
-              <span>25%</span>
-              <span>50%</span>
-              <span>75%+</span>
+          </section>
+        ) : (
+          <section className="panel colleges-page">
+            <div className="panel-head">
+              <h2>Colleges</h2>
             </div>
-          </article>
-        </section>
+            <article className="colleges-heatmap">
+              <h3>Heatmap progression colleges</h3>
+              <div className="colleges-heatmap-grid">
+                {collegesViewRows.map((row) => {
+                  const tone =
+                    row.completion >= 75
+                      ? 'high'
+                      : row.completion >= 50
+                        ? 'mid-high'
+                        : row.completion >= 25
+                          ? 'mid'
+                          : row.completion > 0
+                            ? 'low'
+                            : 'zero'
+                  return (
+                    <button
+                      type="button"
+                      key={`heat-${row.college}`}
+                      className={`colleges-heat-cell ${tone}`}
+                      title={`${row.college} • ${row.completion}%`}
+                      onClick={() => setSelectedCollegeDetail(row.college)}
+                    >
+                      <div className="colleges-heat-cell-head">
+                        <CollegeHealthIcon college={row.college} />
+                        <span>{row.college}</span>
+                      </div>
+                      <strong>{row.completion}%</strong>
+                    </button>
+                  )
+                })}
+              </div>
+              <div className="colleges-heat-legend">
+                <span>0%</span>
+                <span>25%</span>
+                <span>50%</span>
+                <span>75%+</span>
+              </div>
+            </article>
+          </section>
+        )
       ) : null}
 
       {activeView === 'dashboard' ? (
