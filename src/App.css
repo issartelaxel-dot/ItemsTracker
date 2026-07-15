@@ -1672,79 +1672,82 @@ h3 {
 
 .flashcards-college-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(310px, 1fr));
-  gap: 1.4rem;
+  grid-template-columns: repeat(4, minmax(240px, 1fr));
+  gap: 1.25rem;
 }
 
 .flashcards-college-card {
+  position: relative;
   min-width: 0;
   display: grid;
   grid-template-rows: auto auto auto 1fr;
-  gap: 1.45rem;
-  min-height: 440px;
-  padding: 2.15rem;
+  gap: 1.05rem;
+  min-height: 360px;
+  padding: 1.45rem;
   border: 1px solid #e1e8f4;
-  border-radius: 28px;
+  border-radius: 24px;
   background: #fff;
   box-shadow: 0 18px 48px rgba(38, 52, 82, 0.08);
 }
 
 .flashcards-card-head {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 1.35rem;
-  align-items: start;
+  display: block;
+  min-width: 0;
+  padding-right: 2.35rem;
 }
 
-.flashcards-card-icon {
-  width: 76px;
-  height: 76px;
+.college-health-icon.flashcards-card-icon {
+  width: 64px;
+  height: 64px;
   border-radius: 22px;
   color: var(--flash-college-color, #2f68e8);
   background: color-mix(in oklab, var(--flash-college-color, #2f68e8) 10%, #f6f9ff);
   border: 1px solid color-mix(in oklab, var(--flash-college-color, #2f68e8) 23%, #dfe8f7);
 }
 
-.flashcards-card-icon .college-health-icon-glyph {
-  width: 42px;
-  height: 42px;
+.college-health-icon.flashcards-card-icon .college-health-icon-glyph {
+  width: 36px;
+  height: 36px;
 }
 
 .flashcards-card-title {
-  grid-column: 1 / -1;
   min-width: 0;
 }
 
 .flashcards-card-title h3 {
-  margin: 0.1rem 0 1rem;
+  margin: 1.2rem 0 0.72rem;
   color: #061945;
-  font-size: clamp(2rem, 3.1vw, 2.85rem);
-  line-height: 1.08;
+  font-size: clamp(1.55rem, 1.75vw, 2.1rem);
+  line-height: 1.12;
   letter-spacing: 0;
+  overflow-wrap: anywhere;
 }
 
 .flashcards-card-title p {
   margin: 0;
   color: #7d91bd;
   font-weight: 700;
-  font-size: 1.55rem;
+  font-size: 1.2rem;
   line-height: 1.1;
 }
 
 .flashcards-card-menu {
-  width: 38px;
-  height: 44px;
+  position: absolute;
+  top: 1.45rem;
+  right: 1.3rem;
+  width: 34px;
+  height: 42px;
   border: 0;
   background: transparent;
   color: #5872a5;
-  font-size: 2.15rem;
+  font-size: 1.85rem;
   line-height: 1;
   cursor: pointer;
   transition: color 0.18s ease, transform 0.18s ease;
 }
 
 .flashcards-progress-track {
-  height: 11px;
+  height: 9px;
   border-radius: 999px;
   overflow: hidden;
   background: #e0e7f2;
@@ -1758,57 +1761,57 @@ h3 {
 }
 
 .flashcards-card-progress {
-  margin: -0.42rem 0 0;
+  margin: -0.28rem 0 0;
   color: #7890bb;
   font-weight: 800;
-  font-size: 1.75rem;
+  font-size: 1.3rem;
   line-height: 1.1;
 }
 
 .flashcards-card-progress strong {
   color: #2768f1;
-  font-size: 2.05rem;
+  font-size: 1.6rem;
 }
 
 .flashcards-card-actions {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 82px;
-  gap: 1rem;
+  grid-template-columns: minmax(0, 1fr) 64px;
+  gap: 0.75rem;
   align-items: stretch;
   align-self: end;
   margin-top: 0.2rem;
 }
 
 .flashcards-card-launch {
-  min-height: 76px;
+  min-height: 60px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.95rem;
+  gap: 0.72rem;
   border: 1px solid #1d5ee8;
-  border-radius: 20px;
+  border-radius: 18px;
   background: linear-gradient(180deg, #3479ff 0%, #0f61ef 100%);
   color: #fff;
   box-shadow: 0 14px 30px rgba(33, 100, 235, 0.22);
   font-weight: 800;
-  font-size: 1.45rem;
+  font-size: 1.12rem;
   cursor: pointer;
   transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
 }
 
 .flashcards-card-launch span {
-  font-size: 1.55rem;
+  font-size: 1.28rem;
   line-height: 1;
 }
 
 .flashcards-card-view {
-  width: 82px;
-  min-height: 76px;
+  width: 64px;
+  min-height: 60px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border: 1px solid #d8e3f4;
-  border-radius: 20px;
+  border-radius: 18px;
   background: #fff;
   color: #2f68e8;
   font-weight: 800;
@@ -1818,14 +1821,14 @@ h3 {
 
 .flashcards-grid-icon {
   display: grid;
-  grid-template-columns: repeat(3, 8px);
-  gap: 5px;
+  grid-template-columns: repeat(3, 6px);
+  gap: 4px;
 }
 
 .flashcards-grid-icon span {
-  width: 8px;
-  height: 8px;
-  border: 3px solid currentColor;
+  width: 6px;
+  height: 6px;
+  border: 2px solid currentColor;
   border-radius: 3px;
 }
 
@@ -4855,30 +4858,30 @@ tbody tr.selected {
   }
 
   .flashcards-college-grid {
-    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    grid-template-columns: repeat(2, minmax(260px, 1fr));
   }
 
   .flashcards-college-card {
-    min-height: 390px;
-    padding: 1.7rem;
-    border-radius: 24px;
+    min-height: 340px;
+    padding: 1.35rem;
+    border-radius: 22px;
   }
 
   .flashcards-card-title h3 {
-    font-size: 2rem;
+    font-size: 1.75rem;
   }
 
   .flashcards-card-title p,
   .flashcards-card-progress {
-    font-size: 1.35rem;
+    font-size: 1.2rem;
   }
 
   .flashcards-card-progress strong {
-    font-size: 1.65rem;
+    font-size: 1.5rem;
   }
 
   .flashcards-card-launch {
-    font-size: 1.25rem;
+    font-size: 1.05rem;
   }
 
   .item-visual-editor {
@@ -5003,13 +5006,13 @@ tbody tr.selected {
     gap: 1rem;
   }
 
-  .flashcards-card-icon {
+  .college-health-icon.flashcards-card-icon {
     width: 64px;
     height: 64px;
     border-radius: 18px;
   }
 
-  .flashcards-card-icon .college-health-icon-glyph {
+  .college-health-icon.flashcards-card-icon .college-health-icon-glyph {
     width: 34px;
     height: 34px;
   }
