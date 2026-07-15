@@ -4575,37 +4575,6 @@ function getPasswordStrengthMeta(password: string) {
     startCollegeGeneratedQuiz(college)
   }
 
-  function startRandomFlashQuiz() {
-    const selectedFeelings: FlashFeelingFilter[] =
-      flashCollegeLevelFilter === 'ALL' ? ['none', 'again', 'hard', 'good', 'easy'] : [flashCollegeLevelFilter]
-    const visibleColleges = flashCollegeCards.map((row) => row.college)
-    const visibleItems = flashItemCards.map((row) => row.itemNumber)
-    const selectedColleges = visibleColleges.length > 0 ? visibleColleges : [...COLLEGES]
-    const selectedItems = visibleItems.length > 0 ? visibleItems : items.map((item) => item.itemNumber)
-    const scope: FlashGeneratorScope = flashDisplayMode === 'items' ? 'items' : 'colleges'
-    const keys = buildQuizGeneratorCardKeys({
-      scope,
-      selectedItems: scope === 'items' ? selectedItems : [],
-      selectedColleges: scope === 'colleges' ? selectedColleges : [],
-      selectedFeelings,
-      prioritizeWeak: false,
-      questionCount: flashQuestionCount,
-      randomize: true,
-    })
-
-    setFlashGeneratorScope(scope)
-    if (scope === 'items') {
-      setFlashSelectedItems(selectedItems)
-    } else {
-      setFlashSelectedColleges(selectedColleges)
-    }
-    setFlashSelectedFeelings(selectedFeelings)
-    setFlashPrioritizeWeak(false)
-    startGeneratedFlashSession(keys)
-    setFlashGeneratorModalOpen(true)
-    setFlashGeneratorStep(3)
-  }
-
   function openCollegeFlashcardsList(college: string) {
     setFlashCardsListCollege(college)
     setFlashCardsListItem(null)
@@ -7735,10 +7704,6 @@ function getPasswordStrengthMeta(password: string) {
               <option value="name">Trier par : Nom</option>
               <option value="items">Trier par : Items</option>
             </select>
-            <button type="button" className="flashcards-random-btn" onClick={startRandomFlashQuiz}>
-              <span aria-hidden="true">⤨</span>
-              Quiz aléatoire
-            </button>
             <button
               type="button"
               className="flashcards-view-switch"

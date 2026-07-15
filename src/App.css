@@ -1621,7 +1621,7 @@ h3 {
 
 .flashcards-toolbar {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(190px, 0.36fr) minmax(210px, 0.42fr) auto auto;
+  grid-template-columns: minmax(260px, 1fr) minmax(190px, 0.36fr) minmax(210px, 0.42fr) auto;
   gap: 1.05rem;
   align-items: center;
 }
