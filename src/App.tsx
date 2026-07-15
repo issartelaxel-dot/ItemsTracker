@@ -7932,15 +7932,35 @@ function getPasswordStrengthMeta(password: string) {
                   <div className="flashcards-progress-track" aria-hidden="true">
                     <span style={{ width: `${row.masteryPercent}%` }} />
                   </div>
-                  <p className="flashcards-card-progress">{row.masteryPercent}% maîtrisés</p>
-                  <button type="button" className="flashcards-card-launch" onClick={() => startCollegeGeneratedQuiz(row.college)}>
-                    <span aria-hidden="true">▶</span>
-                    Lancer le quiz
-                  </button>
-                  <button type="button" className="flashcards-card-view" onClick={() => openCollegeFlashcardsList(row.college)}>
-                    <span aria-hidden="true">▦</span>
-                    Voir les cartes
-                  </button>
+                  <p className="flashcards-card-progress">
+                    <strong>{row.masteryPercent}%</strong>
+                    <span> maîtrisés</span>
+                  </p>
+                  <div className="flashcards-card-actions">
+                    <button type="button" className="flashcards-card-launch" onClick={() => startCollegeGeneratedQuiz(row.college)}>
+                      <span aria-hidden="true">▶</span>
+                      Lancer le quiz
+                    </button>
+                    <button
+                      type="button"
+                      className="flashcards-card-view"
+                      title={`Voir les cartes ${row.displayName}`}
+                      aria-label={`Voir les cartes ${row.displayName}`}
+                      onClick={() => openCollegeFlashcardsList(row.college)}
+                    >
+                      <span className="flashcards-grid-icon" aria-hidden="true">
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                      </span>
+                    </button>
+                  </div>
                 </article>
               ))}
             </div>

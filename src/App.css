@@ -1672,126 +1672,168 @@ h3 {
 
 .flashcards-college-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(220px, 1fr));
-  gap: 1.05rem 1.25rem;
+  grid-template-columns: repeat(3, minmax(310px, 1fr));
+  gap: 1.4rem;
 }
 
 .flashcards-college-card {
   min-width: 0;
   display: grid;
-  gap: 0.85rem;
-  padding: 1.2rem 1.15rem 1rem;
+  grid-template-rows: auto auto auto 1fr;
+  gap: 1.45rem;
+  min-height: 440px;
+  padding: 2.15rem;
   border: 1px solid #e1e8f4;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 14px 34px rgba(38, 52, 82, 0.04);
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 18px 48px rgba(38, 52, 82, 0.08);
 }
 
 .flashcards-card-head {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
-  gap: 0.9rem;
+  gap: 1.35rem;
   align-items: start;
 }
 
 .flashcards-card-icon {
-  width: 54px;
-  height: 54px;
-  border-radius: 50%;
+  width: 76px;
+  height: 76px;
+  border-radius: 22px;
   color: var(--flash-college-color, #2f68e8);
-  background: color-mix(in oklab, var(--flash-college-color, #2f68e8) 13%, #fff);
-  border: 0;
+  background: color-mix(in oklab, var(--flash-college-color, #2f68e8) 10%, #f6f9ff);
+  border: 1px solid color-mix(in oklab, var(--flash-college-color, #2f68e8) 23%, #dfe8f7);
 }
 
 .flashcards-card-icon .college-health-icon-glyph {
-  width: 30px;
-  height: 30px;
+  width: 42px;
+  height: 42px;
 }
 
 .flashcards-card-title {
+  grid-column: 1 / -1;
   min-width: 0;
 }
 
 .flashcards-card-title h3 {
-  margin: 0.32rem 0 0.28rem;
-  color: #132653;
-  font-size: 0.98rem;
-  line-height: 1.32;
+  margin: 0.1rem 0 1rem;
+  color: #061945;
+  font-size: clamp(2rem, 3.1vw, 2.85rem);
+  line-height: 1.08;
   letter-spacing: 0;
 }
 
 .flashcards-card-title p {
   margin: 0;
-  color: #7184aa;
+  color: #7d91bd;
   font-weight: 700;
-  font-size: 0.86rem;
+  font-size: 1.55rem;
+  line-height: 1.1;
 }
 
 .flashcards-card-menu {
-  width: 26px;
-  height: 32px;
+  width: 38px;
+  height: 44px;
   border: 0;
   background: transparent;
-  color: #1e3159;
-  font-size: 1.35rem;
+  color: #5872a5;
+  font-size: 2.15rem;
   line-height: 1;
   cursor: pointer;
+  transition: color 0.18s ease, transform 0.18s ease;
 }
 
 .flashcards-progress-track {
-  height: 5px;
+  height: 11px;
   border-radius: 999px;
   overflow: hidden;
-  background: #e2e8f2;
+  background: #e0e7f2;
 }
 
 .flashcards-progress-track span {
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: #2768f1;
+  background: linear-gradient(90deg, #1168ff, #2365f0);
 }
 
 .flashcards-card-progress {
-  margin: -0.22rem 0 0;
+  margin: -0.42rem 0 0;
   color: #7890bb;
   font-weight: 800;
-  font-size: 0.86rem;
+  font-size: 1.75rem;
+  line-height: 1.1;
+}
+
+.flashcards-card-progress strong {
+  color: #2768f1;
+  font-size: 2.05rem;
+}
+
+.flashcards-card-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 82px;
+  gap: 1rem;
+  align-items: stretch;
+  align-self: end;
+  margin-top: 0.2rem;
 }
 
 .flashcards-card-launch {
-  min-height: 39px;
+  min-height: 76px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.58rem;
-  border: 1px solid #dfe7f3;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.92);
-  color: #2f68e8;
+  gap: 0.95rem;
+  border: 1px solid #1d5ee8;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #3479ff 0%, #0f61ef 100%);
+  color: #fff;
+  box-shadow: 0 14px 30px rgba(33, 100, 235, 0.22);
   font-weight: 800;
+  font-size: 1.45rem;
   cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.flashcards-card-launch span {
+  font-size: 1.55rem;
+  line-height: 1;
 }
 
 .flashcards-card-view {
-  min-height: 36px;
+  width: 82px;
+  min-height: 76px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.52rem;
-  border: 1px solid #dfe7f3;
-  border-radius: 8px;
-  background: #f8fbff;
-  color: #526989;
+  border: 1px solid #d8e3f4;
+  border-radius: 20px;
+  background: #fff;
+  color: #2f68e8;
   font-weight: 800;
   cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.flashcards-grid-icon {
+  display: grid;
+  grid-template-columns: repeat(3, 8px);
+  gap: 5px;
+}
+
+.flashcards-grid-icon span {
+  width: 8px;
+  height: 8px;
+  border: 3px solid currentColor;
+  border-radius: 3px;
 }
 
 .flashcards-card-launch:hover,
 .flashcards-card-view:hover,
 .flashcards-random-btn:hover {
-  border-color: #b9ccf4;
-  background: #f6f9ff;
+  border-color: #a9c0ef;
+  transform: translateY(-1px);
 }
 
 .flashcards-list-overlay {
@@ -4813,7 +4855,30 @@ tbody tr.selected {
   }
 
   .flashcards-college-grid {
-    grid-template-columns: repeat(2, minmax(220px, 1fr));
+    grid-template-columns: repeat(2, minmax(280px, 1fr));
+  }
+
+  .flashcards-college-card {
+    min-height: 390px;
+    padding: 1.7rem;
+    border-radius: 24px;
+  }
+
+  .flashcards-card-title h3 {
+    font-size: 2rem;
+  }
+
+  .flashcards-card-title p,
+  .flashcards-card-progress {
+    font-size: 1.35rem;
+  }
+
+  .flashcards-card-progress strong {
+    font-size: 1.65rem;
+  }
+
+  .flashcards-card-launch {
+    font-size: 1.25rem;
   }
 
   .item-visual-editor {
@@ -4925,6 +4990,64 @@ tbody tr.selected {
   .flashcards-toolbar,
   .flashcards-college-grid {
     grid-template-columns: 1fr;
+  }
+
+  .flashcards-college-card {
+    min-height: 0;
+    padding: 1.35rem;
+    border-radius: 22px;
+    gap: 1.1rem;
+  }
+
+  .flashcards-card-head {
+    gap: 1rem;
+  }
+
+  .flashcards-card-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+  }
+
+  .flashcards-card-icon .college-health-icon-glyph {
+    width: 34px;
+    height: 34px;
+  }
+
+  .flashcards-card-title h3 {
+    margin-bottom: 0.75rem;
+    font-size: 1.75rem;
+  }
+
+  .flashcards-card-title p {
+    font-size: 1.15rem;
+  }
+
+  .flashcards-card-progress {
+    font-size: 1.2rem;
+  }
+
+  .flashcards-card-progress strong {
+    font-size: 1.45rem;
+  }
+
+  .flashcards-card-actions {
+    grid-template-columns: minmax(0, 1fr) 64px;
+    gap: 0.75rem;
+  }
+
+  .flashcards-card-launch,
+  .flashcards-card-view {
+    min-height: 62px;
+    border-radius: 16px;
+  }
+
+  .flashcards-card-launch {
+    font-size: 1.05rem;
+  }
+
+  .flashcards-card-view {
+    width: 64px;
   }
 
   .flashcards-generator-callout {
