@@ -73,6 +73,8 @@ type QuizImageSlot = 'front' | 'back'
 type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'stats'
 type FlashGeneratorScope = 'items' | 'colleges'
 type FlashFeelingFilter = 'none' | QuizResult
+type FlashCollegeLevelFilter = 'ALL' | FlashFeelingFilter
+type FlashCollegeSort = 'progress' | 'name' | 'items'
 type SidebarNavBubbleKey = Exclude<NavView, 'stats'>
 
 type ItemBase = {
@@ -594,9 +596,13 @@ function sanitizeQuizRichTextHtml(input: string) {
       currentParent = strong
     }
     if (hasItalicStyle) {
-      const em = target.createElement('em')
-      currentParent.appendChild(em)
-      currentParent = em
+      if (tagName === 'SPAN') {
+        inlineWrapper.style.fontStyle = 'italic'
+      } else {
+        const em = target.createElement('em')
+        currentParent.appendChild(em)
+        currentParent = em
+      }
     }
 
     Array.from(element.childNodes).forEach((child) => appendSanitizedNode(currentParent, child))
@@ -638,42 +644,38 @@ function applyQuizRichTextCommand(
     return
   }
 
-  const selectedContent = range.cloneContents()
+  const selectedText = range.toString()
+  if (!selectedText) {
+    return
+  }
   const isSelectionBold = selectionHasBoldFormatting(editor, range)
   const isSelectionItalic = selectionHasItalicFormatting(editor, range)
   const isSelectionHighlighted = selectionHasHighlightFormatting(editor, range)
-  const wrapper =
-    command.type === 'bold'
-      ? document.createElement('span')
-      : command.type === 'italic'
-        ? isSelectionItalic
-          ? document.createElement('span')
-          : document.createElement('em')
-        : command.type === 'highlight' || command.type === 'color' || command.type === 'themeColor'
-          ? document.createElement('span')
-          : null
 
-  if (wrapper && command.type === 'bold') {
-    wrapper.className = isSelectionBold ? 'quiz-rich-normal-text' : 'quiz-rich-bold-text'
+  const wrapper = document.createElement('span')
+  wrapper.textContent = selectedText
+
+  if (command.type === 'bold') {
+    wrapper.classList.add(isSelectionBold ? 'quiz-rich-normal-text' : 'quiz-rich-bold-text')
   }
-  if (wrapper && command.type === 'italic' && isSelectionItalic) {
-    wrapper.style.fontStyle = 'normal'
+  if (command.type === 'italic') {
+    if (isSelectionItalic) {
+      wrapper.style.fontStyle = 'normal'
+    } else {
+      wrapper.style.fontStyle = 'italic'
+    }
   }
-  if (wrapper && command.type === 'highlight') {
-    wrapper.className = isSelectionHighlighted ? 'quiz-rich-plain-highlight-text' : 'quiz-rich-highlight-text'
+  if (command.type === 'highlight') {
+    wrapper.classList.add(isSelectionHighlighted ? 'quiz-rich-plain-highlight-text' : 'quiz-rich-highlight-text')
   }
-  if (wrapper && command.type === 'color') {
+  if (command.type === 'color') {
     wrapper.style.color = command.value
   }
-  if (wrapper && command.type === 'themeColor') {
-    wrapper.className = 'quiz-rich-theme-text'
+  if (command.type === 'themeColor') {
+    wrapper.classList.add('quiz-rich-theme-text')
   }
 
   range.deleteContents()
-  if (!wrapper) {
-    return
-  }
-  wrapper.appendChild(selectedContent)
   range.insertNode(wrapper)
   placeCaretAfterNode(wrapper)
 }
@@ -1132,6 +1134,47 @@ function CollegeHealthIcon({ college, className = '' }: { college: string; class
       />
     </span>
   )
+}
+
+const FLASH_COLLEGE_DISPLAY_NAMES: Partial<Record<CollegeName, string>> = {
+  'ANATOMIE ET CYTOLOGIE PATHOLOGIQUES': 'Anatomie et Cytologie Pathologiques',
+  'ANESTHÉSIE - RÉANIMATION': 'Anesthésie - Réanimation',
+  'GYNÉCOLOGIE OBSTÉTRIQUE': 'Gynécologie Obstétrique',
+  'HÉPATO-GASTRO-ENTÉROLOGIE': 'Hépato-Gastro-Entérologie',
+  'MÉDECINE CARDIOVASCULAIRE': 'Cardiologie',
+  'ORTHOPÉDIE - TRAUMATOLOGIE': 'Orthopédie - Traumatologie',
+}
+
+const FLASH_COLLEGE_ACCENTS = [
+  '#df3d6a',
+  '#2563eb',
+  '#1f9d62',
+  '#8b5cf6',
+  '#f97316',
+  '#f59e0b',
+  '#e11d48',
+  '#4f46e5',
+  '#0e9aa7',
+  '#7c3aed',
+  '#2f7fd8',
+  '#16a34a',
+]
+
+function toReadableCollegeName(college: string) {
+  return college
+    .toLocaleLowerCase('fr-FR')
+    .split(/(\s+-\s+|\s+)/)
+    .map((part) => {
+      if (/^\s+$/.test(part) || part.includes('-')) {
+        return part
+      }
+      return part ? part.charAt(0).toLocaleUpperCase('fr-FR') + part.slice(1) : part
+    })
+    .join('')
+}
+
+function getFlashCollegeDisplayName(college: string) {
+  return FLASH_COLLEGE_DISPLAY_NAMES[college as CollegeName] ?? toReadableCollegeName(college)
 }
 
 const rawItems = itemsData as ItemBase[]
@@ -2086,8 +2129,9 @@ function App() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [flashGeneratorScope, setFlashGeneratorScope] = useState<FlashGeneratorScope>('items')
   const [flashCollegeFilter, setFlashCollegeFilter] = useState<string>('ALL')
-  const [flashItemFilter, setFlashItemFilter] = useState<string>('ALL')
-  const [flashResultFilter, setFlashResultFilter] = useState<'ALL' | QuizResult>('ALL')
+  const [flashCollegeSearch, setFlashCollegeSearch] = useState('')
+  const [flashCollegeLevelFilter, setFlashCollegeLevelFilter] = useState<FlashCollegeLevelFilter>('ALL')
+  const [flashCollegeSort, setFlashCollegeSort] = useState<FlashCollegeSort>('progress')
   const [flashSelectedItems, setFlashSelectedItems] = useState<number[]>(() => rawItems.map((item) => item.itemNumber))
   const [flashSelectedColleges, setFlashSelectedColleges] = useState<string[]>(() => [...COLLEGES])
   const [flashSelectedFeelings, setFlashSelectedFeelings] = useState<FlashFeelingFilter[]>([
@@ -2106,9 +2150,6 @@ function App() {
   const [flashGeneratedSide, setFlashGeneratedSide] = useState<'front' | 'back'>('front')
   const [flashGeneratedFeedback, setFlashGeneratedFeedback] = useState<QuizResult | null>(null)
   const [flashGeneratedSessionResults, setFlashGeneratedSessionResults] = useState<Record<string, QuizResult>>({})
-  const [flashIndex, setFlashIndex] = useState(0)
-  const [flashSide, setFlashSide] = useState<'front' | 'back'>('front')
-  const [flashFeedback, setFlashFeedback] = useState<QuizResult | null>(null)
   const backupInputRef = useRef<HTMLInputElement | null>(null)
   const [hasLoadedRemoteState, setHasLoadedRemoteState] = useState(false)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
@@ -3794,28 +3835,12 @@ function getPasswordStrengthMeta(password: string) {
     return new Map(allFlashcards.map((card) => [`${card.itemNumber}:${card.cardId}`, card]))
   }, [allFlashcards])
 
-  const filteredFlashcards = useMemo<GlobalFlashcard[]>(() => {
-    return allFlashcards.filter((entry) => {
-      if (flashCollegeFilter !== 'ALL' && !entry.colleges.includes(flashCollegeFilter)) {
-        return false
-      }
-      if (flashItemFilter !== 'ALL' && entry.itemNumber !== Number(flashItemFilter)) {
-        return false
-      }
-      if (flashResultFilter !== 'ALL' && entry.lastResult !== flashResultFilter) {
-        return false
-      }
-      return true
-    })
-  }, [allFlashcards, flashCollegeFilter, flashItemFilter, flashResultFilter])
-
   const generatedFlashcards = useMemo<GlobalFlashcard[]>(() => {
     return flashGeneratedCardKeys
       .map((key) => flashcardsByKey.get(key) ?? null)
       .filter((card): card is GlobalFlashcard => card !== null)
   }, [flashcardsByKey, flashGeneratedCardKeys])
 
-  const activeGlobalFlashcard = filteredFlashcards[flashIndex] ?? null
   const activeGeneratedFlashcard = generatedFlashcards[flashGeneratedIndex] ?? null
   const activeGeneratedKey = activeGeneratedFlashcard
     ? `${activeGeneratedFlashcard.itemNumber}:${activeGeneratedFlashcard.cardId}`
@@ -3843,14 +3868,6 @@ function getPasswordStrengthMeta(password: string) {
       completed: generatedFlashcards.length > 0 && success.length + toReview.length >= generatedFlashcards.length,
     }
   }, [generatedFlashcards, flashGeneratedSessionResults])
-
-  const flashSessionStats = useMemo(() => {
-    const reviewed = filteredFlashcards.filter((card) => card.quizCount > 0).length
-    const difficult = filteredFlashcards.filter((card) => card.lastResult === 'again' || card.lastResult === 'hard').length
-    const good = filteredFlashcards.filter((card) => card.lastResult === 'good' || card.lastResult === 'easy').length
-    const completion = filteredFlashcards.length === 0 ? 0 : Math.round((reviewed / filteredFlashcards.length) * 100)
-    return { reviewed, difficult, good, completion }
-  }, [filteredFlashcards])
 
   useEffect(() => {
     if (!quizItem || !activeQuizCard) {
@@ -3887,41 +3904,6 @@ function getPasswordStrengthMeta(password: string) {
   ])
 
   useEffect(() => {
-    if (!activeGlobalFlashcard) {
-      return
-    }
-    void loadQuizCardImagesOnDemand(activeGlobalFlashcard.itemNumber, {
-      id: activeGlobalFlashcard.cardId,
-      frontImageDataUrl: activeGlobalFlashcard.frontImageDataUrl,
-      hasFrontImageDataUrl: activeGlobalFlashcard.hasFrontImageDataUrl,
-      backImageDataUrl: activeGlobalFlashcard.backImageDataUrl,
-      hasBackImageDataUrl: activeGlobalFlashcard.hasBackImageDataUrl,
-    })
-  }, [
-    activeGlobalFlashcard?.itemNumber,
-    activeGlobalFlashcard?.cardId,
-    activeGlobalFlashcard?.frontImageDataUrl,
-    activeGlobalFlashcard?.hasFrontImageDataUrl,
-    activeGlobalFlashcard?.backImageDataUrl,
-    activeGlobalFlashcard?.hasBackImageDataUrl,
-  ])
-
-  useEffect(() => {
-    if (filteredFlashcards.length === 0) {
-      setFlashIndex(0)
-      return
-    }
-    if (flashIndex >= filteredFlashcards.length) {
-      setFlashIndex(filteredFlashcards.length - 1)
-    }
-  }, [filteredFlashcards.length, flashIndex])
-
-  useEffect(() => {
-    setFlashSide('front')
-    setFlashFeedback(null)
-  }, [flashIndex, flashCollegeFilter, flashItemFilter, flashResultFilter])
-
-  useEffect(() => {
     if (generatedFlashcards.length === 0) {
       setFlashGeneratedIndex(0)
       setFlashGeneratedSide('front')
@@ -3941,35 +3923,6 @@ function getPasswordStrengthMeta(password: string) {
       setFlashGeneratorStep(4)
     }
   }, [flashGeneratorModalOpen, flashGeneratorStep, generatedRecap.completed])
-
-  useEffect(() => {
-    if (activeView !== 'flashcards' || flashGeneratorModalOpen || isImageLightboxOpen) {
-      return
-    }
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (!activeGlobalFlashcard) {
-        return
-      }
-      if (event.key === ' ') {
-        event.preventDefault()
-        setFlashSide((current) => (current === 'front' ? 'back' : 'front'))
-      } else if (event.key === '1') {
-        handleGlobalFlashResult('again')
-      } else if (event.key === '2') {
-        handleGlobalFlashResult('hard')
-      } else if (event.key === '3') {
-        handleGlobalFlashResult('good')
-      } else if (event.key === '4') {
-        handleGlobalFlashResult('easy')
-      } else if (event.key === 'ArrowLeft') {
-        setFlashIndex((current) => (current - 1 + filteredFlashcards.length) % filteredFlashcards.length)
-      } else if (event.key === 'ArrowRight') {
-        setFlashIndex((current) => (current + 1) % filteredFlashcards.length)
-      }
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [activeView, activeGlobalFlashcard, filteredFlashcards.length, flashGeneratorModalOpen, isImageLightboxOpen])
 
   const globalStats = useMemo(() => {
     const completedCount = items.filter(
@@ -4136,6 +4089,55 @@ function getPasswordStrengthMeta(password: string) {
     return weeks
   }, [items])
 
+  const flashCollegeCards = useMemo(() => {
+    const normalizedSearch = normalizeText(flashCollegeSearch)
+
+    return collegesViewRows
+      .map((row, index) => {
+        const collegeFlashcards = allFlashcards.filter((card) => card.colleges.includes(row.college))
+        const masteredFlashcards = collegeFlashcards.filter(
+          (card) => card.lastResult === 'good' || card.lastResult === 'easy',
+        ).length
+        const flashcardMastery =
+          collegeFlashcards.length === 0 ? row.completion : Math.round((masteredFlashcards / collegeFlashcards.length) * 100)
+
+        return {
+          ...row,
+          displayName: getFlashCollegeDisplayName(row.college),
+          itemCount: row.items.length,
+          flashcardCount: collegeFlashcards.length,
+          masteryPercent: Math.max(row.completion, flashcardMastery),
+          accent: FLASH_COLLEGE_ACCENTS[index % FLASH_COLLEGE_ACCENTS.length],
+        }
+      })
+      .filter((row) => {
+        if (flashCollegeFilter !== 'ALL' && row.college !== flashCollegeFilter) {
+          return false
+        }
+        if (
+          normalizedSearch &&
+          !normalizeText(row.displayName).includes(normalizedSearch) &&
+          !normalizeText(row.college).includes(normalizedSearch)
+        ) {
+          return false
+        }
+        if (flashCollegeLevelFilter !== 'ALL') {
+          const collegeFlashcards = allFlashcards.filter((card) => card.colleges.includes(row.college))
+          return collegeFlashcards.some((card) => (card.lastResult ?? 'none') === flashCollegeLevelFilter)
+        }
+        return true
+      })
+      .sort((a, b) => {
+        if (flashCollegeSort === 'name') {
+          return a.displayName.localeCompare(b.displayName, 'fr')
+        }
+        if (flashCollegeSort === 'items') {
+          return b.itemCount - a.itemCount || a.displayName.localeCompare(b.displayName, 'fr')
+        }
+        return b.masteryPercent - a.masteryPercent || a.displayName.localeCompare(b.displayName, 'fr')
+      })
+  }, [allFlashcards, collegesViewRows, flashCollegeFilter, flashCollegeLevelFilter, flashCollegeSearch, flashCollegeSort])
+
   function setSelectedItem(itemNumber: number) {
     setSelectedItemId((current) => (current === itemNumber ? null : itemNumber))
   }
@@ -4268,24 +4270,6 @@ function getPasswordStrengthMeta(password: string) {
     })
   }
 
-  function handleGlobalFlashResult(result: QuizResult) {
-    if (!activeGlobalFlashcard) {
-      return
-    }
-    applyQuizResultToCard(activeGlobalFlashcard.itemNumber, activeGlobalFlashcard.cardId, result)
-    setFlashFeedback(result)
-    window.setTimeout(() => {
-      setFlashFeedback((current) => (current === result ? null : current))
-      setFlashIndex((current) => {
-        if (filteredFlashcards.length <= 1) {
-          return 0
-        }
-        return (current + 1) % filteredFlashcards.length
-      })
-      setFlashSide('front')
-    }, 450)
-  }
-
   function handleGeneratedFlashResult(result: QuizResult) {
     if (!activeGeneratedFlashcard || !activeGeneratedKey) {
       return
@@ -4308,7 +4292,6 @@ function getPasswordStrengthMeta(password: string) {
   function jumpToQuizGeneratorSetup() {
     setFlashGeneratorModalOpen(true)
     setFlashGeneratorStep(1)
-    setFlashSide('front')
   }
 
   function toggleFlashFeeling(feeling: FlashFeelingFilter) {
@@ -4327,12 +4310,20 @@ function getPasswordStrengthMeta(password: string) {
     flashGeneratorScope === 'items' ? flashSelectedItems.length > 0 : flashSelectedColleges.length > 0
   const isFlashStepTwoValid = flashSelectedFeelings.length > 0
 
-  function applyQuizGenerator() {
-    const selectedItemsSet = new Set(flashSelectedItems)
-    const selectedCollegesSet = new Set(flashSelectedColleges)
-    const selectedFeelingsSet = new Set(flashSelectedFeelings)
+  function buildQuizGeneratorCardKeys(config: {
+    scope: FlashGeneratorScope
+    selectedItems: number[]
+    selectedColleges: string[]
+    selectedFeelings: FlashFeelingFilter[]
+    prioritizeWeak: boolean
+    questionCount: number
+    randomize?: boolean
+  }) {
+    const selectedItemsSet = new Set(config.selectedItems)
+    const selectedCollegesSet = new Set(config.selectedColleges)
+    const selectedFeelingsSet = new Set(config.selectedFeelings)
     const scopeFiltered = allFlashcards.filter((card) => {
-      if (flashGeneratorScope === 'items') {
+      if (config.scope === 'items') {
         return selectedItemsSet.has(card.itemNumber)
       }
       return card.colleges.some((college) => selectedCollegesSet.has(college))
@@ -4351,26 +4342,96 @@ function getPasswordStrengthMeta(password: string) {
       easy: 4,
     }
 
-    const ranked = [...feelingFiltered].sort((a, b) => {
-      const aFeeling = a.lastResult ?? 'none'
-      const bFeeling = b.lastResult ?? 'none'
-      const aScore = flashPrioritizeWeak ? weakRank[aFeeling] * 100 + a.quizCount * 4 : a.quizCount
-      const bScore = flashPrioritizeWeak ? weakRank[bFeeling] * 100 + b.quizCount * 4 : b.quizCount
-      if (aScore !== bScore) {
-        return aScore - bScore
-      }
-      return a.itemNumber - b.itemNumber
-    })
+    const ranked = config.randomize
+      ? feelingFiltered
+          .map((card) => ({ card, rank: Math.random() }))
+          .sort((a, b) => a.rank - b.rank)
+          .map(({ card }) => card)
+      : [...feelingFiltered].sort((a, b) => {
+          const aFeeling = a.lastResult ?? 'none'
+          const bFeeling = b.lastResult ?? 'none'
+          const aScore = config.prioritizeWeak ? weakRank[aFeeling] * 100 + a.quizCount * 4 : a.quizCount
+          const bScore = config.prioritizeWeak ? weakRank[bFeeling] * 100 + b.quizCount * 4 : b.quizCount
+          if (aScore !== bScore) {
+            return aScore - bScore
+          }
+          return a.itemNumber - b.itemNumber
+        })
 
-    const safeCount = Math.max(1, Math.min(200, Number.isFinite(flashQuestionCount) ? Math.round(flashQuestionCount) : 20))
-    const selected = ranked.slice(0, safeCount)
-    const keys = selected.map((card) => `${card.itemNumber}:${card.cardId}`)
+    const safeCount = Math.max(1, Math.min(200, Number.isFinite(config.questionCount) ? Math.round(config.questionCount) : 20))
+    return ranked.slice(0, safeCount).map((card) => `${card.itemNumber}:${card.cardId}`)
+  }
 
+  function startGeneratedFlashSession(keys: string[]) {
     setFlashGeneratedCardKeys(keys)
     setFlashGeneratedIndex(0)
     setFlashGeneratedSide('front')
     setFlashGeneratedFeedback(null)
     setFlashGeneratedSessionResults({})
+  }
+
+  function applyQuizGenerator() {
+    const keys = buildQuizGeneratorCardKeys({
+      scope: flashGeneratorScope,
+      selectedItems: flashSelectedItems,
+      selectedColleges: flashSelectedColleges,
+      selectedFeelings: flashSelectedFeelings,
+      prioritizeWeak: flashPrioritizeWeak,
+      questionCount: flashQuestionCount,
+    })
+    startGeneratedFlashSession(keys)
+  }
+
+  function startCollegeGeneratedQuiz(college: string, options?: { randomize?: boolean }) {
+    const selectedFeelings: FlashFeelingFilter[] =
+      flashCollegeLevelFilter === 'ALL' ? ['none', 'again', 'hard', 'good', 'easy'] : [flashCollegeLevelFilter]
+    const keys = buildQuizGeneratorCardKeys({
+      scope: 'colleges',
+      selectedItems: [],
+      selectedColleges: [college],
+      selectedFeelings,
+      prioritizeWeak: !options?.randomize,
+      questionCount: flashQuestionCount,
+      randomize: options?.randomize,
+    })
+
+    setFlashGeneratorScope('colleges')
+    setFlashSelectedColleges([college])
+    setFlashSelectedFeelings(selectedFeelings)
+    setFlashPrioritizeWeak(!options?.randomize)
+    startGeneratedFlashSession(keys)
+    setFlashGeneratorModalOpen(true)
+    setFlashGeneratorStep(3)
+  }
+
+  function startSelectedCollegeGeneratedQuiz() {
+    const fallbackCollege = flashCollegeCards[0]?.college ?? COLLEGES[0]
+    const college = flashCollegeFilter === 'ALL' ? fallbackCollege : flashCollegeFilter
+    startCollegeGeneratedQuiz(college)
+  }
+
+  function startRandomFlashQuiz() {
+    const selectedFeelings: FlashFeelingFilter[] =
+      flashCollegeLevelFilter === 'ALL' ? ['none', 'again', 'hard', 'good', 'easy'] : [flashCollegeLevelFilter]
+    const visibleColleges = flashCollegeCards.map((row) => row.college)
+    const selectedColleges = visibleColleges.length > 0 ? visibleColleges : [...COLLEGES]
+    const keys = buildQuizGeneratorCardKeys({
+      scope: 'colleges',
+      selectedItems: [],
+      selectedColleges,
+      selectedFeelings,
+      prioritizeWeak: false,
+      questionCount: flashQuestionCount,
+      randomize: true,
+    })
+
+    setFlashGeneratorScope('colleges')
+    setFlashSelectedColleges(selectedColleges)
+    setFlashSelectedFeelings(selectedFeelings)
+    setFlashPrioritizeWeak(false)
+    startGeneratedFlashSession(keys)
+    setFlashGeneratorModalOpen(true)
+    setFlashGeneratorStep(3)
   }
 
   function triggerReviewFx(key: string, delta: number) {
@@ -7392,55 +7453,93 @@ function getPasswordStrengthMeta(password: string) {
       ) : null}
 
       {activeView === 'flashcards' ? (
-        <section id="flashcards-section" className="panel flashcards-page">
-          <div className="panel-head">
-            <h2>FlashCards</h2>
-            <p>{filteredFlashcards.length} cartes</p>
-          </div>
-          <div className="flashcards-generator-callout">
+        <section id="flashcards-section" className="flashcards-page">
+          <div className="flashcards-generator-callout" aria-label="Générateur de quiz">
             <div className="flashcards-generator-copy">
-              <p className="flashcards-generator-kicker">Nouveau</p>
-              <h3>Quiz Generator</h3>
-              <p>Construis une session flashcards guidée: sélection items/collèges, ressenti cible, puis nombre de questions.</p>
-              <div className="flashcards-generator-tags" aria-hidden="true">
-                <span>Items ou collèges</span>
-                <span>Ressenti ciblé</span>
-                <span>Sans chrono</span>
-              </div>
+              <p className="flashcards-generator-kicker">
+                <span aria-hidden="true">✦</span>
+                Générateur de quiz
+              </p>
+              <h2>Créez un quiz personnalisé</h2>
+              <p>Choisissez un collège, le nombre de questions et le niveau pour générer un quiz adapté.</p>
             </div>
-            <button type="button" className="ghost-btn flashcards-generator-btn" onClick={jumpToQuizGeneratorSetup}>
-              Ouvrir Quiz Generator
+            <div className="flashcards-generator-controls">
+              <label className="flashcards-field">
+                <span>Collège</span>
+                <select value={flashCollegeFilter} onChange={(event) => setFlashCollegeFilter(event.target.value)}>
+                  <option value="ALL">Sélectionner un collège</option>
+                  {COLLEGES.map((college) => (
+                    <option key={college} value={college}>
+                      {getFlashCollegeDisplayName(college)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flashcards-field">
+                <span>Nombre de questions</span>
+                <select value={String(flashQuestionCount)} onChange={(event) => setFlashQuestionCount(Number(event.target.value))}>
+                  {[10, 20, 30, 40, 50].map((count) => (
+                    <option key={count} value={String(count)}>
+                      {count} questions
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flashcards-field">
+                <span>Niveau</span>
+                <select
+                  value={flashCollegeLevelFilter}
+                  onChange={(event) => setFlashCollegeLevelFilter(event.target.value as FlashCollegeLevelFilter)}
+                >
+                  <option value="ALL">Tous les niveaux</option>
+                  <option value="none">Non évalué</option>
+                  <option value="again">Revoir</option>
+                  <option value="hard">Difficile</option>
+                  <option value="good">Bon</option>
+                  <option value="easy">Parfait</option>
+                </select>
+              </label>
+            </div>
+            <button type="button" className="flashcards-generator-btn" onClick={startSelectedCollegeGeneratedQuiz}>
+              <span aria-hidden="true">✦</span>
+              Générer le quiz
             </button>
           </div>
-          <div className="flashcards-generator-summary">
-            <span>Scope: {flashGeneratorScope === 'items' ? `${flashSelectedItems.length} items` : `${flashSelectedColleges.length} colleges`}</span>
-            <span>Ressentis: {flashSelectedFeelings.length}</span>
-            <span>Questions: {flashQuestionCount}</span>
-          </div>
-          <div className="filters-row flashcards-filters">
-            <select value={flashCollegeFilter} onChange={(event) => setFlashCollegeFilter(event.target.value)}>
-              <option value="ALL">Tous colleges</option>
-              {COLLEGES.map((college) => (
-                <option key={college} value={college}>
-                  {college}
-                </option>
-              ))}
-            </select>
-            <select value={flashItemFilter} onChange={(event) => setFlashItemFilter(event.target.value)}>
-              <option value="ALL">Tous items</option>
-              {items.map((item) => (
-                <option key={item.itemNumber} value={String(item.itemNumber)}>
-                  Item #{item.itemNumber}
-                </option>
-              ))}
-            </select>
-            <select value={flashResultFilter} onChange={(event) => setFlashResultFilter(event.target.value as 'ALL' | QuizResult)}>
-              <option value="ALL">Tous ressentis</option>
+          <div className="flashcards-toolbar">
+            <label className="flashcards-search">
+              <span className="flashcards-search-icon" aria-hidden="true">⌕</span>
+              <input
+                type="search"
+                placeholder="Rechercher un collège..."
+                value={flashCollegeSearch}
+                onChange={(event) => setFlashCollegeSearch(event.target.value)}
+              />
+            </label>
+            <select
+              className="flashcards-toolbar-select"
+              value={flashCollegeLevelFilter}
+              onChange={(event) => setFlashCollegeLevelFilter(event.target.value as FlashCollegeLevelFilter)}
+            >
+              <option value="ALL">Tous les niveaux</option>
+              <option value="none">Non évalué</option>
               <option value="again">Revoir</option>
               <option value="hard">Difficile</option>
               <option value="good">Bon</option>
               <option value="easy">Parfait</option>
             </select>
+            <select
+              className="flashcards-toolbar-select"
+              value={flashCollegeSort}
+              onChange={(event) => setFlashCollegeSort(event.target.value as FlashCollegeSort)}
+            >
+              <option value="progress">Trier par : Progression</option>
+              <option value="name">Trier par : Nom</option>
+              <option value="items">Trier par : Items</option>
+            </select>
+            <button type="button" className="flashcards-random-btn" onClick={startRandomFlashQuiz}>
+              <span aria-hidden="true">⤨</span>
+              Quiz aléatoire
+            </button>
           </div>
           {flashGeneratorModalOpen ? (
             <div className="flash-generator-modal-overlay" role="presentation" onClick={() => setFlashGeneratorModalOpen(false)}>
@@ -7762,116 +7861,48 @@ function getPasswordStrengthMeta(password: string) {
               </div>
             </div>
           ) : null}
-          <div className="flashcards-stats-row">
-            <span>Progression session: {flashSessionStats.completion}%</span>
-            <span>Revuees: {flashSessionStats.reviewed}</span>
-            <span>Difficiles: {flashSessionStats.difficult}</span>
-            <span>Bonnes: {flashSessionStats.good}</span>
-            <span className="muted">Raccourcis: Espace / 1-4 / ← →</span>
-          </div>
-          {activeGlobalFlashcard ? (
-            <>
-              <div className="flashcards-session-head">
-                <p>
-                  Item #{activeGlobalFlashcard.itemNumber} • {flashIndex + 1}/{filteredFlashcards.length}
-                </p>
-                <p className="muted">
-                  Ressenti actuel:{' '}
-                  {activeGlobalFlashcard.lastResult ? QUIZ_RESULT_META[activeGlobalFlashcard.lastResult].label : 'Non evalue'}
-                </p>
-                <div className="flashcards-session-nav">
-                  <button
-                    type="button"
-                    className="ghost-btn"
-                    onClick={() => setFlashIndex((current) => (current - 1 + filteredFlashcards.length) % filteredFlashcards.length)}
-                  >
-                    ←
-                  </button>
-                  <button
-                    type="button"
-                    className="ghost-btn"
-                    onClick={() => setFlashIndex((current) => (current + 1) % filteredFlashcards.length)}
-                  >
-                    →
-                  </button>
-                </div>
-              </div>
-              <div
-                className={`quiz-flashcard flip ${flashSide === 'back' ? 'is-back' : 'is-front'}`}
-                onClick={() => setFlashSide((current) => (current === 'front' ? 'back' : 'front'))}
-              >
-                <div className="quiz-face quiz-front">
-                  <p className="quiz-face-label">Question</p>
-                  <div className="quiz-face-body">
-                    <div
-                      className={`${getQuizTextSizeClass(getQuizRichTextPlainText(activeGlobalFlashcard.question))} quiz-rich-rendered`}
-                      dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(activeGlobalFlashcard.question) }}
-                    />
-                    {activeGlobalFlashcard.frontImageDataUrl ? (
-                      <img
-                        className="quiz-face-media"
-                        src={activeGlobalFlashcard.frontImageDataUrl}
-                        alt="Illustration du recto"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          openImageLightbox(activeGlobalFlashcard.frontImageDataUrl, 'Illustration du recto')
-                        }}
-                      />
-                    ) : (
-                      <span className="quiz-face-media-placeholder" aria-hidden="true">IMG</span>
-                    )}
+          {flashCollegeCards.length > 0 ? (
+            <div className="flashcards-college-grid">
+              {flashCollegeCards.map((row) => (
+                <article
+                  key={`flash-college-${row.college}`}
+                  className="flashcards-college-card"
+                  style={{ '--flash-college-color': row.accent } as CSSProperties}
+                >
+                  <div className="flashcards-card-head">
+                    <CollegeHealthIcon college={row.college} className="flashcards-card-icon" />
+                    <div className="flashcards-card-title">
+                      <h3>{row.displayName}</h3>
+                      <p>{row.itemCount} items</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="flashcards-card-menu"
+                      title={`Options ${row.displayName}`}
+                      aria-label={`Options ${row.displayName}`}
+                      onClick={() => {
+                        setFlashCollegeFilter(row.college)
+                        jumpToQuizGeneratorSetup()
+                      }}
+                    >
+                      ⋮
+                    </button>
                   </div>
-                </div>
-                <div className="quiz-face quiz-back">
-                  <p className="quiz-face-label">Réponse</p>
-                  <div className="quiz-face-body">
-                    <div
-                      className={`${getQuizTextSizeClass(getQuizRichTextPlainText(activeGlobalFlashcard.answer))} quiz-rich-rendered`}
-                      dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(activeGlobalFlashcard.answer) }}
-                    />
-                    {activeGlobalFlashcard.backImageDataUrl ? (
-                      <img
-                        className="quiz-face-media"
-                        src={activeGlobalFlashcard.backImageDataUrl}
-                        alt="Illustration du verso"
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          openImageLightbox(activeGlobalFlashcard.backImageDataUrl, 'Illustration du verso')
-                        }}
-                      />
-                    ) : (
-                      <span className="quiz-face-media-placeholder" aria-hidden="true">IMG</span>
-                    )}
+                  <div className="flashcards-progress-track" aria-hidden="true">
+                    <span style={{ width: `${row.masteryPercent}%` }} />
                   </div>
-                </div>
-              </div>
-              <div className="quiz-actions">
-                <button type="button" className="ghost-btn" onClick={() => setFlashSide((current) => (current === 'front' ? 'back' : 'front'))}>
-                  Flip
-                </button>
-                <button type="button" className="ghost-btn quiz-rate-btn again" onClick={() => handleGlobalFlashResult('again')}>
-                  ❌ Revoir
-                </button>
-                <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleGlobalFlashResult('hard')}>
-                  ⚠️ Difficile
-                </button>
-                <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleGlobalFlashResult('good')}>
-                  ✅ Bon
-                </button>
-                <button type="button" className="ghost-btn quiz-rate-btn easy" onClick={() => handleGlobalFlashResult('easy')}>
-                  ⚡ Parfait
-                </button>
-              </div>
-              {flashFeedback ? (
-                <div className={`quiz-feedback ${flashFeedback} reward-medium`}>
-                  <span className="quiz-feedback-main">
-                    {QUIZ_RESULT_META[flashFeedback].icon} {QUIZ_RESULT_META[flashFeedback].label}
-                  </span>
-                </div>
-              ) : null}
-            </>
+                  <p className="flashcards-card-progress">{row.masteryPercent}% maîtrisés</p>
+                  <button type="button" className="flashcards-card-launch" onClick={() => startCollegeGeneratedQuiz(row.college)}>
+                    <span aria-hidden="true">▶</span>
+                    Lancer le quiz
+                  </button>
+                </article>
+              ))}
+            </div>
           ) : (
-            <p className="muted">Aucune flashcard pour cette configuration de quiz.</p>
+            <div className="flashcards-empty-state">
+              <p>Aucun collège ne correspond aux filtres sélectionnés.</p>
+            </div>
           )}
         </section>
       ) : null}
