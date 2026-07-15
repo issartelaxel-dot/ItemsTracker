@@ -1621,14 +1621,15 @@ h3 {
 
 .flashcards-toolbar {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(190px, 0.36fr) minmax(210px, 0.42fr) auto;
+  grid-template-columns: minmax(260px, 1fr) minmax(190px, 0.36fr) minmax(210px, 0.42fr) auto auto;
   gap: 1.05rem;
   align-items: center;
 }
 
 .flashcards-search,
 .flashcards-toolbar-select,
-.flashcards-random-btn {
+.flashcards-random-btn,
+.flashcards-view-switch {
   min-height: 52px;
   border: 1px solid #dbe4f2;
   border-radius: 10px;
@@ -1677,6 +1678,18 @@ h3 {
   cursor: pointer;
 }
 
+.flashcards-view-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.58rem;
+  padding: 0 1rem;
+  color: #2f68e8;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
 .flashcards-college-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 276px));
@@ -1718,6 +1731,20 @@ h3 {
   height: 27px;
 }
 
+.flashcards-item-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  background: color-mix(in oklab, var(--flash-college-color, #2f68e8) 10%, #f6f9ff);
+  color: var(--flash-college-color, #2f68e8);
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
 .flashcards-card-title {
   min-width: 0;
 }
@@ -1737,6 +1764,19 @@ h3 {
   font-weight: 700;
   font-size: 0.92rem;
   line-height: 1.1;
+}
+
+.flashcards-card-description {
+  margin-top: 0.38rem !important;
+  display: -webkit-box;
+  min-height: 2.35em;
+  overflow: hidden;
+  color: #5b6c8c !important;
+  font-size: 0.8rem !important;
+  font-weight: 650 !important;
+  line-height: 1.18 !important;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .flashcards-card-menu {
@@ -1843,7 +1883,8 @@ h3 {
 
 .flashcards-card-launch:hover,
 .flashcards-card-view:hover,
-.flashcards-random-btn:hover {
+.flashcards-random-btn:hover,
+.flashcards-view-switch:hover {
   border-color: #a9c0ef;
   transform: translateY(-1px);
 }
@@ -2058,6 +2099,7 @@ h3 {
 
 :root[data-theme='dark'] .flashcards-generator-copy p,
 :root[data-theme='dark'] .flashcards-card-title p,
+:root[data-theme='dark'] .flashcards-card-description,
 :root[data-theme='dark'] .flashcards-card-progress,
 :root[data-theme='dark'] .flashcards-list-head p:last-child,
 :root[data-theme='dark'] .flashcards-list-row-meta,
@@ -2070,7 +2112,8 @@ h3 {
 :root[data-theme='dark'] .flashcards-field,
 :root[data-theme='dark'] .flashcards-search,
 :root[data-theme='dark'] .flashcards-toolbar-select,
-:root[data-theme='dark'] .flashcards-random-btn {
+:root[data-theme='dark'] .flashcards-random-btn,
+:root[data-theme='dark'] .flashcards-view-switch {
   border-color: rgba(108, 152, 230, 0.32);
   background: rgba(7, 26, 68, 0.92);
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
@@ -2104,7 +2147,8 @@ h3 {
 }
 
 :root[data-theme='dark'] .college-health-icon.flashcards-card-icon,
-:root[data-theme='dark'] .flashcards-list-icon {
+:root[data-theme='dark'] .flashcards-list-icon,
+:root[data-theme='dark'] .flashcards-item-icon {
   background: color-mix(in oklab, var(--flash-college-color, #80aaff) 16%, #071a44);
   color: color-mix(in oklab, var(--flash-college-color, #80aaff) 72%, #dce8ff);
 }
@@ -2125,12 +2169,14 @@ h3 {
 }
 
 :root[data-theme='dark'] .flashcards-card-view:hover,
-:root[data-theme='dark'] .flashcards-random-btn:hover {
+:root[data-theme='dark'] .flashcards-random-btn:hover,
+:root[data-theme='dark'] .flashcards-view-switch:hover {
   border-color: rgba(157, 189, 255, 0.64);
   background: #0a2a62;
 }
 
-:root[data-theme='dark'] .flashcards-random-btn {
+:root[data-theme='dark'] .flashcards-random-btn,
+:root[data-theme='dark'] .flashcards-view-switch {
   color: #9dbdff;
 }
 
@@ -2167,6 +2213,10 @@ h3 {
   border-color: rgba(108, 152, 230, 0.3);
   color: #b7c9ef;
   background: #081f53;
+}
+
+:root[data-theme='dark'] .flashcards-card-description {
+  color: #9fb4dc !important;
 }
 
 .flash-generator-modal-overlay {

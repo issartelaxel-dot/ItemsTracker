@@ -72,6 +72,7 @@ type QuizResult = 'again' | 'hard' | 'good' | 'easy'
 type QuizImageSlot = 'front' | 'back'
 type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'stats'
 type FlashGeneratorScope = 'items' | 'colleges'
+type FlashDisplayMode = 'colleges' | 'items'
 type FlashFeelingFilter = 'none' | QuizResult
 type FlashCollegeLevelFilter = 'ALL' | FlashFeelingFilter
 type FlashCollegeSort = 'progress' | 'name' | 'items'
@@ -2132,7 +2133,9 @@ function App() {
   const [flashCollegeSearch, setFlashCollegeSearch] = useState('')
   const [flashCollegeLevelFilter, setFlashCollegeLevelFilter] = useState<FlashCollegeLevelFilter>('ALL')
   const [flashCollegeSort, setFlashCollegeSort] = useState<FlashCollegeSort>('progress')
+  const [flashDisplayMode, setFlashDisplayMode] = useState<FlashDisplayMode>('colleges')
   const [flashCardsListCollege, setFlashCardsListCollege] = useState<string | null>(null)
+  const [flashCardsListItem, setFlashCardsListItem] = useState<number | null>(null)
   const [flashSelectedItems, setFlashSelectedItems] = useState<number[]>(() => rawItems.map((item) => item.itemNumber))
   const [flashSelectedColleges, setFlashSelectedColleges] = useState<string[]>(() => [...COLLEGES])
   const [flashSelectedFeelings, setFlashSelectedFeelings] = useState<FlashFeelingFilter[]>([
@@ -4139,6 +4142,70 @@ function getPasswordStrengthMeta(password: string) {
       })
   }, [allFlashcards, collegesViewRows, flashCollegeFilter, flashCollegeLevelFilter, flashCollegeSearch, flashCollegeSort])
 
+  const flashItemCards = useMemo(() => {
+    const normalizedSearch = normalizeText(flashCollegeSearch)
+
+    return items
+      .map((item, index) => {
+        const itemFlashcards = allFlashcards.filter((card) => card.itemNumber === item.itemNumber)
+        const masteredFlashcards = itemFlashcards.filter(
+          (card) => card.lastResult === 'good' || card.lastResult === 'easy',
+        ).length
+        const masteryPercent =
+          itemFlashcards.length === 0 ? Math.round(item.progress * 100) : Math.round((masteredFlashcards / itemFlashcards.length) * 100)
+        const collegeNames = item.tracking.assignedColleges.map(getFlashCollegeDisplayName)
+        const accent = item.tracking.itemColor || FLASH_COLLEGE_ACCENTS[index % FLASH_COLLEGE_ACCENTS.length]
+
+        return {
+          itemNumber: item.itemNumber,
+          displayName: `Item #${item.itemNumber}`,
+          description: item.shortDescription,
+          itemCount: itemFlashcards.length,
+          cardCount: itemFlashcards.length,
+          masteryPercent,
+          accent,
+          icon: item.tracking.itemIcon,
+          colleges: item.tracking.assignedColleges,
+          collegeNames,
+        }
+      })
+      .filter((row) => {
+        if (row.cardCount === 0) {
+          return false
+        }
+        if (flashCollegeFilter !== 'ALL' && !row.colleges.includes(flashCollegeFilter)) {
+          return false
+        }
+        if (normalizedSearch) {
+          const searchable = [
+            row.displayName,
+            row.description,
+            String(row.itemNumber),
+            ...row.colleges,
+            ...row.collegeNames,
+          ].join(' ')
+          if (!normalizeText(searchable).includes(normalizedSearch)) {
+            return false
+          }
+        }
+        if (flashCollegeLevelFilter !== 'ALL') {
+          return allFlashcards.some(
+            (card) => card.itemNumber === row.itemNumber && (card.lastResult ?? 'none') === flashCollegeLevelFilter,
+          )
+        }
+        return true
+      })
+      .sort((a, b) => {
+        if (flashCollegeSort === 'name') {
+          return a.itemNumber - b.itemNumber
+        }
+        if (flashCollegeSort === 'items') {
+          return b.cardCount - a.cardCount || a.itemNumber - b.itemNumber
+        }
+        return b.masteryPercent - a.masteryPercent || a.itemNumber - b.itemNumber
+      })
+  }, [allFlashcards, flashCollegeFilter, flashCollegeLevelFilter, flashCollegeSearch, flashCollegeSort, items])
+
   const flashCardsListCollegeMeta = useMemo(() => {
     if (!flashCardsListCollege) {
       return null
@@ -4159,6 +4226,60 @@ function getPasswordStrengthMeta(password: string) {
       .filter((card) => card.colleges.includes(flashCardsListCollege))
       .sort((a, b) => a.itemNumber - b.itemNumber || a.cardId.localeCompare(b.cardId))
   }, [allFlashcards, flashCardsListCollege])
+
+  const flashCardsListItemMeta = useMemo(() => {
+    if (flashCardsListItem === null) {
+      return null
+    }
+    const row = flashItemCards.find((entry) => entry.itemNumber === flashCardsListItem)
+    const item = items.find((entry) => entry.itemNumber === flashCardsListItem)
+    return {
+      itemNumber: flashCardsListItem,
+      displayName: row?.displayName ?? `Item #${flashCardsListItem}`,
+      description: row?.description ?? item?.shortDescription ?? '',
+      accent: row?.accent ?? item?.tracking.itemColor ?? '#2f68e8',
+      icon: row?.icon ?? item?.tracking.itemIcon ?? '',
+    }
+  }, [flashCardsListItem, flashItemCards, items])
+
+  const flashCardsForSelectedItem = useMemo(() => {
+    if (flashCardsListItem === null) {
+      return []
+    }
+    return allFlashcards
+      .filter((card) => card.itemNumber === flashCardsListItem)
+      .sort((a, b) => a.cardId.localeCompare(b.cardId))
+  }, [allFlashcards, flashCardsListItem])
+
+  const flashCardsListMeta = useMemo(() => {
+    if (flashCardsListCollegeMeta) {
+      return {
+        kind: 'college' as const,
+        college: flashCardsListCollegeMeta.college,
+        displayName: flashCardsListCollegeMeta.displayName,
+        kicker: 'Cartes du collège',
+        countLabel: `${flashCardsForSelectedCollege.length} cartes`,
+        accent: flashCardsListCollegeMeta.accent,
+        description: '',
+        icon: '',
+      }
+    }
+    if (flashCardsListItemMeta) {
+      return {
+        kind: 'item' as const,
+        college: '',
+        displayName: flashCardsListItemMeta.displayName,
+        kicker: 'Cartes de l’item',
+        countLabel: `${flashCardsForSelectedItem.length} cartes`,
+        accent: flashCardsListItemMeta.accent,
+        description: flashCardsListItemMeta.description,
+        icon: flashCardsListItemMeta.icon,
+      }
+    }
+    return null
+  }, [flashCardsForSelectedCollege.length, flashCardsForSelectedItem.length, flashCardsListCollegeMeta, flashCardsListItemMeta])
+
+  const flashCardsForActiveList = flashCardsListMeta?.kind === 'college' ? flashCardsForSelectedCollege : flashCardsForSelectedItem
 
   function setSelectedItem(itemNumber: number) {
     setSelectedItemId((current) => (current === itemNumber ? null : itemNumber))
@@ -4426,6 +4547,28 @@ function getPasswordStrengthMeta(password: string) {
     setFlashGeneratorStep(3)
   }
 
+  function startItemGeneratedQuiz(itemNumber: number, options?: { randomize?: boolean }) {
+    const selectedFeelings: FlashFeelingFilter[] =
+      flashCollegeLevelFilter === 'ALL' ? ['none', 'again', 'hard', 'good', 'easy'] : [flashCollegeLevelFilter]
+    const keys = buildQuizGeneratorCardKeys({
+      scope: 'items',
+      selectedItems: [itemNumber],
+      selectedColleges: [],
+      selectedFeelings,
+      prioritizeWeak: !options?.randomize,
+      questionCount: flashQuestionCount,
+      randomize: options?.randomize,
+    })
+
+    setFlashGeneratorScope('items')
+    setFlashSelectedItems([itemNumber])
+    setFlashSelectedFeelings(selectedFeelings)
+    setFlashPrioritizeWeak(!options?.randomize)
+    startGeneratedFlashSession(keys)
+    setFlashGeneratorModalOpen(true)
+    setFlashGeneratorStep(3)
+  }
+
   function startSelectedCollegeGeneratedQuiz() {
     const fallbackCollege = flashCollegeCards[0]?.college ?? COLLEGES[0]
     const college = flashCollegeFilter === 'ALL' ? fallbackCollege : flashCollegeFilter
@@ -4436,19 +4579,26 @@ function getPasswordStrengthMeta(password: string) {
     const selectedFeelings: FlashFeelingFilter[] =
       flashCollegeLevelFilter === 'ALL' ? ['none', 'again', 'hard', 'good', 'easy'] : [flashCollegeLevelFilter]
     const visibleColleges = flashCollegeCards.map((row) => row.college)
+    const visibleItems = flashItemCards.map((row) => row.itemNumber)
     const selectedColleges = visibleColleges.length > 0 ? visibleColleges : [...COLLEGES]
+    const selectedItems = visibleItems.length > 0 ? visibleItems : items.map((item) => item.itemNumber)
+    const scope: FlashGeneratorScope = flashDisplayMode === 'items' ? 'items' : 'colleges'
     const keys = buildQuizGeneratorCardKeys({
-      scope: 'colleges',
-      selectedItems: [],
-      selectedColleges,
+      scope,
+      selectedItems: scope === 'items' ? selectedItems : [],
+      selectedColleges: scope === 'colleges' ? selectedColleges : [],
       selectedFeelings,
       prioritizeWeak: false,
       questionCount: flashQuestionCount,
       randomize: true,
     })
 
-    setFlashGeneratorScope('colleges')
-    setFlashSelectedColleges(selectedColleges)
+    setFlashGeneratorScope(scope)
+    if (scope === 'items') {
+      setFlashSelectedItems(selectedItems)
+    } else {
+      setFlashSelectedColleges(selectedColleges)
+    }
     setFlashSelectedFeelings(selectedFeelings)
     setFlashPrioritizeWeak(false)
     startGeneratedFlashSession(keys)
@@ -4458,10 +4608,17 @@ function getPasswordStrengthMeta(password: string) {
 
   function openCollegeFlashcardsList(college: string) {
     setFlashCardsListCollege(college)
+    setFlashCardsListItem(null)
+  }
+
+  function openItemFlashcardsList(itemNumber: number) {
+    setFlashCardsListItem(itemNumber)
+    setFlashCardsListCollege(null)
   }
 
   function closeCollegeFlashcardsList() {
     setFlashCardsListCollege(null)
+    setFlashCardsListItem(null)
   }
 
   function startSingleFlashcardQuiz(card: GlobalFlashcard) {
@@ -4471,6 +4628,7 @@ function getPasswordStrengthMeta(password: string) {
     setFlashSelectedFeelings([(card.lastResult ?? 'none') as FlashFeelingFilter])
     setFlashPrioritizeWeak(false)
     setFlashCardsListCollege(null)
+    setFlashCardsListItem(null)
     setFlashGeneratorModalOpen(true)
     setFlashGeneratorStep(3)
   }
@@ -7551,7 +7709,7 @@ function getPasswordStrengthMeta(password: string) {
               <span className="flashcards-search-icon" aria-hidden="true">⌕</span>
               <input
                 type="search"
-                placeholder="Rechercher un collège..."
+                placeholder="Rechercher un item ou un collège..."
                 value={flashCollegeSearch}
                 onChange={(event) => setFlashCollegeSearch(event.target.value)}
               />
@@ -7580,6 +7738,14 @@ function getPasswordStrengthMeta(password: string) {
             <button type="button" className="flashcards-random-btn" onClick={startRandomFlashQuiz}>
               <span aria-hidden="true">⤨</span>
               Quiz aléatoire
+            </button>
+            <button
+              type="button"
+              className="flashcards-view-switch"
+              onClick={() => setFlashDisplayMode((current) => (current === 'colleges' ? 'items' : 'colleges'))}
+            >
+              <span aria-hidden="true">{flashDisplayMode === 'colleges' ? '☷' : '◉'}</span>
+              {flashDisplayMode === 'colleges' ? 'Afficher par items' : 'Afficher par collèges'}
             </button>
           </div>
           {flashGeneratorModalOpen ? (
@@ -7902,7 +8068,7 @@ function getPasswordStrengthMeta(password: string) {
               </div>
             </div>
           ) : null}
-          {flashCollegeCards.length > 0 ? (
+          {flashDisplayMode === 'colleges' && flashCollegeCards.length > 0 ? (
             <div className="flashcards-college-grid">
               {flashCollegeCards.map((row) => (
                 <article
@@ -7964,27 +8130,104 @@ function getPasswordStrengthMeta(password: string) {
                 </article>
               ))}
             </div>
-          ) : (
-            <div className="flashcards-empty-state">
-              <p>Aucun collège ne correspond aux filtres sélectionnés.</p>
+          ) : null}
+          {flashDisplayMode === 'items' && flashItemCards.length > 0 ? (
+            <div className="flashcards-college-grid">
+              {flashItemCards.map((row) => (
+                <article
+                  key={`flash-item-${row.itemNumber}`}
+                  className="flashcards-college-card flashcards-item-card"
+                  style={{ '--flash-college-color': row.accent } as CSSProperties}
+                >
+                  <div className="flashcards-card-head">
+                    <span className="flashcards-item-icon" aria-hidden="true">
+                      {row.icon || row.itemNumber}
+                    </span>
+                    <div className="flashcards-card-title">
+                      <h3>{row.displayName}</h3>
+                      <p>{row.cardCount} cartes</p>
+                      <p className="flashcards-card-description">{row.description}</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="flashcards-card-menu"
+                      title={`Options item ${row.itemNumber}`}
+                      aria-label={`Options item ${row.itemNumber}`}
+                      onClick={() => {
+                        setFlashGeneratorScope('items')
+                        setFlashSelectedItems([row.itemNumber])
+                        setFlashGeneratorModalOpen(true)
+                        setFlashGeneratorStep(1)
+                      }}
+                    >
+                      ⋮
+                    </button>
+                  </div>
+                  <div className="flashcards-progress-track" aria-hidden="true">
+                    <span style={{ width: `${row.masteryPercent}%` }} />
+                  </div>
+                  <p className="flashcards-card-progress">
+                    <strong>{row.masteryPercent}%</strong>
+                    <span> maîtrisés</span>
+                  </p>
+                  <div className="flashcards-card-actions">
+                    <button type="button" className="flashcards-card-launch" onClick={() => startItemGeneratedQuiz(row.itemNumber)}>
+                      <span aria-hidden="true">▶</span>
+                      Lancer le quiz
+                    </button>
+                    <button
+                      type="button"
+                      className="flashcards-card-view"
+                      title={`Voir les cartes item ${row.itemNumber}`}
+                      aria-label={`Voir les cartes item ${row.itemNumber}`}
+                      onClick={() => openItemFlashcardsList(row.itemNumber)}
+                    >
+                      <span className="flashcards-grid-icon" aria-hidden="true">
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                        <span />
+                      </span>
+                    </button>
+                  </div>
+                </article>
+              ))}
             </div>
-          )}
-          {flashCardsListCollegeMeta ? (
+          ) : null}
+          {(flashDisplayMode === 'colleges' && flashCollegeCards.length === 0) ||
+          (flashDisplayMode === 'items' && flashItemCards.length === 0) ? (
+            <div className="flashcards-empty-state">
+              <p>Aucun {flashDisplayMode === 'colleges' ? 'collège' : 'item'} ne correspond aux filtres sélectionnés.</p>
+            </div>
+          ) : null}
+          {flashCardsListMeta ? (
             <div className="flashcards-list-overlay" role="presentation" onClick={closeCollegeFlashcardsList}>
               <div
                 className="flashcards-list-modal"
                 role="dialog"
                 aria-modal="true"
-                aria-label={`Cartes ${flashCardsListCollegeMeta.displayName}`}
-                style={{ '--flash-college-color': flashCardsListCollegeMeta.accent } as CSSProperties}
+                aria-label={`Cartes ${flashCardsListMeta.displayName}`}
+                style={{ '--flash-college-color': flashCardsListMeta.accent } as CSSProperties}
                 onClick={(event) => event.stopPropagation()}
               >
                 <div className="flashcards-list-head">
-                  <CollegeHealthIcon college={flashCardsListCollegeMeta.college} className="flashcards-list-icon" />
+                  {flashCardsListMeta.kind === 'college' ? (
+                    <CollegeHealthIcon college={flashCardsListMeta.college} className="flashcards-list-icon" />
+                  ) : (
+                    <span className="flashcards-list-icon flashcards-item-icon" aria-hidden="true">
+                      {flashCardsListMeta.icon || flashCardsListMeta.displayName.replace('Item #', '')}
+                    </span>
+                  )}
                   <div>
-                    <p className="flashcards-list-kicker">Cartes du collège</p>
-                    <h3>{flashCardsListCollegeMeta.displayName}</h3>
-                    <p>{flashCardsForSelectedCollege.length} cartes</p>
+                    <p className="flashcards-list-kicker">{flashCardsListMeta.kicker}</p>
+                    <h3>{flashCardsListMeta.displayName}</h3>
+                    {flashCardsListMeta.description ? <p>{flashCardsListMeta.description}</p> : null}
+                    <p>{flashCardsListMeta.countLabel}</p>
                   </div>
                   <button
                     type="button"
@@ -7996,8 +8239,8 @@ function getPasswordStrengthMeta(password: string) {
                   </button>
                 </div>
                 <div className="flashcards-list-body">
-                  {flashCardsForSelectedCollege.length > 0 ? (
-                    flashCardsForSelectedCollege.map((card) => {
+                  {flashCardsForActiveList.length > 0 ? (
+                    flashCardsForActiveList.map((card) => {
                       const question = getQuizRichTextPlainText(card.question)
                       const answer = getQuizRichTextPlainText(card.answer)
                       const resultLabel = card.lastResult ? QUIZ_RESULT_META[card.lastResult].label : 'Non évalué'
@@ -8019,7 +8262,7 @@ function getPasswordStrengthMeta(password: string) {
                     })
                   ) : (
                     <div className="flashcards-list-empty">
-                      <p>Aucune carte associée à ce collège.</p>
+                      <p>Aucune carte associée à {flashCardsListMeta.kind === 'college' ? 'ce collège' : 'cet item'}.</p>
                     </div>
                   )}
                 </div>
