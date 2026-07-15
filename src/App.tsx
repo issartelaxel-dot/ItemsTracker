@@ -1117,7 +1117,7 @@ const COLLEGE_ICON_META: Record<CollegeName, { svg: string; label: string }> = {
   UROLOGIE: { svg: urologyIcon, label: 'Vessie' },
 }
 
-function CollegeHealthIcon({ college, className = '' }: { college: string; className?: string }) {
+function CollegeHealthIcon({ college, className = '', showTitle = true }: { college: string; className?: string; showTitle?: boolean }) {
   const iconMeta = COLLEGE_ICON_META[college as CollegeName]
 
   if (!iconMeta) {
@@ -1125,7 +1125,7 @@ function CollegeHealthIcon({ college, className = '' }: { college: string; class
   }
 
   return (
-    <span className={`college-health-icon ${className}`} title={iconMeta.label}>
+    <span className={`college-health-icon ${className}`} title={showTitle ? iconMeta.label : undefined}>
       <span
         className="college-health-icon-glyph"
         role="img"
@@ -7911,7 +7911,7 @@ function getPasswordStrengthMeta(password: string) {
                   style={{ '--flash-college-color': row.accent } as CSSProperties}
                 >
                   <div className="flashcards-card-head">
-                    <CollegeHealthIcon college={row.college} className="flashcards-card-icon" />
+                    <CollegeHealthIcon college={row.college} className="flashcards-card-icon" showTitle={false} />
                     <div className="flashcards-card-title">
                       <h3>{row.displayName}</h3>
                       <p>{row.itemCount} items</p>
