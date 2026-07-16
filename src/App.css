@@ -2203,10 +2203,12 @@ h3 {
 }
 
 :root[data-theme='dark'] .dashboard-quote-card {
+  border-color: rgba(45, 87, 145, 0.68);
   background:
     linear-gradient(90deg, rgba(7, 27, 68, 0.97) 0%, rgba(7, 27, 68, 0.86) 42%, rgba(7, 27, 68, 0.08) 68%),
     var(--dashboard-quote-bg) center right / cover no-repeat,
     #071b44;
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.24);
 }
 
 :root[data-theme='dark'] .dashboard-section-head,
