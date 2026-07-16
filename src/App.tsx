@@ -6121,6 +6121,26 @@ function getPasswordStrengthMeta(password: string) {
               </div>
             ) : null}
           </div>
+          <button
+            type="button"
+            className="sidebar-footer-action sidebar-theme-action"
+            onClick={() => setTheme((value) => (value === 'light' ? 'dark' : 'light'))}
+            aria-label={theme === 'light' ? 'Activer le thème sombre' : 'Activer le thème clair'}
+          >
+            <span className="sidebar-footer-icon sidebar-sun-icon" aria-hidden="true">
+              ☀
+            </span>
+            <span className="sidebar-footer-label">{theme === 'light' ? 'Thème clair' : 'Thème sombre'}</span>
+            <span className={`sidebar-theme-switch ${theme === 'light' ? 'is-light' : 'is-dark'}`} aria-hidden="true">
+              <span />
+            </span>
+          </button>
+          <button type="button" className="sidebar-footer-action" onClick={() => void handleLogout()}>
+            <span className="sidebar-footer-icon" aria-hidden="true">
+              <img src={logoutIcon} className="sidebar-footer-icon-img" alt="" />
+            </span>
+            <span className="sidebar-footer-label">Déconnexion</span>
+          </button>
           <div className="menu-wrap sidebar-profile-wrap">
             <button
               className="sidebar-profile-trigger"
@@ -6225,24 +6245,6 @@ function getPasswordStrengthMeta(password: string) {
                 Copie locale plus récente détectée ({localShadowNotice.savedAtLabel}) sur cet appareil. Version cloud confirmée chargée.
               </span>
             ) : null}
-          </div>
-          <div className="topbar-actions">
-          <button
-            className="ghost-btn icon-btn"
-            title="Déconnexion"
-            aria-label="Déconnexion"
-            onClick={() => void handleLogout()}
-          >
-            <img src={logoutIcon} className="logout-icon-img" alt="" aria-hidden="true" />
-          </button>
-          <button
-            className="ghost-btn icon-btn"
-            title={theme === 'light' ? 'Night mode' : 'Light mode'}
-            aria-label={theme === 'light' ? 'Night mode' : 'Light mode'}
-            onClick={() => setTheme((value) => (value === 'light' ? 'dark' : 'light'))}
-          >
-            {theme === 'light' ? '🌙' : '☀️'}
-          </button>
           </div>
         </header>
         {saveStatus !== 'idle' ? (
