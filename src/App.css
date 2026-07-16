@@ -252,11 +252,7 @@
   border-radius: 8px;
 }
 
-.dashboard-shell .sidebar-collapse-btn {
-  position: absolute;
-  top: 0.65rem;
-  left: 0.7rem;
-  z-index: 3;
+.topbar .sidebar-collapse-btn {
   width: auto;
   height: auto;
   border: 0;
@@ -269,15 +265,15 @@
   padding: 0.1rem 0.16rem;
 }
 
-.dashboard-shell .sidebar-collapse-btn:hover {
+.topbar .sidebar-collapse-btn:hover {
   background: transparent;
 }
 
-.dashboard-shell .sidebar-collapse-btn:active {
+.topbar .sidebar-collapse-btn:active {
   background: transparent;
 }
 
-:root[data-theme='dark'] .dashboard-shell .sidebar-collapse-btn {
+:root[data-theme='dark'] .topbar .sidebar-collapse-btn {
   color: #93b8ff;
 }
 
@@ -1109,12 +1105,14 @@
 
 .topbar-meta {
   min-width: 0;
-  display: grid;
-  gap: 0.16rem;
+  display: flex;
+  align-items: center;
+  gap: 0.42rem;
   font-size: 0.68rem;
   color: var(--muted);
   line-height: 1.1;
   white-space: normal;
+  flex-wrap: wrap;
 }
 
 .topbar-save-warning {

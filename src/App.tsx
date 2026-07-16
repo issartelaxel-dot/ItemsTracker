@@ -6294,17 +6294,17 @@ function getPasswordStrengthMeta(password: string) {
           activeView === 'dashboard' ? 'dashboard-view-shell' : ''
         }`}
       >
-        <button
-          type="button"
-          className="sidebar-collapse-btn"
-          onClick={() => setSidebarCollapsed((current) => !current)}
-          aria-label={sidebarCollapsed ? 'Etendre le menu' : 'Replier le menu'}
-          title={sidebarCollapsed ? 'Etendre le menu' : 'Replier le menu'}
-        >
-          {sidebarCollapsed ? '→' : '←'}
-        </button>
         <header className="topbar">
           <div className="topbar-meta" aria-live="polite">
+            <button
+              type="button"
+              className="sidebar-collapse-btn"
+              onClick={() => setSidebarCollapsed((current) => !current)}
+              aria-label={sidebarCollapsed ? 'Etendre le menu' : 'Replier le menu'}
+              title={sidebarCollapsed ? 'Etendre le menu' : 'Replier le menu'}
+            >
+              {sidebarCollapsed ? '→' : '←'}
+            </button>
             {saveErrorMessage ? (
               <span className="topbar-save-warning">{saveErrorMessage}</span>
             ) : lastSavedAt ? (
