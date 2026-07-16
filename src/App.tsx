@@ -76,6 +76,7 @@ type FlashDisplayMode = 'colleges' | 'items'
 type FlashFeelingFilter = 'none' | QuizResult
 type FlashCollegeLevelFilter = 'ALL' | FlashFeelingFilter
 type FlashCollegeSort = 'progress' | 'name' | 'items'
+type CollegeDetailFilter = 'all' | 'review' | 'hard' | 'mastered'
 type SidebarNavBubbleKey = Exclude<NavView, 'stats'>
 
 type ItemBase = {
@@ -2133,6 +2134,7 @@ function App() {
   const [sortKey, setSortKey] = useState<SortKey>('reviews')
   const [activeView, setActiveView] = useState<NavView>('dashboard')
   const [selectedCollegeDetail, setSelectedCollegeDetail] = useState<string | null>(null)
+  const [collegeDetailFilter, setCollegeDetailFilter] = useState<CollegeDetailFilter>('all')
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
@@ -4070,6 +4072,22 @@ function getPasswordStrengthMeta(password: string) {
       upcomingReviews,
     }
   }, [allFlashcards, collegesViewRows, selectedCollegeDetail])
+
+  const selectedCollegeDetailItems = useMemo(() => {
+    if (!selectedCollegeDetailData) {
+      return []
+    }
+    if (collegeDetailFilter === 'review') {
+      return selectedCollegeDetailData.items.filter((item) => item.mastery === 'Mauvais')
+    }
+    if (collegeDetailFilter === 'hard') {
+      return selectedCollegeDetailData.items.filter((item) => item.mastery === 'Moyen')
+    }
+    if (collegeDetailFilter === 'mastered') {
+      return selectedCollegeDetailData.items.filter((item) => MASTERY_SCORE[item.mastery] >= MASTERY_SCORE.Bon)
+    }
+    return selectedCollegeDetailData.items
+  }, [collegeDetailFilter, selectedCollegeDetailData])
 
   const weeklyReviewSeries = useMemo(() => {
     const yearStart = new Date(HABIT_TRACKER_YEAR, 0, 1)
@@ -8324,7 +8342,14 @@ function getPasswordStrengthMeta(password: string) {
       {activeView === 'colleges' ? (
         selectedCollegeDetailData ? (
           <section className="college-detail-page">
-            <button type="button" className="college-detail-back" onClick={() => setSelectedCollegeDetail(null)}>
+            <button
+              type="button"
+              className="college-detail-back"
+              onClick={() => {
+                setCollegeDetailFilter('all')
+                setSelectedCollegeDetail(null)
+              }}
+            >
               ← Retour aux collèges
             </button>
             <header className="college-detail-hero">
@@ -8384,16 +8409,33 @@ function getPasswordStrengthMeta(password: string) {
             <div className="college-detail-layout">
               <article className="college-detail-items-panel">
                 <div className="college-detail-tabs">
-                  <button type="button" className="active">
+                  <button type="button" className="active" onClick={() => setCollegeDetailFilter('all')}>
                     Items du collège
                   </button>
-                  <button type="button">Vue par item</button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCollegeFilter(selectedCollegeDetailData.college)
+                      setActiveView('items')
+                      setSelectedCollegeDetail(null)
+                    }}
+                  >
+                    Vue par item
+                  </button>
                 </div>
                 <div className="college-detail-filters">
-                  <span className="active">Tous <strong>{selectedCollegeDetailData.items.length}</strong></span>
-                  <span>À revoir <strong>{selectedCollegeDetailData.items.filter((item) => item.mastery === 'Mauvais').length}</strong></span>
-                  <span>Difficiles <strong>{selectedCollegeDetailData.items.filter((item) => item.mastery === 'Moyen').length}</strong></span>
-                  <span>Maîtrisés <strong>{selectedCollegeDetailData.items.filter((item) => MASTERY_SCORE[item.mastery] >= MASTERY_SCORE.Bon).length}</strong></span>
+                  <button type="button" className={collegeDetailFilter === 'all' ? 'active' : ''} onClick={() => setCollegeDetailFilter('all')}>
+                    Tous <strong>{selectedCollegeDetailData.items.length}</strong>
+                  </button>
+                  <button type="button" className={collegeDetailFilter === 'review' ? 'active' : ''} onClick={() => setCollegeDetailFilter('review')}>
+                    À revoir <strong>{selectedCollegeDetailData.items.filter((item) => item.mastery === 'Mauvais').length}</strong>
+                  </button>
+                  <button type="button" className={collegeDetailFilter === 'hard' ? 'active' : ''} onClick={() => setCollegeDetailFilter('hard')}>
+                    Difficiles <strong>{selectedCollegeDetailData.items.filter((item) => item.mastery === 'Moyen').length}</strong>
+                  </button>
+                  <button type="button" className={collegeDetailFilter === 'mastered' ? 'active' : ''} onClick={() => setCollegeDetailFilter('mastered')}>
+                    Maîtrisés <strong>{selectedCollegeDetailData.items.filter((item) => MASTERY_SCORE[item.mastery] >= MASTERY_SCORE.Bon).length}</strong>
+                  </button>
                 </div>
                 <div className="college-detail-table-wrap">
                   <table className="college-detail-table">
@@ -8407,8 +8449,16 @@ function getPasswordStrengthMeta(password: string) {
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedCollegeDetailData.items.slice(0, 12).map((item, index) => (
-                        <tr key={`college-detail-item-${item.itemNumber}`} onClick={() => setSelectedItemId(item.itemNumber)}>
+                      {selectedCollegeDetailItems.slice(0, 12).map((item, index) => (
+                        <tr
+                          key={`college-detail-item-${item.itemNumber}`}
+                          onClick={() => {
+                            setCollegeFilter(selectedCollegeDetailData.college)
+                            setSelectedItemId(item.itemNumber)
+                            setActiveView('items')
+                            setSelectedCollegeDetail(null)
+                          }}
+                        >
                           <td>{index + 1}</td>
                           <td>
                             <strong>{item.shortDescription}</strong>
@@ -8434,7 +8484,7 @@ function getPasswordStrengthMeta(password: string) {
                   </table>
                 </div>
                 <div className="college-detail-pagination">
-                  <span>1-{Math.min(12, selectedCollegeDetailData.items.length)} sur {selectedCollegeDetailData.items.length} items</span>
+                  <span>1-{Math.min(12, selectedCollegeDetailItems.length)} sur {selectedCollegeDetailItems.length} items</span>
                   <span>‹ 1 2 3 … ›</span>
                 </div>
               </article>
@@ -8458,10 +8508,9 @@ function getPasswordStrengthMeta(password: string) {
                     ))}
                   </div>
                 </article>
-                <article className="college-detail-side-card">
+                <article className="college-detail-side-card college-detail-dev-card">
                   <div className="college-detail-card-head">
                     <h3>Prochaines révisions</h3>
-                    <button type="button">Voir tout</button>
                   </div>
                   <div className="college-detail-upcoming">
                     {selectedCollegeDetailData.upcomingReviews.map((item) => (
@@ -8471,6 +8520,9 @@ function getPasswordStrengthMeta(password: string) {
                         <small>{item.dueLabel}</small>
                       </div>
                     ))}
+                  </div>
+                  <div className="college-detail-dev-overlay">
+                    <strong>AI suggestions & Insights are in development</strong>
                   </div>
                 </article>
                 <article className="college-detail-side-card college-detail-action-card">
@@ -8531,7 +8583,10 @@ function getPasswordStrengthMeta(password: string) {
                       key={`heat-${row.college}`}
                       className={`colleges-heat-cell ${tone}`}
                       title={`${row.college} • ${row.completion}%`}
-                      onClick={() => setSelectedCollegeDetail(row.college)}
+                      onClick={() => {
+                        setCollegeDetailFilter('all')
+                        setSelectedCollegeDetail(row.college)
+                      }}
                     >
                       <div className="colleges-heat-cell-head">
                         <CollegeHealthIcon college={row.college} />

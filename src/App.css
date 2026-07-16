@@ -2846,16 +2846,17 @@ h3 {
   flex-wrap: wrap;
 }
 
-.college-detail-filters span {
+.college-detail-filters button {
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 0.35rem 0.6rem;
   color: var(--muted);
   font-weight: 800;
   background: var(--input-bg);
+  cursor: pointer;
 }
 
-.college-detail-filters span.active {
+.college-detail-filters button.active {
   border-color: #1f64d8;
   background: #1f64d8;
   color: #fff;
@@ -3027,6 +3028,36 @@ h3 {
 .college-detail-upcoming {
   display: grid;
   gap: 0.6rem;
+}
+
+.college-detail-dev-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.college-detail-dev-card .college-detail-card-head,
+.college-detail-dev-card .college-detail-upcoming {
+  filter: blur(3px);
+  opacity: 0.38;
+  pointer-events: none;
+  user-select: none;
+}
+
+.college-detail-dev-overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: color-mix(in oklab, var(--panel-bg) 72%, transparent);
+  text-align: center;
+}
+
+.college-detail-dev-overlay strong {
+  max-width: 230px;
+  color: var(--text);
+  font-size: 0.9rem;
+  line-height: 1.25;
 }
 
 .college-detail-upcoming div {
