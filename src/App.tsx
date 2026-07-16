@@ -6188,6 +6188,7 @@ function getPasswordStrengthMeta(password: string) {
           </div>
         ) : null}
 
+        <div className="dashboard-content">
         {activeView === 'dashboard' ? (
         <div className="dashboard-greeting">
           <p className="dashboard-greeting-text">
@@ -8654,6 +8655,7 @@ function getPasswordStrengthMeta(password: string) {
           <p>Bientôt disponible.</p>
         </section>
       ) : null}
+      </div>
       </div>
     </div>
   )

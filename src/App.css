@@ -45,18 +45,29 @@
 
 .dashboard-shell {
   display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 1rem;
   padding: 0.95rem 1rem 1rem;
-  align-content: start;
+  align-content: stretch;
   height: calc(100dvh - 15px);
   min-height: 0;
-  overflow-y: auto;
+  overflow-y: hidden;
   overflow-x: hidden;
-  overscroll-behavior: contain;
   background: var(--surface);
   border-top-left-radius: 30px;
   border-left: 1px solid var(--border);
   position: relative;
+}
+
+.dashboard-content {
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  display: grid;
+  gap: 1rem;
+  align-content: start;
+  padding-right: 0.15rem;
 }
 
 .dashboard-shell.items-view-shell {
@@ -66,6 +77,16 @@
   height: calc(100dvh - 15px);
   min-height: 0;
   overflow: hidden;
+}
+
+.dashboard-shell.items-view-shell .dashboard-content {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding-right: 0;
 }
 
 .dashboard-sidebar {
@@ -850,8 +871,7 @@
 }
 
 .topbar {
-  position: sticky;
-  top: 0;
+  position: relative;
   z-index: 30;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
@@ -5595,8 +5615,9 @@ tbody tr.selected {
     overflow: visible;
   }
 
-  .topbar {
-    position: static;
+  .dashboard-content {
+    overflow: visible;
+    padding-right: 0;
   }
 
   .dashboard-sidebar {
