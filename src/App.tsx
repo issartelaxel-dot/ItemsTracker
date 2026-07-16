@@ -1032,10 +1032,26 @@ const QUIZ_RESULT_META: Record<
   QuizResult,
   { label: string; mastery: Mastery; icon: string; actionVerb: string; rewardTone: 'neutral' | 'good' | 'easy' }
 > = {
-  again: { label: 'Revoir', mastery: 'Mauvais', icon: '❌', actionVerb: 'à revoir', rewardTone: 'neutral' },
+  again: { label: 'À revoir', mastery: 'Mauvais', icon: '❌', actionVerb: 'à revoir', rewardTone: 'neutral' },
   hard: { label: 'Difficile', mastery: 'Moyen', icon: '⚠️', actionVerb: 'difficile', rewardTone: 'neutral' },
-  good: { label: 'Bon', mastery: 'Bon', icon: '✅', actionVerb: 'bon', rewardTone: 'good' },
-  easy: { label: 'Parfait', mastery: 'Parfait', icon: '⚡', actionVerb: 'parfait', rewardTone: 'easy' },
+  good: { label: 'Facile', mastery: 'Bon', icon: '✅', actionVerb: 'facile', rewardTone: 'good' },
+  easy: { label: 'Très facile', mastery: 'Parfait', icon: '⚡', actionVerb: 'très facile', rewardTone: 'easy' },
+}
+
+const FLASH_FEELING_LABELS: Record<FlashFeelingFilter, string> = {
+  none: 'Moyen',
+  again: 'À revoir',
+  hard: 'Difficile',
+  good: 'Facile',
+  easy: 'Très facile',
+}
+
+function getMasteryFeelingLabel(mastery: Mastery) {
+  if (mastery === 'Mauvais') return 'À revoir'
+  if (mastery === 'Moyen') return 'Difficile'
+  if (mastery === 'Bon') return 'Moyen'
+  if (mastery === 'Très bon') return 'Facile'
+  return 'Très facile'
 }
 
 const COLLEGES = [
@@ -4038,7 +4054,7 @@ function getPasswordStrengthMeta(password: string) {
           }, 0) / scoredCards.length
     const globalFeeling =
       averageResult === null
-        ? 'Non évalué'
+        ? FLASH_FEELING_LABELS.none
         : averageResult >= 4.5
           ? 'Très facile'
           : averageResult >= 3.2
@@ -4047,7 +4063,7 @@ function getPasswordStrengthMeta(password: string) {
               ? 'Moyen'
               : averageResult >= 1.6
                 ? 'Difficile'
-                : 'Très difficile'
+                : 'À revoir'
 
     const upcomingReviews = [...row.items]
       .sort((a, b) => {
@@ -4865,7 +4881,7 @@ function getPasswordStrengthMeta(password: string) {
           quiz: currentItemTracking.quiz,
           actionLogs: currentItemTracking.actionLogs,
         },
-        [checked ? `College ajouté: ${college}` : `College retiré: ${college}`],
+        [checked ? `Collège ajouté: ${college}` : `Collège retiré: ${college}`],
       )
 
       return {
@@ -4891,10 +4907,10 @@ function getPasswordStrengthMeta(password: string) {
       if (nextCollegeTracking.reviews !== prevCollegeTracking.reviews) {
         const diff = nextCollegeTracking.reviews - prevCollegeTracking.reviews
         const signed = diff > 0 ? `+${diff}` : String(diff)
-        actions.push(`[${college}] Reviews ${signed} (${nextCollegeTracking.reviews})`)
+        actions.push(`[${college}] Révisions ${signed} (${nextCollegeTracking.reviews})`)
       }
       if (nextCollegeTracking.mastery !== prevCollegeTracking.mastery) {
-        actions.push(`[${college}] Mastery: ${nextCollegeTracking.mastery}`)
+        actions.push(`[${college}] Ressenti: ${getMasteryFeelingLabel(nextCollegeTracking.mastery)}`)
       }
       if (nextCollegeTracking.favorite !== prevCollegeTracking.favorite) {
         actions.push(`[${college}] Favori ${nextCollegeTracking.favorite ? 'activé' : 'désactivé'}`)
@@ -4971,10 +4987,10 @@ function getPasswordStrengthMeta(password: string) {
         if (sheet.tracking.reviews !== previous.tracking.reviews) {
           const diff = sheet.tracking.reviews - previous.tracking.reviews
           const signed = diff > 0 ? `+${diff}` : String(diff)
-          actions.push(`${kindLabel} "${sheet.name || 'sans nom'}": reviews ${signed} (${sheet.tracking.reviews})`)
+          actions.push(`${kindLabel} "${sheet.name || 'sans nom'}": révisions ${signed} (${sheet.tracking.reviews})`)
         }
         if (sheet.tracking.mastery !== previous.tracking.mastery) {
-          actions.push(`${kindLabel} "${sheet.name || 'sans nom'}": mastery ${sheet.tracking.mastery}`)
+          actions.push(`${kindLabel} "${sheet.name || 'sans nom'}": ressenti ${getMasteryFeelingLabel(sheet.tracking.mastery)}`)
         }
         if (sheet.tracking.favorite !== previous.tracking.favorite) {
           actions.push(
@@ -5940,7 +5956,7 @@ function getPasswordStrengthMeta(password: string) {
             <span className="sidebar-nav-icon" aria-hidden="true">
               <img src={navFlashcardsIcon} className="sidebar-nav-icon-img" alt="" />
             </span>
-            <span className="sidebar-nav-label">FlashCards</span>
+            <span className="sidebar-nav-label">Flashcards</span>
           </button>
           <button
             type="button"
@@ -5953,7 +5969,7 @@ function getPasswordStrengthMeta(password: string) {
             <span className="sidebar-nav-icon" aria-hidden="true">
               <img src={navCollegesIcon} className="sidebar-nav-icon-img" alt="" />
             </span>
-            <span className="sidebar-nav-label">Colleges</span>
+            <span className="sidebar-nav-label">Collèges</span>
           </button>
           <button
             type="button"
@@ -6241,12 +6257,12 @@ function getPasswordStrengthMeta(password: string) {
           <div className="filters-row">
             <input
               type="text"
-              placeholder="Search item, tags, college"
+              placeholder="Rechercher item, tags, collège"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
             <select value={collegeFilter} onChange={(event) => setCollegeFilter(event.target.value)}>
-              <option value="ALL">Tous colleges</option>
+              <option value="ALL">Tous collèges</option>
               {COLLEGES.map((college) => (
                 <option value={college} key={college}>
                   {college}
@@ -6254,10 +6270,10 @@ function getPasswordStrengthMeta(password: string) {
               ))}
             </select>
             <select value={masteryFilter} onChange={(event) => setMasteryFilter(event.target.value)}>
-              <option value="ALL">Tous niveaux</option>
+              <option value="ALL">Tous ressentis</option>
               {MASTERY_LEVELS.map((level) => (
                 <option value={level} key={level}>
-                  {level}
+                  {getMasteryFeelingLabel(level)}
                 </option>
               ))}
             </select>
@@ -6277,7 +6293,7 @@ function getPasswordStrengthMeta(password: string) {
                 <tr>
                   <th>Item</th>
                   <th>Description</th>
-                  <th>Colleges</th>
+                  <th>Collèges</th>
                   <th>Fiches LISA</th>
                   <th>Fiches Plateformes</th>
                   <th>Révisions</th>
@@ -6342,7 +6358,11 @@ function getPasswordStrengthMeta(password: string) {
                         </span>
                       </td>
                       <td>
-                        <span className={`item-mastery-pill ${masteryToneClass}`}>{item.tracking.itemMastery}</span>
+                        <span className={`item-mastery-pill ${masteryToneClass}`}>
+                          {item.tracking.itemMastery === 'Non évalué'
+                            ? FLASH_FEELING_LABELS.none
+                            : getMasteryFeelingLabel(item.tracking.itemMastery)}
+                        </span>
                       </td>
                       <td>
                         <button
@@ -6407,7 +6427,7 @@ function getPasswordStrengthMeta(password: string) {
                   <p>{effectiveSelectedItem.tagLabels.join(', ') || 'Aucun'}</p>
                 </div>
                 <div>
-                  <p className="meta-label">Relectures (total)</p>
+                  <p className="meta-label">Révisions (total)</p>
                   <p>
                     {effectiveSelectedItem.totalReviews +
                       effectiveSelectedItem.tracking.lisaSheets.reduce(
@@ -6421,7 +6441,7 @@ function getPasswordStrengthMeta(password: string) {
                   </p>
                 </div>
                 <div>
-                  <p className="meta-label">Dernière review</p>
+                  <p className="meta-label">Dernière révision</p>
                   <p>{formatDate(effectiveSelectedItem.lastReviewDate)}</p>
                 </div>
                 <div>
@@ -6440,10 +6460,10 @@ function getPasswordStrengthMeta(password: string) {
                       )
                     }
                   >
-                    <option value="Non évalué">Non évalué</option>
+                    <option value="Non évalué">{FLASH_FEELING_LABELS.none}</option>
                     {MASTERY_LEVELS.map((level) => (
                       <option key={level} value={level}>
-                        {level}
+                        {getMasteryFeelingLabel(level)}
                       </option>
                     ))}
                   </select>
@@ -6759,11 +6779,11 @@ function getPasswordStrengthMeta(password: string) {
                           title={
                             card.lastResult
                               ? `${QUIZ_RESULT_META[card.lastResult].label} · ${card.quizCount} quiz`
-                              : 'Non évalué'
+                              : FLASH_FEELING_LABELS.none
                           }
                         >
                           {card.lastResult ? QUIZ_RESULT_META[card.lastResult].icon : '•'}{' '}
-                          {card.lastResult ? QUIZ_RESULT_META[card.lastResult].label : 'Non évalué'}
+                          {card.lastResult ? QUIZ_RESULT_META[card.lastResult].label : FLASH_FEELING_LABELS.none}
                         </span>
                         <button
                           type="button"
@@ -6910,14 +6930,14 @@ function getPasswordStrengthMeta(password: string) {
                             </span>
                           ) : (
                             <span key={card.id} className="quiz-last-result-pill none">
-                              Non évalué
+                              {FLASH_FEELING_LABELS.none}
                             </span>
                           ),
                         )}
                       {!effectiveSelectedItem.tracking.quiz.cards.some(
                         (card) => card.id === effectiveSelectedItem.tracking.quiz.activeCardId,
                       ) ? (
-                        <span className="quiz-last-result-pill none">Non évalué</span>
+                        <span className="quiz-last-result-pill none">{FLASH_FEELING_LABELS.none}</span>
                       ) : null}
                       <span className="quiz-last-result-count">
                         Quiz faits (carte active):{' '}
@@ -6930,7 +6950,7 @@ function getPasswordStrengthMeta(password: string) {
                 ) : null}
               </div>
 
-              <h3>Assignation colleges</h3>
+              <h3>Assignation collèges</h3>
               <div className="college-picker">
                 {COLLEGES.map((college) => (
                   <label key={college}>
@@ -6947,10 +6967,10 @@ function getPasswordStrengthMeta(password: string) {
                 ))}
               </div>
 
-              <h3>Tracking par college</h3>
+              <h3>Suivi par collège</h3>
               <div className="tracking-grid">
                 {effectiveSelectedItem.tracking.assignedColleges.length === 0 ? (
-                  <p className="muted">Sélectionne au moins un college pour commencer le suivi.</p>
+                  <p className="muted">Sélectionne au moins un collège pour commencer le suivi.</p>
                 ) : null}
 
                 {effectiveSelectedItem.tracking.assignedColleges.map((college) => {
@@ -6979,7 +6999,7 @@ function getPasswordStrengthMeta(password: string) {
                       </div>
 
                       <div className="control-row">
-                        <p>Reviews</p>
+                        <p>Révisions</p>
                         <div className="counter-wrap">
                           <button
                             onClick={() => {
@@ -7002,7 +7022,7 @@ function getPasswordStrengthMeta(password: string) {
                       </div>
 
                       <label className="block-label">
-                        Feeling / Mastery
+                        Ressenti
                         <select
                           value={data.mastery}
                           className={getMasteryClass(data.mastery, collegeFxKey)}
@@ -7016,7 +7036,7 @@ function getPasswordStrengthMeta(password: string) {
                         >
                           {MASTERY_LEVELS.map((level) => (
                             <option value={level} key={level}>
-                              {level}
+                              {getMasteryFeelingLabel(level)}
                             </option>
                           ))}
                         </select>
@@ -7166,7 +7186,7 @@ function getPasswordStrengthMeta(password: string) {
                     </div>
 
                     <label className="block-label">
-                      Feeling / Mastery
+                      Ressenti
                       <select
                         value={sheet.tracking.mastery}
                         className={getMasteryClass(
@@ -7192,7 +7212,7 @@ function getPasswordStrengthMeta(password: string) {
                       >
                         {MASTERY_LEVELS.map((level) => (
                           <option value={level} key={level}>
-                            {level}
+                            {getMasteryFeelingLabel(level)}
                           </option>
                         ))}
                       </select>
@@ -7366,7 +7386,7 @@ function getPasswordStrengthMeta(password: string) {
                     </div>
 
                     <label className="block-label">
-                      Feeling / Mastery
+                      Ressenti
                       <select
                         value={sheet.tracking.mastery}
                         className={getMasteryClass(
@@ -7395,7 +7415,7 @@ function getPasswordStrengthMeta(password: string) {
                       >
                         {MASTERY_LEVELS.map((level) => (
                           <option value={level} key={level}>
-                            {level}
+                            {getMasteryFeelingLabel(level)}
                           </option>
                         ))}
                       </select>
@@ -7672,16 +7692,16 @@ function getPasswordStrengthMeta(password: string) {
                 Flip
               </button>
               <button type="button" className="ghost-btn quiz-rate-btn again" onClick={() => handleQuizResult('again')}>
-                ❌ Revoir
+                ❌ À revoir
               </button>
               <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleQuizResult('hard')}>
                 ⚠️ Difficile
               </button>
               <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleQuizResult('good')}>
-                ✅ Bon
+                ✅ Facile
               </button>
               <button type="button" className="ghost-btn quiz-rate-btn easy" onClick={() => handleQuizResult('easy')}>
-                ⚡ Parfait
+                ⚡ Très facile
               </button>
             </div>
 
@@ -7751,11 +7771,11 @@ function getPasswordStrengthMeta(password: string) {
                   onChange={(event) => setFlashCollegeLevelFilter(event.target.value as FlashCollegeLevelFilter)}
                 >
                   <option value="ALL">Tous les niveaux</option>
-                  <option value="none">Non évalué</option>
-                  <option value="again">Revoir</option>
-                  <option value="hard">Difficile</option>
-                  <option value="good">Bon</option>
-                  <option value="easy">Parfait</option>
+                  <option value="none">{FLASH_FEELING_LABELS.none}</option>
+                  <option value="again">{FLASH_FEELING_LABELS.again}</option>
+                  <option value="hard">{FLASH_FEELING_LABELS.hard}</option>
+                  <option value="good">{FLASH_FEELING_LABELS.good}</option>
+                  <option value="easy">{FLASH_FEELING_LABELS.easy}</option>
                 </select>
               </label>
             </div>
@@ -7780,11 +7800,11 @@ function getPasswordStrengthMeta(password: string) {
               onChange={(event) => setFlashCollegeLevelFilter(event.target.value as FlashCollegeLevelFilter)}
             >
               <option value="ALL">Tous les niveaux</option>
-              <option value="none">Non évalué</option>
-              <option value="again">Revoir</option>
-              <option value="hard">Difficile</option>
-              <option value="good">Bon</option>
-              <option value="easy">Parfait</option>
+              <option value="none">{FLASH_FEELING_LABELS.none}</option>
+              <option value="again">{FLASH_FEELING_LABELS.again}</option>
+              <option value="hard">{FLASH_FEELING_LABELS.hard}</option>
+              <option value="good">{FLASH_FEELING_LABELS.good}</option>
+              <option value="easy">{FLASH_FEELING_LABELS.easy}</option>
             </select>
             <select
               className="flashcards-toolbar-select"
@@ -7806,9 +7826,9 @@ function getPasswordStrengthMeta(password: string) {
           </div>
           {flashGeneratorModalOpen ? (
             <div className="flash-generator-modal-overlay" role="presentation" onClick={() => setFlashGeneratorModalOpen(false)}>
-              <div className="flash-generator-modal" role="dialog" aria-modal="true" aria-label="Quiz Generator" onClick={(event) => event.stopPropagation()}>
+              <div className="flash-generator-modal" role="dialog" aria-modal="true" aria-label="Générateur de quiz" onClick={(event) => event.stopPropagation()}>
                 <div className="flash-generator-modal-head">
-                  <h3>Quiz Generator</h3>
+                  <h3>Générateur de quiz</h3>
                   <p>Étape {flashGeneratorStep}/4</p>
                   <button type="button" className="ghost-btn" onClick={() => setFlashGeneratorModalOpen(false)}>
                     Fermer
@@ -7817,13 +7837,13 @@ function getPasswordStrengthMeta(password: string) {
 
                 {flashGeneratorStep === 1 ? (
                   <div className="flash-generator-step">
-                    <p className="flash-generator-step-title">1) Trier par items ou colleges</p>
+                    <p className="flash-generator-step-title">1) Choisir par items ou collèges</p>
                     <div className="flashcards-mode-row">
                       <button type="button" className={`ghost-btn ${flashGeneratorScope === 'items' ? 'active' : ''}`} onClick={() => setFlashGeneratorScope('items')}>
                         Par items
                       </button>
                       <button type="button" className={`ghost-btn ${flashGeneratorScope === 'colleges' ? 'active' : ''}`} onClick={() => setFlashGeneratorScope('colleges')}>
-                        Par colleges
+                        Par collèges
                       </button>
                     </div>
                     <div className="flash-generator-actions">
@@ -7836,7 +7856,7 @@ function getPasswordStrengthMeta(password: string) {
                             : setFlashSelectedColleges([...COLLEGES])
                         }
                       >
-                        Select all
+                        Tout sélectionner
                       </button>
                       <button
                         type="button"
@@ -7845,7 +7865,7 @@ function getPasswordStrengthMeta(password: string) {
                           flashGeneratorScope === 'items' ? setFlashSelectedItems([]) : setFlashSelectedColleges([])
                         }
                       >
-                        Deselect all
+                        Tout désélectionner
                       </button>
                     </div>
                     <div className="flash-generator-chip-grid">
@@ -7913,19 +7933,19 @@ function getPasswordStrengthMeta(password: string) {
                     </div>
                     <div className="flashcards-mode-row">
                       <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('none') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('none')}>
-                        Non evalue
+                        {FLASH_FEELING_LABELS.none}
                       </button>
                       <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('again') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('again')}>
-                        Revoir
+                        {FLASH_FEELING_LABELS.again}
                       </button>
                       <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('hard') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('hard')}>
                         Difficile
                       </button>
                       <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('good') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('good')}>
-                        Bon
+                        {FLASH_FEELING_LABELS.good}
                       </button>
                       <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('easy') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('easy')}>
-                        Parfait
+                        {FLASH_FEELING_LABELS.easy}
                       </button>
                     </div>
                     {flashPrioritizeWeak ? <p className="muted">Preset actif: priorisation des faibles.</p> : null}
@@ -7944,7 +7964,7 @@ function getPasswordStrengthMeta(password: string) {
                         onChange={(event) => setFlashQuestionCount(Number(event.target.value) || 1)}
                       />
                       <button type="button" className="ghost-btn flashcards-generator-btn" onClick={applyQuizGenerator}>
-                        Generer quiz
+                        Générer le quiz
                       </button>
                     </div>
                     {generatedFlashcards.length > 0 && activeGeneratedFlashcard ? (
@@ -7955,7 +7975,7 @@ function getPasswordStrengthMeta(password: string) {
                           </p>
                           <p className="muted">
                             Ressenti actuel:{' '}
-                            {activeGeneratedFlashcard.lastResult ? QUIZ_RESULT_META[activeGeneratedFlashcard.lastResult].label : 'Non evalue'}
+                            {activeGeneratedFlashcard.lastResult ? QUIZ_RESULT_META[activeGeneratedFlashcard.lastResult].label : FLASH_FEELING_LABELS.none}
                           </p>
                           <div className="flashcards-session-nav">
                             <button
@@ -8032,16 +8052,16 @@ function getPasswordStrengthMeta(password: string) {
                             Flip
                           </button>
                           <button type="button" className="ghost-btn quiz-rate-btn again" onClick={() => handleGeneratedFlashResult('again')}>
-                            ❌ Revoir
+                            ❌ À revoir
                           </button>
                           <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleGeneratedFlashResult('hard')}>
                             ⚠️ Difficile
                           </button>
                           <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleGeneratedFlashResult('good')}>
-                            ✅ Bon
+                            ✅ Facile
                           </button>
                           <button type="button" className="ghost-btn quiz-rate-btn easy" onClick={() => handleGeneratedFlashResult('easy')}>
-                            ⚡ Parfait
+                            ⚡ Très facile
                           </button>
                         </div>
                         {flashGeneratedFeedback ? (
@@ -8299,7 +8319,7 @@ function getPasswordStrengthMeta(password: string) {
                     flashCardsForActiveList.map((card) => {
                       const question = getQuizRichTextPlainText(card.question)
                       const answer = getQuizRichTextPlainText(card.answer)
-                      const resultLabel = card.lastResult ? QUIZ_RESULT_META[card.lastResult].label : 'Non évalué'
+                      const resultLabel = card.lastResult ? QUIZ_RESULT_META[card.lastResult].label : FLASH_FEELING_LABELS.none
                       return (
                         <article key={`college-card-${card.itemNumber}-${card.cardId}`} className="flashcards-list-row">
                           <div className="flashcards-list-row-main">
@@ -8394,7 +8414,7 @@ function getPasswordStrengthMeta(password: string) {
               </article>
               <article>
                 <span className="college-detail-stat-icon">▱</span>
-                <p>FlashCards</p>
+                <p>Flashcards</p>
                 <strong>{selectedCollegeDetailData.flashcardCount}</strong>
                 <small>créées</small>
               </article>
@@ -8475,7 +8495,7 @@ function getPasswordStrengthMeta(password: string) {
                           <td>{item.reviews}</td>
                           <td>
                             <span className={`college-detail-mastery ${getMasteryClass(item.mastery, `detail-${selectedCollegeDetailData.college}-${item.itemNumber}`)}`}>
-                              {item.mastery}
+                              {getMasteryFeelingLabel(item.mastery)}
                             </span>
                           </td>
                         </tr>
@@ -8498,7 +8518,7 @@ function getPasswordStrengthMeta(password: string) {
                       ['☺', 'Facile', selectedCollegeDetailData.resultCounts.good, 'easy'],
                       ['☻', 'Moyen', selectedCollegeDetailData.resultCounts.none, 'medium'],
                       ['☹', 'Difficile', selectedCollegeDetailData.resultCounts.hard, 'hard'],
-                      ['☹', 'Très difficile', selectedCollegeDetailData.resultCounts.again, 'again'],
+                      ['☹', 'À revoir', selectedCollegeDetailData.resultCounts.again, 'again'],
                     ].map(([icon, label, count, tone]) => (
                       <div key={label}>
                         <span className={`college-detail-feeling-dot ${tone}`}>{icon}</span>
@@ -8561,10 +8581,10 @@ function getPasswordStrengthMeta(password: string) {
         ) : (
           <section className="panel colleges-page">
             <div className="panel-head">
-              <h2>Colleges</h2>
+              <h2>Collèges</h2>
             </div>
             <article className="colleges-heatmap">
-              <h3>Heatmap progression colleges</h3>
+              <h3>Progression par collège</h3>
               <div className="colleges-heatmap-grid">
                 {collegesViewRows.map((row) => {
                   const tone =
@@ -8612,14 +8632,14 @@ function getPasswordStrengthMeta(password: string) {
       <section id="stats-section" className="bottom-grid">
         <article className="panel compact-panel">
           <div className="panel-head">
-            <h2>Progression par college</h2>
+            <h2>Progression par collège</h2>
           </div>
           <div className="college-metrics">
             {globalStats.byCollege.map((row) => (
               <div key={row.college} className="metric-row">
                 <p>{row.college}</p>
                 <p>
-                  {row.completed}/{row.assigned} ({row.progress.toFixed(0)}%) - {row.reviews} reviews
+                  {row.completed}/{row.assigned} ({row.progress.toFixed(0)}%) - {row.reviews} révisions
                 </p>
               </div>
             ))}
