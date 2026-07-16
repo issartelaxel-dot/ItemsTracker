@@ -6246,6 +6246,31 @@ function getPasswordStrengthMeta(password: string) {
               </span>
             ) : null}
           </div>
+          <div className="topbar-actions" aria-label="Actions globales">
+            <label className="topbar-search">
+              <span aria-hidden="true">⌕</span>
+              <input
+                type="search"
+                placeholder="Rechercher un item, un collège..."
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    setActiveView('items')
+                  }
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              className="topbar-notification-btn"
+              aria-label="Notifications non configurées"
+              title="Notifications non configurées"
+            >
+              <span aria-hidden="true">!</span>
+              <span className="topbar-notification-tooltip">Notifications non configurées</span>
+            </button>
+          </div>
         </header>
         {saveStatus !== 'idle' ? (
           <div className={`save-popup ${saveStatus}`}>
@@ -6264,31 +6289,6 @@ function getPasswordStrengthMeta(password: string) {
               <div className="dashboard-title-block">
                 <h1 id="dashboard-title">Bonjour, {profile.firstName?.trim() || authUser?.displayName || 'Setup'} 👋</h1>
                 <p>Chaque révision vous rapproche de votre objectif.</p>
-              </div>
-              <div className="dashboard-home-actions">
-                <label className="dashboard-home-search">
-                  <span aria-hidden="true">⌕</span>
-                  <input
-                    type="search"
-                    placeholder="Rechercher un item, un collège..."
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        setActiveView('items')
-                      }
-                    }}
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="dashboard-alert-btn"
-                  aria-label={`${dashboardDueCount} révisions dues`}
-                  onClick={() => setActiveView('items')}
-                >
-                  <span aria-hidden="true">🔔</span>
-                  <strong>{Math.min(99, dashboardDueCount)}</strong>
-                </button>
               </div>
             </div>
 

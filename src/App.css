@@ -975,10 +975,11 @@
 }
 
 .topbar {
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 30;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(340px, 500px);
   gap: 0.65rem;
   padding: 0.25rem 0;
   align-items: center;
@@ -1052,10 +1053,121 @@ h3 {
 }
 
 .topbar-actions {
-  display: flex;
-  flex-wrap: nowrap;
-  gap: 0.45rem;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 52px;
+  gap: 0.55rem;
   align-items: center;
+  justify-self: end;
+  width: min(100%, 500px);
+}
+
+.topbar-search {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  min-width: 0;
+  min-height: 48px;
+  padding: 0 0.9rem;
+  border: 1px solid #d8e3f1;
+  border-radius: 10px;
+  background: #fff;
+  color: #0d2353;
+  box-shadow: 0 10px 28px rgba(34, 72, 125, 0.06);
+}
+
+.topbar-search span {
+  color: #0d2353;
+  font-size: 1rem;
+  transform: translateY(-1px);
+}
+
+.topbar-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  padding: 0.55rem 0.55rem;
+  color: #152745;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.topbar-search input::placeholder {
+  color: #7084a4;
+}
+
+.topbar-notification-btn {
+  position: relative;
+  width: 52px;
+  height: 48px;
+  border-radius: 10px;
+  border: 1px solid #d8e3f1;
+  background: #fff;
+  color: #1d65e8;
+  display: grid;
+  place-items: center;
+  cursor: help;
+  font-size: 1rem;
+  font-weight: 900;
+  box-shadow: 0 10px 28px rgba(34, 72, 125, 0.06);
+}
+
+.topbar-notification-btn > span:first-child {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  border: 2px solid currentColor;
+  line-height: 1;
+}
+
+.topbar-notification-tooltip {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: max-content;
+  max-width: 230px;
+  padding: 0.45rem 0.55rem;
+  border-radius: 8px;
+  border: 1px solid #d8e3f1;
+  background: #fff;
+  color: #152745;
+  font-size: 0.72rem;
+  font-weight: 700;
+  line-height: 1.2;
+  box-shadow: 0 14px 26px rgba(34, 72, 125, 0.14);
+  opacity: 0;
+  transform: translateY(-3px);
+  pointer-events: none;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.topbar-notification-btn:hover .topbar-notification-tooltip,
+.topbar-notification-btn:focus-visible .topbar-notification-tooltip {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+:root[data-theme='dark'] .topbar-search,
+:root[data-theme='dark'] .topbar-notification-btn,
+:root[data-theme='dark'] .topbar-notification-tooltip {
+  border-color: rgba(73, 118, 171, 0.55);
+  background: rgba(11, 34, 73, 0.76);
+  color: #d9e8ff;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+}
+
+:root[data-theme='dark'] .topbar-search input,
+:root[data-theme='dark'] .topbar-search span {
+  color: #eaf2ff;
+}
+
+:root[data-theme='dark'] .topbar-search input::placeholder {
+  color: #95a9c8;
 }
 
 .save-popup {
@@ -1580,7 +1692,7 @@ h3 {
 
 .dashboard-hero-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
   align-items: start;
 }
@@ -1597,79 +1709,6 @@ h3 {
   margin: 0.45rem 0 0;
   color: #536986;
   font-size: 0.95rem;
-}
-
-.dashboard-home-actions {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 0.75rem;
-  align-items: center;
-}
-
-.dashboard-home-search {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  align-items: center;
-  min-height: 44px;
-  padding: 0 0.85rem;
-  border: 1px solid #dbe5f2;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 10px 28px rgba(34, 72, 125, 0.06);
-  color: #0d2353;
-}
-
-.dashboard-home-search span {
-  color: #0d2353;
-  font-size: 1.05rem;
-  transform: translateY(-1px);
-}
-
-.dashboard-home-search input {
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  outline: 0;
-  background: transparent;
-  padding: 0.55rem 0.55rem;
-  color: #152745;
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-
-.dashboard-home-search input::placeholder {
-  color: #697f9f;
-}
-
-.dashboard-alert-btn {
-  position: relative;
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  border: 1px solid #dbe5f2;
-  background: #fff;
-  color: #0d2353;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  box-shadow: 0 10px 28px rgba(34, 72, 125, 0.06);
-}
-
-.dashboard-alert-btn strong {
-  position: absolute;
-  top: -8px;
-  right: -8px;
-  min-width: 20px;
-  height: 20px;
-  padding: 0 0.28rem;
-  border-radius: 999px;
-  display: grid;
-  place-items: center;
-  background: #2268e7;
-  color: #fff;
-  font-size: 0.68rem;
-  font-weight: 800;
-  border: 2px solid #fff;
 }
 
 .dashboard-stat-grid {
@@ -2214,8 +2253,6 @@ h3 {
   color: #9fb0cc;
 }
 
-:root[data-theme='dark'] .dashboard-home-search,
-:root[data-theme='dark'] .dashboard-alert-btn,
 :root[data-theme='dark'] .dashboard-stat-card,
 :root[data-theme='dark'] .dashboard-habit-card,
 :root[data-theme='dark'] .dashboard-action-card,
@@ -2226,15 +2263,9 @@ h3 {
   box-shadow: 0 20px 42px rgba(0, 0, 0, 0.22);
 }
 
-:root[data-theme='dark'] .dashboard-home-search input,
-:root[data-theme='dark'] .dashboard-home-search span,
 :root[data-theme='dark'] .dashboard-stat-card p,
 :root[data-theme='dark'] .dashboard-habit-card p {
   color: #eaf2ff;
-}
-
-:root[data-theme='dark'] .dashboard-home-search input::placeholder {
-  color: #95a9c8;
 }
 
 :root[data-theme='dark'] .dashboard-action-tile {
@@ -2246,10 +2277,6 @@ h3 {
 :root[data-theme='dark'] .dashboard-action-tile:hover {
   border-color: rgba(112, 154, 218, 0.74);
   background: #0e2a5f;
-}
-
-:root[data-theme='dark'] .dashboard-alert-btn strong {
-  border-color: #071b44;
 }
 
 :root[data-theme='dark'] .dashboard-quote-card {
@@ -6508,7 +6535,6 @@ tbody tr.selected {
     gap: 0.75rem;
   }
 
-  .dashboard-home-actions,
   .dashboard-stat-grid,
   .dashboard-mid-grid,
   .dashboard-quote-card {
@@ -6574,13 +6600,20 @@ tbody tr.selected {
   }
 
   .topbar {
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: 1fr;
     padding: 0.2rem 0;
   }
 
   .topbar-actions {
-    width: auto;
-    justify-content: flex-end;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) 48px;
+    justify-self: stretch;
+  }
+
+  .topbar-search,
+  .topbar-notification-btn {
+    min-height: 44px;
+    height: 44px;
   }
 
   .filters-row,
