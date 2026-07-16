@@ -1478,6 +1478,7 @@ h3 {
 
 .main-grid.has-detail {
   grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
+  align-items: start;
 }
 
 .main-grid.full-table {
@@ -1529,6 +1530,11 @@ h3 {
 .detail-panel.is-open {
   opacity: 1;
   transform: translateX(0);
+}
+
+.main-grid.has-detail .detail-panel.is-open {
+  max-height: calc(100dvh - 9rem);
+  overflow: auto;
 }
 
 .detail-panel.is-closed {

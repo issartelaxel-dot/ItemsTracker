@@ -8629,7 +8629,7 @@ function getPasswordStrengthMeta(password: string) {
         )
       ) : null}
 
-      {activeView === 'dashboard' ? (
+      {activeView === 'dashboard' && !effectiveSelectedItem ? (
       <section id="stats-section" className="bottom-grid">
         <article className="panel compact-panel">
           <div className="panel-head">
