@@ -90,6 +90,119 @@
   padding-right: 0;
 }
 
+.dashboard-shell.dashboard-view-shell {
+  gap: 0.65rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-content {
+  overflow: hidden;
+  padding-right: 0;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-home {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  gap: 0.7rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-title-block h1 {
+  font-size: clamp(1.3rem, 1.75vw, 1.75rem);
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-title-block p {
+  margin-top: 0.28rem;
+  font-size: 0.86rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-stat-grid,
+.dashboard-shell.dashboard-view-shell .dashboard-mid-grid {
+  gap: 0.7rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-stat-card,
+.dashboard-shell.dashboard-view-shell .dashboard-habit-card {
+  min-height: 122px;
+  padding: 0.78rem 0.85rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-stat-card {
+  gap: 0.28rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-stat-card strong {
+  font-size: 1.65rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-stat-icon {
+  width: 34px;
+  height: 34px;
+  font-size: 0.9rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-habit-wrap {
+  padding: 0.48rem 0 0.45rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-action-card,
+.dashboard-shell.dashboard-view-shell .dashboard-quote-card {
+  min-height: 130px;
+  padding: 0.85rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-action-card {
+  gap: 0.65rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-action-grid {
+  gap: 0.5rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-action-tile {
+  min-height: 74px;
+  padding: 0.58rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-action-tile > span {
+  width: 28px;
+  height: 28px;
+  font-size: 0.9rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-quote-copy p {
+  font-size: 0.94rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-college-card {
+  min-height: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-section-head {
+  padding: 0.7rem 0.9rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-college-list {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-college-row {
+  padding: 0.52rem 0.9rem;
+  gap: 0.65rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-college-icon {
+  width: 30px;
+  height: 30px;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-college-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
 .dashboard-sidebar {
   position: sticky;
   top: 8px;
@@ -6299,6 +6412,22 @@ tbody tr.selected {
     grid-column: span 2;
   }
 
+  .dashboard-shell.dashboard-view-shell .dashboard-hero-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-shell.dashboard-view-shell .dashboard-stat-grid {
+    grid-template-columns: repeat(3, minmax(120px, 1fr)) minmax(240px, 2fr);
+  }
+
+  .dashboard-shell.dashboard-view-shell .dashboard-habit-card {
+    grid-column: auto;
+  }
+
+  .dashboard-shell.dashboard-view-shell .dashboard-mid-grid {
+    grid-template-columns: minmax(280px, 0.82fr) minmax(340px, 1fr);
+  }
+
   .main-grid,
   .bottom-grid {
     grid-template-columns: 1fr;
@@ -6395,6 +6524,15 @@ tbody tr.selected {
   .dashboard-content {
     overflow: visible;
     padding-right: 0;
+  }
+
+  .dashboard-shell.dashboard-view-shell .dashboard-content {
+    overflow: visible;
+  }
+
+  .dashboard-shell.dashboard-view-shell .dashboard-home {
+    height: auto;
+    grid-template-rows: none;
   }
 
   .dashboard-sidebar {

@@ -6222,7 +6222,11 @@ function getPasswordStrengthMeta(password: string) {
         </div>
       </aside>
 
-      <div className={`dashboard-shell ${activeView === 'items' ? 'items-view-shell' : ''}`}>
+      <div
+        className={`dashboard-shell ${activeView === 'items' ? 'items-view-shell' : ''} ${
+          activeView === 'dashboard' ? 'dashboard-view-shell' : ''
+        }`}
+      >
         <button
           type="button"
           className="sidebar-collapse-btn"
