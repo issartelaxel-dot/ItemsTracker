@@ -6128,8 +6128,8 @@ function getPasswordStrengthMeta(password: string) {
             onClick={() => setTheme((value) => (value === 'light' ? 'dark' : 'light'))}
             aria-label={theme === 'light' ? 'Activer le thème sombre' : 'Activer le thème clair'}
           >
-            <span className="sidebar-footer-icon sidebar-sun-icon" aria-hidden="true">
-              ☀
+            <span className={`sidebar-footer-icon ${theme === 'light' ? 'sidebar-sun-icon' : 'sidebar-moon-icon'}`} aria-hidden="true">
+              {theme === 'light' ? '☀' : '☾'}
             </span>
             <span className="sidebar-footer-label">{theme === 'light' ? 'Thème clair' : 'Thème sombre'}</span>
             <span className={`sidebar-theme-switch ${theme === 'light' ? 'is-light' : 'is-dark'}`} aria-hidden="true">
