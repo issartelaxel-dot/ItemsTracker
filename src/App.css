@@ -620,23 +620,25 @@
 
 .dashboard-layout.is-sidebar-collapsed .sidebar-settings-btn {
   width: 42px;
-  height: 36px;
+  height: 42px;
   padding: 0;
   justify-self: center;
   justify-content: center;
+  border-color: transparent;
   border-bottom-color: transparent;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .dashboard-layout.is-sidebar-collapsed .sidebar-footer-action {
   width: 42px;
-  height: 36px;
-  min-height: 36px;
+  height: 42px;
+  min-height: 42px;
   grid-template-columns: 1fr;
   justify-items: center;
   padding: 0;
+  border: 1px solid transparent;
   border-bottom-color: transparent;
-  border-radius: 10px;
+  border-radius: 12px;
 }
 
 .dashboard-layout.is-sidebar-collapsed .sidebar-profile-trigger {
@@ -651,6 +653,16 @@
 .dashboard-layout.is-sidebar-collapsed .menu-wrap {
   display: grid;
   justify-items: center;
+}
+
+.dashboard-layout.is-sidebar-collapsed .sidebar-footer {
+  gap: 0.72rem;
+  justify-items: center;
+  padding-top: 0.78rem;
+}
+
+.dashboard-layout.is-sidebar-collapsed .sidebar-profile-wrap {
+  padding-top: 0.12rem;
 }
 
 .dashboard-layout.is-sidebar-collapsed .dashboard-sidebar .menu-popover {
