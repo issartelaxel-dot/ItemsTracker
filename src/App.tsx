@@ -6252,7 +6252,7 @@ function getPasswordStrengthMeta(password: string) {
               <span aria-hidden="true">⌕</span>
               <input
                 type="search"
-                placeholder="Rechercher un item, un collège..."
+                placeholder="Rechercher un item..."
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
                 onKeyDown={(event) => {
@@ -6459,7 +6459,7 @@ function getPasswordStrengthMeta(password: string) {
           <div className="filters-row">
             <input
               type="text"
-              placeholder="Rechercher item, tags, collège"
+              placeholder="Rechercher un item..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
@@ -7991,7 +7991,7 @@ function getPasswordStrengthMeta(password: string) {
               <span className="flashcards-search-icon" aria-hidden="true">⌕</span>
               <input
                 type="search"
-                placeholder="Rechercher un item ou un collège..."
+                placeholder="Rechercher un item..."
                 value={flashCollegeSearch}
                 onChange={(event) => setFlashCollegeSearch(event.target.value)}
               />
