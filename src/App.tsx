@@ -5,11 +5,14 @@ import {
   useRef,
   useState,
   type ClipboardEvent,
+  type ButtonHTMLAttributes,
   type CSSProperties,
   type FormEvent,
+  type HTMLAttributes,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent,
+  type ReactNode,
 } from 'react'
 import itemsData from './data/items.json'
 import navCollegesIcon from './assets/nav/colleges.svg'
@@ -1016,6 +1019,158 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
         }}
       />
     </div>
+  )
+}
+
+function cx(...classes: Array<string | false | null | undefined>) {
+  return classes.filter(Boolean).join(' ')
+}
+
+type ButtonVariant = 'primary' | 'secondary' | 'tertiary' | 'danger'
+type ButtonSize = 'small' | 'medium' | 'large'
+
+type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: ButtonVariant
+  size?: ButtonSize
+  loading?: boolean
+  icon?: ReactNode
+}
+
+function Button({
+  variant = 'secondary',
+  size = 'medium',
+  loading = false,
+  icon,
+  className,
+  children,
+  disabled,
+  ...props
+}: ButtonProps) {
+  return (
+    <button
+      type="button"
+      className={cx('ui-button', `ui-button-${variant}`, `ui-button-${size}`, loading && 'is-loading', className)}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
+      {...props}
+    >
+      {loading ? <ButtonLoader /> : icon ? <span className="ui-button-icon" aria-hidden="true">{icon}</span> : null}
+      <span className="ui-button-label">{children}</span>
+    </button>
+  )
+}
+
+type IconButtonProps = Omit<ButtonProps, 'children' | 'icon' | 'variant'> & {
+  label: string
+  icon: ReactNode
+  variant?: Extract<ButtonVariant, 'secondary' | 'tertiary' | 'danger'>
+}
+
+function IconButton({ label, icon, variant = 'secondary', className, ...props }: IconButtonProps) {
+  return (
+    <Button
+      {...props}
+      variant={variant}
+      className={cx('ui-icon-button', className)}
+      aria-label={label}
+      title={props.title ?? label}
+    >
+      <span aria-hidden="true">{icon}</span>
+    </Button>
+  )
+}
+
+type PageHeaderProps = {
+  title: ReactNode
+  subtitle?: ReactNode
+  actions?: ReactNode
+  className?: string
+}
+
+function PageHeader({ title, subtitle, actions, className }: PageHeaderProps) {
+  return (
+    <header className={cx('ui-page-header', className)}>
+      <div>
+        <h1>{title}</h1>
+        {subtitle ? <p>{subtitle}</p> : null}
+      </div>
+      {actions ? <div className="ui-page-header-actions">{actions}</div> : null}
+    </header>
+  )
+}
+
+type SectionHeaderProps = {
+  title: ReactNode
+  meta?: ReactNode
+  actions?: ReactNode
+  className?: string
+}
+
+function SectionHeader({ title, meta, actions, className }: SectionHeaderProps) {
+  return (
+    <div className={cx('ui-section-header', className)}>
+      <div>
+        <h2>{title}</h2>
+        {meta ? <p>{meta}</p> : null}
+      </div>
+      {actions ? <div className="ui-section-header-actions">{actions}</div> : null}
+    </div>
+  )
+}
+
+function CardHeader({ title, meta, actions, className }: SectionHeaderProps) {
+  return (
+    <div className={cx('ui-card-header', className)}>
+      <div>
+        <h3>{title}</h3>
+        {meta ? <p>{meta}</p> : null}
+      </div>
+      {actions ? <div className="ui-card-header-actions">{actions}</div> : null}
+    </div>
+  )
+}
+
+type BadgeProps = HTMLAttributes<HTMLSpanElement> & {
+  tone?: 'neutral' | 'primary' | 'success' | 'warning' | 'danger'
+}
+
+function Badge({ tone = 'neutral', className, children, ...props }: BadgeProps) {
+  return (
+    <span className={cx('ui-badge', `ui-badge-${tone}`, className)} {...props}>
+      {children}
+    </span>
+  )
+}
+
+function Spinner({ label = 'Chargement...' }: { label?: string }) {
+  return <span className="ui-spinner" role="status" aria-label={label} />
+}
+
+function ButtonLoader() {
+  return <span className="ui-button-loader" aria-hidden="true" />
+}
+
+function SkeletonText({ className }: { className?: string }) {
+  return <span className={cx('ui-skeleton', 'ui-skeleton-text', className)} aria-hidden="true" />
+}
+
+function SkeletonRow() {
+  return (
+    <div className="ui-skeleton-row" aria-hidden="true">
+      <SkeletonText />
+      <SkeletonText />
+      <SkeletonText />
+    </div>
+  )
+}
+
+function SkeletonCard() {
+  return (
+    <article className="ui-skeleton-card" aria-label="Chargement...">
+      <SkeletonText className="wide" />
+      <SkeletonText />
+      <SkeletonRow />
+    </article>
   )
 }
 
@@ -6160,58 +6315,64 @@ function getPasswordStrengthMeta(password: string) {
             ) : null}
           </div>
           <div className="topbar-actions">
-          <button
-            className="ghost-btn icon-btn"
-            title="Déconnexion"
-            aria-label="Déconnexion"
+          <IconButton
+            label="Déconnexion"
+            className="icon-btn"
             onClick={() => void handleLogout()}
-          >
-            <img src={logoutIcon} className="logout-icon-img" alt="" aria-hidden="true" />
-          </button>
-          <button
-            className="ghost-btn icon-btn"
-            title={theme === 'light' ? 'Night mode' : 'Light mode'}
-            aria-label={theme === 'light' ? 'Night mode' : 'Light mode'}
+            icon={<img src={logoutIcon} className="logout-icon-img" alt="" aria-hidden="true" />}
+          />
+          <IconButton
+            label={theme === 'light' ? 'Mode nuit' : 'Mode clair'}
+            className="icon-btn"
             onClick={() => setTheme((value) => (value === 'light' ? 'dark' : 'light'))}
-          >
-            {theme === 'light' ? '🌙' : '☀️'}
-          </button>
+            icon={theme === 'light' ? '🌙' : '☀️'}
+          />
           </div>
         </header>
         {saveStatus !== 'idle' ? (
           <div className={`save-popup ${saveStatus}`}>
-            {saveStatus === 'saving'
-              ? 'Sauvegarde en cours...'
-              : saveStatus === 'saved'
-                ? `Sauvegarde cloud OK${lastSavedAt ? ` (${lastSavedAt})` : ''}`
-                : `Erreur de sauvegarde${saveErrorMessage ? `: ${saveErrorMessage}` : ''}`}
+            {saveStatus === 'saving' ? <Spinner label="Enregistrement..." /> : null}
+            <span>
+              {saveStatus === 'saving'
+                ? 'Enregistrement...'
+                : saveStatus === 'saved'
+                  ? `Sauvegarde cloud OK${lastSavedAt ? ` (${lastSavedAt})` : ''}`
+                  : `Erreur de sauvegarde${saveErrorMessage ? `: ${saveErrorMessage}` : ''}`}
+            </span>
           </div>
         ) : null}
 
         {activeView === 'dashboard' ? (
-        <div className="dashboard-greeting">
-          <p className="dashboard-greeting-text">
-            Bonjour, {profile.firstName?.trim() || authUser?.displayName || 'Setup'}.
-          </p>
-        </div>
+        <PageHeader
+          className="dashboard-greeting"
+          title={`Bonjour, ${profile.firstName?.trim() || authUser?.displayName || 'Setup'}.`}
+          subtitle="Suivez vos items, révisions, flashcards et quiz depuis un tableau de bord unifié."
+        />
         ) : null}
 
         {activeView === 'dashboard' ? (
+        authStatus === 'authed' && !hasLoadedRemoteState ? (
+          <div className="ui-skeleton-grid" aria-label="Chargement du tableau de bord">
+            <SkeletonCard />
+            <SkeletonCard />
+            <SkeletonCard />
+          </div>
+        ) : (
         <section id="dashboard-overview" className="global-grid">
         <article className="stat-card">
-          <p className="stat-label">Items complétés</p>
+          <CardHeader title="Items complétés" />
           <p className="stat-value">{globalStats.completedCount}</p>
-          <p className="stat-sub">{globalStats.remainingCount} restants</p>
+          <Badge>{globalStats.remainingCount} restants</Badge>
         </article>
         <article className="stat-card">
-          <p className="stat-label">Progression globale</p>
+          <CardHeader title="Progression globale" />
           <p className="stat-value">{globalStats.overallProgress.toFixed(1)}%</p>
           <div className="progress-track">
             <div className="progress-fill" style={{ width: `${globalStats.overallProgress}%` }} />
           </div>
         </article>
         <article className="stat-card large-card">
-          <p className="stat-label">Habit tracking {HABIT_TRACKER_YEAR} (lectures)</p>
+          <CardHeader title={`Habit tracking ${HABIT_TRACKER_YEAR}`} meta="Lectures" />
           <div className="habit-tracker-wrap">
             {weeklyReviewSeries.map((week, weekIndex) => (
               <div className="habit-week" key={week.weekKey} title={`Semaine du ${week.weekLabel}`}>
@@ -6239,6 +6400,7 @@ function getPasswordStrengthMeta(password: string) {
           </div>
         </article>
         </section>
+        )
         ) : null}
 
         {activeView === 'dashboard' || activeView === 'items' ? (
@@ -6249,10 +6411,7 @@ function getPasswordStrengthMeta(password: string) {
           }`}
         >
         <article className={`panel table-panel ${effectiveSelectedItem ? '' : 'full-width'}`}>
-          <div className="panel-head">
-            <h2>Items</h2>
-            <p>{itemTableList.length} lignes</p>
-          </div>
+          <SectionHeader title="Items" meta={`${itemTableList.length} lignes`} />
 
           <div className="filters-row">
             <input
@@ -6389,11 +6548,10 @@ function getPasswordStrengthMeta(password: string) {
         <article className={`panel detail-panel ${effectiveSelectedItem ? 'is-open' : 'is-closed'}`}>
           {effectiveSelectedItem ? (
             <>
-              <div className="panel-head">
-                <div>
-                  <h2>{effectiveSelectedItem.tracking.itemIcon ? `${effectiveSelectedItem.tracking.itemIcon} ` : ''}Item #{effectiveSelectedItem.itemNumber}</h2>
-                  <p>{effectiveSelectedItem.shortDescription}</p>
-                </div>
+              <SectionHeader
+                title={`${effectiveSelectedItem.tracking.itemIcon ? `${effectiveSelectedItem.tracking.itemIcon} ` : ''}Item #${effectiveSelectedItem.itemNumber}`}
+                meta={effectiveSelectedItem.shortDescription}
+                actions={
                 <div className="detail-head-actions">
                   <button
                     type="button"
@@ -6419,7 +6577,8 @@ function getPasswordStrengthMeta(password: string) {
                     </button>
                   ) : null}
                 </div>
-              </div>
+                }
+              />
 
               <div className="meta-grid">
                 <div>
@@ -7779,10 +7938,9 @@ function getPasswordStrengthMeta(password: string) {
                 </select>
               </label>
             </div>
-            <button type="button" className="flashcards-generator-btn" onClick={startSelectedCollegeGeneratedQuiz}>
-              <span aria-hidden="true">✦</span>
+            <Button variant="primary" size="large" className="flashcards-generator-btn" icon="✦" onClick={startSelectedCollegeGeneratedQuiz}>
               Générer le quiz
-            </button>
+            </Button>
           </div>
           <div className="flashcards-toolbar">
             <label className="flashcards-search">
@@ -8179,17 +8337,14 @@ function getPasswordStrengthMeta(password: string) {
                     <span> maîtrisés</span>
                   </p>
                   <div className="flashcards-card-actions">
-                    <button type="button" className="flashcards-card-launch" onClick={() => startCollegeGeneratedQuiz(row.college)}>
-                      <span aria-hidden="true">▶</span>
+                    <Button variant="primary" className="flashcards-card-launch" icon="▶" onClick={() => startCollegeGeneratedQuiz(row.college)}>
                       Lancer le quiz
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <IconButton
                       className="flashcards-card-view"
-                      title={`Voir les cartes ${row.displayName}`}
-                      aria-label={`Voir les cartes ${row.displayName}`}
+                      label={`Voir les cartes ${row.displayName}`}
                       onClick={() => openCollegeFlashcardsList(row.college)}
-                    >
+                      icon={
                       <span className="flashcards-grid-icon" aria-hidden="true">
                         <span />
                         <span />
@@ -8201,7 +8356,8 @@ function getPasswordStrengthMeta(password: string) {
                         <span />
                         <span />
                       </span>
-                    </button>
+                      }
+                    />
                   </div>
                 </article>
               ))}
@@ -8247,17 +8403,14 @@ function getPasswordStrengthMeta(password: string) {
                     <span> maîtrisés</span>
                   </p>
                   <div className="flashcards-card-actions">
-                    <button type="button" className="flashcards-card-launch" onClick={() => startItemGeneratedQuiz(row.itemNumber)}>
-                      <span aria-hidden="true">▶</span>
+                    <Button variant="primary" className="flashcards-card-launch" icon="▶" onClick={() => startItemGeneratedQuiz(row.itemNumber)}>
                       Lancer le quiz
-                    </button>
-                    <button
-                      type="button"
+                    </Button>
+                    <IconButton
                       className="flashcards-card-view"
-                      title={`Voir les cartes item ${row.itemNumber}`}
-                      aria-label={`Voir les cartes item ${row.itemNumber}`}
+                      label={`Voir les cartes item ${row.itemNumber}`}
                       onClick={() => openItemFlashcardsList(row.itemNumber)}
-                    >
+                      icon={
                       <span className="flashcards-grid-icon" aria-hidden="true">
                         <span />
                         <span />
@@ -8269,7 +8422,8 @@ function getPasswordStrengthMeta(password: string) {
                         <span />
                         <span />
                       </span>
-                    </button>
+                      }
+                    />
                   </div>
                 </article>
               ))}
@@ -8330,9 +8484,9 @@ function getPasswordStrengthMeta(password: string) {
                             <h4>{question || `Carte item #${card.itemNumber}`}</h4>
                             <p>{answer || 'Aucune réponse personnalisée.'}</p>
                           </div>
-                          <button type="button" className="flashcards-list-row-action" onClick={() => startSingleFlashcardQuiz(card)}>
+                          <Button variant="primary" size="small" className="flashcards-list-row-action" onClick={() => startSingleFlashcardQuiz(card)}>
                             Lancer
-                          </button>
+                          </Button>
                         </article>
                       )
                     })
@@ -8362,8 +8516,9 @@ function getPasswordStrengthMeta(password: string) {
       {activeView === 'colleges' ? (
         selectedCollegeDetailData ? (
           <section className="college-detail-page">
-            <button
-              type="button"
+            <Button
+              variant="tertiary"
+              size="small"
               className="college-detail-back"
               onClick={() => {
                 setCollegeDetailFilter('all')
@@ -8371,7 +8526,7 @@ function getPasswordStrengthMeta(password: string) {
               }}
             >
               ← Retour aux collèges
-            </button>
+            </Button>
             <header className="college-detail-hero">
               <div className="college-detail-title">
                 <CollegeHealthIcon college={selectedCollegeDetailData.college} className="college-detail-main-icon" />
@@ -8380,8 +8535,9 @@ function getPasswordStrengthMeta(password: string) {
                   <p>Vue détaillée du collège</p>
                 </div>
               </div>
-              <button
-                type="button"
+              <Button
+                variant="primary"
+                size="large"
                 className="college-detail-primary"
                 onClick={() => {
                   setCollegeFilter(selectedCollegeDetailData.college)
@@ -8390,7 +8546,7 @@ function getPasswordStrengthMeta(password: string) {
                 }}
               >
                 + Ajouter un item
-              </button>
+              </Button>
             </header>
 
             <div className="college-detail-stats">
@@ -8511,7 +8667,7 @@ function getPasswordStrengthMeta(password: string) {
 
               <aside className="college-detail-side">
                 <article className="college-detail-side-card">
-                  <h3>Ressenti global</h3>
+                  <CardHeader title="Ressenti global" />
                   <div className="college-detail-feelings">
                     {[
                       ['☺', 'Très facile', selectedCollegeDetailData.resultCounts.easy, 'very-easy'],
@@ -8529,9 +8685,7 @@ function getPasswordStrengthMeta(password: string) {
                   </div>
                 </article>
                 <article className="college-detail-side-card college-detail-dev-card">
-                  <div className="college-detail-card-head">
-                    <h3>Prochaines révisions</h3>
-                  </div>
+                  <CardHeader className="college-detail-card-head" title="Prochaines révisions" />
                   <div className="college-detail-upcoming">
                     {selectedCollegeDetailData.upcomingReviews.map((item) => (
                       <div key={`upcoming-${item.itemNumber}`}>
@@ -8546,45 +8700,45 @@ function getPasswordStrengthMeta(password: string) {
                   </div>
                 </article>
                 <article className="college-detail-side-card college-detail-action-card">
-                  <h3>Quiz du collège</h3>
+                  <CardHeader title="Quiz du collège" />
                   <p>Testez vos connaissances sur ce collège.</p>
-                  <button
-                    type="button"
+                  <Button
+                    variant="primary"
                     className="college-detail-primary"
+                    icon="▶"
                     onClick={() => {
                       setActiveView('flashcards')
                       setFlashDisplayMode('colleges')
                       startCollegeGeneratedQuiz(selectedCollegeDetailData.college)
                     }}
                   >
-                    ▶ Lancer un quiz
-                  </button>
+                    Lancer un quiz
+                  </Button>
                 </article>
                 <article className="college-detail-side-card college-detail-action-card">
-                  <h3>Voir les flashcards</h3>
+                  <CardHeader title="Voir les flashcards" />
                   <p>Parcourez les {selectedCollegeDetailData.flashcardCount} flashcards créées pour ce collège.</p>
-                  <button
-                    type="button"
+                  <Button
+                    variant="secondary"
                     className="college-detail-secondary"
+                    icon="▱"
                     onClick={() => {
                       setActiveView('flashcards')
                       setFlashDisplayMode('colleges')
                       openCollegeFlashcardsList(selectedCollegeDetailData.college)
                     }}
                   >
-                    ▱ Voir les flashcards
-                  </button>
+                    Voir les flashcards
+                  </Button>
                 </article>
               </aside>
             </div>
           </section>
         ) : (
           <section className="panel colleges-page">
-            <div className="panel-head">
-              <h2>Collèges</h2>
-            </div>
+            <SectionHeader title="Collèges" meta={`${collegesViewRows.length} spécialités médicales`} />
             <article className="colleges-heatmap">
-              <h3>Progression par collège</h3>
+              <CardHeader title="Progression par collège" />
               <div className="colleges-heatmap-grid">
                 {collegesViewRows.map((row) => {
                   const tone =
@@ -8631,9 +8785,7 @@ function getPasswordStrengthMeta(password: string) {
       {activeView === 'dashboard' ? (
       <section id="stats-section" className="bottom-grid">
         <article className="panel compact-panel">
-          <div className="panel-head">
-            <h2>Progression par collège</h2>
-          </div>
+          <SectionHeader title="Progression par collège" />
           <div className="college-metrics">
             {globalStats.byCollege.map((row) => (
               <div key={row.college} className="metric-row">
@@ -8650,8 +8802,7 @@ function getPasswordStrengthMeta(password: string) {
 
       {activeView === 'stats' ? (
         <section className="panel stats-placeholder">
-          <h2>Insights</h2>
-          <p>Bientôt disponible.</p>
+          <SectionHeader title="Insights" meta="Bientôt disponible." />
         </section>
       ) : null}
       </div>
