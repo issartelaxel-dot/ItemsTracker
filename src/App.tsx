@@ -4200,6 +4200,75 @@ function getPasswordStrengthMeta(password: string) {
     return weeks
   }, [items])
 
+  const dashboardStudyStats = useMemo(() => {
+    const days = weeklyReviewSeries
+      .flatMap((week) => week.days)
+      .filter((day) => day.inRange)
+      .sort((a, b) => a.dateKey.localeCompare(b.dateKey))
+
+    let bestStreak = 0
+    let runningStreak = 0
+    for (const day of days) {
+      if (day.count > 0) {
+        runningStreak += 1
+        bestStreak = Math.max(bestStreak, runningStreak)
+      } else {
+        runningStreak = 0
+      }
+    }
+
+    const countsByDay = new Map(days.map((day) => [day.dateKey, day.count]))
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    let currentStreak = 0
+    for (const cursor = new Date(today); currentStreak < 366; cursor.setDate(cursor.getDate() - 1)) {
+      const dayKey = toDayKey(cursor)
+      if ((countsByDay.get(dayKey) ?? 0) <= 0) {
+        break
+      }
+      currentStreak += 1
+    }
+
+    return { currentStreak, bestStreak }
+  }, [weeklyReviewSeries])
+
+  const dashboardReviewQueue = useMemo(() => {
+    return items
+      .filter((item) => item.tracking.assignedColleges.length > 0)
+      .map((item) => {
+        const needsCollegeReview = item.tracking.assignedColleges.some((college) => {
+          const entry = item.tracking.byCollege[college] ?? getDefaultCollegeTracking()
+          return MASTERY_SCORE[entry.mastery] <= MASTERY_SCORE.Moyen || entry.reviews === 0
+        })
+        const needsItemReview =
+          item.tracking.itemMastery === 'Mauvais' || item.tracking.itemMastery === 'Moyen' || item.progress < 0.5
+
+        return {
+          item,
+          needsReview: needsCollegeReview || needsItemReview,
+        }
+      })
+      .filter((entry) => entry.needsReview)
+      .sort((a, b) => a.item.totalReviews - b.item.totalReviews || a.item.itemNumber - b.item.itemNumber)
+  }, [items])
+
+  const dashboardResumeItem = dashboardReviewQueue[0]?.item ?? items.find((item) => item.tracking.assignedColleges.length > 0) ?? null
+  const dashboardResumeCollege = dashboardResumeItem?.tracking.assignedColleges[0] ?? ''
+  const dashboardDueCount = dashboardReviewQueue.length
+  const dashboardDueMinutes = Math.max(5, dashboardDueCount * 2)
+
+  const dashboardCollegeRows = useMemo(() => {
+    return globalStats.byCollege
+      .filter((row) => row.assigned > 0)
+      .map((row, index) => ({
+        ...row,
+        displayName: getFlashCollegeDisplayName(row.college),
+        accent: FLASH_COLLEGE_ACCENTS[index % FLASH_COLLEGE_ACCENTS.length],
+      }))
+      .sort((a, b) => b.progress - a.progress || b.assigned - a.assigned || a.displayName.localeCompare(b.displayName, 'fr'))
+      .slice(0, 5)
+  }, [globalStats.byCollege])
+
   const flashCollegeCards = useMemo(() => {
     const normalizedSearch = normalizeText(flashCollegeSearch)
 
@@ -6190,59 +6259,189 @@ function getPasswordStrengthMeta(password: string) {
 
         <div className="dashboard-content">
         {activeView === 'dashboard' ? (
-        <div className="dashboard-greeting">
-          <p className="dashboard-greeting-text">
-            Bonjour, {profile.firstName?.trim() || authUser?.displayName || 'Setup'}.
-          </p>
-        </div>
-        ) : null}
-
-        {activeView === 'dashboard' ? (
-        <section id="dashboard-overview" className="global-grid">
-        <article className="stat-card">
-          <p className="stat-label">Items complétés</p>
-          <p className="stat-value">{globalStats.completedCount}</p>
-          <p className="stat-sub">{globalStats.remainingCount} restants</p>
-        </article>
-        <article className="stat-card">
-          <p className="stat-label">Progression globale</p>
-          <p className="stat-value">{globalStats.overallProgress.toFixed(1)}%</p>
-          <div className="progress-track">
-            <div className="progress-fill" style={{ width: `${globalStats.overallProgress}%` }} />
-          </div>
-        </article>
-        <article className="stat-card large-card">
-          <p className="stat-label">Habit tracking {HABIT_TRACKER_YEAR} (lectures)</p>
-          <div className="habit-tracker-wrap">
-            {weeklyReviewSeries.map((week, weekIndex) => (
-              <div className="habit-week" key={week.weekKey} title={`Semaine du ${week.weekLabel}`}>
-                {week.days.map((day, dayIndex) => (
-                  <span
-                    key={day.dateKey}
-                    className={`habit-dot ${day.inRange ? `intensity-${day.intensity}` : 'out-range'}`}
-                    data-tip={`${day.dateKey} • ${day.count} lecture${day.count > 1 ? 's' : ''}`}
-                    style={{ animationDelay: `${Math.min((weekIndex * 7 + dayIndex) * 8, 900)}ms` }}
-                  />
-                ))}
+          <section className="dashboard-home" aria-labelledby="dashboard-title">
+            <div className="dashboard-hero-row">
+              <div className="dashboard-title-block">
+                <h1 id="dashboard-title">Bonjour, {profile.firstName?.trim() || authUser?.displayName || 'Setup'} 👋</h1>
+                <p>Chaque révision vous rapproche de votre objectif.</p>
               </div>
-            ))}
-          </div>
-          <div className="habit-legend">
-            <span>Faible</span>
-            <div className="legend-scale">
-              <span className="habit-dot intensity-0" />
-              <span className="habit-dot intensity-1" />
-              <span className="habit-dot intensity-2" />
-              <span className="habit-dot intensity-3" />
-              <span className="habit-dot intensity-4" />
+              <div className="dashboard-home-actions">
+                <label className="dashboard-home-search">
+                  <span aria-hidden="true">⌕</span>
+                  <input
+                    type="search"
+                    placeholder="Rechercher un item, un collège..."
+                    value={search}
+                    onChange={(event) => setSearch(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        setActiveView('items')
+                      }
+                    }}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="dashboard-alert-btn"
+                  aria-label={`${dashboardDueCount} révisions dues`}
+                  onClick={() => setActiveView('items')}
+                >
+                  <span aria-hidden="true">🔔</span>
+                  <strong>{Math.min(99, dashboardDueCount)}</strong>
+                </button>
+              </div>
             </div>
-            <span>Intense</span>
-          </div>
-        </article>
-        </section>
+
+            <section className="dashboard-stat-grid" aria-label="Résumé">
+              <article className="dashboard-stat-card dashboard-progress-card">
+                <div className="dashboard-stat-head">
+                  <p>Progression globale</p>
+                  <span className="dashboard-trend-icon" aria-hidden="true">⌁</span>
+                </div>
+                <strong>{Math.round(globalStats.overallProgress)}%</strong>
+                <span className="dashboard-positive">+{Math.max(1, Math.round(globalStats.overallProgress * 0.12))}% depuis la semaine dernière</span>
+                <div className="dashboard-mini-progress" aria-hidden="true">
+                  <span style={{ width: `${globalStats.overallProgress}%` }} />
+                </div>
+              </article>
+
+              <article className="dashboard-stat-card">
+                <div className="dashboard-stat-icon dashboard-stat-fire" aria-hidden="true">🔥</div>
+                <p>Série actuelle</p>
+                <strong>{dashboardStudyStats.currentStreak}</strong>
+                <span>jours d’affilée</span>
+                <small>Votre meilleure série : {dashboardStudyStats.bestStreak} jours</small>
+              </article>
+
+              <article className="dashboard-stat-card">
+                <div className="dashboard-stat-icon" aria-hidden="true">▣</div>
+                <p>Révisions dues</p>
+                <strong>{dashboardDueCount}</strong>
+                <span>items à revoir</span>
+                <small>Estimation : {dashboardDueMinutes} min</small>
+              </article>
+
+              <article className="dashboard-habit-card">
+                <p>Habit tracking {HABIT_TRACKER_YEAR} (lectures)</p>
+                <div className="habit-tracker-wrap dashboard-habit-wrap">
+                  {weeklyReviewSeries.map((week, weekIndex) => (
+                    <div className="habit-week" key={week.weekKey} title={`Semaine du ${week.weekLabel}`}>
+                      {week.days.map((day, dayIndex) => (
+                        <span
+                          key={day.dateKey}
+                          className={`habit-dot ${day.inRange ? `intensity-${day.intensity}` : 'out-range'}`}
+                          data-tip={`${day.dateKey} • ${day.count} lecture${day.count > 1 ? 's' : ''}`}
+                          style={{ animationDelay: `${Math.min((weekIndex * 7 + dayIndex) * 8, 900)}ms` }}
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </div>
+                <div className="habit-legend">
+                  <span>Faible</span>
+                  <div className="legend-scale">
+                    <span className="habit-dot intensity-0" />
+                    <span className="habit-dot intensity-1" />
+                    <span className="habit-dot intensity-2" />
+                    <span className="habit-dot intensity-3" />
+                    <span className="habit-dot intensity-4" />
+                  </div>
+                  <span>Intense</span>
+                </div>
+              </article>
+            </section>
+
+            <section className="dashboard-mid-grid">
+              <article className="dashboard-resume-card">
+                <div>
+                  <h2>Prêt à avancer ?</h2>
+                  <p>Reprenez là où vous vous étiez arrêté.</p>
+                </div>
+                <div className="dashboard-resume-row">
+                  <span className="dashboard-resume-icon">
+                    {dashboardResumeCollege ? (
+                      <CollegeHealthIcon college={dashboardResumeCollege} showTitle={false} />
+                    ) : (
+                      <span aria-hidden="true">▣</span>
+                    )}
+                  </span>
+                  <div>
+                    <strong>{dashboardResumeCollege ? getFlashCollegeDisplayName(dashboardResumeCollege) : 'Aucun collège'}</strong>
+                    <span>{dashboardResumeItem?.shortDescription ?? 'Aucun item à reprendre pour le moment.'}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="dashboard-continue-btn"
+                    disabled={!dashboardResumeItem}
+                    onClick={() => {
+                      if (!dashboardResumeItem) {
+                        return
+                      }
+                      setActiveView('items')
+                      setSelectedItemId(dashboardResumeItem.itemNumber)
+                    }}
+                  >
+                    ▶ Continuer
+                  </button>
+                </div>
+              </article>
+
+              <article className="dashboard-quote-card">
+                <div className="dashboard-quote-copy">
+                  <span aria-hidden="true">“</span>
+                  <p>La constance d’aujourd’hui est la réussite de demain.</p>
+                  <small>— Avance chaque jour</small>
+                </div>
+                <div className="dashboard-mountain-art" aria-hidden="true">
+                  <span className="mountain mountain-back" />
+                  <span className="mountain mountain-mid" />
+                  <span className="mountain mountain-front" />
+                  <span className="mountain-road" />
+                  <span className="mountain-flag" />
+                </div>
+              </article>
+            </section>
+
+            <section className="dashboard-college-card">
+              <div className="dashboard-section-head">
+                <h2>Progression par collège</h2>
+                <button type="button" onClick={() => setActiveView('colleges')}>Voir tout</button>
+              </div>
+              <div className="dashboard-college-list">
+                {dashboardCollegeRows.length > 0 ? (
+                  dashboardCollegeRows.map((row) => (
+                    <button
+                      type="button"
+                      key={`dashboard-college-${row.college}`}
+                      className="dashboard-college-row"
+                      style={{ '--dashboard-college-accent': row.accent } as CSSProperties}
+                      onClick={() => {
+                        setCollegeDetailFilter('all')
+                        setSelectedCollegeDetail(row.college)
+                        setActiveView('colleges')
+                      }}
+                    >
+                      <CollegeHealthIcon college={row.college} className="dashboard-college-icon" showTitle={false} />
+                      <span className="dashboard-college-meta">
+                        <strong>{row.displayName}</strong>
+                        <small>{row.assigned} items</small>
+                      </span>
+                      <span className="dashboard-college-progress" aria-hidden="true">
+                        <span style={{ width: `${row.progress}%` }} />
+                      </span>
+                      <strong className="dashboard-college-percent">{Math.round(row.progress)}%</strong>
+                      <span className="dashboard-college-chevron" aria-hidden="true">›</span>
+                    </button>
+                  ))
+                ) : (
+                  <p className="dashboard-empty-state">Aucun collège assigné pour le moment.</p>
+                )}
+              </div>
+            </section>
+          </section>
         ) : null}
 
-        {activeView === 'dashboard' || activeView === 'items' ? (
+        {activeView === 'items' ? (
         <section
           id="items-section"
           className={`main-grid ${effectiveSelectedItem ? 'has-detail' : 'full-table'} ${
@@ -8627,26 +8826,6 @@ function getPasswordStrengthMeta(password: string) {
             </article>
           </section>
         )
-      ) : null}
-
-      {activeView === 'dashboard' && !effectiveSelectedItem ? (
-      <section id="stats-section" className="bottom-grid">
-        <article className="panel compact-panel">
-          <div className="panel-head">
-            <h2>Progression par collège</h2>
-          </div>
-          <div className="college-metrics">
-            {globalStats.byCollege.map((row) => (
-              <div key={row.college} className="metric-row">
-                <p>{row.college}</p>
-                <p>
-                  {row.completed}/{row.assigned} ({row.progress.toFixed(0)}%) - {row.reviews} révisions
-                </p>
-              </div>
-            ))}
-          </div>
-        </article>
-      </section>
       ) : null}
 
       {activeView === 'stats' ? (

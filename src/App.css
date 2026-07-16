@@ -34,6 +34,7 @@
 }
 
 .dashboard-layout.is-shell-entering .global-grid,
+.dashboard-layout.is-shell-entering .dashboard-home,
 .dashboard-layout.is-shell-entering .main-grid,
 .dashboard-layout.is-shell-entering .flashcards-page,
 .dashboard-layout.is-shell-entering .colleges-page,
@@ -1466,6 +1467,608 @@ h3 {
 .legend-scale {
   display: flex;
   gap: 0.18rem;
+}
+
+.dashboard-home {
+  display: grid;
+  gap: 1.15rem;
+  align-content: start;
+}
+
+.dashboard-hero-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 420px);
+  gap: 1rem;
+  align-items: start;
+}
+
+.dashboard-title-block h1 {
+  margin: 0;
+  color: #07183f;
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.dashboard-title-block p {
+  margin: 0.45rem 0 0;
+  color: #536986;
+  font-size: 0.95rem;
+}
+
+.dashboard-home-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.dashboard-home-search {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 0.85rem;
+  border: 1px solid #dbe5f2;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(34, 72, 125, 0.06);
+  color: #0d2353;
+}
+
+.dashboard-home-search span {
+  color: #0d2353;
+  font-size: 1.05rem;
+  transform: translateY(-1px);
+}
+
+.dashboard-home-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  padding: 0.55rem 0.55rem;
+  color: #152745;
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.dashboard-home-search input::placeholder {
+  color: #697f9f;
+}
+
+.dashboard-alert-btn {
+  position: relative;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  border: 1px solid #dbe5f2;
+  background: #fff;
+  color: #0d2353;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  box-shadow: 0 10px 28px rgba(34, 72, 125, 0.06);
+}
+
+.dashboard-alert-btn strong {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 0.28rem;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #2268e7;
+  color: #fff;
+  font-size: 0.68rem;
+  font-weight: 800;
+  border: 2px solid #fff;
+}
+
+.dashboard-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr)) minmax(320px, 2.25fr);
+  gap: 0.8rem;
+  align-items: stretch;
+}
+
+.dashboard-stat-card,
+.dashboard-habit-card,
+.dashboard-resume-card,
+.dashboard-quote-card,
+.dashboard-college-card {
+  border: 1px solid rgba(211, 222, 231, 0.82);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 42px rgba(23, 48, 86, 0.07);
+}
+
+.dashboard-stat-card {
+  min-height: 146px;
+  padding: 1.05rem 1rem;
+  display: grid;
+  align-content: start;
+  gap: 0.42rem;
+}
+
+.dashboard-stat-card p,
+.dashboard-habit-card p {
+  margin: 0;
+  color: #0c1d43;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.dashboard-stat-card strong {
+  color: #07183f;
+  font-size: 2.05rem;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.dashboard-stat-card span,
+.dashboard-stat-card small {
+  color: #4f6583;
+  font-size: 0.76rem;
+}
+
+.dashboard-stat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dashboard-trend-icon {
+  color: #2c6df0;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.dashboard-positive {
+  color: #1767f2 !important;
+  font-weight: 700;
+}
+
+.dashboard-mini-progress,
+.dashboard-college-progress {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #e6ebf2;
+  overflow: hidden;
+}
+
+.dashboard-mini-progress {
+  align-self: end;
+  margin-top: 0.45rem;
+}
+
+.dashboard-mini-progress span,
+.dashboard-college-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #1976ff, #0f5dea);
+}
+
+.dashboard-stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #eef4ff;
+  color: #1d65e8;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.dashboard-stat-fire {
+  background: #fff1e7;
+}
+
+.dashboard-habit-card {
+  min-width: 0;
+  min-height: 146px;
+  padding: 1.05rem 1rem 0.9rem;
+  overflow: hidden;
+}
+
+.dashboard-habit-wrap {
+  padding: 0.65rem 0.1rem 0.75rem;
+}
+
+.dashboard-mid-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.82fr) minmax(420px, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.dashboard-resume-card,
+.dashboard-quote-card {
+  min-height: 154px;
+  padding: 1.15rem;
+}
+
+.dashboard-resume-card {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.dashboard-resume-card h2,
+.dashboard-college-card h2 {
+  margin: 0;
+  color: #0d1d37;
+  font-size: 1.05rem;
+  letter-spacing: 0;
+}
+
+.dashboard-resume-card p {
+  margin: 0.35rem 0 0;
+  color: #657893;
+  font-size: 0.86rem;
+}
+
+.dashboard-resume-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.dashboard-resume-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #edf4ff;
+  color: #1d65e8;
+  display: grid;
+  place-items: center;
+}
+
+.dashboard-resume-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.dashboard-resume-row strong {
+  display: block;
+  color: #0e203d;
+  font-size: 0.88rem;
+}
+
+.dashboard-resume-row span:not(.dashboard-resume-icon) {
+  display: block;
+  min-width: 0;
+  color: #4f6583;
+  font-size: 0.76rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-continue-btn {
+  height: 38px;
+  padding: 0 1.1rem;
+  border-radius: 7px;
+  border: 1px solid #1f6af0;
+  background: #fff;
+  color: #1f65e6;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.dashboard-continue-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.dashboard-quote-card {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(210px, 0.78fr) minmax(260px, 1fr);
+  align-items: stretch;
+  background:
+    linear-gradient(90deg, #fff 0%, rgba(255, 255, 255, 0.94) 45%, rgba(230, 239, 255, 0.72) 100%),
+    #fff;
+}
+
+.dashboard-quote-copy {
+  position: relative;
+  z-index: 2;
+  align-self: center;
+}
+
+.dashboard-quote-copy > span {
+  color: #2f75ff;
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.dashboard-quote-copy p {
+  margin: 0.2rem 0 0.9rem;
+  max-width: 320px;
+  color: #0e203d;
+  font-size: 1.04rem;
+  line-height: 1.38;
+  font-weight: 800;
+}
+
+.dashboard-quote-copy small {
+  color: #1f65e6;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.dashboard-mountain-art {
+  position: relative;
+  min-height: 132px;
+}
+
+.dashboard-mountain-art::before,
+.dashboard-mountain-art::after {
+  content: '';
+  position: absolute;
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 999px 999px 0 0;
+}
+
+.dashboard-mountain-art::before {
+  width: 70px;
+  height: 18px;
+  right: 20%;
+  top: 18px;
+}
+
+.dashboard-mountain-art::after {
+  width: 42px;
+  height: 12px;
+  right: 6%;
+  top: 32px;
+}
+
+.mountain {
+  position: absolute;
+  bottom: -16px;
+  transform: skewX(-20deg) rotate(45deg);
+  transform-origin: bottom left;
+  border-radius: 10px 0 12px 0;
+}
+
+.mountain-back {
+  width: 172px;
+  height: 172px;
+  right: 175px;
+  background: linear-gradient(135deg, #dbe8ff, #9cbcf3);
+}
+
+.mountain-mid {
+  width: 220px;
+  height: 220px;
+  right: 76px;
+  background: linear-gradient(135deg, #4e7dde, #123f9f 58%, #09285f);
+}
+
+.mountain-front {
+  width: 260px;
+  height: 260px;
+  right: -72px;
+  bottom: -64px;
+  background: linear-gradient(135deg, #2e5fca, #0b2b7a 55%, #061d52);
+}
+
+.mountain-road {
+  position: absolute;
+  right: 116px;
+  bottom: 0;
+  width: 86px;
+  height: 142px;
+  border-left: 6px solid rgba(238, 246, 255, 0.84);
+  border-radius: 62% 0 0 40%;
+  transform: rotate(22deg);
+}
+
+.mountain-flag {
+  position: absolute;
+  right: 107px;
+  top: 6px;
+  width: 4px;
+  height: 52px;
+  background: #185de4;
+  border-radius: 999px;
+}
+
+.mountain-flag::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 0;
+  width: 30px;
+  height: 18px;
+  background: #185de4;
+  clip-path: polygon(0 0, 100% 18%, 0 100%);
+}
+
+.dashboard-college-card {
+  overflow: hidden;
+}
+
+.dashboard-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.05rem;
+  border-bottom: 1px solid #e4ebf3;
+}
+
+.dashboard-section-head button {
+  border: 0;
+  background: transparent;
+  color: #1f65e6;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.dashboard-college-list {
+  display: grid;
+}
+
+.dashboard-college-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(160px, 1fr) minmax(220px, 1.25fr) 56px 18px;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.8rem 1.05rem;
+  border: 0;
+  border-bottom: 1px solid #e7edf4;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dashboard-college-row:last-child {
+  border-bottom: 0;
+}
+
+.dashboard-college-row:hover {
+  background: #f7faff;
+}
+
+.dashboard-college-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--dashboard-college-accent);
+  background: color-mix(in oklab, var(--dashboard-college-accent) 13%, white);
+}
+
+.dashboard-college-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.dashboard-college-meta {
+  display: grid;
+  min-width: 0;
+}
+
+.dashboard-college-meta strong {
+  color: #0f203f;
+  font-size: 0.88rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-college-meta small {
+  color: #657893;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.dashboard-college-progress span {
+  background: var(--dashboard-college-accent);
+}
+
+.dashboard-college-percent {
+  justify-self: end;
+  color: #0e203d;
+  font-size: 0.86rem;
+}
+
+.dashboard-college-chevron {
+  color: #6c80a0;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.dashboard-empty-state {
+  margin: 0;
+  padding: 1rem;
+  color: #657893;
+}
+
+:root[data-theme='dark'] .dashboard-title-block h1,
+:root[data-theme='dark'] .dashboard-stat-card strong,
+:root[data-theme='dark'] .dashboard-resume-card h2,
+:root[data-theme='dark'] .dashboard-college-card h2,
+:root[data-theme='dark'] .dashboard-quote-copy p,
+:root[data-theme='dark'] .dashboard-resume-row strong,
+:root[data-theme='dark'] .dashboard-college-meta strong,
+:root[data-theme='dark'] .dashboard-college-percent {
+  color: #edf5ff;
+}
+
+:root[data-theme='dark'] .dashboard-title-block p,
+:root[data-theme='dark'] .dashboard-stat-card span,
+:root[data-theme='dark'] .dashboard-stat-card small,
+:root[data-theme='dark'] .dashboard-resume-card p,
+:root[data-theme='dark'] .dashboard-resume-row span:not(.dashboard-resume-icon),
+:root[data-theme='dark'] .dashboard-college-meta small,
+:root[data-theme='dark'] .dashboard-empty-state {
+  color: #9fb0cc;
+}
+
+:root[data-theme='dark'] .dashboard-home-search,
+:root[data-theme='dark'] .dashboard-alert-btn,
+:root[data-theme='dark'] .dashboard-stat-card,
+:root[data-theme='dark'] .dashboard-habit-card,
+:root[data-theme='dark'] .dashboard-resume-card,
+:root[data-theme='dark'] .dashboard-college-card {
+  border-color: rgba(64, 110, 172, 0.62);
+  background: #071b44;
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.22);
+}
+
+:root[data-theme='dark'] .dashboard-home-search input,
+:root[data-theme='dark'] .dashboard-home-search span,
+:root[data-theme='dark'] .dashboard-stat-card p,
+:root[data-theme='dark'] .dashboard-habit-card p {
+  color: #eaf2ff;
+}
+
+:root[data-theme='dark'] .dashboard-home-search input::placeholder {
+  color: #95a9c8;
+}
+
+:root[data-theme='dark'] .dashboard-alert-btn strong {
+  border-color: #071b44;
+}
+
+:root[data-theme='dark'] .dashboard-quote-card {
+  background:
+    linear-gradient(90deg, #071b44 0%, rgba(7, 27, 68, 0.96) 42%, rgba(15, 48, 112, 0.78) 100%),
+    #071b44;
+}
+
+:root[data-theme='dark'] .dashboard-section-head,
+:root[data-theme='dark'] .dashboard-college-row {
+  border-color: rgba(64, 110, 172, 0.56);
+}
+
+:root[data-theme='dark'] .dashboard-college-row:hover {
+  background: rgba(44, 91, 172, 0.16);
+}
+
+:root[data-theme='dark'] .dashboard-mini-progress,
+:root[data-theme='dark'] .dashboard-college-progress {
+  background: rgba(223, 234, 255, 0.16);
 }
 
 .main-grid {
@@ -5502,6 +6105,7 @@ tbody tr.selected {
   .dashboard-layout.is-shell-entering .dashboard-sidebar,
   .dashboard-layout.is-shell-entering .topbar,
   .dashboard-layout.is-shell-entering .global-grid,
+  .dashboard-layout.is-shell-entering .dashboard-home,
   .dashboard-layout.is-shell-entering .main-grid,
   .dashboard-layout.is-shell-entering .flashcards-page,
   .dashboard-layout.is-shell-entering .colleges-page,
@@ -5525,6 +6129,19 @@ tbody tr.selected {
   }
 
   .large-card {
+    grid-column: span 2;
+  }
+
+  .dashboard-hero-row,
+  .dashboard-mid-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dashboard-habit-card {
     grid-column: span 2;
   }
 
@@ -5680,6 +6297,74 @@ tbody tr.selected {
   .habit-legend {
     flex-wrap: wrap;
     row-gap: 0.2rem;
+  }
+
+  .dashboard-home {
+    gap: 0.85rem;
+  }
+
+  .dashboard-hero-row {
+    gap: 0.75rem;
+  }
+
+  .dashboard-home-actions,
+  .dashboard-stat-grid,
+  .dashboard-mid-grid,
+  .dashboard-quote-card {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-habit-card {
+    grid-column: auto;
+  }
+
+  .dashboard-stat-card,
+  .dashboard-habit-card,
+  .dashboard-resume-card,
+  .dashboard-quote-card {
+    min-height: 0;
+  }
+
+  .dashboard-resume-row {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .dashboard-continue-btn {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .dashboard-mountain-art {
+    min-height: 120px;
+  }
+
+  .dashboard-college-row {
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      'icon meta percent'
+      'icon progress chevron';
+    gap: 0.45rem 0.75rem;
+  }
+
+  .dashboard-college-icon {
+    grid-area: icon;
+  }
+
+  .dashboard-college-meta {
+    grid-area: meta;
+  }
+
+  .dashboard-college-progress {
+    grid-area: progress;
+  }
+
+  .dashboard-college-percent {
+    grid-area: percent;
+  }
+
+  .dashboard-college-chevron {
+    grid-area: chevron;
+    justify-self: end;
   }
 
   .topbar {
