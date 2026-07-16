@@ -1578,6 +1578,7 @@ h3 {
 
 .dashboard-stat-card,
 .dashboard-habit-card,
+.dashboard-action-card,
 .dashboard-resume-card,
 .dashboard-quote-card,
 .dashboard-college-card {
@@ -1691,9 +1692,15 @@ h3 {
 }
 
 .dashboard-resume-card,
+.dashboard-action-card,
 .dashboard-quote-card {
   min-height: 154px;
   padding: 1.15rem;
+}
+
+.dashboard-action-card {
+  display: grid;
+  gap: 0.95rem;
 }
 
 .dashboard-resume-card {
@@ -1701,12 +1708,87 @@ h3 {
   gap: 1.2rem;
 }
 
+.dashboard-action-card h2,
 .dashboard-resume-card h2,
 .dashboard-college-card h2 {
   margin: 0;
   color: #0d1d37;
   font-size: 1.05rem;
   letter-spacing: 0;
+}
+
+.dashboard-action-card p {
+  margin: 0.35rem 0 0;
+  color: #536986;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.dashboard-action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.dashboard-action-tile {
+  min-width: 0;
+  min-height: 90px;
+  padding: 0.8rem;
+  border: 1px solid #dbe5f2;
+  border-radius: 10px;
+  background: #fff;
+  color: #0e203d;
+  text-align: left;
+  display: grid;
+  align-content: start;
+  gap: 0.32rem;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(34, 72, 125, 0.05);
+}
+
+.dashboard-action-tile:hover {
+  transform: translateY(-1px);
+  border-color: #bcd0ee;
+  box-shadow: 0 14px 26px rgba(34, 72, 125, 0.09);
+}
+
+.dashboard-action-tile > span {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.dashboard-action-tile strong {
+  margin-top: 0.15rem;
+  color: #0e203d;
+  font-size: 0.82rem;
+  line-height: 1.18;
+}
+
+.dashboard-action-tile small {
+  color: #657893;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.dashboard-action-quiz > span {
+  color: #1f65e6;
+  background: #eaf1ff;
+}
+
+.dashboard-action-items > span {
+  color: #13a968;
+  background: #e4f8ee;
+}
+
+.dashboard-action-flashcards > span {
+  color: #7d55f0;
+  background: #efeaff;
 }
 
 .dashboard-resume-card p {
@@ -2006,6 +2088,8 @@ h3 {
 
 :root[data-theme='dark'] .dashboard-title-block h1,
 :root[data-theme='dark'] .dashboard-stat-card strong,
+:root[data-theme='dark'] .dashboard-action-card h2,
+:root[data-theme='dark'] .dashboard-action-tile strong,
 :root[data-theme='dark'] .dashboard-resume-card h2,
 :root[data-theme='dark'] .dashboard-college-card h2,
 :root[data-theme='dark'] .dashboard-quote-copy p,
@@ -2018,6 +2102,8 @@ h3 {
 :root[data-theme='dark'] .dashboard-title-block p,
 :root[data-theme='dark'] .dashboard-stat-card span,
 :root[data-theme='dark'] .dashboard-stat-card small,
+:root[data-theme='dark'] .dashboard-action-card p,
+:root[data-theme='dark'] .dashboard-action-tile small,
 :root[data-theme='dark'] .dashboard-resume-card p,
 :root[data-theme='dark'] .dashboard-resume-row span:not(.dashboard-resume-icon),
 :root[data-theme='dark'] .dashboard-college-meta small,
@@ -2029,6 +2115,7 @@ h3 {
 :root[data-theme='dark'] .dashboard-alert-btn,
 :root[data-theme='dark'] .dashboard-stat-card,
 :root[data-theme='dark'] .dashboard-habit-card,
+:root[data-theme='dark'] .dashboard-action-card,
 :root[data-theme='dark'] .dashboard-resume-card,
 :root[data-theme='dark'] .dashboard-college-card {
   border-color: rgba(64, 110, 172, 0.62);
@@ -2045,6 +2132,17 @@ h3 {
 
 :root[data-theme='dark'] .dashboard-home-search input::placeholder {
   color: #95a9c8;
+}
+
+:root[data-theme='dark'] .dashboard-action-tile {
+  border-color: rgba(64, 110, 172, 0.62);
+  background: #0a214e;
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] .dashboard-action-tile:hover {
+  border-color: rgba(112, 154, 218, 0.74);
+  background: #0e2a5f;
 }
 
 :root[data-theme='dark'] .dashboard-alert-btn strong {
@@ -6320,9 +6418,14 @@ tbody tr.selected {
 
   .dashboard-stat-card,
   .dashboard-habit-card,
+  .dashboard-action-card,
   .dashboard-resume-card,
   .dashboard-quote-card {
     min-height: 0;
+  }
+
+  .dashboard-action-grid {
+    grid-template-columns: 1fr;
   }
 
   .dashboard-resume-row {

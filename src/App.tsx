@@ -4252,8 +4252,6 @@ function getPasswordStrengthMeta(password: string) {
       .sort((a, b) => a.item.totalReviews - b.item.totalReviews || a.item.itemNumber - b.item.itemNumber)
   }, [items])
 
-  const dashboardResumeItem = dashboardReviewQueue[0]?.item ?? items.find((item) => item.tracking.assignedColleges.length > 0) ?? null
-  const dashboardResumeCollege = dashboardResumeItem?.tracking.assignedColleges[0] ?? ''
   const dashboardDueCount = dashboardReviewQueue.length
   const dashboardDueMinutes = Math.max(5, dashboardDueCount * 2)
 
@@ -6352,36 +6350,41 @@ function getPasswordStrengthMeta(password: string) {
             </section>
 
             <section className="dashboard-mid-grid">
-              <article className="dashboard-resume-card">
+              <article className="dashboard-action-card">
                 <div>
-                  <h2>Prêt à avancer ?</h2>
-                  <p>Reprenez là où vous vous étiez arrêté.</p>
+                  <h2>Que voulez-vous faire aujourd’hui ?</h2>
+                  <p>Choisissez une action pour rester régulier.</p>
                 </div>
-                <div className="dashboard-resume-row">
-                  <span className="dashboard-resume-icon">
-                    {dashboardResumeCollege ? (
-                      <CollegeHealthIcon college={dashboardResumeCollege} showTitle={false} />
-                    ) : (
-                      <span aria-hidden="true">▣</span>
-                    )}
-                  </span>
-                  <div>
-                    <strong>{dashboardResumeCollege ? getFlashCollegeDisplayName(dashboardResumeCollege) : 'Aucun collège'}</strong>
-                    <span>{dashboardResumeItem?.shortDescription ?? 'Aucun item à reprendre pour le moment.'}</span>
-                  </div>
+                <div className="dashboard-action-grid">
                   <button
                     type="button"
-                    className="dashboard-continue-btn"
-                    disabled={!dashboardResumeItem}
+                    className="dashboard-action-tile dashboard-action-quiz"
                     onClick={() => {
-                      if (!dashboardResumeItem) {
-                        return
-                      }
-                      setActiveView('items')
-                      setSelectedItemId(dashboardResumeItem.itemNumber)
+                      setActiveView('flashcards')
+                      jumpToQuizGeneratorSetup()
                     }}
                   >
-                    ▶ Continuer
+                    <span aria-hidden="true">▷</span>
+                    <strong>Lancer un quiz</strong>
+                    <small>Testez vos connaissances</small>
+                  </button>
+                  <button type="button" className="dashboard-action-tile dashboard-action-items" onClick={() => setActiveView('items')}>
+                    <span aria-hidden="true">☷</span>
+                    <strong>Réviser mes items</strong>
+                    <small>Reprenez là où vous en étiez</small>
+                  </button>
+                  <button
+                    type="button"
+                    className="dashboard-action-tile dashboard-action-flashcards"
+                    onClick={() => {
+                      setActiveView('flashcards')
+                      setFlashGeneratorScope('items')
+                      jumpToQuizGeneratorSetup()
+                    }}
+                  >
+                    <span aria-hidden="true">▣</span>
+                    <strong>Créer des flashcards</strong>
+                    <small>Transformez vos notions</small>
                   </button>
                 </div>
               </article>
