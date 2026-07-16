@@ -2526,7 +2526,7 @@ h3 {
 
 .flashcards-toolbar {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(190px, 0.36fr) minmax(210px, 0.42fr) auto;
+  grid-template-columns: minmax(260px, 1fr) minmax(170px, 0.32fr) minmax(190px, 0.36fr) auto auto;
   gap: 1.05rem;
   align-items: center;
 }
@@ -2534,7 +2534,8 @@ h3 {
 .flashcards-search,
 .flashcards-toolbar-select,
 .flashcards-random-btn,
-.flashcards-view-switch {
+.flashcards-view-switch,
+.flashcards-create-btn {
   min-height: 52px;
   border: 1px solid #dbe4f2;
   border-radius: 10px;
@@ -2593,6 +2594,26 @@ h3 {
   font-weight: 800;
   cursor: pointer;
   white-space: nowrap;
+}
+
+.flashcards-create-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.52rem;
+  padding: 0 1rem;
+  color: #fff;
+  background: #2f68e8;
+  border-color: #2f68e8;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 14px 28px rgba(47, 104, 232, 0.18);
+}
+
+.flashcards-create-btn:hover {
+  background: #245bd1;
+  color: #fff;
 }
 
 .flashcards-college-grid {
@@ -3024,6 +3045,17 @@ h3 {
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
 }
 
+:root[data-theme='dark'] .flashcards-create-btn {
+  border-color: #3f7af0;
+  background: #2f68e8;
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(8, 22, 55, 0.32);
+}
+
+:root[data-theme='dark'] .flashcards-create-btn:hover {
+  background: #245bd1;
+}
+
 :root[data-theme='dark'] .flashcards-field span,
 :root[data-theme='dark'] .flashcards-search-icon {
   color: #9fb4dc;
@@ -3171,6 +3203,49 @@ h3 {
   display: flex;
   justify-content: space-between;
   gap: 0.5rem;
+}
+
+.flash-create-modal {
+  width: min(780px, 100%);
+}
+
+.flash-create-form {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.flash-create-item-context {
+  margin-top: -0.35rem;
+  padding: 0 0.2rem;
+}
+
+.flash-create-item-context p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.78rem;
+  line-height: 1.35;
+}
+
+.flash-create-editor {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.flash-create-editor > span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.flash-create-error {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  border: 1px solid #f2b8b8;
+  border-radius: 10px;
+  background: #fff2f2;
+  color: #b42318;
+  font-size: 0.82rem;
+  font-weight: 700;
 }
 
 .flash-generator-recap {
@@ -6454,7 +6529,8 @@ tbody tr.selected {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .flashcards-random-btn {
+  .flashcards-random-btn,
+  .flashcards-create-btn {
     width: 100%;
   }
 
@@ -6811,7 +6887,8 @@ tbody tr.selected {
   }
 
   .flashcards-generator-btn,
-  .flashcards-random-btn {
+  .flashcards-random-btn,
+  .flashcards-create-btn {
     width: 100%;
   }
 

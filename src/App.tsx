@@ -2181,6 +2181,11 @@ function App() {
   const [flashGeneratedSide, setFlashGeneratedSide] = useState<'front' | 'back'>('front')
   const [flashGeneratedFeedback, setFlashGeneratedFeedback] = useState<QuizResult | null>(null)
   const [flashGeneratedSessionResults, setFlashGeneratedSessionResults] = useState<Record<string, QuizResult>>({})
+  const [flashCreateModalOpen, setFlashCreateModalOpen] = useState(false)
+  const [flashCreateItemNumber, setFlashCreateItemNumber] = useState<number>(() => rawItems[0]?.itemNumber ?? 0)
+  const [flashCreateQuestion, setFlashCreateQuestion] = useState('')
+  const [flashCreateAnswer, setFlashCreateAnswer] = useState('')
+  const [flashCreateError, setFlashCreateError] = useState('')
   const backupInputRef = useRef<HTMLInputElement | null>(null)
   const [hasLoadedRemoteState, setHasLoadedRemoteState] = useState(false)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
@@ -4612,6 +4617,68 @@ function getPasswordStrengthMeta(password: string) {
     setFlashGeneratorStep(1)
   }
 
+  function openFlashcardCreator(itemNumber?: number) {
+    const fallbackItemNumber = itemNumber ?? items[0]?.itemNumber ?? rawItems[0]?.itemNumber ?? 0
+    setActiveView('flashcards')
+    setFlashCreateItemNumber(fallbackItemNumber)
+    setFlashCreateQuestion('')
+    setFlashCreateAnswer('')
+    setFlashCreateError('')
+    setFlashCreateModalOpen(true)
+  }
+
+  function closeFlashcardCreator() {
+    setFlashCreateModalOpen(false)
+    setFlashCreateError('')
+  }
+
+  function createFlashcardFromFlashcardsPage() {
+    const targetItem = items.find((item) => item.itemNumber === flashCreateItemNumber)
+    if (!targetItem) {
+      setFlashCreateError('Sélectionnez un item avant de créer la flashcard.')
+      return
+    }
+
+    const question = sanitizeQuizRichTextHtml(flashCreateQuestion)
+    const answer = sanitizeQuizRichTextHtml(flashCreateAnswer)
+    if (!hasQuizRichTextContent(question)) {
+      setFlashCreateError('La question est obligatoire.')
+      return
+    }
+    if (!hasQuizRichTextContent(answer)) {
+      setFlashCreateError('La réponse est obligatoire.')
+      return
+    }
+
+    const newCard = makeQuizCard({ question, answer })
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[targetItem.itemNumber] ?? getDefaultItemTracking())
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [targetItem.itemNumber]: {
+            ...itemTracking,
+            quiz: {
+              ...itemTracking.quiz,
+              enabled: true,
+              cards: [...itemTracking.quiz.cards, newCard],
+              activeCardId: newCard.id,
+            },
+          },
+        },
+      }
+    })
+
+    setFlashDisplayMode('items')
+    setFlashCardsListCollege(null)
+    setFlashCardsListItem(targetItem.itemNumber)
+    setFlashCreateQuestion('')
+    setFlashCreateAnswer('')
+    setFlashCreateError('')
+    setFlashCreateModalOpen(false)
+  }
+
   function toggleFlashFeeling(feeling: FlashFeelingFilter) {
     setFlashSelectedFeelings((current) =>
       current.includes(feeling) ? current.filter((entry) => entry !== feeling) : [...current, feeling],
@@ -6384,9 +6451,7 @@ function getPasswordStrengthMeta(password: string) {
                     type="button"
                     className="dashboard-action-tile dashboard-action-flashcards"
                     onClick={() => {
-                      setActiveView('flashcards')
-                      setFlashGeneratorScope('items')
-                      jumpToQuizGeneratorSetup()
+                      openFlashcardCreator()
                     }}
                   >
                     <span aria-hidden="true">▣</span>
@@ -8029,7 +8094,96 @@ function getPasswordStrengthMeta(password: string) {
               <span aria-hidden="true">{flashDisplayMode === 'colleges' ? '☷' : '◉'}</span>
               {flashDisplayMode === 'colleges' ? 'Afficher par items' : 'Afficher par collèges'}
             </button>
+            <button type="button" className="flashcards-create-btn" onClick={() => openFlashcardCreator()}>
+              <span aria-hidden="true">＋</span>
+              Créer une flashcard
+            </button>
           </div>
+          {flashCreateModalOpen ? (
+            <div className="flash-generator-modal-overlay" role="presentation" onClick={closeFlashcardCreator}>
+              <div
+                className="flash-generator-modal flash-create-modal"
+                role="dialog"
+                aria-modal="true"
+                aria-label="Créer une flashcard"
+                onClick={(event) => event.stopPropagation()}
+              >
+                <div className="flash-generator-modal-head">
+                  <h3>Créer une flashcard</h3>
+                  <p>Associez obligatoirement la carte à un item.</p>
+                  <button type="button" className="ghost-btn" onClick={closeFlashcardCreator}>
+                    Fermer
+                  </button>
+                </div>
+                <div className="flash-create-form">
+                  <label className="flashcards-field">
+                    <span>Item associé</span>
+                    <select
+                      value={String(flashCreateItemNumber)}
+                      onChange={(event) => {
+                        setFlashCreateItemNumber(Number(event.target.value))
+                        setFlashCreateError('')
+                      }}
+                    >
+                      {items.map((item) => (
+                        <option key={`flash-create-item-${item.itemNumber}`} value={String(item.itemNumber)}>
+                          Item #{item.itemNumber} - {item.shortDescription}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <div className="flash-create-item-context">
+                    {items.find((item) => item.itemNumber === flashCreateItemNumber)?.tracking.assignedColleges.length ? (
+                      <p>
+                        Collèges :{' '}
+                        {items
+                          .find((item) => item.itemNumber === flashCreateItemNumber)
+                          ?.tracking.assignedColleges.map(getFlashCollegeDisplayName)
+                          .join(', ')}
+                      </p>
+                    ) : (
+                      <p>Aucun collège associé à cet item pour le moment.</p>
+                    )}
+                  </div>
+                  <div className="flash-create-editor">
+                    <span>Question</span>
+                    <QuizRichTextEditor
+                      value={flashCreateQuestion}
+                      placeholder="Écrivez la question de la flashcard..."
+                      onChange={(value) => {
+                        setFlashCreateQuestion(value)
+                        setFlashCreateError('')
+                      }}
+                    />
+                  </div>
+                  <div className="flash-create-editor">
+                    <span>Réponse</span>
+                    <QuizRichTextEditor
+                      value={flashCreateAnswer}
+                      placeholder="Écrivez la réponse attendue..."
+                      onChange={(value) => {
+                        setFlashCreateAnswer(value)
+                        setFlashCreateError('')
+                      }}
+                    />
+                  </div>
+                  {flashCreateError ? <p className="flash-create-error">{flashCreateError}</p> : null}
+                </div>
+                <div className="flash-generator-modal-nav">
+                  <button type="button" className="ghost-btn" onClick={closeFlashcardCreator}>
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-btn flashcards-generator-btn"
+                    onClick={createFlashcardFromFlashcardsPage}
+                  >
+                    Créer la flashcard
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
           {flashGeneratorModalOpen ? (
             <div className="flash-generator-modal-overlay" role="presentation" onClick={() => setFlashGeneratorModalOpen(false)}>
               <div className="flash-generator-modal" role="dialog" aria-modal="true" aria-label="Générateur de quiz" onClick={(event) => event.stopPropagation()}>
