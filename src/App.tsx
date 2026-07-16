@@ -18,6 +18,7 @@ import navFlashcardsIcon from './assets/nav/flashcards.svg'
 import navInsightsIcon from './assets/nav/insights.svg'
 import navItemsIcon from './assets/nav/items.svg'
 import logoutIcon from './assets/nav/logout.svg'
+import dashboardMountainBg from './assets/dashboard-mountain-bg.png'
 import anatomyIcon from 'healthicons/public/icons/svg/outline/devices/microscope.svg?raw'
 import anesthesiaIcon from 'healthicons/public/icons/svg/outline/ppe/ppe_face_mask.svg?raw'
 import cancerIcon from 'healthicons/public/icons/svg/outline/conditions/ribbon.svg?raw'
@@ -6391,18 +6392,14 @@ function getPasswordStrengthMeta(password: string) {
                 </div>
               </article>
 
-              <article className="dashboard-quote-card">
+              <article
+                className="dashboard-quote-card"
+                style={{ '--dashboard-quote-bg': `url(${dashboardMountainBg})` } as CSSProperties}
+              >
                 <div className="dashboard-quote-copy">
                   <span aria-hidden="true">“</span>
                   <p>La constance d’aujourd’hui est la réussite de demain.</p>
                   <small>— Avance chaque jour</small>
-                </div>
-                <div className="dashboard-mountain-art" aria-hidden="true">
-                  <span className="mountain mountain-back" />
-                  <span className="mountain mountain-mid" />
-                  <span className="mountain mountain-front" />
-                  <span className="mountain-road" />
-                  <span className="mountain-flag" />
                 </div>
               </article>
             </section>
