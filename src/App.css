@@ -4639,6 +4639,37 @@ tbody tr.selected {
   background: color-mix(in oklab, var(--accent) 8%, var(--input-bg));
 }
 
+.flashcard-editor-duplicate-icon {
+  position: relative;
+}
+
+.flashcard-editor-duplicate-icon::before,
+.flashcard-editor-duplicate-icon::after {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-radius: 3px;
+  background: var(--input-bg);
+}
+
+.flashcard-editor-duplicate-icon::before {
+  top: 12px;
+  left: 14px;
+  opacity: 0.72;
+}
+
+.flashcard-editor-duplicate-icon::after {
+  top: 16px;
+  left: 19px;
+}
+
+.flashcard-editor-action:hover .flashcard-editor-duplicate-icon::before,
+.flashcard-editor-action:hover .flashcard-editor-duplicate-icon::after {
+  background: color-mix(in oklab, var(--accent) 8%, var(--input-bg));
+}
+
 .flashcard-editor-action.danger {
   color: #dc2626;
 }

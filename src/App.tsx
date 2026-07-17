@@ -7923,7 +7923,7 @@ function getPasswordStrengthMeta(password: string) {
                       className="flashcard-editor-action"
                       onClick={() => duplicateQuizCard(quizItem.itemNumber, activeQuizCard.id)}
                     >
-                      <span aria-hidden="true">▣</span>
+                      <span className="flashcard-editor-duplicate-icon" aria-hidden="true" />
                       Dupliquer
                     </button>
                     <button type="button" className="flashcard-editor-action danger" onClick={removeActiveQuizCardWithConfirm}>
