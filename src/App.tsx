@@ -543,6 +543,20 @@ function sanitizeQuizRichTextHtml(input: string) {
       return
     }
 
+    if (tagName === 'UL') {
+      const list = target.createElement('ul')
+      Array.from(element.childNodes).forEach((child) => appendSanitizedNode(list, child))
+      parent.appendChild(list)
+      return
+    }
+
+    if (tagName === 'LI') {
+      const listItem = target.createElement('li')
+      Array.from(element.childNodes).forEach((child) => appendSanitizedNode(listItem, child))
+      parent.appendChild(listItem)
+      return
+    }
+
     if (tagName === 'DIV' || tagName === 'P') {
       const block = target.createElement('div')
       Array.from(element.childNodes).forEach((child) => appendSanitizedNode(block, child))
@@ -645,10 +659,15 @@ function hasQuizRichTextContent(value: string) {
 function applyQuizRichTextCommand(
   editor: HTMLDivElement,
   command:
-    | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' }
+    | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' | 'bulletList' }
     | { type: 'color'; value: string },
 ) {
   editor.focus({ preventScroll: true })
+  if (command.type === 'bulletList') {
+    document.execCommand('insertUnorderedList')
+    return
+  }
+
   const range = getEditorRange(editor)
   if (!range || range.collapsed) {
     return
@@ -855,7 +874,7 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
       return
     }
     const range = getEditorRange(editor)
-    if (!range || range.collapsed) {
+    if (!range) {
       return
     }
     lastSelectionRangeRef.current = range.cloneRange()
@@ -878,7 +897,7 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
 
   const runCommand = (
     command:
-      | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' }
+      | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' | 'bulletList' }
       | { type: 'color'; value: string },
   ) => {
     const editor = editorRef.current
@@ -886,6 +905,12 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
       return
     }
     restoreSelectionRange()
+    if (command.type === 'bulletList') {
+      applyQuizRichTextCommand(editor, command)
+      syncValue({ commitDom: true })
+      saveSelectionRange()
+      return
+    }
     if (!hasSelectedEditorText(editor)) {
       editor.focus({ preventScroll: true })
       return
@@ -899,7 +924,7 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
   const runToolbarCommand = (
     event: ReactMouseEvent<HTMLButtonElement>,
     command:
-      | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' }
+      | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' | 'bulletList' }
       | { type: 'color'; value: string },
   ) => {
     event.preventDefault()
@@ -955,6 +980,9 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
         </button>
         <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'highlight' })}>
           Surligner
+        </button>
+        <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'bulletList' })}>
+          Puces
         </button>
         <button
           type="button"

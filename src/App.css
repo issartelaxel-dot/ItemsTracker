@@ -4831,6 +4831,16 @@ tbody tr.selected {
   font-weight: 800;
 }
 
+.quiz-rich-editable ul {
+  margin: 0.35rem 0 0.35rem 1.15rem;
+  padding-left: 0.9rem;
+}
+
+.quiz-rich-editable li {
+  margin: 0.16rem 0;
+  padding-left: 0.1rem;
+}
+
 .quiz-rich-bold-text {
   font-weight: 800 !important;
 }
@@ -4888,6 +4898,16 @@ tbody tr.selected {
 .quiz-rich-rendered > div + p,
 .quiz-rich-rendered > p + div {
   margin-top: 0.35rem;
+}
+
+.quiz-rich-rendered ul {
+  margin: 0.35rem 0 0.35rem 1.15rem;
+  padding-left: 0.9rem;
+}
+
+.quiz-rich-rendered li {
+  margin: 0.16rem 0;
+  padding-left: 0.1rem;
 }
 
 .quiz-rich-rendered strong {
