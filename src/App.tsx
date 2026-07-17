@@ -1046,6 +1046,7 @@ const FLASH_FEELING_LABELS: Record<FlashFeelingFilter, string> = {
   good: 'Facile',
   easy: 'Très facile',
 }
+const UNRATED_FEELING_LABEL = 'Non évalué'
 
 function getMasteryFeelingLabel(mastery: Mastery) {
   if (mastery === 'Mauvais') return 'À revoir'
@@ -6674,7 +6675,7 @@ function getPasswordStrengthMeta(password: string) {
                       <td>
                         <span className={`item-mastery-pill ${masteryToneClass}`}>
                           {item.tracking.itemMastery === 'Non évalué'
-                            ? FLASH_FEELING_LABELS.none
+                            ? UNRATED_FEELING_LABEL
                             : getMasteryFeelingLabel(item.tracking.itemMastery)}
                         </span>
                       </td>
@@ -6774,7 +6775,9 @@ function getPasswordStrengthMeta(password: string) {
                       )
                     }
                   >
-                    <option value="Non évalué">{FLASH_FEELING_LABELS.none}</option>
+                    {effectiveSelectedItem.tracking.itemMastery === 'Non évalué' ? (
+                      <option value="Non évalué">{UNRATED_FEELING_LABEL}</option>
+                    ) : null}
                     {MASTERY_LEVELS.map((level) => (
                       <option key={level} value={level}>
                         {getMasteryFeelingLabel(level)}
