@@ -6713,8 +6713,10 @@ tbody tr.selected {
 }
 
 .item-detail-panel .quiz-trigger-btn {
+  flex: 0 0 auto;
   min-width: 116px;
   justify-content: center;
+  padding-left: 2.22rem;
 }
 
 .item-detail-icon-btn {
@@ -7178,6 +7180,7 @@ tbody tr.selected {
 }
 
 .item-detail-panel .quiz-trigger-btn {
+  min-width: 148px;
   border-radius: 8px;
   background: linear-gradient(135deg, #6554e8, #7e47d7);
   border-color: #6d5deb;
