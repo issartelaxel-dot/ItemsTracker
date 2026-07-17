@@ -6721,20 +6721,31 @@ tbody tr.selected {
 }
 
 .item-detail-stat-grid {
-  grid-template-columns: repeat(6, minmax(112px, 1fr));
-  gap: 0.5rem;
+  grid-template-columns: repeat(5, minmax(112px, 1fr));
+  gap: 0;
   margin: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-bg);
+  overflow: hidden;
+  box-shadow: 0 10px 24px color-mix(in oklab, var(--shadow) 30%, transparent);
 }
 
 .item-detail-stat-grid > div {
   min-width: 0;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 0.6rem 0.68rem;
-  background: var(--panel-bg);
-  box-shadow: 0 10px 24px color-mix(in oklab, var(--shadow) 50%, transparent);
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.54rem 0.66rem;
+  background: transparent;
+  box-shadow: none;
 }
 
+.item-detail-stat-grid > div:last-child {
+  border-right: 0;
+}
+
+.item-detail-stat-value,
 .item-detail-stat-grid p:not(.meta-label) {
   margin: 0;
   font-size: 1.05rem;
@@ -7167,7 +7178,7 @@ tbody tr.selected {
 }
 
 .item-detail-stat-grid {
-  grid-template-columns: repeat(6, minmax(104px, 1fr));
+  grid-template-columns: repeat(5, minmax(104px, 1fr));
   border: 1px solid var(--border);
   border-radius: 12px;
   gap: 0;
@@ -7206,6 +7217,11 @@ tbody tr.selected {
   background: color-mix(in oklab, var(--selected) 68%, white);
 }
 
+.item-detail-feeling-stat .item-detail-stat-icon {
+  color: #16a34a;
+  background: color-mix(in oklab, #dcfce7 78%, var(--panel-bg));
+}
+
 .item-detail-stat-grid .meta-label {
   grid-area: label;
   margin: 0.12rem 0 0;
@@ -7215,9 +7231,37 @@ tbody tr.selected {
   letter-spacing: 0;
 }
 
+.item-detail-stat-value {
+  grid-area: value;
+}
+
 .item-detail-stat-grid p:not(.meta-label) {
   grid-area: value;
   font-size: 0.86rem;
+}
+
+.item-detail-stat-select {
+  grid-area: value;
+  min-height: 24px;
+  width: 100%;
+  max-width: 128px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  box-shadow: none;
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.item-detail-stat-select.manual-item-mastery-select {
+  border-color: transparent;
+  background: transparent;
+}
+
+.item-detail-stat-select:focus {
+  outline: 2px solid color-mix(in oklab, var(--accent) 35%, transparent);
+  outline-offset: 2px;
 }
 
 .item-detail-stat-grid small {

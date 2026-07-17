@@ -6921,14 +6921,7 @@ function getPasswordStrengthMeta(password: string) {
               <div className="meta-grid item-detail-stat-grid">
                 <div>
                   <span className="item-detail-stat-icon" aria-hidden="true">▥</span>
-                  <p className="meta-label">Collèges</p>
-                  <p>{effectiveSelectedItem.tracking.assignedColleges.length || 0}</p>
-                  <small>{effectiveSelectedItem.tagLabels.join(', ') || 'Aucun collège'}</small>
-                </div>
-                <div>
-                  <span className="item-detail-stat-icon" aria-hidden="true">▥</span>
-                  <p className="meta-label">Révisions</p>
-                  <p>
+                  <p className="item-detail-stat-value">
                     {effectiveSelectedItem.totalReviews +
                       effectiveSelectedItem.tracking.lisaSheets.reduce(
                         (sum, sheet) => sum + sheet.tracking.reviews,
@@ -6939,35 +6932,50 @@ function getPasswordStrengthMeta(password: string) {
                         0,
                       )}
                   </p>
-                  <small>Total item et ressources</small>
+                  <p className="meta-label">Révisions</p>
                 </div>
                 <div>
                   <span className="item-detail-stat-icon" aria-hidden="true">□</span>
+                  <p className="item-detail-stat-value">{formatDate(effectiveSelectedItem.lastReviewDate)}</p>
                   <p className="meta-label">Dernière révision</p>
-                  <p>{formatDate(effectiveSelectedItem.lastReviewDate)}</p>
-                  <small>Dernier passage</small>
                 </div>
-                <div>
+                <div className="item-detail-feeling-stat">
                   <span className="item-detail-stat-icon" aria-hidden="true">☺</span>
+                  <select
+                    className={`item-detail-stat-select manual-item-mastery-select ${
+                      effectiveSelectedItem.tracking.itemMastery === 'Non évalué'
+                        ? 'none'
+                        : `mastery-${normalizeText(effectiveSelectedItem.tracking.itemMastery).toLowerCase().replace(' ', '-')}`
+                    }`}
+                    value={effectiveSelectedItem.tracking.itemMastery}
+                    onChange={(event) =>
+                      updateItemMastery(
+                        effectiveSelectedItem.itemNumber,
+                        (event.target.value as Mastery | 'Non évalué') ?? 'Non évalué',
+                      )
+                    }
+                    aria-label="Ajuster le ressenti manuel"
+                  >
+                    {effectiveSelectedItem.tracking.itemMastery === 'Non évalué' ? (
+                      <option value="Non évalué">{UNRATED_FEELING_LABEL}</option>
+                    ) : null}
+                    {MASTERY_LEVELS.map((level) => (
+                      <option key={level} value={level}>
+                        {getMasteryFeelingLabel(level)}
+                      </option>
+                    ))}
+                  </select>
                   <p className="meta-label">Ressenti manuel</p>
-                  <p>
-                    {effectiveSelectedItem.tracking.itemMastery === 'Non évalué'
-                      ? UNRATED_FEELING_LABEL
-                      : getMasteryFeelingLabel(effectiveSelectedItem.tracking.itemMastery)}
-                  </p>
-                  <small>Évaluation globale</small>
                 </div>
                 <div>
                   <span className="item-detail-stat-icon" aria-hidden="true">▱</span>
+                  <p className="item-detail-stat-value">{effectiveSelectedItem.tracking.lisaSheets.length + effectiveSelectedItem.tracking.platformSheets.length}</p>
                   <p className="meta-label">Ressources</p>
-                  <p>{effectiveSelectedItem.tracking.lisaSheets.length + effectiveSelectedItem.tracking.platformSheets.length}</p>
-                  <small>Fiches liées</small>
                 </div>
                 <div>
                   <span className="item-detail-stat-icon" aria-hidden="true">▣</span>
-                  <p className="meta-label">Flashcards</p>
-                  <p>{effectiveSelectedItem.tracking.quiz.cards.length}</p>
-                  <small>Cartes créées</small>
+                  <p className="item-detail-stat-value">{effectiveSelectedItem.tracking.quiz.cards.length}</p>
+                  <p className="meta-label">Cartes</p>
                 </div>
               </div>
 
