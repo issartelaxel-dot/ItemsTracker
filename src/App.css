@@ -6281,6 +6281,7 @@ tbody tr.selected {
 }
 
 .quiz-card-select,
+.quiz-card-edit,
 .quiz-card-remove,
 .quiz-card-add {
   border: 1px solid var(--border);
@@ -6300,6 +6301,11 @@ tbody tr.selected {
 
 .quiz-card-remove {
   color: #b33a3a;
+}
+
+.quiz-card-edit {
+  color: color-mix(in oklab, var(--accent) 72%, var(--text));
+  font-weight: 700;
 }
 
 .quiz-card-add {
@@ -6894,7 +6900,7 @@ tbody tr.selected {
 
 .item-detail-side-column .quiz-card-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: minmax(0, 1fr) auto auto auto;
 }
 
 .item-detail-side-column .quiz-card-select {
@@ -7223,6 +7229,53 @@ tbody tr.selected {
   padding: 0.78rem;
   margin-top: -0.82rem;
   background: var(--panel-bg);
+}
+
+.item-detail-tab-panel {
+  display: none !important;
+}
+
+.item-detail-tab-overview .item-detail-tab-panel-overview,
+.item-detail-tab-resources .item-detail-tab-panel-resources,
+.item-detail-tab-flashcards .item-detail-tab-panel-flashcards,
+.item-detail-tab-tracking .item-detail-tab-panel-tracking,
+.item-detail-tab-assignments .item-detail-tab-panel-assignments {
+  display: revert !important;
+}
+
+.item-detail-tab-overview label.item-detail-tab-panel-overview,
+.item-detail-tab-resources label.item-detail-tab-panel-resources,
+.item-detail-tab-tracking label.item-detail-tab-panel-tracking,
+.item-detail-tab-assignments label.item-detail-tab-panel-assignments {
+  display: grid !important;
+}
+
+.item-detail-tab-resources label.checkline.item-detail-tab-panel-resources {
+  display: flex !important;
+}
+
+.item-detail-tab-overview .item-detail-card.item-detail-tab-panel-overview,
+.item-detail-tab-resources .item-detail-card.item-detail-tab-panel-resources,
+.item-detail-tab-flashcards .item-detail-card.item-detail-tab-panel-flashcards,
+.item-detail-tab-tracking .item-detail-card.item-detail-tab-panel-tracking,
+.item-detail-tab-assignments .item-detail-card.item-detail-tab-panel-assignments,
+.item-detail-tab-resources .reference-grid.item-detail-tab-panel-resources,
+.item-detail-tab-tracking .tracking-grid.item-detail-tab-panel-tracking,
+.item-detail-tab-assignments .college-picker.item-detail-tab-panel-assignments {
+  display: grid !important;
+}
+
+.item-detail-tab-resources,
+.item-detail-tab-flashcards,
+.item-detail-tab-tracking,
+.item-detail-tab-assignments {
+  grid-template-columns: 1fr;
+}
+
+.item-detail-tab-flashcards .item-detail-main-column,
+.item-detail-tab-tracking .item-detail-main-column,
+.item-detail-tab-assignments .item-detail-main-column {
+  display: none;
 }
 
 .item-detail-card,
