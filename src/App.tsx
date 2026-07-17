@@ -1205,6 +1205,10 @@ function getFlashCollegeDisplayName(college: string) {
 
 const rawItems = itemsData as ItemBase[]
 
+function getFlashCreateItemLabel(item: ItemBase) {
+  return `Item #${item.itemNumber} - ${item.shortDescription}`
+}
+
 function normalizeText(value: string) {
   return value
     .normalize('NFD')
@@ -2182,7 +2186,8 @@ function App() {
   const [flashGeneratedFeedback, setFlashGeneratedFeedback] = useState<QuizResult | null>(null)
   const [flashGeneratedSessionResults, setFlashGeneratedSessionResults] = useState<Record<string, QuizResult>>({})
   const [flashCreateModalOpen, setFlashCreateModalOpen] = useState(false)
-  const [flashCreateItemNumber, setFlashCreateItemNumber] = useState<number>(() => rawItems[0]?.itemNumber ?? 0)
+  const [flashCreateItemNumber, setFlashCreateItemNumber] = useState<number | null>(null)
+  const [flashCreateItemSearch, setFlashCreateItemSearch] = useState('')
   const [flashCreateQuestion, setFlashCreateQuestion] = useState('')
   const [flashCreateAnswer, setFlashCreateAnswer] = useState('')
   const [flashCreateError, setFlashCreateError] = useState('')
@@ -3622,6 +3627,37 @@ function getPasswordStrengthMeta(password: string) {
     })
   }, [trackingState])
 
+  const flashCreateSelectedItem = useMemo(() => {
+    return items.find((item) => item.itemNumber === flashCreateItemNumber) ?? null
+  }, [flashCreateItemNumber, items])
+
+  const flashCreateItemResults = useMemo(() => {
+    const normalizedSearch = normalizeText(flashCreateItemSearch)
+    if (!normalizedSearch) {
+      return []
+    }
+
+    return items
+      .filter((item) => {
+        const searchable = normalizeText(
+          [
+            String(item.itemNumber),
+            item.shortDescription,
+            item.tagCodes.join(' '),
+            item.tagLabels.join(' '),
+            item.tracking.assignedColleges.map(getFlashCollegeDisplayName).join(' '),
+          ].join(' '),
+        )
+        return searchable.includes(normalizedSearch)
+      })
+      .slice(0, 8)
+  }, [flashCreateItemSearch, items])
+
+  const flashCreateSearchMatchesSelection = Boolean(
+    flashCreateSelectedItem &&
+      normalizeText(flashCreateItemSearch) === normalizeText(getFlashCreateItemLabel(flashCreateSelectedItem)),
+  )
+
   const filteredAndSortedItems = useMemo(() => {
     const normalizedSearch = normalizeText(search)
 
@@ -4618,9 +4654,10 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   function openFlashcardCreator(itemNumber?: number) {
-    const fallbackItemNumber = itemNumber ?? items[0]?.itemNumber ?? rawItems[0]?.itemNumber ?? 0
+    const preselectedItem = typeof itemNumber === 'number' ? items.find((item) => item.itemNumber === itemNumber) : null
     setActiveView('flashcards')
-    setFlashCreateItemNumber(fallbackItemNumber)
+    setFlashCreateItemNumber(preselectedItem?.itemNumber ?? null)
+    setFlashCreateItemSearch(preselectedItem ? getFlashCreateItemLabel(preselectedItem) : '')
     setFlashCreateQuestion('')
     setFlashCreateAnswer('')
     setFlashCreateError('')
@@ -4632,10 +4669,16 @@ function getPasswordStrengthMeta(password: string) {
     setFlashCreateError('')
   }
 
+  function selectFlashCreateItem(item: ItemComputed) {
+    setFlashCreateItemNumber(item.itemNumber)
+    setFlashCreateItemSearch(getFlashCreateItemLabel(item))
+    setFlashCreateError('')
+  }
+
   function createFlashcardFromFlashcardsPage() {
     const targetItem = items.find((item) => item.itemNumber === flashCreateItemNumber)
     if (!targetItem) {
-      setFlashCreateError('Sélectionnez un item avant de créer la flashcard.')
+      setFlashCreateError('Recherchez et sélectionnez un item avant de créer la flashcard.')
       return
     }
 
@@ -8116,30 +8159,62 @@ function getPasswordStrengthMeta(password: string) {
                   </button>
                 </div>
                 <div className="flash-create-form">
-                  <label className="flashcards-field">
+                  <div className="flashcards-field flash-create-item-picker">
                     <span>Item associé</span>
-                    <select
-                      value={String(flashCreateItemNumber)}
+                    <input
+                      type="search"
+                      value={flashCreateItemSearch}
+                      placeholder="Rechercher un item par numéro, titre ou collège..."
                       onChange={(event) => {
-                        setFlashCreateItemNumber(Number(event.target.value))
+                        setFlashCreateItemSearch(event.target.value)
+                        setFlashCreateItemNumber(null)
                         setFlashCreateError('')
                       }}
-                    >
-                      {items.map((item) => (
-                        <option key={`flash-create-item-${item.itemNumber}`} value={String(item.itemNumber)}>
-                          Item #{item.itemNumber} - {item.shortDescription}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' && flashCreateItemResults[0]) {
+                          event.preventDefault()
+                          selectFlashCreateItem(flashCreateItemResults[0])
+                        }
+                      }}
+                    />
+                    {flashCreateItemSearch.trim() && !flashCreateSearchMatchesSelection ? (
+                      <div className="flash-create-item-results" role="listbox" aria-label="Résultats de recherche d'items">
+                        {flashCreateItemResults.length ? (
+                          flashCreateItemResults.map((item) => (
+                            <button
+                              key={`flash-create-item-result-${item.itemNumber}`}
+                              type="button"
+                              className="flash-create-item-result"
+                              onClick={() => selectFlashCreateItem(item)}
+                            >
+                              <strong>Item #{item.itemNumber}</strong>
+                              <span>{item.shortDescription}</span>
+                              {item.tracking.assignedColleges.length ? (
+                                <small>{item.tracking.assignedColleges.map(getFlashCollegeDisplayName).join(', ')}</small>
+                              ) : null}
+                            </button>
+                          ))
+                        ) : (
+                          <p className="flash-create-item-empty">Aucun item trouvé.</p>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                  {flashCreateSelectedItem ? (
+                    <div className="flash-create-selected-item">
+                      <span>Item sélectionné</span>
+                      <strong>
+                        Item #{flashCreateSelectedItem.itemNumber} - {flashCreateSelectedItem.shortDescription}
+                      </strong>
+                    </div>
+                  ) : null}
                   <div className="flash-create-item-context">
-                    {items.find((item) => item.itemNumber === flashCreateItemNumber)?.tracking.assignedColleges.length ? (
+                    {!flashCreateSelectedItem ? (
+                      <p>Recherchez puis sélectionnez l’item à associer à cette flashcard.</p>
+                    ) : flashCreateSelectedItem.tracking.assignedColleges.length ? (
                       <p>
                         Collèges :{' '}
-                        {items
-                          .find((item) => item.itemNumber === flashCreateItemNumber)
-                          ?.tracking.assignedColleges.map(getFlashCollegeDisplayName)
-                          .join(', ')}
+                        {flashCreateSelectedItem.tracking.assignedColleges.map(getFlashCollegeDisplayName).join(', ')}
                       </p>
                     ) : (
                       <p>Aucun collège associé à cet item pour le moment.</p>

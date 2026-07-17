@@ -3224,6 +3224,108 @@ h3 {
   gap: 0.85rem;
 }
 
+.flash-create-item-picker {
+  position: relative;
+  min-width: 0;
+}
+
+.flash-create-item-picker input {
+  min-width: 0;
+  width: 100%;
+}
+
+.flash-create-item-results {
+  display: grid;
+  gap: 0.35rem;
+  max-height: 230px;
+  overflow: auto;
+  margin-top: 0.45rem;
+  padding: 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 16px 34px rgba(34, 57, 104, 0.12);
+}
+
+.flash-create-item-result {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  display: grid;
+  gap: 0.12rem;
+  padding: 0.55rem 0.65rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.flash-create-item-result:hover,
+.flash-create-item-result:focus-visible {
+  border-color: rgba(47, 111, 230, 0.28);
+  background: rgba(47, 111, 230, 0.08);
+  outline: none;
+}
+
+.flash-create-item-result strong,
+.flash-create-item-result span,
+.flash-create-item-result small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.flash-create-item-result strong {
+  color: var(--accent);
+  font-size: 0.82rem;
+}
+
+.flash-create-item-result span {
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.flash-create-item-result small {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.flash-create-item-empty {
+  margin: 0;
+  padding: 0.55rem 0.65rem;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.flash-create-selected-item {
+  min-width: 0;
+  display: grid;
+  gap: 0.24rem;
+  padding: 0.68rem 0.76rem;
+  border: 1px solid rgba(47, 111, 230, 0.22);
+  border-radius: 14px;
+  background: rgba(47, 111, 230, 0.06);
+}
+
+.flash-create-selected-item span {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.flash-create-selected-item strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: 0.9rem;
+}
+
 .flash-create-item-context {
   margin-top: -0.35rem;
   padding: 0 0.2rem;
