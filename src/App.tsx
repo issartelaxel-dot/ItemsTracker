@@ -69,7 +69,7 @@ type SheetColor = 'jaune' | 'rouge' | 'vert' | 'vertfonce'
 type SheetKind = 'lisaSheets' | 'platformSheets'
 type QuizAnimationStyle = 'flip' | 'fade'
 type RewardIntensity = 'low' | 'medium' | 'high'
-type QuizResult = 'again' | 'hard' | 'good' | 'easy'
+type QuizResult = 'again' | 'hard' | 'medium' | 'good' | 'easy'
 type QuizImageSlot = 'front' | 'back'
 type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'stats'
 type FlashGeneratorScope = 'items' | 'colleges'
@@ -122,6 +122,7 @@ type QuizCard = {
   hasFrontImageDataUrl: boolean
   backImageDataUrl: string
   hasBackImageDataUrl: boolean
+  personalNotes: string
   lastResult: QuizResult | null
   quizCount: number
   lastReviewedAt: string | null
@@ -204,6 +205,7 @@ type GlobalFlashcard = {
   hasFrontImageDataUrl: boolean
   backImageDataUrl: string
   hasBackImageDataUrl: boolean
+  personalNotes: string
   lastResult: QuizResult | null
   colleges: string[]
   quizCount: number
@@ -1063,14 +1065,16 @@ const QUIZ_RESULT_META: Record<
 > = {
   again: { label: 'À revoir', mastery: 'Mauvais', icon: '❌', actionVerb: 'à revoir', rewardTone: 'neutral' },
   hard: { label: 'Difficile', mastery: 'Moyen', icon: '⚠️', actionVerb: 'difficile', rewardTone: 'neutral' },
-  good: { label: 'Facile', mastery: 'Bon', icon: '✅', actionVerb: 'facile', rewardTone: 'good' },
+  medium: { label: 'Moyen', mastery: 'Bon', icon: '⊖', actionVerb: 'moyen', rewardTone: 'neutral' },
+  good: { label: 'Facile', mastery: 'Très bon', icon: '✅', actionVerb: 'facile', rewardTone: 'good' },
   easy: { label: 'Très facile', mastery: 'Parfait', icon: '⚡', actionVerb: 'très facile', rewardTone: 'easy' },
 }
 
 const FLASH_FEELING_LABELS: Record<FlashFeelingFilter, string> = {
-  none: 'Moyen',
+  none: 'Non évalué',
   again: 'À revoir',
   hard: 'Difficile',
+  medium: 'Moyen',
   good: 'Facile',
   easy: 'Très facile',
 }
@@ -1394,6 +1398,7 @@ function makeQuizCard(partial?: Partial<QuizCard>): QuizCard {
     hasFrontImageDataUrl: Boolean(partial?.hasFrontImageDataUrl) || Boolean(frontImageDataUrl),
     backImageDataUrl,
     hasBackImageDataUrl: Boolean(partial?.hasBackImageDataUrl) || legacyHasBackImageDataUrl || Boolean(backImageDataUrl),
+    personalNotes: typeof partial?.personalNotes === 'string' ? partial.personalNotes : '',
     lastResult: isQuizResult(partial?.lastResult) ? partial.lastResult : null,
     quizCount: Number.isFinite(rawCount) ? Math.max(0, Math.floor(rawCount)) : 0,
     lastReviewedAt: typeof partial?.lastReviewedAt === 'string' ? partial.lastReviewedAt : null,
@@ -1454,7 +1459,7 @@ function makeReferenceSheet(): ReferenceSheet {
 }
 
 function isQuizResult(value: unknown): value is QuizResult {
-  return value === 'again' || value === 'hard' || value === 'good' || value === 'easy'
+  return value === 'again' || value === 'hard' || value === 'medium' || value === 'good' || value === 'easy'
 }
 
 function normalizeItemTracking(tracking?: Partial<ItemTracking>): ItemTracking {
@@ -2202,6 +2207,7 @@ function App() {
     'none',
     'again',
     'hard',
+    'medium',
     'good',
     'easy',
   ])
@@ -3924,6 +3930,7 @@ function getPasswordStrengthMeta(password: string) {
         hasFrontImageDataUrl: card.hasFrontImageDataUrl,
         backImageDataUrl: card.backImageDataUrl,
         hasBackImageDataUrl: card.hasBackImageDataUrl,
+        personalNotes: card.personalNotes,
         lastResult: card.lastResult,
         colleges: item.tracking.assignedColleges,
         quizCount: card.quizCount,
@@ -4110,6 +4117,7 @@ function getPasswordStrengthMeta(password: string) {
     const resultCounts = {
       easy: collegeFlashcards.filter((card) => card.lastResult === 'easy').length,
       good: collegeFlashcards.filter((card) => card.lastResult === 'good').length,
+      medium: collegeFlashcards.filter((card) => card.lastResult === 'medium').length,
       none: collegeFlashcards.filter((card) => card.lastResult === null).length,
       hard: collegeFlashcards.filter((card) => card.lastResult === 'hard').length,
       again: collegeFlashcards.filter((card) => card.lastResult === 'again').length,
@@ -4120,7 +4128,7 @@ function getPasswordStrengthMeta(password: string) {
         ? null
         : scoredCards.reduce((sum, card) => {
             const feeling = card.lastResult ?? 'again'
-            const value: Record<QuizResult, number> = { again: 1, hard: 2, good: 4, easy: 5 }
+            const value: Record<QuizResult, number> = { again: 1, hard: 2, medium: 3, good: 4, easy: 5 }
             return sum + value[feeling]
           }, 0) / scoredCards.length
     const globalFeeling =
@@ -4759,7 +4767,7 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   function applyWeakPriorityPreset() {
-    setFlashSelectedFeelings(['none', 'again', 'hard'])
+    setFlashSelectedFeelings(['none', 'again', 'hard', 'medium'])
     setFlashPrioritizeWeak(true)
   }
 
@@ -4795,8 +4803,9 @@ function getPasswordStrengthMeta(password: string) {
       none: 0,
       again: 1,
       hard: 2,
-      good: 3,
-      easy: 4,
+      medium: 3,
+      good: 4,
+      easy: 5,
     }
 
     const ranked = config.randomize
@@ -4841,7 +4850,7 @@ function getPasswordStrengthMeta(password: string) {
 
   function startCollegeGeneratedQuiz(college: string, options?: { randomize?: boolean }) {
     const selectedFeelings: FlashFeelingFilter[] =
-      flashCollegeLevelFilter === 'ALL' ? ['none', 'again', 'hard', 'good', 'easy'] : [flashCollegeLevelFilter]
+      flashCollegeLevelFilter === 'ALL' ? ['none', 'again', 'hard', 'medium', 'good', 'easy'] : [flashCollegeLevelFilter]
     const keys = buildQuizGeneratorCardKeys({
       scope: 'colleges',
       selectedItems: [],
@@ -4863,7 +4872,7 @@ function getPasswordStrengthMeta(password: string) {
 
   function startItemGeneratedQuiz(itemNumber: number, options?: { randomize?: boolean }) {
     const selectedFeelings: FlashFeelingFilter[] =
-      flashCollegeLevelFilter === 'ALL' ? ['none', 'again', 'hard', 'good', 'easy'] : [flashCollegeLevelFilter]
+      flashCollegeLevelFilter === 'ALL' ? ['none', 'again', 'hard', 'medium', 'good', 'easy'] : [flashCollegeLevelFilter]
     const keys = buildQuizGeneratorCardKeys({
       scope: 'items',
       selectedItems: [itemNumber],
@@ -5451,6 +5460,7 @@ function getPasswordStrengthMeta(password: string) {
         hasFrontImageDataUrl: sourceCard.hasFrontImageDataUrl,
         backImageDataUrl: sourceCard.backImageDataUrl,
         hasBackImageDataUrl: sourceCard.hasBackImageDataUrl,
+        personalNotes: sourceCard.personalNotes,
       })
       const cards = [...itemTracking.quiz.cards]
       cards.splice(sourceIndex + 1, 0, duplicatedCard)
@@ -7987,6 +7997,9 @@ function getPasswordStrengthMeta(password: string) {
                         )
                       }
                     />
+                    <p className="flashcard-editor-char-count">
+                      {getQuizRichTextPlainText(quizSide === 'front' ? activeQuizCard.question : activeQuizCard.answer).length} / 500
+                    </p>
                   </div>
                   <aside className="flashcard-editor-image-panel">
                     <p className="flashcard-editor-section-label">
@@ -8038,6 +8051,13 @@ function getPasswordStrengthMeta(password: string) {
                     <span aria-hidden="true">▤</span>
                     Notes personnelles <small>(optionnel)</small>
                   </summary>
+                  <textarea
+                    value={activeQuizCard.personalNotes}
+                    placeholder="Ajoutez ici des notes personnelles sur cette carte..."
+                    onChange={(event) =>
+                      updateQuizCard(quizItem.itemNumber, activeQuizCard.id, { personalNotes: event.target.value })
+                    }
+                  />
                 </details>
 
                 <div className="flashcard-editor-footer">
@@ -8055,7 +8075,7 @@ function getPasswordStrengthMeta(password: string) {
                     <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleQuizResult('hard')}>
                       ⚠ Difficile
                     </button>
-                    <button type="button" className="ghost-btn quiz-rate-btn medium" disabled title="Le résultat Moyen sera disponible dans une prochaine version.">
+                    <button type="button" className="ghost-btn quiz-rate-btn medium" onClick={() => handleQuizResult('medium')}>
                       ⊖ Moyen
                     </button>
                     <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleQuizResult('good')}>
@@ -8203,6 +8223,9 @@ function getPasswordStrengthMeta(password: string) {
                   <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleQuizResult('hard')}>
                     ⚠️ Difficile
                   </button>
+                  <button type="button" className="ghost-btn quiz-rate-btn medium" onClick={() => handleQuizResult('medium')}>
+                    ⊖ Moyen
+                  </button>
                   <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleQuizResult('good')}>
                     ✅ Facile
                   </button>
@@ -8282,6 +8305,7 @@ function getPasswordStrengthMeta(password: string) {
                   <option value="none">{FLASH_FEELING_LABELS.none}</option>
                   <option value="again">{FLASH_FEELING_LABELS.again}</option>
                   <option value="hard">{FLASH_FEELING_LABELS.hard}</option>
+                  <option value="medium">{FLASH_FEELING_LABELS.medium}</option>
                   <option value="good">{FLASH_FEELING_LABELS.good}</option>
                   <option value="easy">{FLASH_FEELING_LABELS.easy}</option>
                 </select>
@@ -8311,6 +8335,7 @@ function getPasswordStrengthMeta(password: string) {
               <option value="none">{FLASH_FEELING_LABELS.none}</option>
               <option value="again">{FLASH_FEELING_LABELS.again}</option>
               <option value="hard">{FLASH_FEELING_LABELS.hard}</option>
+              <option value="medium">{FLASH_FEELING_LABELS.medium}</option>
               <option value="good">{FLASH_FEELING_LABELS.good}</option>
               <option value="easy">{FLASH_FEELING_LABELS.easy}</option>
             </select>
@@ -8553,7 +8578,7 @@ function getPasswordStrengthMeta(password: string) {
                         type="button"
                         className="ghost-btn"
                         onClick={() => {
-                          setFlashSelectedFeelings(['none', 'again', 'hard', 'good', 'easy'])
+                          setFlashSelectedFeelings(['none', 'again', 'hard', 'medium', 'good', 'easy'])
                           setFlashPrioritizeWeak(false)
                         }}
                       >
@@ -8569,6 +8594,9 @@ function getPasswordStrengthMeta(password: string) {
                       </button>
                       <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('hard') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('hard')}>
                         Difficile
+                      </button>
+                      <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('medium') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('medium')}>
+                        {FLASH_FEELING_LABELS.medium}
                       </button>
                       <button type="button" className={`ghost-btn ${flashSelectedFeelings.includes('good') ? 'active' : ''}`} onClick={() => toggleFlashFeeling('good')}>
                         {FLASH_FEELING_LABELS.good}
@@ -8685,6 +8713,9 @@ function getPasswordStrengthMeta(password: string) {
                           </button>
                           <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleGeneratedFlashResult('hard')}>
                             ⚠️ Difficile
+                          </button>
+                          <button type="button" className="ghost-btn quiz-rate-btn medium" onClick={() => handleGeneratedFlashResult('medium')}>
+                            ⊖ Moyen
                           </button>
                           <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleGeneratedFlashResult('good')}>
                             ✅ Facile
@@ -9145,7 +9176,7 @@ function getPasswordStrengthMeta(password: string) {
                     {[
                       ['☺', 'Très facile', selectedCollegeDetailData.resultCounts.easy, 'very-easy'],
                       ['☺', 'Facile', selectedCollegeDetailData.resultCounts.good, 'easy'],
-                      ['☻', 'Moyen', selectedCollegeDetailData.resultCounts.none, 'medium'],
+                      ['☻', 'Moyen', selectedCollegeDetailData.resultCounts.medium, 'medium'],
                       ['☹', 'Difficile', selectedCollegeDetailData.resultCounts.hard, 'hard'],
                       ['☹', 'À revoir', selectedCollegeDetailData.resultCounts.again, 'again'],
                     ].map(([icon, label, count, tone]) => (
