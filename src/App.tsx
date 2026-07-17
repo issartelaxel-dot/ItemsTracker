@@ -4565,9 +4565,9 @@ function getPasswordStrengthMeta(password: string) {
     }, 360)
   }
 
-  function openQuiz(itemNumber: number, cardId?: string) {
+  function openQuiz(itemNumber: number, cardId?: string, options: { allowDisabled?: boolean } = {}) {
     const item = items.find((entry) => entry.itemNumber === itemNumber)
-    if (!item || !item.tracking.quiz.enabled) {
+    if (!item || (!item.tracking.quiz.enabled && !options.allowDisabled)) {
       return
     }
     if (cardId && item.tracking.quiz.activeCardId !== cardId) {
@@ -7205,10 +7205,10 @@ function getPasswordStrengthMeta(password: string) {
                           }`}
                             title={getQuizRichTextPlainText(card.question) || `Carte ${index + 1}`}
                             onClick={() => {
-                              setQuizSide('front')
                               updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
                                 activeCardId: card.id,
                               })
+                              openQuiz(effectiveSelectedItem.itemNumber, card.id, { allowDisabled: true })
                             }}
                           >
                             {getQuizCardButtonLabel(card, index)}
