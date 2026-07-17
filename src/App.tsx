@@ -72,7 +72,7 @@ type RewardIntensity = 'low' | 'medium' | 'high'
 type QuizResult = 'again' | 'hard' | 'medium' | 'good' | 'easy'
 type QuizImageSlot = 'front' | 'back'
 type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'stats'
-type ItemDetailTab = 'overview' | 'resources' | 'flashcards' | 'tracking' | 'assignments'
+type ItemDetailTab = 'tracking' | 'resources' | 'flashcards' | 'assignments'
 type FlashGeneratorScope = 'items' | 'colleges'
 type FlashDisplayMode = 'colleges' | 'items'
 type FlashFeelingFilter = 'none' | QuizResult
@@ -2263,7 +2263,7 @@ function App() {
   const [imageLightboxSrc, setImageLightboxSrc] = useState<string | null>(null)
   const [imageLightboxAlt, setImageLightboxAlt] = useState('Image')
   const [quizPulseByItem, setQuizPulseByItem] = useState<Record<number, number>>({})
-  const [itemDetailTab, setItemDetailTab] = useState<ItemDetailTab>('overview')
+  const [itemDetailTab, setItemDetailTab] = useState<ItemDetailTab>('tracking')
   const [reviewFx, setReviewFx] = useState<Record<string, { delta: number; id: number }>>({})
   const [starFx, setStarFx] = useState<Record<string, number>>({})
   const [masteryFx, setMasteryFx] = useState<Record<string, number>>({})
@@ -3840,7 +3840,7 @@ function getPasswordStrengthMeta(password: string) {
       setUsefulLinkInputError('')
       return
     }
-    setItemDetailTab('overview')
+    setItemDetailTab('tracking')
     setYoutubeInput(effectiveSelectedItem.tracking.youtubeUrl)
     setYoutubeInputError('')
     setUsefulLinkInput(effectiveSelectedItem.tracking.usefulLinkUrl)
@@ -6862,16 +6862,15 @@ function getPasswordStrengthMeta(password: string) {
               </div>
 
                 <div className="item-detail-tabs" aria-label="Navigation détail item">
-                  <button type="button" className={itemDetailTab === 'overview' ? 'active' : ''} onClick={() => setItemDetailTab('overview')}>Vue d’ensemble</button>
+                  <button type="button" className={itemDetailTab === 'tracking' ? 'active' : ''} onClick={() => setItemDetailTab('tracking')}>Suivi des révisions</button>
                   <button type="button" className={itemDetailTab === 'resources' ? 'active' : ''} onClick={() => setItemDetailTab('resources')}>Ressources</button>
                   <button type="button" className={itemDetailTab === 'flashcards' ? 'active' : ''} onClick={() => setItemDetailTab('flashcards')}>Flashcards & Quiz</button>
-                  <button type="button" className={itemDetailTab === 'tracking' ? 'active' : ''} onClick={() => setItemDetailTab('tracking')}>Suivi</button>
                   <button type="button" className={itemDetailTab === 'assignments' ? 'active' : ''} onClick={() => setItemDetailTab('assignments')}>Assignations</button>
                 </div>
 
                 <div id="item-detail-overview" className={`item-detail-content-grid item-detail-tab-${itemDetailTab}`}>
                 <div className="item-detail-main-column">
-                    <label className="block-label item-detail-card item-detail-upcoming-card item-detail-tab-panel item-detail-tab-panel-overview">
+                    <label className="block-label item-detail-card item-detail-upcoming-card item-detail-tab-panel item-detail-tab-panel-tracking">
                     Prochaine(s) lecture(s)
                     <textarea
                       value={effectiveSelectedItem.tracking.itemComment}
@@ -6880,7 +6879,7 @@ function getPasswordStrengthMeta(password: string) {
                     />
                   </label>
 
-                    <div id="item-detail-resources" className="inline-accordion item-detail-card item-detail-video-card item-detail-tab-panel item-detail-tab-panel-overview item-detail-tab-panel-resources">
+                    <div id="item-detail-resources" className="inline-accordion item-detail-card item-detail-video-card item-detail-tab-panel item-detail-tab-panel-resources">
                     <button
                       type="button"
                       className={`inline-accordion-head ${youtubeSectionOpen ? 'open' : ''}`}
@@ -7020,7 +7019,7 @@ function getPasswordStrengthMeta(password: string) {
                   </div>
 
                 <aside className="item-detail-side-column">
-                    <div className="inline-accordion item-detail-card item-detail-tab-panel item-detail-tab-panel-overview">
+                    <div className="inline-accordion item-detail-card item-detail-tab-panel item-detail-tab-panel-tracking">
                     <button
                       type="button"
                       className={`inline-accordion-head ${itemVisualSectionOpen ? 'open' : ''}`}
@@ -7115,7 +7114,7 @@ function getPasswordStrengthMeta(password: string) {
                     ) : null}
                   </div>
 
-                    <div className="item-detail-card item-detail-mastery-card item-detail-tab-panel item-detail-tab-panel-overview item-detail-tab-panel-tracking">
+                    <div className="item-detail-card item-detail-mastery-card item-detail-tab-panel item-detail-tab-panel-tracking">
                     <h3>Ressenti manuel</h3>
                     <select
                       className={`manual-item-mastery-select ${
@@ -7506,9 +7505,9 @@ function getPasswordStrengthMeta(password: string) {
                 })}
               </div>
 
-                <h3 className="item-detail-tab-panel item-detail-tab-panel-resources">Fiches LISA</h3>
+                <h3 className="item-detail-tab-panel item-detail-tab-panel-tracking">Fiches LISA</h3>
                 {effectiveSelectedItem.tracking.lisaSheets.length === 0 ? (
-                  <label className="checkline item-detail-tab-panel item-detail-tab-panel-resources">
+                  <label className="checkline item-detail-tab-panel item-detail-tab-panel-tracking">
                   <input
                     type="checkbox"
                     checked={effectiveSelectedItem.tracking.noLisaSheets}
@@ -7519,7 +7518,7 @@ function getPasswordStrengthMeta(password: string) {
                   PAS de fiche lisa
                 </label>
               ) : null}
-                <div className="reference-grid item-detail-tab-panel item-detail-tab-panel-resources">
+                <div className="reference-grid item-detail-tab-panel item-detail-tab-panel-tracking">
                 {effectiveSelectedItem.tracking.lisaSheets.length === 0 ? (
                   <p className="muted">Aucune fiche LISA.</p>
                 ) : null}
@@ -7702,9 +7701,9 @@ function getPasswordStrengthMeta(password: string) {
                 </button>
               </div>
 
-                <h3 className="item-detail-tab-panel item-detail-tab-panel-resources">Fiches Plateformes</h3>
+                <h3 className="item-detail-tab-panel item-detail-tab-panel-tracking">Fiches Plateformes</h3>
                 {effectiveSelectedItem.tracking.platformSheets.length === 0 ? (
-                  <label className="checkline item-detail-tab-panel item-detail-tab-panel-resources">
+                  <label className="checkline item-detail-tab-panel item-detail-tab-panel-tracking">
                   <input
                     type="checkbox"
                     checked={effectiveSelectedItem.tracking.noPlatformSheets}
@@ -7715,7 +7714,7 @@ function getPasswordStrengthMeta(password: string) {
                   PAS de fiche plateformes
                 </label>
               ) : null}
-                <div className="reference-grid item-detail-tab-panel item-detail-tab-panel-resources">
+                <div className="reference-grid item-detail-tab-panel item-detail-tab-panel-tracking">
                 {effectiveSelectedItem.tracking.platformSheets.length === 0 ? (
                   <p className="muted">Aucune fiche plateforme.</p>
                 ) : null}

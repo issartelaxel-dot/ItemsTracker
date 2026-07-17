@@ -7235,7 +7235,6 @@ tbody tr.selected {
   display: none !important;
 }
 
-.item-detail-tab-overview .item-detail-tab-panel-overview,
 .item-detail-tab-resources .item-detail-tab-panel-resources,
 .item-detail-tab-flashcards .item-detail-tab-panel-flashcards,
 .item-detail-tab-tracking .item-detail-tab-panel-tracking,
@@ -7243,23 +7242,22 @@ tbody tr.selected {
   display: revert !important;
 }
 
-.item-detail-tab-overview label.item-detail-tab-panel-overview,
 .item-detail-tab-resources label.item-detail-tab-panel-resources,
 .item-detail-tab-tracking label.item-detail-tab-panel-tracking,
 .item-detail-tab-assignments label.item-detail-tab-panel-assignments {
   display: grid !important;
 }
 
-.item-detail-tab-resources label.checkline.item-detail-tab-panel-resources {
+.item-detail-tab-resources label.checkline.item-detail-tab-panel-resources,
+.item-detail-tab-tracking label.checkline.item-detail-tab-panel-tracking {
   display: flex !important;
 }
 
-.item-detail-tab-overview .item-detail-card.item-detail-tab-panel-overview,
 .item-detail-tab-resources .item-detail-card.item-detail-tab-panel-resources,
 .item-detail-tab-flashcards .item-detail-card.item-detail-tab-panel-flashcards,
 .item-detail-tab-tracking .item-detail-card.item-detail-tab-panel-tracking,
 .item-detail-tab-assignments .item-detail-card.item-detail-tab-panel-assignments,
-.item-detail-tab-resources .reference-grid.item-detail-tab-panel-resources,
+.item-detail-tab-tracking .reference-grid.item-detail-tab-panel-tracking,
 .item-detail-tab-tracking .tracking-grid.item-detail-tab-panel-tracking,
 .item-detail-tab-assignments .college-picker.item-detail-tab-panel-assignments {
   display: grid !important;
@@ -7267,13 +7265,12 @@ tbody tr.selected {
 
 .item-detail-tab-resources,
 .item-detail-tab-flashcards,
-.item-detail-tab-tracking,
 .item-detail-tab-assignments {
   grid-template-columns: 1fr;
 }
 
+.item-detail-tab-resources .item-detail-side-column,
 .item-detail-tab-flashcards .item-detail-main-column,
-.item-detail-tab-tracking .item-detail-main-column,
 .item-detail-tab-assignments .item-detail-main-column {
   display: none;
 }
