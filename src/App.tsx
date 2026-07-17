@@ -5435,6 +5435,45 @@ function getPasswordStrengthMeta(password: string) {
     })
   }
 
+  function duplicateQuizCard(itemNumber: number, cardId: string) {
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      const sourceIndex = itemTracking.quiz.cards.findIndex((card) => card.id === cardId)
+      const sourceCard = itemTracking.quiz.cards[sourceIndex]
+      if (!sourceCard) {
+        return current
+      }
+
+      const duplicatedCard = makeQuizCard({
+        question: sourceCard.question,
+        answer: sourceCard.answer,
+        frontImageDataUrl: sourceCard.frontImageDataUrl,
+        hasFrontImageDataUrl: sourceCard.hasFrontImageDataUrl,
+        backImageDataUrl: sourceCard.backImageDataUrl,
+        hasBackImageDataUrl: sourceCard.hasBackImageDataUrl,
+      })
+      const cards = [...itemTracking.quiz.cards]
+      cards.splice(sourceIndex + 1, 0, duplicatedCard)
+
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: {
+            ...itemTracking,
+            quiz: {
+              ...itemTracking.quiz,
+              cards,
+              activeCardId: duplicatedCard.id,
+            },
+          },
+        },
+      }
+    })
+    setQuizSide('front')
+    setQuizEditMode(true)
+  }
+
   function updateQuizCard(itemNumber: number, cardId: string, patch: Partial<QuizCard>) {
     setTrackingState((current) => {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
@@ -7839,239 +7878,363 @@ function getPasswordStrengthMeta(password: string) {
 
       {quizItem ? (
         <div className="quiz-modal-backdrop" onClick={closeQuiz}>
-          <div className="quiz-modal" onClick={(event) => event.stopPropagation()}>
-            <div className="quiz-modal-head">
-              <h3>Quiz item #{quizItem.itemNumber}</h3>
-              <div className="quiz-head-actions">
-                <span className="quiz-card-counter">
-                  {Math.max(
-                    1,
-                    quizItem.tracking.quiz.cards.findIndex((card) => card.id === quizItem.tracking.quiz.activeCardId) + 1,
-                  )}
-                  /{Math.max(1, quizItem.tracking.quiz.cards.length)}
-                </span>
-                <button
-                  type="button"
-                  className="ghost-btn quiz-manage-btn"
-                  onClick={() => {
-                    addQuizCard(quizItem.itemNumber)
-                    setQuizSide('front')
-                    setQuizEditMode(true)
-                  }}
-                  title="Créer une flashcard"
-                >
-                  ➕
-                </button>
-                <button
-                  type="button"
-                  className={`ghost-btn quiz-manage-btn ${quizEditMode ? 'active' : ''}`}
-                  onClick={() => setQuizEditMode((current) => !current)}
-                  title="Modifier la flashcard"
-                >
-                  ✏️
-                </button>
-                <button
-                  type="button"
-                  className="ghost-btn quiz-manage-btn danger"
-                  onClick={removeActiveQuizCardWithConfirm}
-                  title="Supprimer la flashcard"
-                >
-                  🗑️
-                </button>
-                <button type="button" className="ghost-btn" onClick={() => navigateQuizCard('prev')}>
-                  ←
-                </button>
-                <button type="button" className="ghost-btn" onClick={() => navigateQuizCard('next')}>
-                  →
-                </button>
-                <button type="button" className="ghost-btn" onClick={closeQuiz}>
-                  Close
-                </button>
-              </div>
-            </div>
-
-            <div
-              className={`quiz-flashcard ${quizItem.tracking.quiz.animationStyle} ${
-                quizSide === 'back' ? 'is-back' : 'is-front'
-              }`}
-              onClick={() => setQuizSide((current) => (current === 'front' ? 'back' : 'front'))}
-            >
-              <div className="quiz-face quiz-front">
-                <p className="quiz-face-label">
-                  <span>Question</span>
-                  {quizCurrentCardFeeling ? (
-                    <span className={`quiz-face-feeling ${quizCurrentCardFeeling.toneClass}`}>
-                      Feeling: {quizCurrentCardFeeling.label}
-                    </span>
-                  ) : null}
-                </p>
-                <div className="quiz-face-body">
-                  <div
-                    className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizQuestion))} quiz-rich-rendered`}
-                    dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizQuestion) }}
-                  />
-                  {activeQuizCard?.frontImageDataUrl ? (
-                    <img
-                      className="quiz-face-media"
-                      src={activeQuizCard.frontImageDataUrl}
-                      alt="Illustration du recto"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        openImageLightbox(activeQuizCard.frontImageDataUrl, 'Illustration du recto')
-                      }}
-                    />
-                  ) : (
-                    <span className="quiz-face-media-placeholder" aria-hidden="true">IMG</span>
-                  )}
-                </div>
-              </div>
-              <div className="quiz-face quiz-back">
-                <p className="quiz-face-label">Réponse</p>
-                <div className="quiz-face-body">
-                  <div
-                    className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizAnswer))} quiz-rich-rendered`}
-                    dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizAnswer) }}
-                  />
-                  {activeQuizCard?.backImageDataUrl ? (
-                    <img
-                      className="quiz-face-media"
-                      src={activeQuizCard.backImageDataUrl}
-                      alt="Illustration du verso"
-                      onClick={(event) => {
-                        event.stopPropagation()
-                        openImageLightbox(activeQuizCard.backImageDataUrl, 'Illustration du verso')
-                      }}
-                    />
-                  ) : (
-                    <span className="quiz-face-media-placeholder" aria-hidden="true">IMG</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
+          <div className={`quiz-modal ${quizEditMode && activeQuizCard ? 'flashcard-editor-modal' : ''}`} onClick={(event) => event.stopPropagation()}>
             {quizEditMode && activeQuizCard ? (
-              <div className="quiz-modal-editor">
-                <label className="block-label">
-                  Question
-                  <QuizRichTextEditor
-                    placeholder="Question de la flashcard..."
-                    value={activeQuizCard.question}
-                    onChange={(value) => updateQuizCard(quizItem.itemNumber, activeQuizCard.id, { question: value })}
-                  />
-                </label>
-                <label className="block-label">
-                  Réponse
-                  <QuizRichTextEditor
-                    placeholder="Réponse de la flashcard..."
-                    value={activeQuizCard.answer}
-                    onChange={(value) => updateQuizCard(quizItem.itemNumber, activeQuizCard.id, { answer: value })}
-                  />
-                </label>
-                <label className="block-label">
-                  Image recto (max 1 MB)
-                  <div className="quiz-file-input-row">
+              <>
+                <div className="flashcard-editor-head">
+                  <div className="flashcard-editor-title">
+                    <h3>
+                      Flashcard #
+                      {Math.max(
+                        1,
+                        quizItem.tracking.quiz.cards.findIndex((card) => card.id === activeQuizCard.id) + 1,
+                      )}
+                    </h3>
+                    <p>Édition du {quizSide === 'front' ? 'recto' : 'verso'}</p>
+                  </div>
+                  <span className="flashcard-editor-counter">
+                    {Math.max(
+                      1,
+                      quizItem.tracking.quiz.cards.findIndex((card) => card.id === activeQuizCard.id) + 1,
+                    )}{' '}
+                    / {Math.max(1, quizItem.tracking.quiz.cards.length)}
+                  </span>
+                  <div className="flashcard-editor-actions">
+                    <button type="button" className="flashcard-editor-action" onClick={() => navigateQuizCard('prev')}>
+                      <span aria-hidden="true">←</span>
+                      Précédente
+                    </button>
+                    <button type="button" className="flashcard-editor-action" onClick={() => navigateQuizCard('next')}>
+                      <span aria-hidden="true">→</span>
+                      Suivante
+                    </button>
                     <button
                       type="button"
-                      className="ghost-btn quiz-file-picker-btn"
-                      onClick={() => openQuizCardImagePicker(quizItem.itemNumber, activeQuizCard.id, 'front')}
+                      className="flashcard-editor-action"
+                      onClick={() => duplicateQuizCard(quizItem.itemNumber, activeQuizCard.id)}
                     >
-                      Choose File
+                      <span aria-hidden="true">▣</span>
+                      Dupliquer
                     </button>
-                    {quizImageErrors.front ? (
-                      <span className="quiz-file-name quiz-file-name-error">{quizImageErrors.front}</span>
-                    ) : quizImageFileNames.front ? (
-                      <span className="quiz-file-name">{quizImageFileNames.front}</span>
-                    ) : null}
-                  </div>
-                </label>
-                <label className="block-label">
-                  Image verso (max 1 MB)
-                  <div className="quiz-file-input-row">
-                    <button
-                      type="button"
-                      className="ghost-btn quiz-file-picker-btn"
-                      onClick={() => openQuizCardImagePicker(quizItem.itemNumber, activeQuizCard.id, 'back')}
-                    >
-                      Choose File
+                    <button type="button" className="flashcard-editor-action danger" onClick={removeActiveQuizCardWithConfirm}>
+                      <span aria-hidden="true">⌫</span>
+                      Supprimer
                     </button>
-                    {quizImageErrors.back ? (
-                      <span className="quiz-file-name quiz-file-name-error">{quizImageErrors.back}</span>
-                    ) : quizImageFileNames.back ? (
-                      <span className="quiz-file-name">{quizImageFileNames.back}</span>
-                    ) : null}
+                    <button type="button" className="flashcard-editor-action" onClick={closeQuiz}>
+                      <span aria-hidden="true">×</span>
+                      Fermer
+                    </button>
                   </div>
-                </label>
-                <div className="quiz-card-media-actions">
+                </div>
+
+                <div className="flashcard-editor-tabs" role="tablist" aria-label="Face de la flashcard">
                   <button
                     type="button"
-                    className="ghost-btn"
-                    onClick={() => {
-                      setQuizImageFeedback('front', { fileName: '', error: '' })
-                      updateQuizCard(quizItem.itemNumber, activeQuizCard.id, getQuizCardImagePatch('front', '', false))
-                    }}
-                    disabled={!activeQuizCard.frontImageDataUrl && !activeQuizCard.hasFrontImageDataUrl}
+                    className={quizSide === 'front' ? 'active' : ''}
+                    onClick={() => setQuizSide('front')}
                   >
-                    Retirer image recto
+                    <span aria-hidden="true">▱</span>
+                    Recto
                   </button>
                   <button
                     type="button"
-                    className="ghost-btn"
-                    onClick={() => {
-                      setQuizImageFeedback('back', { fileName: '', error: '' })
-                      updateQuizCard(quizItem.itemNumber, activeQuizCard.id, getQuizCardImagePatch('back', '', false))
-                    }}
-                    disabled={!activeQuizCard.backImageDataUrl && !activeQuizCard.hasBackImageDataUrl}
+                    className={quizSide === 'back' ? 'active' : ''}
+                    onClick={() => setQuizSide('back')}
                   >
-                    Retirer image verso
+                    <span aria-hidden="true">▰</span>
+                    Verso
                   </button>
                 </div>
-              </div>
-            ) : null}
 
-            <div className="quiz-actions">
-              <button
-                type="button"
-                className="ghost-btn"
-                onClick={() => setQuizSide((current) => (current === 'front' ? 'back' : 'front'))}
-              >
-                Flip
-              </button>
-              <button type="button" className="ghost-btn quiz-rate-btn again" onClick={() => handleQuizResult('again')}>
-                ❌ À revoir
-              </button>
-              <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleQuizResult('hard')}>
-                ⚠️ Difficile
-              </button>
-              <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleQuizResult('good')}>
-                ✅ Facile
-              </button>
-              <button type="button" className="ghost-btn quiz-rate-btn easy" onClick={() => handleQuizResult('easy')}>
-                ⚡ Très facile
-              </button>
-            </div>
+                <section className="flashcard-editor-preview" aria-label={`Aperçu du ${quizSide === 'front' ? 'recto' : 'verso'}`}>
+                  <p className="flashcard-editor-section-label">
+                    <span aria-hidden="true">◉</span>
+                    Aperçu du {quizSide === 'front' ? 'recto' : 'verso'}
+                  </p>
+                  <div className="flashcard-editor-preview-body">
+                    <div
+                      className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizSide === 'front' ? quizQuestion : quizAnswer))} quiz-rich-rendered`}
+                      dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizSide === 'front' ? quizQuestion : quizAnswer) }}
+                    />
+                    {(quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl) ? (
+                      <img
+                        className="flashcard-editor-preview-image"
+                        src={quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl}
+                        alt={`Illustration du ${quizSide === 'front' ? 'recto' : 'verso'}`}
+                        onClick={(event) => {
+                          event.stopPropagation()
+                          openImageLightbox(
+                            quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl,
+                            `Illustration du ${quizSide === 'front' ? 'recto' : 'verso'}`,
+                          )
+                        }}
+                      />
+                    ) : null}
+                  </div>
+                </section>
 
-            {quizFeedback ? (
-              <div className={`quiz-feedback ${quizFeedback} reward-${quizItem.tracking.quiz.rewardIntensity}`}>
-                <span className="quiz-feedback-main">
-                  {QUIZ_RESULT_META[quizFeedback].icon} {QUIZ_RESULT_META[quizFeedback].label}
-                </span>
-                {quizFeedback === 'good' || quizFeedback === 'easy' ? (
-                  <span className="quiz-feedback-plus-one" aria-hidden="true">
-                    +1
-                  </span>
+                <section className="flashcard-editor-content">
+                  <div className="flashcard-editor-main">
+                    <p className="flashcard-editor-section-label">Contenu du {quizSide === 'front' ? 'recto' : 'verso'}</p>
+                    <QuizRichTextEditor
+                      placeholder={quizSide === 'front' ? 'Question de la flashcard...' : 'Réponse de la flashcard...'}
+                      value={quizSide === 'front' ? activeQuizCard.question : activeQuizCard.answer}
+                      onChange={(value) =>
+                        updateQuizCard(
+                          quizItem.itemNumber,
+                          activeQuizCard.id,
+                          quizSide === 'front' ? { question: value } : { answer: value },
+                        )
+                      }
+                    />
+                  </div>
+                  <aside className="flashcard-editor-image-panel">
+                    <p className="flashcard-editor-section-label">
+                      Image du {quizSide === 'front' ? 'recto' : 'verso'} <span>(optionnelle)</span>
+                    </p>
+                    {(quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl) ? (
+                      <img
+                        className="flashcard-editor-image-thumb"
+                        src={quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl}
+                        alt={`Image du ${quizSide === 'front' ? 'recto' : 'verso'}`}
+                      />
+                    ) : (
+                      <div className="flashcard-editor-image-empty">IMG</div>
+                    )}
+                    {quizImageErrors[quizSide] ? (
+                      <span className="quiz-file-name quiz-file-name-error">{quizImageErrors[quizSide]}</span>
+                    ) : quizImageFileNames[quizSide] ? (
+                      <span className="quiz-file-name">{quizImageFileNames[quizSide]}</span>
+                    ) : null}
+                    <div className="flashcard-editor-image-actions">
+                      <button
+                        type="button"
+                        className="ghost-btn"
+                        onClick={() => openQuizCardImagePicker(quizItem.itemNumber, activeQuizCard.id, quizSide)}
+                      >
+                        ↻ Remplacer
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-btn danger"
+                        onClick={() => {
+                          setQuizImageFeedback(quizSide, { fileName: '', error: '' })
+                          updateQuizCard(quizItem.itemNumber, activeQuizCard.id, getQuizCardImagePatch(quizSide, '', false))
+                        }}
+                        disabled={
+                          quizSide === 'front'
+                            ? !activeQuizCard.frontImageDataUrl && !activeQuizCard.hasFrontImageDataUrl
+                            : !activeQuizCard.backImageDataUrl && !activeQuizCard.hasBackImageDataUrl
+                        }
+                      >
+                        ⌫ Retirer
+                      </button>
+                    </div>
+                  </aside>
+                </section>
+
+                <details className="flashcard-editor-notes">
+                  <summary>
+                    <span aria-hidden="true">▤</span>
+                    Notes personnelles <small>(optionnel)</small>
+                  </summary>
+                </details>
+
+                <div className="flashcard-editor-footer">
+                  <button
+                    type="button"
+                    className="ghost-btn flashcard-editor-flip"
+                    onClick={() => setQuizSide((current) => (current === 'front' ? 'back' : 'front'))}
+                  >
+                    ↻ Aperçu / Flip
+                  </button>
+                  <div className="flashcard-editor-rates">
+                    <button type="button" className="ghost-btn quiz-rate-btn again" onClick={() => handleQuizResult('again')}>
+                      ↺ À revoir
+                    </button>
+                    <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleQuizResult('hard')}>
+                      ⚠ Difficile
+                    </button>
+                    <button type="button" className="ghost-btn quiz-rate-btn medium" disabled title="Le résultat Moyen sera disponible dans une prochaine version.">
+                      ⊖ Moyen
+                    </button>
+                    <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleQuizResult('good')}>
+                      ✓ Facile
+                    </button>
+                    <button type="button" className="ghost-btn quiz-rate-btn easy" onClick={() => handleQuizResult('easy')}>
+                      ☆ Très facile
+                    </button>
+                  </div>
+                  <button type="button" className="flashcard-editor-save" onClick={() => setQuizEditMode(false)}>
+                    ▣ Enregistrer
+                  </button>
+                </div>
+
+                {quizFeedback ? (
+                  <div className={`quiz-feedback ${quizFeedback} reward-${quizItem.tracking.quiz.rewardIntensity}`}>
+                    <span className="quiz-feedback-main">
+                      {QUIZ_RESULT_META[quizFeedback].icon} {QUIZ_RESULT_META[quizFeedback].label}
+                    </span>
+                  </div>
                 ) : null}
-                {quizFeedback === 'good' ? (
-                  <span className="quiz-feedback-check" aria-hidden="true">
-                    ✔️
-                  </span>
+              </>
+            ) : (
+              <>
+                <div className="quiz-modal-head">
+                  <h3>Quiz item #{quizItem.itemNumber}</h3>
+                  <div className="quiz-head-actions">
+                    <span className="quiz-card-counter">
+                      {Math.max(
+                        1,
+                        quizItem.tracking.quiz.cards.findIndex((card) => card.id === quizItem.tracking.quiz.activeCardId) + 1,
+                      )}
+                      /{Math.max(1, quizItem.tracking.quiz.cards.length)}
+                    </span>
+                    <button
+                      type="button"
+                      className="ghost-btn quiz-manage-btn"
+                      onClick={() => {
+                        addQuizCard(quizItem.itemNumber)
+                        setQuizSide('front')
+                        setQuizEditMode(true)
+                      }}
+                      title="Créer une flashcard"
+                    >
+                      ➕
+                    </button>
+                    <button
+                      type="button"
+                      className="ghost-btn quiz-manage-btn"
+                      onClick={() => setQuizEditMode(true)}
+                      title="Modifier la flashcard"
+                    >
+                      ✏️
+                    </button>
+                    <button
+                      type="button"
+                      className="ghost-btn quiz-manage-btn danger"
+                      onClick={removeActiveQuizCardWithConfirm}
+                      title="Supprimer la flashcard"
+                    >
+                      🗑️
+                    </button>
+                    <button type="button" className="ghost-btn" onClick={() => navigateQuizCard('prev')}>
+                      ←
+                    </button>
+                    <button type="button" className="ghost-btn" onClick={() => navigateQuizCard('next')}>
+                      →
+                    </button>
+                    <button type="button" className="ghost-btn" onClick={closeQuiz}>
+                      Close
+                    </button>
+                  </div>
+                </div>
+
+                <div
+                  className={`quiz-flashcard ${quizItem.tracking.quiz.animationStyle} ${
+                    quizSide === 'back' ? 'is-back' : 'is-front'
+                  }`}
+                  onClick={() => setQuizSide((current) => (current === 'front' ? 'back' : 'front'))}
+                >
+                  <div className="quiz-face quiz-front">
+                    <p className="quiz-face-label">
+                      <span>Question</span>
+                      {quizCurrentCardFeeling ? (
+                        <span className={`quiz-face-feeling ${quizCurrentCardFeeling.toneClass}`}>
+                          Feeling: {quizCurrentCardFeeling.label}
+                        </span>
+                      ) : null}
+                    </p>
+                    <div className="quiz-face-body">
+                      <div
+                        className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizQuestion))} quiz-rich-rendered`}
+                        dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizQuestion) }}
+                      />
+                      {activeQuizCard?.frontImageDataUrl ? (
+                        <img
+                          className="quiz-face-media"
+                          src={activeQuizCard.frontImageDataUrl}
+                          alt="Illustration du recto"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            openImageLightbox(activeQuizCard.frontImageDataUrl, 'Illustration du recto')
+                          }}
+                        />
+                      ) : (
+                        <span className="quiz-face-media-placeholder" aria-hidden="true">IMG</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="quiz-face quiz-back">
+                    <p className="quiz-face-label">Réponse</p>
+                    <div className="quiz-face-body">
+                      <div
+                        className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizAnswer))} quiz-rich-rendered`}
+                        dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizAnswer) }}
+                      />
+                      {activeQuizCard?.backImageDataUrl ? (
+                        <img
+                          className="quiz-face-media"
+                          src={activeQuizCard.backImageDataUrl}
+                          alt="Illustration du verso"
+                          onClick={(event) => {
+                            event.stopPropagation()
+                            openImageLightbox(activeQuizCard.backImageDataUrl, 'Illustration du verso')
+                          }}
+                        />
+                      ) : (
+                        <span className="quiz-face-media-placeholder" aria-hidden="true">IMG</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="quiz-actions">
+                  <button
+                    type="button"
+                    className="ghost-btn"
+                    onClick={() => setQuizSide((current) => (current === 'front' ? 'back' : 'front'))}
+                  >
+                    Flip
+                  </button>
+                  <button type="button" className="ghost-btn quiz-rate-btn again" onClick={() => handleQuizResult('again')}>
+                    ❌ À revoir
+                  </button>
+                  <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleQuizResult('hard')}>
+                    ⚠️ Difficile
+                  </button>
+                  <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleQuizResult('good')}>
+                    ✅ Facile
+                  </button>
+                  <button type="button" className="ghost-btn quiz-rate-btn easy" onClick={() => handleQuizResult('easy')}>
+                    ⚡ Très facile
+                  </button>
+                </div>
+
+                {quizFeedback ? (
+                  <div className={`quiz-feedback ${quizFeedback} reward-${quizItem.tracking.quiz.rewardIntensity}`}>
+                    <span className="quiz-feedback-main">
+                      {QUIZ_RESULT_META[quizFeedback].icon} {QUIZ_RESULT_META[quizFeedback].label}
+                    </span>
+                    {quizFeedback === 'good' || quizFeedback === 'easy' ? (
+                      <span className="quiz-feedback-plus-one" aria-hidden="true">
+                        +1
+                      </span>
+                    ) : null}
+                    {quizFeedback === 'good' ? (
+                      <span className="quiz-feedback-check" aria-hidden="true">
+                        ✔️
+                      </span>
+                    ) : null}
+                    {quizFeedback === 'easy' && quizItem.tracking.quiz.rewardIntensity !== 'low' ? (
+                      <span className="quiz-feedback-sparkles" aria-hidden="true">
+                        ✨⚡
+                      </span>
+                    ) : null}
+                  </div>
                 ) : null}
-                {quizFeedback === 'easy' && quizItem.tracking.quiz.rewardIntensity !== 'low' ? (
-                  <span className="quiz-feedback-sparkles" aria-hidden="true">
-                    ✨⚡
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
+              </>
+            )}
           </div>
         </div>
       ) : null}
