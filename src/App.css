@@ -6627,6 +6627,292 @@ tbody tr.selected {
   font-size: 0.78rem;
 }
 
+.main-grid.has-detail {
+  grid-template-columns: minmax(330px, 0.82fr) minmax(0, 1.38fr);
+}
+
+.item-detail-panel {
+  padding: 0.72rem;
+  display: grid;
+  gap: 0.72rem;
+  background:
+    linear-gradient(180deg, color-mix(in oklab, var(--panel-bg) 96%, #f7fbff), var(--panel-bg));
+}
+
+.main-grid.has-detail .item-detail-panel.is-open {
+  max-height: calc(100dvh - 8.4rem);
+  overflow: auto;
+}
+
+.item-detail-hero {
+  align-items: flex-start;
+  gap: 0.9rem;
+  margin: 0;
+  padding-bottom: 0.7rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.item-detail-hero h2 {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.15rem, 1.8vw, 1.52rem);
+  line-height: 1.08;
+  color: var(--text);
+}
+
+.item-detail-hero p {
+  max-width: 74ch;
+  font-size: 0.84rem;
+  line-height: 1.42;
+  color: var(--muted);
+}
+
+.item-detail-tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.34rem;
+  margin-top: 0.55rem;
+}
+
+.item-detail-tag-row span {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0.18rem 0.5rem;
+  background: var(--surface-soft);
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.item-detail-panel .detail-head-actions {
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 0.42rem;
+}
+
+.item-detail-action-btn,
+.item-detail-panel .quiz-trigger-btn {
+  min-height: 34px;
+  border-radius: 9px;
+  padding: 0.42rem 0.64rem;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.item-detail-panel .quiz-trigger-btn {
+  min-width: 116px;
+  justify-content: center;
+}
+
+.item-detail-icon-btn {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.item-detail-stat-grid {
+  grid-template-columns: repeat(6, minmax(112px, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.item-detail-stat-grid > div {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.6rem 0.68rem;
+  background: var(--panel-bg);
+  box-shadow: 0 10px 24px color-mix(in oklab, var(--shadow) 50%, transparent);
+}
+
+.item-detail-stat-grid p:not(.meta-label) {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1;
+  font-weight: 900;
+  color: var(--text);
+}
+
+.item-detail-stat-grid small {
+  display: block;
+  margin-top: 0.22rem;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-detail-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.24rem;
+  padding: 0.28rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.item-detail-tabs button {
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted);
+  padding: 0.42rem 0.62rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.item-detail-tabs button.active {
+  background: var(--panel-bg);
+  color: var(--accent);
+  box-shadow: 0 1px 8px color-mix(in oklab, var(--shadow) 45%, transparent);
+}
+
+.item-detail-content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(230px, 290px);
+  align-items: start;
+  gap: 0.72rem;
+}
+
+.item-detail-main-column,
+.item-detail-side-column {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 0.72rem;
+}
+
+.item-detail-card,
+.item-detail-side-column > .college-picker,
+.item-detail-side-column > .tracking-grid,
+.item-detail-side-column > .reference-grid {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--panel-bg);
+  box-shadow: 0 10px 24px color-mix(in oklab, var(--shadow) 36%, transparent);
+}
+
+.item-detail-card {
+  padding: 0.7rem;
+  margin: 0;
+}
+
+.item-detail-card.inline-accordion {
+  padding: 0.58rem 0.66rem;
+  background: var(--panel-bg);
+}
+
+.item-detail-card .inline-accordion-head {
+  padding: 0;
+}
+
+.item-detail-card h3,
+.item-detail-side-column > h3 {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.15;
+  color: var(--text);
+}
+
+.item-detail-upcoming-card {
+  gap: 0.45rem;
+}
+
+.item-detail-upcoming-card textarea {
+  min-height: 78px;
+  resize: vertical;
+}
+
+.item-detail-video-card .youtube-preview {
+  max-width: none;
+}
+
+.item-detail-video-card .youtube-embed-wrap {
+  width: 100%;
+}
+
+.item-detail-created {
+  color: var(--muted);
+  font-size: 0.72rem;
+  padding-inline: 0.1rem;
+}
+
+.item-detail-side-column > h3 {
+  padding: 0.7rem 0.7rem 0;
+  margin-bottom: -0.72rem;
+}
+
+.item-detail-side-column > .college-picker,
+.item-detail-side-column > .tracking-grid,
+.item-detail-side-column > .reference-grid {
+  margin: 0;
+  padding: 0.62rem;
+}
+
+.item-detail-side-column > .college-picker {
+  grid-template-columns: 1fr;
+  max-height: 180px;
+}
+
+.item-detail-side-column > .tracking-grid,
+.item-detail-side-column > .reference-grid {
+  max-height: 260px;
+  overflow: auto;
+}
+
+.item-detail-side-column .college-card,
+.item-detail-side-column .reference-card {
+  background: var(--surface-soft);
+}
+
+.item-detail-side-column .reference-row,
+.item-detail-side-column .youtube-input-row {
+  grid-template-columns: 1fr;
+}
+
+.item-detail-side-column .quiz-config-grid {
+  margin: 0;
+  background: var(--panel-bg);
+}
+
+.item-detail-side-column .quiz-config-head {
+  align-items: flex-start;
+}
+
+.item-detail-side-column .quiz-config-title-row {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.item-detail-side-column .quiz-card-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.item-detail-side-column .quiz-card-select {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root[data-theme='dark'] .item-detail-panel,
+:root[data-theme='dark'] .item-detail-card,
+:root[data-theme='dark'] .item-detail-stat-grid > div,
+:root[data-theme='dark'] .item-detail-side-column > .college-picker,
+:root[data-theme='dark'] .item-detail-side-column > .tracking-grid,
+:root[data-theme='dark'] .item-detail-side-column > .reference-grid {
+  background: color-mix(in oklab, var(--panel-bg) 94%, #071838);
+}
+
 .muted {
   color: var(--muted);
 }
@@ -7088,6 +7374,14 @@ tbody tr.selected {
     grid-template-columns: 1fr;
   }
 
+  .main-grid.has-detail {
+    grid-template-columns: 1fr;
+  }
+
+  .item-detail-stat-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .college-detail-stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -7359,6 +7653,21 @@ tbody tr.selected {
   .dashboard-quote-card {
     min-height: 150px;
     background-position: center right;
+  }
+
+  .item-detail-hero,
+  .item-detail-panel .detail-head-actions {
+    flex-wrap: wrap;
+  }
+
+  .item-detail-stat-grid,
+  .item-detail-content-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .item-detail-side-column > .tracking-grid,
+  .item-detail-side-column > .reference-grid {
+    max-height: none;
   }
 
   .dashboard-college-row {

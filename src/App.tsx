@@ -6778,336 +6778,27 @@ function getPasswordStrengthMeta(password: string) {
           </div>
         </article>
 
-        <article className={`panel detail-panel ${effectiveSelectedItem ? 'is-open' : 'is-closed'}`}>
+        <article className={`panel detail-panel item-detail-panel ${effectiveSelectedItem ? 'is-open' : 'is-closed'}`}>
           {effectiveSelectedItem ? (
             <>
-              <div className="panel-head">
+              <div className="panel-head item-detail-hero">
                 <div>
                   <h2>{effectiveSelectedItem.tracking.itemIcon ? `${effectiveSelectedItem.tracking.itemIcon} ` : ''}Item #{effectiveSelectedItem.itemNumber}</h2>
                   <p>{effectiveSelectedItem.shortDescription}</p>
+                  <div className="item-detail-tag-row">
+                    {effectiveSelectedItem.tagLabels.map((tag) => (
+                      <span key={tag}>{tag}</span>
+                    ))}
+                  </div>
                 </div>
                 <div className="detail-head-actions">
                   <button
                     type="button"
-                    className="ghost-btn"
-                    title="Masquer le panneau item"
-                    aria-label="Masquer le panneau item"
-                    onClick={() => setSelectedItemId(null)}
+                    className="ghost-btn item-detail-action-btn"
+                    onClick={() => setItemVisualSectionOpen((current) => !current)}
                   >
-                    ✕
+                    ✎ Modifier
                   </button>
-                  <button
-                    type="button"
-                    className="history-icon-btn"
-                    title={`Historique item #${effectiveSelectedItem.itemNumber}`}
-                    aria-label={`Afficher l'historique de l'item ${effectiveSelectedItem.itemNumber}`}
-                    onClick={() => setHistoryItemId(effectiveSelectedItem.itemNumber)}
-                  >
-                    🕘
-                  </button>
-                  {focusMode ? (
-                    <button className="ghost-btn" onClick={nextFocusItem}>
-                      Item focus suivant
-                    </button>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="meta-grid">
-                <div>
-                  <p className="meta-label">Tags</p>
-                  <p>{effectiveSelectedItem.tagLabels.join(', ') || 'Aucun'}</p>
-                </div>
-                <div>
-                  <p className="meta-label">Révisions (total)</p>
-                  <p>
-                    {effectiveSelectedItem.totalReviews +
-                      effectiveSelectedItem.tracking.lisaSheets.reduce(
-                        (sum, sheet) => sum + sheet.tracking.reviews,
-                        0,
-                      ) +
-                      effectiveSelectedItem.tracking.platformSheets.reduce(
-                        (sum, sheet) => sum + sheet.tracking.reviews,
-                        0,
-                      )}
-                  </p>
-                </div>
-                <div>
-                  <p className="meta-label">Dernière révision</p>
-                  <p>{formatDate(effectiveSelectedItem.lastReviewDate)}</p>
-                </div>
-                <div>
-                  <p className="meta-label">Ressenti item (manuel)</p>
-                  <select
-                    className={`manual-item-mastery-select ${
-                      effectiveSelectedItem.tracking.itemMastery === 'Non évalué'
-                        ? 'none'
-                        : `mastery-${normalizeText(effectiveSelectedItem.tracking.itemMastery).toLowerCase().replace(' ', '-')}`
-                    }`}
-                    value={effectiveSelectedItem.tracking.itemMastery}
-                    onChange={(event) =>
-                      updateItemMastery(
-                        effectiveSelectedItem.itemNumber,
-                        (event.target.value as Mastery | 'Non évalué') ?? 'Non évalué',
-                      )
-                    }
-                  >
-                    {effectiveSelectedItem.tracking.itemMastery === 'Non évalué' ? (
-                      <option value="Non évalué">{UNRATED_FEELING_LABEL}</option>
-                    ) : null}
-                    {MASTERY_LEVELS.map((level) => (
-                      <option key={level} value={level}>
-                        {getMasteryFeelingLabel(level)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <label className="block-label">
-                Prochaine(s) lecture(s)
-                <textarea
-                  value={effectiveSelectedItem.tracking.itemComment}
-                  placeholder="Notes pour les prochaines lectures..."
-                  onChange={(event) => updateItemComment(effectiveSelectedItem.itemNumber, event.target.value)}
-                />
-              </label>
-
-              <div className="inline-accordion">
-                <button
-                  type="button"
-                  className={`inline-accordion-head ${youtubeSectionOpen ? 'open' : ''}`}
-                  aria-expanded={youtubeSectionOpen}
-                  onClick={() => setYoutubeSectionOpen((current) => !current)}
-                >
-                  <h3>Vidéo YouTube</h3>
-                  <span className="inline-accordion-chevron" aria-hidden="true">
-                    ▾
-                  </span>
-                </button>
-                {youtubeSectionOpen ? (
-                  <div className="youtube-editor">
-                    <div className="youtube-input-row">
-                      <input
-                        type="url"
-                        placeholder="Coller le lien YouTube ici (ex. https://www.youtube.com/watch?v=...)"
-                        value={youtubeInput}
-                        onChange={(event) => {
-                          setYoutubeInput(event.target.value)
-                          if (youtubeInputError) {
-                            setYoutubeInputError('')
-                          }
-                        }}
-                      />
-                      <button type="button" className="ghost-btn" onClick={handleYouTubeSave}>
-                        {effectiveSelectedItem.tracking.youtubeUrl ? 'Modifier' : 'Ajouter'}
-                      </button>
-                      {effectiveSelectedItem.tracking.youtubeUrl ? (
-                        <button type="button" className="ghost-btn" onClick={handleYouTubeClear}>
-                          Supprimer
-                        </button>
-                      ) : null}
-                      {selectedYouTubeVideoId && youtubeDisplayMode === 'external' ? (
-                        <a
-                          href={makeYouTubeWatchUrl(selectedYouTubeVideoId)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="ghost-btn youtube-open-link"
-                        >
-                          Voir vidéo
-                        </a>
-                      ) : null}
-                    </div>
-                    {youtubeInputError ? <p className="youtube-error">{youtubeInputError}</p> : null}
-                    {selectedYouTubeVideoId ? (
-                      <div className="youtube-preview">
-                        {youtubeDisplayMode === 'embed' ? (
-                          <div className="youtube-embed-wrap">
-                            <iframe
-                              src={`https://www.youtube-nocookie.com/embed/${selectedYouTubeVideoId}`}
-                              title={`Vidéo item ${effectiveSelectedItem.itemNumber}`}
-                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                              referrerPolicy="strict-origin-when-cross-origin"
-                              allowFullScreen
-                            />
-                          </div>
-                        ) : null}
-                      </div>
-                    ) : effectiveSelectedItem.tracking.youtubeUrl ? (
-                      <p className="muted">Le lien YouTube sauvegardé est invalide.</p>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="inline-accordion">
-                <button
-                  type="button"
-                  className={`inline-accordion-head ${usefulLinkSectionOpen ? 'open' : ''}`}
-                  aria-expanded={usefulLinkSectionOpen}
-                  onClick={() => setUsefulLinkSectionOpen((current) => !current)}
-                >
-                  <h3>Lien utile</h3>
-                  <span className="inline-accordion-chevron" aria-hidden="true">
-                    ▾
-                  </span>
-                </button>
-                {usefulLinkSectionOpen ? (
-                  <div className="useful-link-editor">
-                    <div className="youtube-input-row">
-                      <input
-                        type="url"
-                        placeholder="Coller un lien utile (ex. https://example.com)"
-                        value={usefulLinkInput}
-                        onChange={(event) => {
-                          setUsefulLinkInput(event.target.value)
-                          if (usefulLinkInputError) {
-                            setUsefulLinkInputError('')
-                          }
-                        }}
-                      />
-                      <button
-                        type="button"
-                        className={`ghost-btn ${effectiveSelectedItem.tracking.usefulLinkUrl ? 'link-icon-btn' : ''}`}
-                        title={effectiveSelectedItem.tracking.usefulLinkUrl ? 'Modifier le lien utile' : 'Ajouter le lien utile'}
-                        aria-label={effectiveSelectedItem.tracking.usefulLinkUrl ? 'Modifier le lien utile' : 'Ajouter le lien utile'}
-                        onClick={handleUsefulLinkSave}
-                      >
-                        {effectiveSelectedItem.tracking.usefulLinkUrl ? (
-                          <span className="link-icon-glyph" aria-hidden="true">
-                            ✏️
-                          </span>
-                        ) : (
-                          'Ajouter'
-                        )}
-                      </button>
-                      {effectiveSelectedItem.tracking.usefulLinkUrl ? (
-                        <button
-                          type="button"
-                          className="ghost-btn link-icon-btn link-icon-btn-danger"
-                          title="Supprimer le lien utile"
-                          aria-label="Supprimer le lien utile"
-                          onClick={handleUsefulLinkClear}
-                        >
-                          <span className="link-icon-glyph" aria-hidden="true">
-                            🗑️
-                          </span>
-                        </button>
-                      ) : null}
-                      {effectiveSelectedItem.tracking.usefulLinkUrl ? (
-                        <a
-                          href={effectiveSelectedItem.tracking.usefulLinkUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="ghost-btn youtube-open-link"
-                        >
-                          Voir lien
-                        </a>
-                      ) : null}
-                    </div>
-                    {usefulLinkInputError ? <p className="youtube-error">{usefulLinkInputError}</p> : null}
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="inline-accordion">
-                <button
-                  type="button"
-                  className={`inline-accordion-head ${itemVisualSectionOpen ? 'open' : ''}`}
-                  aria-expanded={itemVisualSectionOpen}
-                  onClick={() => setItemVisualSectionOpen((current) => !current)}
-                >
-                  <h3>Marqueur visuel item</h3>
-                  <span className="inline-accordion-chevron" aria-hidden="true">
-                    ▾
-                  </span>
-                </button>
-                {itemVisualSectionOpen ? (
-                  <div className="item-visual-editor">
-                <label className="block-label">
-                  Icône
-                  <input
-                    type="text"
-                    maxLength={2}
-                    value={effectiveSelectedItem.tracking.itemIcon}
-                    onChange={(event) =>
-                      updateItemVisual(effectiveSelectedItem.itemNumber, { itemIcon: event.target.value })
-                    }
-                  />
-                </label>
-                <label className="block-label">
-                  Couleur
-                  <input
-                    type="color"
-                    value={effectiveSelectedItem.tracking.itemColor || '#2563eb'}
-                    onChange={(event) =>
-                      updateItemVisual(effectiveSelectedItem.itemNumber, { itemColor: event.target.value })
-                    }
-                  />
-                </label>
-                <label className="block-label">
-                  Libellé
-                  <input
-                    type="text"
-                    placeholder="Tombe souvent, Difficile..."
-                    value={effectiveSelectedItem.tracking.itemLabel}
-                    onChange={(event) =>
-                      updateItemVisual(effectiveSelectedItem.itemNumber, { itemLabel: event.target.value })
-                    }
-                  />
-                </label>
-                <div className="item-visual-actions">
-                  <button
-                    type="button"
-                    className="ghost-btn item-visual-emoji-btn"
-                    title="Tombe souvent"
-                    aria-label="Marquer comme tombe souvent"
-                    onClick={() =>
-                      updateItemVisual(effectiveSelectedItem.itemNumber, {
-                        itemIcon: '⭐️',
-                        itemColor: '#facc15',
-                        itemLabel: 'Tombe souvent',
-                      }, 'Marqueur visuel: ⭐️ Tombe souvent')
-                    }
-                  >
-                    ⭐️
-                  </button>
-                  <button
-                    type="button"
-                    className="ghost-btn item-visual-emoji-btn"
-                    title="Difficile"
-                    aria-label="Marquer comme difficile"
-                    onClick={() =>
-                      updateItemVisual(effectiveSelectedItem.itemNumber, {
-                        itemIcon: '⚠️',
-                        itemColor: '#ef4444',
-                        itemLabel: 'Difficile',
-                      }, 'Marqueur visuel: ⚠️ Difficile')
-                    }
-                  >
-                    ⚠️
-                  </button>
-                  <button
-                    type="button"
-                    className="ghost-btn"
-                    onClick={() =>
-                      updateItemVisual(effectiveSelectedItem.itemNumber, {
-                        itemIcon: '',
-                        itemColor: '',
-                        itemLabel: '',
-                      }, 'Marqueur visuel effacé')
-                    }
-                  >
-                    Effacer marqueur
-                  </button>
-                </div>
-                  </div>
-                ) : null}
-              </div>
-
-              <div id="flashcards-section" className="quiz-config-head">
-                <div className="quiz-config-title-row">
-                  <h3>Quiz item</h3>
                   <button
                     type="button"
                     className={`quiz-trigger-btn ${quizPulseByItem[effectiveSelectedItem.itemNumber] ? 'pulse' : ''}`}
@@ -7119,33 +6810,406 @@ function getPasswordStrengthMeta(password: string) {
                         : 'Quiz désactivé pour cet item'
                     }
                   >
-                    Quiz
+                    Lancer le quiz
                   </button>
+                  <button
+                    type="button"
+                    className="ghost-btn item-detail-icon-btn"
+                    title={`Historique item #${effectiveSelectedItem.itemNumber}`}
+                    aria-label={`Afficher l'historique de l'item ${effectiveSelectedItem.itemNumber}`}
+                    onClick={() => setHistoryItemId(effectiveSelectedItem.itemNumber)}
+                  >
+                    ...
+                  </button>
+                  <button
+                    type="button"
+                    className="ghost-btn item-detail-icon-btn"
+                    title="Masquer le panneau item"
+                    aria-label="Masquer le panneau item"
+                    onClick={() => setSelectedItemId(null)}
+                  >
+                    ✕
+                  </button>
+                  {focusMode ? (
+                    <button className="ghost-btn" onClick={nextFocusItem}>
+                      Item focus suivant
+                    </button>
+                  ) : null}
                 </div>
-                <button
-                  type="button"
-                  className={`ghost-btn quiz-config-toggle ${quizConfigExpanded ? 'open' : ''}`}
-                  onClick={() => setQuizConfigExpanded((current) => !current)}
-                  aria-expanded={quizConfigExpanded}
-                  aria-label={quizConfigExpanded ? 'Masquer les détails du quiz' : 'Afficher les détails du quiz'}
-                  title={quizConfigExpanded ? 'Masquer les détails' : 'Afficher les détails'}
-                >
-                  ▾
-                </button>
               </div>
-              <div className="quiz-config-grid">
-                <label className="checkline">
-                  <input
-                    type="checkbox"
-                    checked={effectiveSelectedItem.tracking.quiz.enabled}
-                    onChange={(event) =>
-                      updateItemQuizConfig(effectiveSelectedItem.itemNumber, { enabled: event.target.checked })
-                    }
-                  />
-                  Activer quiz pour cet item
-                </label>
-                <label className="block-label">
-                  Cartes quiz
+
+              <div className="meta-grid item-detail-stat-grid">
+                <div>
+                  <p className="meta-label">Collèges</p>
+                  <p>{effectiveSelectedItem.tracking.assignedColleges.length || 0}</p>
+                  <small>{effectiveSelectedItem.tagLabels.join(', ') || 'Aucun collège'}</small>
+                </div>
+                <div>
+                  <p className="meta-label">Révisions</p>
+                  <p>
+                    {effectiveSelectedItem.totalReviews +
+                      effectiveSelectedItem.tracking.lisaSheets.reduce(
+                        (sum, sheet) => sum + sheet.tracking.reviews,
+                        0,
+                      ) +
+                      effectiveSelectedItem.tracking.platformSheets.reduce(
+                        (sum, sheet) => sum + sheet.tracking.reviews,
+                        0,
+                      )}
+                  </p>
+                  <small>Total item et ressources</small>
+                </div>
+                <div>
+                  <p className="meta-label">Dernière révision</p>
+                  <p>{formatDate(effectiveSelectedItem.lastReviewDate)}</p>
+                  <small>Dernier passage</small>
+                </div>
+                <div>
+                  <p className="meta-label">Ressenti manuel</p>
+                  <p>
+                    {effectiveSelectedItem.tracking.itemMastery === 'Non évalué'
+                      ? UNRATED_FEELING_LABEL
+                      : getMasteryFeelingLabel(effectiveSelectedItem.tracking.itemMastery)}
+                  </p>
+                  <small>Évaluation globale</small>
+                </div>
+                <div>
+                  <p className="meta-label">Ressources</p>
+                  <p>{effectiveSelectedItem.tracking.lisaSheets.length + effectiveSelectedItem.tracking.platformSheets.length}</p>
+                  <small>Fiches liées</small>
+                </div>
+                <div>
+                  <p className="meta-label">Flashcards</p>
+                  <p>{effectiveSelectedItem.tracking.quiz.cards.length}</p>
+                  <small>Cartes créées</small>
+                </div>
+              </div>
+
+              <div className="item-detail-tabs" aria-label="Navigation détail item">
+                <button type="button" className="active" onClick={() => document.getElementById('item-detail-overview')?.scrollIntoView({ block: 'nearest' })}>Vue d’ensemble</button>
+                <button type="button" onClick={() => document.getElementById('item-detail-resources')?.scrollIntoView({ block: 'nearest' })}>Ressources</button>
+                <button type="button" onClick={() => document.getElementById('flashcards-section')?.scrollIntoView({ block: 'nearest' })}>Flashcards & Quiz</button>
+                <button type="button" onClick={() => document.getElementById('item-detail-tracking')?.scrollIntoView({ block: 'nearest' })}>Suivi</button>
+                <button type="button" onClick={() => document.getElementById('item-detail-assignments')?.scrollIntoView({ block: 'nearest' })}>Assignations</button>
+              </div>
+
+              <div id="item-detail-overview" className="item-detail-content-grid">
+                <div className="item-detail-main-column">
+                  <label className="block-label item-detail-card item-detail-upcoming-card">
+                    Prochaine(s) lecture(s)
+                    <textarea
+                      value={effectiveSelectedItem.tracking.itemComment}
+                      placeholder="Notes pour les prochaines lectures..."
+                      onChange={(event) => updateItemComment(effectiveSelectedItem.itemNumber, event.target.value)}
+                    />
+                  </label>
+
+                  <div id="item-detail-resources" className="inline-accordion item-detail-card item-detail-video-card">
+                    <button
+                      type="button"
+                      className={`inline-accordion-head ${youtubeSectionOpen ? 'open' : ''}`}
+                      aria-expanded={youtubeSectionOpen}
+                      onClick={() => setYoutubeSectionOpen((current) => !current)}
+                    >
+                      <h3>Vidéo YouTube</h3>
+                      <span className="inline-accordion-chevron" aria-hidden="true">
+                        ▾
+                      </span>
+                    </button>
+                    {youtubeSectionOpen ? (
+                      <div className="youtube-editor">
+                        <div className="youtube-input-row">
+                          <input
+                            type="url"
+                            placeholder="Coller le lien YouTube ici (ex. https://www.youtube.com/watch?v=...)"
+                            value={youtubeInput}
+                            onChange={(event) => {
+                              setYoutubeInput(event.target.value)
+                              if (youtubeInputError) {
+                                setYoutubeInputError('')
+                              }
+                            }}
+                          />
+                          <button type="button" className="ghost-btn" onClick={handleYouTubeSave}>
+                            {effectiveSelectedItem.tracking.youtubeUrl ? 'Modifier' : 'Ajouter'}
+                          </button>
+                          {effectiveSelectedItem.tracking.youtubeUrl ? (
+                            <button type="button" className="ghost-btn" onClick={handleYouTubeClear}>
+                              Supprimer
+                            </button>
+                          ) : null}
+                          {selectedYouTubeVideoId && youtubeDisplayMode === 'external' ? (
+                            <a
+                              href={makeYouTubeWatchUrl(selectedYouTubeVideoId)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ghost-btn youtube-open-link"
+                            >
+                              Voir vidéo
+                            </a>
+                          ) : null}
+                        </div>
+                        {youtubeInputError ? <p className="youtube-error">{youtubeInputError}</p> : null}
+                        {selectedYouTubeVideoId ? (
+                          <div className="youtube-preview">
+                            {youtubeDisplayMode === 'embed' ? (
+                              <div className="youtube-embed-wrap">
+                                <iframe
+                                  src={`https://www.youtube-nocookie.com/embed/${selectedYouTubeVideoId}`}
+                                  title={`Vidéo item ${effectiveSelectedItem.itemNumber}`}
+                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                  referrerPolicy="strict-origin-when-cross-origin"
+                                  allowFullScreen
+                                />
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : effectiveSelectedItem.tracking.youtubeUrl ? (
+                          <p className="muted">Le lien YouTube sauvegardé est invalide.</p>
+                        ) : null}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="inline-accordion item-detail-card">
+                    <button
+                      type="button"
+                      className={`inline-accordion-head ${usefulLinkSectionOpen ? 'open' : ''}`}
+                      aria-expanded={usefulLinkSectionOpen}
+                      onClick={() => setUsefulLinkSectionOpen((current) => !current)}
+                    >
+                      <h3>Lien utile</h3>
+                      <span className="inline-accordion-chevron" aria-hidden="true">
+                        ▾
+                      </span>
+                    </button>
+                    {usefulLinkSectionOpen ? (
+                      <div className="useful-link-editor">
+                        <div className="youtube-input-row">
+                          <input
+                            type="url"
+                            placeholder="Coller un lien utile (ex. https://example.com)"
+                            value={usefulLinkInput}
+                            onChange={(event) => {
+                              setUsefulLinkInput(event.target.value)
+                              if (usefulLinkInputError) {
+                                setUsefulLinkInputError('')
+                              }
+                            }}
+                          />
+                          <button
+                            type="button"
+                            className={`ghost-btn ${effectiveSelectedItem.tracking.usefulLinkUrl ? 'link-icon-btn' : ''}`}
+                            title={effectiveSelectedItem.tracking.usefulLinkUrl ? 'Modifier le lien utile' : 'Ajouter le lien utile'}
+                            aria-label={effectiveSelectedItem.tracking.usefulLinkUrl ? 'Modifier le lien utile' : 'Ajouter le lien utile'}
+                            onClick={handleUsefulLinkSave}
+                          >
+                            {effectiveSelectedItem.tracking.usefulLinkUrl ? (
+                              <span className="link-icon-glyph" aria-hidden="true">
+                                ✏️
+                              </span>
+                            ) : (
+                              'Ajouter'
+                            )}
+                          </button>
+                          {effectiveSelectedItem.tracking.usefulLinkUrl ? (
+                            <button
+                              type="button"
+                              className="ghost-btn link-icon-btn link-icon-btn-danger"
+                              title="Supprimer le lien utile"
+                              aria-label="Supprimer le lien utile"
+                              onClick={handleUsefulLinkClear}
+                            >
+                              <span className="link-icon-glyph" aria-hidden="true">
+                                🗑️
+                              </span>
+                            </button>
+                          ) : null}
+                          {effectiveSelectedItem.tracking.usefulLinkUrl ? (
+                            <a
+                              href={effectiveSelectedItem.tracking.usefulLinkUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="ghost-btn youtube-open-link"
+                            >
+                              Voir lien
+                            </a>
+                          ) : null}
+                        </div>
+                        {usefulLinkInputError ? <p className="youtube-error">{usefulLinkInputError}</p> : null}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="item-detail-created">
+                    Créé le 12 févr. 2026 par Dr Martin
+                  </div>
+                </div>
+
+                <aside className="item-detail-side-column">
+                  <div className="inline-accordion item-detail-card">
+                    <button
+                      type="button"
+                      className={`inline-accordion-head ${itemVisualSectionOpen ? 'open' : ''}`}
+                      aria-expanded={itemVisualSectionOpen}
+                      onClick={() => setItemVisualSectionOpen((current) => !current)}
+                    >
+                      <h3>Commentaires</h3>
+                      <span className="inline-accordion-chevron" aria-hidden="true">
+                        ▾
+                      </span>
+                    </button>
+                    {itemVisualSectionOpen ? (
+                      <div className="item-visual-editor">
+                    <label className="block-label">
+                      Icône
+                      <input
+                        type="text"
+                        maxLength={2}
+                        value={effectiveSelectedItem.tracking.itemIcon}
+                        onChange={(event) =>
+                          updateItemVisual(effectiveSelectedItem.itemNumber, { itemIcon: event.target.value })
+                        }
+                      />
+                    </label>
+                    <label className="block-label">
+                      Couleur
+                      <input
+                        type="color"
+                        value={effectiveSelectedItem.tracking.itemColor || '#2563eb'}
+                        onChange={(event) =>
+                          updateItemVisual(effectiveSelectedItem.itemNumber, { itemColor: event.target.value })
+                        }
+                      />
+                    </label>
+                    <label className="block-label">
+                      Libellé
+                      <input
+                        type="text"
+                        placeholder="Tombe souvent, Difficile..."
+                        value={effectiveSelectedItem.tracking.itemLabel}
+                        onChange={(event) =>
+                          updateItemVisual(effectiveSelectedItem.itemNumber, { itemLabel: event.target.value })
+                        }
+                      />
+                    </label>
+                    <div className="item-visual-actions">
+                      <button
+                        type="button"
+                        className="ghost-btn item-visual-emoji-btn"
+                        title="Tombe souvent"
+                        aria-label="Marquer comme tombe souvent"
+                        onClick={() =>
+                          updateItemVisual(effectiveSelectedItem.itemNumber, {
+                            itemIcon: '⭐️',
+                            itemColor: '#facc15',
+                            itemLabel: 'Tombe souvent',
+                          }, 'Marqueur visuel: ⭐️ Tombe souvent')
+                        }
+                      >
+                        ⭐️
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-btn item-visual-emoji-btn"
+                        title="Difficile"
+                        aria-label="Marquer comme difficile"
+                        onClick={() =>
+                          updateItemVisual(effectiveSelectedItem.itemNumber, {
+                            itemIcon: '⚠️',
+                            itemColor: '#ef4444',
+                            itemLabel: 'Difficile',
+                          }, 'Marqueur visuel: ⚠️ Difficile')
+                        }
+                      >
+                        ⚠️
+                      </button>
+                      <button
+                        type="button"
+                        className="ghost-btn"
+                        onClick={() =>
+                          updateItemVisual(effectiveSelectedItem.itemNumber, {
+                            itemIcon: '',
+                            itemColor: '',
+                            itemLabel: '',
+                          }, 'Marqueur visuel effacé')
+                        }
+                      >
+                        Effacer marqueur
+                      </button>
+                    </div>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div className="item-detail-card item-detail-mastery-card">
+                    <h3>Ressenti manuel</h3>
+                    <select
+                      className={`manual-item-mastery-select ${
+                        effectiveSelectedItem.tracking.itemMastery === 'Non évalué'
+                          ? 'none'
+                          : `mastery-${normalizeText(effectiveSelectedItem.tracking.itemMastery).toLowerCase().replace(' ', '-')}`
+                      }`}
+                      value={effectiveSelectedItem.tracking.itemMastery}
+                      onChange={(event) =>
+                        updateItemMastery(
+                          effectiveSelectedItem.itemNumber,
+                          (event.target.value as Mastery | 'Non évalué') ?? 'Non évalué',
+                        )
+                      }
+                    >
+                      {effectiveSelectedItem.tracking.itemMastery === 'Non évalué' ? (
+                        <option value="Non évalué">{UNRATED_FEELING_LABEL}</option>
+                      ) : null}
+                      {MASTERY_LEVELS.map((level) => (
+                        <option key={level} value={level}>
+                          {getMasteryFeelingLabel(level)}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div id="flashcards-section" className="quiz-config-head item-detail-card">
+                    <div className="quiz-config-title-row">
+                      <h3>Flashcards & Quiz</h3>
+                      <button
+                        type="button"
+                        className={`quiz-trigger-btn ${quizPulseByItem[effectiveSelectedItem.itemNumber] ? 'pulse' : ''}`}
+                        onClick={() => openQuiz(effectiveSelectedItem.itemNumber)}
+                        disabled={!effectiveSelectedItem.tracking.quiz.enabled}
+                        title={
+                          effectiveSelectedItem.tracking.quiz.enabled
+                            ? "Lancer le quiz de l'item"
+                            : 'Quiz désactivé pour cet item'
+                        }
+                      >
+                        Quiz
+                      </button>
+                    </div>
+                    <button
+                      type="button"
+                      className={`ghost-btn quiz-config-toggle ${quizConfigExpanded ? 'open' : ''}`}
+                      onClick={() => setQuizConfigExpanded((current) => !current)}
+                      aria-expanded={quizConfigExpanded}
+                      aria-label={quizConfigExpanded ? 'Masquer les détails du quiz' : 'Afficher les détails du quiz'}
+                      title={quizConfigExpanded ? 'Masquer les détails' : 'Afficher les détails'}
+                    >
+                      ▾
+                    </button>
+                  </div>
+                  <div className="quiz-config-grid item-detail-card">
+                    <label className="checkline">
+                      <input
+                        type="checkbox"
+                        checked={effectiveSelectedItem.tracking.quiz.enabled}
+                        onChange={(event) =>
+                          updateItemQuizConfig(effectiveSelectedItem.itemNumber, { enabled: event.target.checked })
+                        }
+                      />
+                      Activer quiz pour cet item
+                    </label>
+                    <label className="block-label">
+                      Cartes quiz
                   <div className="quiz-card-list">
                     {effectiveSelectedItem.tracking.quiz.cards.map((card, index) => (
                       <div key={card.id} className="quiz-card-row">
@@ -7345,7 +7409,7 @@ function getPasswordStrengthMeta(password: string) {
               </div>
 
               <h3>Assignation collèges</h3>
-              <div className="college-picker">
+              <div id="item-detail-assignments" className="college-picker">
                 {COLLEGES.map((college) => (
                   <label key={college}>
                     <input
@@ -7362,7 +7426,7 @@ function getPasswordStrengthMeta(password: string) {
               </div>
 
               <h3>Suivi par collège</h3>
-              <div className="tracking-grid">
+              <div id="item-detail-tracking" className="tracking-grid">
                 {effectiveSelectedItem.tracking.assignedColleges.length === 0 ? (
                   <p className="muted">Sélectionne au moins un collège pour commencer le suivi.</p>
                 ) : null}
@@ -7851,6 +7915,8 @@ function getPasswordStrengthMeta(password: string) {
                 >
                   + Ajouter fiche plateforme
                 </button>
+              </div>
+                </aside>
               </div>
             </>
           ) : null}
