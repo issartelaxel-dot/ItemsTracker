@@ -2276,7 +2276,7 @@ function App() {
   const [usefulLinkInputError, setUsefulLinkInputError] = useState('')
   const [youtubeSectionOpen, setYoutubeSectionOpen] = useState(true)
   const [usefulLinkSectionOpen, setUsefulLinkSectionOpen] = useState(true)
-  const [itemVisualSectionOpen, setItemVisualSectionOpen] = useState(true)
+  const [itemVisualSectionOpen, setItemVisualSectionOpen] = useState(false)
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const imageSyncInFlightRef = useRef<Promise<{ updatedAt: string | null } | false> | null>(null)
   const trackingStateRef = useRef(trackingState)
@@ -3841,6 +3841,7 @@ function getPasswordStrengthMeta(password: string) {
       return
     }
     setItemDetailTab('tracking')
+    setItemVisualSectionOpen(false)
     setYoutubeInput(effectiveSelectedItem.tracking.youtubeUrl)
     setYoutubeInputError('')
     setUsefulLinkInput(effectiveSelectedItem.tracking.usefulLinkUrl)
@@ -6762,13 +6763,122 @@ function getPasswordStrengthMeta(password: string) {
                   </div>
                 </div>
                 <div className="detail-head-actions">
-                  <button
-                    type="button"
-                    className="ghost-btn item-detail-action-btn"
-                    onClick={() => setItemVisualSectionOpen((current) => !current)}
-                  >
-                    ✎ Modifier
-                  </button>
+                  <div className="item-detail-edit-menu">
+                    <button
+                      type="button"
+                      className="ghost-btn item-detail-action-btn"
+                      onClick={() => setItemVisualSectionOpen((current) => !current)}
+                      aria-expanded={itemVisualSectionOpen}
+                    >
+                      ✎ Modifier
+                    </button>
+                    {itemVisualSectionOpen ? (
+                      <div className="item-detail-edit-popover">
+                        <div className="item-detail-edit-popover-head">
+                          <h3>Commentaires</h3>
+                          <button
+                            type="button"
+                            className="ghost-btn item-detail-edit-close"
+                            aria-label="Fermer les commentaires"
+                            onClick={() => setItemVisualSectionOpen(false)}
+                          >
+                            ✕
+                          </button>
+                        </div>
+                        <div className="item-visual-editor">
+                          <label className="block-label">
+                            Icône
+                            <input
+                              type="text"
+                              maxLength={2}
+                              value={effectiveSelectedItem.tracking.itemIcon}
+                              onChange={(event) =>
+                                updateItemVisual(effectiveSelectedItem.itemNumber, { itemIcon: event.target.value })
+                              }
+                            />
+                          </label>
+                          <label className="block-label">
+                            Couleur
+                            <input
+                              type="color"
+                              value={effectiveSelectedItem.tracking.itemColor || '#2563eb'}
+                              onChange={(event) =>
+                                updateItemVisual(effectiveSelectedItem.itemNumber, { itemColor: event.target.value })
+                              }
+                            />
+                          </label>
+                          <label className="block-label">
+                            Libellé
+                            <input
+                              type="text"
+                              placeholder="Tombe souvent, Difficile..."
+                              value={effectiveSelectedItem.tracking.itemLabel}
+                              onChange={(event) =>
+                                updateItemVisual(effectiveSelectedItem.itemNumber, { itemLabel: event.target.value })
+                              }
+                            />
+                          </label>
+                          <div className="item-visual-actions">
+                            <button
+                              type="button"
+                              className="ghost-btn item-visual-emoji-btn"
+                              title="Tombe souvent"
+                              aria-label="Marquer comme tombe souvent"
+                              onClick={() =>
+                                updateItemVisual(
+                                  effectiveSelectedItem.itemNumber,
+                                  {
+                                    itemIcon: '⭐️',
+                                    itemColor: '#facc15',
+                                    itemLabel: 'Tombe souvent',
+                                  },
+                                  'Marqueur visuel: ⭐️ Tombe souvent',
+                                )
+                              }
+                            >
+                              ⭐️
+                            </button>
+                            <button
+                              type="button"
+                              className="ghost-btn item-visual-emoji-btn"
+                              title="Difficile"
+                              aria-label="Marquer comme difficile"
+                              onClick={() =>
+                                updateItemVisual(
+                                  effectiveSelectedItem.itemNumber,
+                                  {
+                                    itemIcon: '⚠️',
+                                    itemColor: '#ef4444',
+                                    itemLabel: 'Difficile',
+                                  },
+                                  'Marqueur visuel: ⚠️ Difficile',
+                                )
+                              }
+                            >
+                              ⚠️
+                            </button>
+                            <button
+                              type="button"
+                              className="ghost-btn"
+                              onClick={() =>
+                                updateItemVisual(
+                                  effectiveSelectedItem.itemNumber,
+                                  {
+                                    itemIcon: '',
+                                    itemColor: '',
+                                    itemLabel: '',
+                                  },
+                                  'Marqueur visuel effacé',
+                                )
+                              }
+                            >
+                              Effacer marqueur
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : null}
+                  </div>
                   <button
                     type="button"
                     className={`quiz-trigger-btn ${quizPulseByItem[effectiveSelectedItem.itemNumber] ? 'pulse' : ''}`}
@@ -7019,101 +7129,6 @@ function getPasswordStrengthMeta(password: string) {
                   </div>
 
                 <aside className="item-detail-side-column">
-                    <div className="inline-accordion item-detail-card item-detail-tab-panel item-detail-tab-panel-tracking">
-                    <button
-                      type="button"
-                      className={`inline-accordion-head ${itemVisualSectionOpen ? 'open' : ''}`}
-                      aria-expanded={itemVisualSectionOpen}
-                      onClick={() => setItemVisualSectionOpen((current) => !current)}
-                    >
-                      <h3>Commentaires</h3>
-                      <span className="inline-accordion-chevron" aria-hidden="true">
-                        ▾
-                      </span>
-                    </button>
-                    {itemVisualSectionOpen ? (
-                      <div className="item-visual-editor">
-                    <label className="block-label">
-                      Icône
-                      <input
-                        type="text"
-                        maxLength={2}
-                        value={effectiveSelectedItem.tracking.itemIcon}
-                        onChange={(event) =>
-                          updateItemVisual(effectiveSelectedItem.itemNumber, { itemIcon: event.target.value })
-                        }
-                      />
-                    </label>
-                    <label className="block-label">
-                      Couleur
-                      <input
-                        type="color"
-                        value={effectiveSelectedItem.tracking.itemColor || '#2563eb'}
-                        onChange={(event) =>
-                          updateItemVisual(effectiveSelectedItem.itemNumber, { itemColor: event.target.value })
-                        }
-                      />
-                    </label>
-                    <label className="block-label">
-                      Libellé
-                      <input
-                        type="text"
-                        placeholder="Tombe souvent, Difficile..."
-                        value={effectiveSelectedItem.tracking.itemLabel}
-                        onChange={(event) =>
-                          updateItemVisual(effectiveSelectedItem.itemNumber, { itemLabel: event.target.value })
-                        }
-                      />
-                    </label>
-                    <div className="item-visual-actions">
-                      <button
-                        type="button"
-                        className="ghost-btn item-visual-emoji-btn"
-                        title="Tombe souvent"
-                        aria-label="Marquer comme tombe souvent"
-                        onClick={() =>
-                          updateItemVisual(effectiveSelectedItem.itemNumber, {
-                            itemIcon: '⭐️',
-                            itemColor: '#facc15',
-                            itemLabel: 'Tombe souvent',
-                          }, 'Marqueur visuel: ⭐️ Tombe souvent')
-                        }
-                      >
-                        ⭐️
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-btn item-visual-emoji-btn"
-                        title="Difficile"
-                        aria-label="Marquer comme difficile"
-                        onClick={() =>
-                          updateItemVisual(effectiveSelectedItem.itemNumber, {
-                            itemIcon: '⚠️',
-                            itemColor: '#ef4444',
-                            itemLabel: 'Difficile',
-                          }, 'Marqueur visuel: ⚠️ Difficile')
-                        }
-                      >
-                        ⚠️
-                      </button>
-                      <button
-                        type="button"
-                        className="ghost-btn"
-                        onClick={() =>
-                          updateItemVisual(effectiveSelectedItem.itemNumber, {
-                            itemIcon: '',
-                            itemColor: '',
-                            itemLabel: '',
-                          }, 'Marqueur visuel effacé')
-                        }
-                      >
-                        Effacer marqueur
-                      </button>
-                    </div>
-                      </div>
-                    ) : null}
-                  </div>
-
                     <div className="item-detail-card item-detail-mastery-card item-detail-tab-panel item-detail-tab-panel-tracking">
                     <h3>Ressenti manuel</h3>
                     <select

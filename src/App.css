@@ -6781,6 +6781,42 @@ tbody tr.selected {
   box-shadow: 0 1px 8px color-mix(in oklab, var(--shadow) 45%, transparent);
 }
 
+.item-detail-edit-menu {
+  position: relative;
+}
+
+.item-detail-edit-popover {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  z-index: 30;
+  width: min(360px, calc(100vw - 2rem));
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--panel-bg);
+  padding: 0.85rem;
+  box-shadow: 0 18px 42px color-mix(in oklab, var(--shadow) 70%, transparent);
+}
+
+.item-detail-edit-popover-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.7rem;
+}
+
+.item-detail-edit-popover-head h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.item-detail-edit-close {
+  width: 34px;
+  min-height: 34px;
+  padding: 0;
+}
+
 .item-detail-content-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(230px, 290px);
