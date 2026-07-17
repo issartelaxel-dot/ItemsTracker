@@ -6973,10 +6973,8 @@ function getPasswordStrengthMeta(password: string) {
                     }
                     aria-label="Ajuster le ressenti manuel"
                   >
-                    {effectiveSelectedItem.tracking.itemMastery === 'Non évalué' ? (
-                      <option value="Non évalué">{UNRATED_FEELING_LABEL}</option>
-                    ) : null}
-                    {MASTERY_LEVELS.map((level) => (
+                    <option value="Non évalué">{UNRATED_FEELING_LABEL}</option>
+                    {MASTERY_LEVELS.filter((level) => level !== 'Mauvais').map((level) => (
                       <option key={level} value={level}>
                         {getMasteryFeelingLabel(level)}
                       </option>
