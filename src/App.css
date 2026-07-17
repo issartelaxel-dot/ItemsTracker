@@ -4358,16 +4358,17 @@ tbody tr.selected {
 }
 
 .item-label-chip {
-  justify-self: start;
-  width: fit-content;
-  max-width: 100%;
+  place-self: start;
+  inline-size: max-content;
+  max-inline-size: min(100%, 32ch);
   margin: 0.18rem 0 0;
   padding: 0.06rem 0.36rem;
   border: 1px solid var(--border);
   border-radius: 999px;
   color: var(--muted);
   font-size: 0.68rem;
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
