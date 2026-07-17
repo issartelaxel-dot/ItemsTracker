@@ -7228,8 +7228,33 @@ tbody tr.selected {
 }
 
 .item-detail-feeling-stat .item-detail-stat-icon {
+  color: var(--muted);
+  background: color-mix(in oklab, var(--surface-soft) 78%, var(--panel-bg));
+}
+
+.item-detail-feeling-stat.mastery-mauvais .item-detail-stat-icon {
+  color: #dc2626;
+  background: #fee2e2;
+}
+
+.item-detail-feeling-stat.mastery-moyen .item-detail-stat-icon {
+  color: #f97316;
+  background: #ffedd5;
+}
+
+.item-detail-feeling-stat.mastery-bon .item-detail-stat-icon {
+  color: #d97706;
+  background: #fef3c7;
+}
+
+.item-detail-feeling-stat.mastery-tres-bon .item-detail-stat-icon {
   color: #16a34a;
-  background: color-mix(in oklab, #dcfce7 78%, var(--panel-bg));
+  background: #dcfce7;
+}
+
+.item-detail-feeling-stat.mastery-parfait .item-detail-stat-icon {
+  color: #2563eb;
+  background: #dbeafe;
 }
 
 .item-detail-stat-grid .meta-label {
@@ -7267,6 +7292,26 @@ tbody tr.selected {
 .item-detail-stat-select.manual-item-mastery-select {
   border-color: transparent;
   background: transparent;
+}
+
+.item-detail-stat-select.manual-item-mastery-select.mastery-mauvais {
+  color: #dc2626;
+}
+
+.item-detail-stat-select.manual-item-mastery-select.mastery-moyen {
+  color: #f97316;
+}
+
+.item-detail-stat-select.manual-item-mastery-select.mastery-bon {
+  color: #d97706;
+}
+
+.item-detail-stat-select.manual-item-mastery-select.mastery-tres-bon {
+  color: #16a34a;
+}
+
+.item-detail-stat-select.manual-item-mastery-select.mastery-parfait {
+  color: #2563eb;
 }
 
 .item-detail-stat-select:focus {

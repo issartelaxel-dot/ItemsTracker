@@ -1089,6 +1089,15 @@ function getMasteryFeelingLabel(mastery: Mastery) {
   return 'Très facile'
 }
 
+function getMasteryFeelingIcon(mastery: Mastery | 'Non évalué') {
+  if (mastery === 'Mauvais') return '↻'
+  if (mastery === 'Moyen') return '⚠'
+  if (mastery === 'Bon') return '⊖'
+  if (mastery === 'Très bon') return '☺'
+  if (mastery === 'Parfait') return '★'
+  return '○'
+}
+
 const COLLEGES = [
   'ANATOMIE ET CYTOLOGIE PATHOLOGIQUES',
   'ANESTHÉSIE - RÉANIMATION',
@@ -6939,8 +6948,16 @@ function getPasswordStrengthMeta(password: string) {
                   <p className="item-detail-stat-value">{formatDate(effectiveSelectedItem.lastReviewDate)}</p>
                   <p className="meta-label">Dernière révision</p>
                 </div>
-                <div className="item-detail-feeling-stat">
-                  <span className="item-detail-stat-icon" aria-hidden="true">☺</span>
+                <div
+                  className={`item-detail-feeling-stat ${
+                    effectiveSelectedItem.tracking.itemMastery === 'Non évalué'
+                      ? 'none'
+                      : `mastery-${normalizeText(effectiveSelectedItem.tracking.itemMastery).toLowerCase().replace(' ', '-')}`
+                  }`}
+                >
+                  <span className="item-detail-stat-icon" aria-hidden="true">
+                    {getMasteryFeelingIcon(effectiveSelectedItem.tracking.itemMastery)}
+                  </span>
                   <select
                     className={`item-detail-stat-select manual-item-mastery-select ${
                       effectiveSelectedItem.tracking.itemMastery === 'Non évalué'
