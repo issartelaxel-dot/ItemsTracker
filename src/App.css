@@ -7384,6 +7384,219 @@ tbody tr.selected {
   display: none;
 }
 
+.item-detail-tab-tracking {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0.72rem;
+}
+
+.item-detail-tab-tracking .item-detail-main-column,
+.item-detail-tab-tracking .item-detail-side-column {
+  display: contents;
+}
+
+.item-detail-tab-tracking .item-detail-mastery-card {
+  display: none !important;
+}
+
+.item-detail-tab-tracking .item-detail-upcoming-card,
+.item-detail-tab-tracking .item-detail-section-title-colleges,
+.item-detail-tab-tracking #item-detail-tracking {
+  grid-column: 1;
+}
+
+.item-detail-tab-tracking .item-detail-section-title-lisa,
+.item-detail-tab-tracking .item-detail-section-title-platform,
+.item-detail-tab-tracking .reference-grid {
+  grid-column: 2;
+}
+
+.item-detail-tab-tracking .item-detail-section-title {
+  display: flex !important;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.68rem 0.75rem 0;
+  border: 1px solid var(--border);
+  border-bottom: 0;
+  border-radius: 12px 12px 0 0;
+  background: var(--panel-bg);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.item-detail-tab-tracking .item-detail-section-title::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+
+.item-detail-tab-tracking .item-detail-section-title-lisa::before {
+  background: #facc15;
+}
+
+.item-detail-tab-tracking .item-detail-section-title-platform::before {
+  background: #a855f7;
+}
+
+.item-detail-tab-tracking .item-detail-section-title + .reference-grid,
+.item-detail-tab-tracking .item-detail-section-title + .checkline + .reference-grid,
+.item-detail-tab-tracking .item-detail-section-title + .tracking-grid {
+  border-radius: 0 0 12px 12px;
+  border-top: 0;
+}
+
+.item-detail-tab-tracking .item-detail-upcoming-card {
+  gap: 0.5rem;
+}
+
+.item-detail-tab-tracking .tracking-grid,
+.item-detail-tab-tracking .reference-grid {
+  max-height: none;
+  margin: 0;
+  padding: 0.58rem;
+  gap: 0;
+  background: var(--panel-bg);
+}
+
+.item-detail-tracking-table-head,
+.item-detail-reference-table-head {
+  display: grid;
+  gap: 0.5rem;
+  padding: 0 0.42rem 0.42rem;
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 900;
+}
+
+.item-detail-tracking-table-head {
+  grid-template-columns: minmax(120px, 1.3fr) 92px 102px minmax(120px, 1fr);
+}
+
+.item-detail-reference-table-head {
+  grid-template-columns: minmax(120px, 1.35fr) 92px 102px minmax(120px, 1fr) 30px;
+}
+
+.item-detail-tab-tracking .college-card,
+.item-detail-tab-tracking .reference-card {
+  display: grid;
+  align-items: center;
+  gap: 0.5rem;
+  border: 0;
+  border-top: 1px solid var(--border);
+  border-radius: 0;
+  padding: 0.48rem 0.42rem;
+  background: transparent;
+}
+
+.item-detail-tab-tracking .college-card {
+  grid-template-columns: minmax(120px, 1.3fr) 92px 102px minmax(120px, 1fr);
+}
+
+.item-detail-tab-tracking .reference-card {
+  grid-template-columns: minmax(120px, 1.35fr) 92px 102px minmax(120px, 1fr) 30px;
+}
+
+.item-detail-tab-tracking .college-card-head {
+  min-width: 0;
+}
+
+.item-detail-tab-tracking .college-card-head .star-btn {
+  display: none;
+}
+
+.item-detail-tab-tracking .college-card-head p {
+  font-size: 0.7rem;
+  font-weight: 900;
+}
+
+.item-detail-tab-tracking .college-card-health-icon {
+  width: 22px;
+  height: 22px;
+}
+
+.item-detail-tab-tracking .control-row {
+  margin: 0;
+  justify-content: center;
+}
+
+.item-detail-tab-tracking .control-row > p,
+.item-detail-tab-tracking .block-label {
+  font-size: 0;
+}
+
+.item-detail-tab-tracking .counter-wrap {
+  gap: 0.28rem;
+}
+
+.item-detail-tab-tracking .counter-wrap button {
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+}
+
+.item-detail-tab-tracking .counter-wrap .star-btn {
+  display: none;
+}
+
+.item-detail-tab-tracking .block-label select,
+.item-detail-tab-tracking .block-label textarea,
+.item-detail-tab-tracking .reference-row input {
+  font-size: 0.68rem;
+}
+
+.item-detail-tab-tracking .block-label textarea {
+  min-height: 32px;
+  resize: vertical;
+}
+
+.item-detail-tab-tracking .reference-row {
+  display: contents;
+}
+
+.item-detail-tab-tracking .reference-row .sheet-emoji-btn {
+  display: none;
+}
+
+.item-detail-tab-tracking .reference-row input[type='text'] {
+  grid-column: 1;
+}
+
+.item-detail-tab-tracking .reference-row input[type='url'] {
+  display: none;
+}
+
+.item-detail-tab-tracking .reference-card > .control-row {
+  grid-column: 2;
+}
+
+.item-detail-tab-tracking .reference-card > .block-label:nth-of-type(1) {
+  grid-column: 3;
+}
+
+.item-detail-tab-tracking .reference-card > .block-label:nth-of-type(2) {
+  grid-column: 4;
+}
+
+.item-detail-tab-tracking .reference-row .remove-ref-btn {
+  grid-column: 5;
+  grid-row: 1;
+}
+
+.item-detail-tab-tracking .remove-ref-btn {
+  width: 24px;
+  height: 24px;
+  color: #ef4444;
+}
+
+.item-detail-tab-tracking .add-ref-btn {
+  margin-top: 0.5rem;
+  color: var(--accent);
+  background: transparent;
+  border-color: color-mix(in oklab, var(--accent) 34%, var(--border));
+}
+
 .item-detail-upcoming-card textarea {
   min-height: 54px;
   font-size: 0.72rem;
@@ -8255,6 +8468,30 @@ tbody tr.selected {
   .item-detail-stat-grid,
   .item-detail-content-grid {
     grid-template-columns: 1fr;
+  }
+
+  .item-detail-tab-tracking .item-detail-upcoming-card,
+  .item-detail-tab-tracking .item-detail-section-title-colleges,
+  .item-detail-tab-tracking #item-detail-tracking,
+  .item-detail-tab-tracking .item-detail-section-title-lisa,
+  .item-detail-tab-tracking .item-detail-section-title-platform,
+  .item-detail-tab-tracking .reference-grid {
+    grid-column: 1;
+  }
+
+  .item-detail-tracking-table-head,
+  .item-detail-reference-table-head,
+  .item-detail-tab-tracking .college-card,
+  .item-detail-tab-tracking .reference-card {
+    grid-template-columns: 1fr;
+  }
+
+  .item-detail-tab-tracking .reference-row input[type='text'],
+  .item-detail-tab-tracking .reference-card > .control-row,
+  .item-detail-tab-tracking .reference-card > .block-label:nth-of-type(1),
+  .item-detail-tab-tracking .reference-card > .block-label:nth-of-type(2),
+  .item-detail-tab-tracking .reference-row .remove-ref-btn {
+    grid-column: 1;
   }
 
   .item-detail-stat-grid > div {

@@ -7435,8 +7435,14 @@ function getPasswordStrengthMeta(password: string) {
                 ))}
               </div>
 
-                <h3 className="item-detail-tab-panel item-detail-tab-panel-tracking">Suivi par collège</h3>
+                <h3 className="item-detail-section-title item-detail-section-title-colleges item-detail-tab-panel item-detail-tab-panel-tracking">Suivi par collège</h3>
                 <div id="item-detail-tracking" className="tracking-grid item-detail-tab-panel item-detail-tab-panel-tracking">
+                <div className="item-detail-tracking-table-head" aria-hidden="true">
+                  <span>Collège</span>
+                  <span>Révisions</span>
+                  <span>Ressenti</span>
+                  <span>Commentaires</span>
+                </div>
                 {effectiveSelectedItem.tracking.assignedColleges.length === 0 ? (
                   <p className="muted">Sélectionne au moins un collège pour commencer le suivi.</p>
                 ) : null}
@@ -7528,7 +7534,7 @@ function getPasswordStrengthMeta(password: string) {
                 })}
               </div>
 
-                <h3 className="item-detail-tab-panel item-detail-tab-panel-tracking">Fiches LISA</h3>
+                <h3 className="item-detail-section-title item-detail-section-title-lisa item-detail-tab-panel item-detail-tab-panel-tracking">Fiches LISA</h3>
                 {effectiveSelectedItem.tracking.lisaSheets.length === 0 ? (
                   <label className="checkline item-detail-tab-panel item-detail-tab-panel-tracking">
                   <input
@@ -7542,6 +7548,12 @@ function getPasswordStrengthMeta(password: string) {
                 </label>
               ) : null}
                 <div className="reference-grid item-detail-tab-panel item-detail-tab-panel-tracking">
+                <div className="item-detail-reference-table-head" aria-hidden="true">
+                  <span>Fiche</span>
+                  <span>Révisions</span>
+                  <span>Ressenti</span>
+                  <span>Commentaires</span>
+                </div>
                 {effectiveSelectedItem.tracking.lisaSheets.length === 0 ? (
                   <p className="muted">Aucune fiche LISA.</p>
                 ) : null}
@@ -7724,7 +7736,7 @@ function getPasswordStrengthMeta(password: string) {
                 </button>
               </div>
 
-                <h3 className="item-detail-tab-panel item-detail-tab-panel-tracking">Fiches Plateformes</h3>
+                <h3 className="item-detail-section-title item-detail-section-title-platform item-detail-tab-panel item-detail-tab-panel-tracking">Fiches Plateformes</h3>
                 {effectiveSelectedItem.tracking.platformSheets.length === 0 ? (
                   <label className="checkline item-detail-tab-panel item-detail-tab-panel-tracking">
                   <input
@@ -7738,6 +7750,12 @@ function getPasswordStrengthMeta(password: string) {
                 </label>
               ) : null}
                 <div className="reference-grid item-detail-tab-panel item-detail-tab-panel-tracking">
+                <div className="item-detail-reference-table-head" aria-hidden="true">
+                  <span>Fiche</span>
+                  <span>Révisions</span>
+                  <span>Ressenti</span>
+                  <span>Commentaires</span>
+                </div>
                 {effectiveSelectedItem.tracking.platformSheets.length === 0 ? (
                   <p className="muted">Aucune fiche plateforme.</p>
                 ) : null}
