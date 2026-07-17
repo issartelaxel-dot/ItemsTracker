@@ -7154,33 +7154,6 @@ function getPasswordStrengthMeta(password: string) {
                   </div>
 
                 <aside className="item-detail-side-column">
-                    <div className="item-detail-card item-detail-mastery-card item-detail-tab-panel item-detail-tab-panel-tracking">
-                    <h3>Ressenti manuel</h3>
-                    <select
-                      className={`manual-item-mastery-select ${
-                        effectiveSelectedItem.tracking.itemMastery === 'Non évalué'
-                          ? 'none'
-                          : `mastery-${normalizeText(effectiveSelectedItem.tracking.itemMastery).toLowerCase().replace(' ', '-')}`
-                      }`}
-                      value={effectiveSelectedItem.tracking.itemMastery}
-                      onChange={(event) =>
-                        updateItemMastery(
-                          effectiveSelectedItem.itemNumber,
-                          (event.target.value as Mastery | 'Non évalué') ?? 'Non évalué',
-                        )
-                      }
-                    >
-                      {effectiveSelectedItem.tracking.itemMastery === 'Non évalué' ? (
-                        <option value="Non évalué">{UNRATED_FEELING_LABEL}</option>
-                      ) : null}
-                      {MASTERY_LEVELS.map((level) => (
-                        <option key={level} value={level}>
-                          {getMasteryFeelingLabel(level)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
                     <div id="flashcards-section" className="quiz-config-head item-detail-card item-detail-tab-panel item-detail-tab-panel-flashcards">
                     <div className="quiz-config-title-row">
                       <h3>Flashcards & Quiz</h3>

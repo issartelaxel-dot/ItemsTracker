@@ -7449,10 +7449,6 @@ tbody tr.selected {
   display: contents;
 }
 
-.item-detail-tab-tracking .item-detail-mastery-card {
-  display: none !important;
-}
-
 .item-detail-tab-tracking .item-detail-upcoming-card,
 .item-detail-tab-tracking .item-detail-section-title-colleges,
 .item-detail-tab-tracking #item-detail-tracking {
