@@ -1007,7 +1007,7 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
             <span className="quiz-rich-color-swatch" style={{ backgroundColor: option.value }} aria-hidden="true" />
           </button>
         ))}
-      </div>
+                </div>
       <div
         ref={editorRef}
         className="quiz-rich-editable"
@@ -6679,102 +6679,69 @@ function getPasswordStrengthMeta(password: string) {
             </select>
           </div>
 
-              <div className="table-wrap">
-            <table className="items-table">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Description</th>
-                  <th>Collèges</th>
-                  <th>Fiches LISA</th>
-                  <th>Fiches Plateformes</th>
-                  <th>Révisions</th>
-                  <th>Progression</th>
-                  <th>Ressenti</th>
-                  <th>Quiz</th>
-                </tr>
-              </thead>
-              <tbody>
-                {itemTableList.map((item) => {
-                  const hasVisualMarker = Boolean(item.tracking.itemIcon || item.tracking.itemColor || item.tracking.itemLabel)
-                  const progressPercent = Math.round(item.progress * 100)
-                  const progressTier =
-                    progressPercent >= 100
-                      ? 'tier-complete'
-                      : progressPercent >= 75
-                        ? 'tier-high'
-                        : progressPercent >= 50
-                          ? 'tier-mid-high'
-                          : progressPercent >= 30
-                            ? 'tier-mid'
-                            : 'tier-low'
-                  const masteryToneClass =
-                    item.tracking.itemMastery === 'Non évalué'
-                      ? 'none'
-                      : `mastery-${normalizeText(item.tracking.itemMastery).toLowerCase().replace(' ', '-')}`
-                  return (
-                    <tr
-                      key={item.itemNumber}
-                      className={item.itemNumber === effectiveSelectedItem?.itemNumber ? 'selected' : ''}
-                      onClick={() => setSelectedItem(item.itemNumber)}
-                    >
-                      <td>
-                        <div className="item-cell">
-                          {hasVisualMarker && (item.tracking.itemIcon || item.tracking.itemColor) ? (
-                            <span className="item-marker" style={{ backgroundColor: item.tracking.itemColor || undefined }}>
-                              {item.tracking.itemIcon || ''}
-                            </span>
-                          ) : null}
-                          <div>
-                            <span>#{item.itemNumber}</span>
-                            {item.tracking.itemLabel ? (
-                              <p className="item-label-chip" style={{ borderColor: item.tracking.itemColor || undefined }}>
-                                {item.tracking.itemLabel}
-                              </p>
-                            ) : null}
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <p className="description-cell">{item.shortDescription}</p>
-                        <p className="tag-row">{item.tagCodes.join(' • ')}</p>
-                      </td>
-                      <td>{item.tracking.assignedColleges.length}</td>
-                      <td>{item.tracking.lisaSheets.length}</td>
-                      <td>{item.tracking.platformSheets.length}</td>
-                      <td>{item.totalReviews}</td>
-                      <td>
-                        <span className={`pill progress-pill ${progressTier}`}>
-                          {progressPercent}%
-                          {progressPercent >= 100 ? <span className="progress-pill-check">✓</span> : null}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`item-mastery-pill ${masteryToneClass}`}>
-                          {item.tracking.itemMastery === 'Non évalué'
-                            ? UNRATED_FEELING_LABEL
-                            : getMasteryFeelingLabel(item.tracking.itemMastery)}
-                        </span>
-                      </td>
-                      <td>
-                        <button
-                          type="button"
-                          className={`quiz-trigger-btn ${quizPulseByItem[item.itemNumber] ? 'pulse' : ''}`}
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            openQuiz(item.itemNumber)
-                          }}
-                          disabled={!item.tracking.quiz.enabled}
-                          title={item.tracking.quiz.enabled ? "Lancer le quiz de l'item" : 'Quiz désactivé pour cet item'}
-                        >
-                          Quiz
-                        </button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
+          <div className="items-list-wrap" role="list" aria-label="Liste des items">
+            {itemTableList.map((item) => {
+              const hasVisualMarker = Boolean(item.tracking.itemIcon || item.tracking.itemColor || item.tracking.itemLabel)
+              const progressPercent = Math.round(item.progress * 100)
+              const progressTier =
+                progressPercent >= 100
+                  ? 'tier-complete'
+                  : progressPercent >= 75
+                    ? 'tier-high'
+                    : progressPercent >= 50
+                      ? 'tier-mid-high'
+                      : progressPercent >= 30
+                        ? 'tier-mid'
+                        : 'tier-low'
+              const masteryToneClass =
+                item.tracking.itemMastery === 'Non évalué'
+                  ? 'none'
+                  : `mastery-${normalizeText(item.tracking.itemMastery).toLowerCase().replace(' ', '-')}`
+              return (
+                <button
+                  type="button"
+                  key={item.itemNumber}
+                  role="listitem"
+                  className={`items-list-row ${item.itemNumber === effectiveSelectedItem?.itemNumber ? 'selected' : ''}`}
+                  onClick={() => setSelectedItem(item.itemNumber)}
+                >
+                  <span
+                    className={`items-list-marker ${hasVisualMarker ? '' : 'empty'}`}
+                    style={{ backgroundColor: item.tracking.itemColor || undefined }}
+                    aria-hidden="true"
+                  >
+                    {item.tracking.itemIcon || ''}
+                  </span>
+                  <span className="items-list-number">#{item.itemNumber}</span>
+                  <span className="items-list-main">
+                    <strong>{item.shortDescription}</strong>
+                    <small>{item.tagLabels.join(' • ') || item.tagCodes.join(' • ') || 'Aucun collège'}</small>
+                    {item.tracking.itemLabel ? (
+                      <span className="item-label-chip" style={{ borderColor: item.tracking.itemColor || undefined }}>
+                        {item.tracking.itemLabel}
+                      </span>
+                    ) : null}
+                    <span className="items-list-metrics" aria-label="Métriques item">
+                      <span title="Collèges assignés">♙ {item.tracking.assignedColleges.length}</span>
+                      <span title="Flashcards">▧ {item.tracking.quiz.cards.length}</span>
+                      <span title="Révisions">↻ {item.totalReviews}</span>
+                    </span>
+                  </span>
+                  <span className="items-list-status">
+                    <span className={`pill progress-pill ${progressTier}`}>
+                      {progressPercent}%
+                      {progressPercent >= 100 ? <span className="progress-pill-check">✓</span> : null}
+                    </span>
+                    <span className={`item-mastery-pill ${masteryToneClass}`}>
+                      {item.tracking.itemMastery === 'Non évalué'
+                        ? UNRATED_FEELING_LABEL
+                        : getMasteryFeelingLabel(item.tracking.itemMastery)}
+                    </span>
+                  </span>
+                  <span className="items-list-chevron" aria-hidden="true">›</span>
+                </button>
+              )
+            })}
           </div>
         </article>
 
@@ -6840,11 +6807,13 @@ function getPasswordStrengthMeta(password: string) {
 
               <div className="meta-grid item-detail-stat-grid">
                 <div>
+                  <span className="item-detail-stat-icon" aria-hidden="true">▥</span>
                   <p className="meta-label">Collèges</p>
                   <p>{effectiveSelectedItem.tracking.assignedColleges.length || 0}</p>
                   <small>{effectiveSelectedItem.tagLabels.join(', ') || 'Aucun collège'}</small>
                 </div>
                 <div>
+                  <span className="item-detail-stat-icon" aria-hidden="true">▥</span>
                   <p className="meta-label">Révisions</p>
                   <p>
                     {effectiveSelectedItem.totalReviews +
@@ -6860,11 +6829,13 @@ function getPasswordStrengthMeta(password: string) {
                   <small>Total item et ressources</small>
                 </div>
                 <div>
+                  <span className="item-detail-stat-icon" aria-hidden="true">□</span>
                   <p className="meta-label">Dernière révision</p>
                   <p>{formatDate(effectiveSelectedItem.lastReviewDate)}</p>
                   <small>Dernier passage</small>
                 </div>
                 <div>
+                  <span className="item-detail-stat-icon" aria-hidden="true">☺</span>
                   <p className="meta-label">Ressenti manuel</p>
                   <p>
                     {effectiveSelectedItem.tracking.itemMastery === 'Non évalué'
@@ -6874,11 +6845,13 @@ function getPasswordStrengthMeta(password: string) {
                   <small>Évaluation globale</small>
                 </div>
                 <div>
+                  <span className="item-detail-stat-icon" aria-hidden="true">▱</span>
                   <p className="meta-label">Ressources</p>
                   <p>{effectiveSelectedItem.tracking.lisaSheets.length + effectiveSelectedItem.tracking.platformSheets.length}</p>
                   <small>Fiches liées</small>
                 </div>
                 <div>
+                  <span className="item-detail-stat-icon" aria-hidden="true">▣</span>
                   <p className="meta-label">Flashcards</p>
                   <p>{effectiveSelectedItem.tracking.quiz.cards.length}</p>
                   <small>Cartes créées</small>
@@ -7041,10 +7014,7 @@ function getPasswordStrengthMeta(password: string) {
                     ) : null}
                   </div>
 
-                  <div className="item-detail-created">
-                    Créé le 12 févr. 2026 par Dr Martin
                   </div>
-                </div>
 
                 <aside className="item-detail-side-column">
                   <div className="inline-accordion item-detail-card">
@@ -7403,8 +7373,14 @@ function getPasswordStrengthMeta(password: string) {
                           (card) => card.id === effectiveSelectedItem.tracking.quiz.activeCardId,
                         )?.quizCount ?? 0}
                       </span>
-                    </div>
-                  </>
+              </div>
+              <div className="item-detail-footer">
+                <span>Créé le 12 févr. 2026 par Dr. Martin</span>
+                <button type="button" className="item-detail-delete-btn" disabled title="Suppression d'item non disponible">
+                  Supprimer cet item
+                </button>
+              </div>
+            </>
                 ) : null}
               </div>
 
