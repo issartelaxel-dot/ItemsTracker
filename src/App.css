@@ -7425,6 +7425,12 @@ tbody tr.selected {
   display: none;
 }
 
+.item-detail-tab-resources .item-detail-video-card .youtube-preview,
+.item-detail-tab-resources .item-detail-video-card .youtube-embed-wrap {
+  width: 100%;
+  max-width: none;
+}
+
 .item-detail-card,
 .item-detail-side-column > .college-picker,
 .item-detail-side-column > .tracking-grid,
