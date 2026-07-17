@@ -7653,10 +7653,6 @@ tbody tr.selected {
   font-size: 0.72rem;
 }
 
-.item-detail-video-card .youtube-embed-wrap {
-  max-width: 420px;
-}
-
 .item-detail-side-column .item-visual-editor {
   grid-template-columns: 1fr;
 }
