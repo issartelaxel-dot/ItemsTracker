@@ -4686,6 +4686,21 @@ tbody tr.selected {
   color: #dc2626;
 }
 
+.flashcard-editor-save-action {
+  color: var(--accent);
+}
+
+.flashcard-editor-save-action span {
+  border-color: color-mix(in oklab, var(--accent) 44%, var(--border));
+  background: var(--accent);
+  color: #fff;
+}
+
+.flashcard-editor-save-action:hover span {
+  background: color-mix(in oklab, var(--accent) 88%, #000);
+  color: #fff;
+}
+
 .flashcard-editor-tabs {
   display: flex;
   gap: 0.55rem;
@@ -4924,8 +4939,8 @@ tbody tr.selected {
 .flashcard-editor-footer {
   position: sticky;
   bottom: 0;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
+  justify-content: center;
   align-items: center;
   gap: 1rem;
   margin-top: 1.25rem;

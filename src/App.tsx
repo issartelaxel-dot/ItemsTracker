@@ -8018,6 +8018,14 @@ function getPasswordStrengthMeta(password: string) {
                       <span aria-hidden="true">⌫</span>
                       Supprimer
                     </button>
+                    <button
+                      type="button"
+                      className="flashcard-editor-action flashcard-editor-save-action"
+                      onClick={() => setQuizEditMode(false)}
+                    >
+                      <span aria-hidden="true">▣</span>
+                      Enregistrer
+                    </button>
                     <button type="button" className="flashcard-editor-action" onClick={closeQuiz}>
                       <span aria-hidden="true">×</span>
                       Fermer
@@ -8166,9 +8174,6 @@ function getPasswordStrengthMeta(password: string) {
                       ☆ Très facile
                     </button>
                   </div>
-                  <button type="button" className="flashcard-editor-save" onClick={() => setQuizEditMode(false)}>
-                    ▣ Enregistrer
-                  </button>
                 </div>
 
                 {quizFeedback ? (
