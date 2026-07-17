@@ -4887,7 +4887,7 @@ tbody tr.selected {
   position: sticky;
   bottom: 0;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 1rem;
   margin-top: 1.25rem;
@@ -4897,7 +4897,6 @@ tbody tr.selected {
   backdrop-filter: blur(10px);
 }
 
-.flashcard-editor-flip,
 .flashcard-editor-save {
   min-height: 46px;
   font-weight: 900;

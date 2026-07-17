@@ -8061,13 +8061,6 @@ function getPasswordStrengthMeta(password: string) {
                 </details>
 
                 <div className="flashcard-editor-footer">
-                  <button
-                    type="button"
-                    className="ghost-btn flashcard-editor-flip"
-                    onClick={() => setQuizSide((current) => (current === 'front' ? 'back' : 'front'))}
-                  >
-                    ↻ Aperçu / Flip
-                  </button>
                   <div className="flashcard-editor-rates">
                     <button type="button" className="ghost-btn quiz-rate-btn again" onClick={() => handleQuizResult('again')}>
                       ↺ À revoir
