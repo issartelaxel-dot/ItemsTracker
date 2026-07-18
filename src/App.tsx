@@ -2200,7 +2200,6 @@ function App() {
   const [activeView, setActiveView] = useState<NavView>('dashboard')
   const [selectedCollegeDetail, setSelectedCollegeDetail] = useState<string | null>(null)
   const [collegeDetailFilter, setCollegeDetailFilter] = useState<CollegeDetailFilter>('all')
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [flashGeneratorScope, setFlashGeneratorScope] = useState<FlashGeneratorScope>('items')
   const [flashCollegeFilter, setFlashCollegeFilter] = useState<string>('ALL')
@@ -6298,22 +6297,6 @@ function getPasswordStrengthMeta(password: string) {
           </button>
         </nav>
         <div className="sidebar-footer">
-          <div className="menu-wrap">
-            <button
-              className={`ghost-btn sidebar-settings-btn ${activeView === 'settings' ? 'active' : ''}`}
-              title="Réglages"
-              aria-label="Réglages"
-              onClick={() => {
-                setActiveView('settings')
-                setProfileMenuOpen(false)
-              }}
-            >
-              <span className="sidebar-settings-icon" aria-hidden="true">
-                ⚙
-              </span>
-              <span className="sidebar-settings-label">Réglages</span>
-            </button>
-          </div>
           <button
             type="button"
             className="sidebar-footer-action sidebar-theme-action"
@@ -6334,12 +6317,14 @@ function getPasswordStrengthMeta(password: string) {
             </span>
             <span className="sidebar-footer-label">Déconnexion</span>
           </button>
-          <div className="menu-wrap sidebar-profile-wrap">
+          <div className="sidebar-profile-wrap">
             <button
-              className="sidebar-profile-trigger"
-              title="Profil"
-              aria-label="Profil"
-              onClick={() => setProfileMenuOpen((value) => !value)}
+              type="button"
+              className={`sidebar-profile-trigger ${activeView === 'settings' ? 'active' : ''}`}
+              title="Ouvrir les réglages"
+              aria-label="Ouvrir les réglages"
+              aria-current={activeView === 'settings' ? 'page' : undefined}
+              onClick={() => setActiveView('settings')}
             >
               {profile.photoUrl ? (
                 <img className="sidebar-profile-avatar" src={profile.photoUrl} alt="Profil" />
@@ -6353,63 +6338,6 @@ function getPasswordStrengthMeta(password: string) {
                 <small>{profile.email || authUser?.email || 'hello@setup-hub.com'}</small>
               </span>
             </button>
-            {profileMenuOpen ? (
-              <div className="menu-popover">
-                <p className="menu-title">Profil</p>
-                <div className="profile-head">
-                  {profile.photoUrl ? (
-                    <img className="profile-avatar" src={profile.photoUrl} alt="Photo profil" />
-                  ) : (
-                    <div className="profile-avatar profile-avatar-fallback" style={{ background: profile.avatarGradient }}>
-                      {getProfileInitials(profile)}
-                    </div>
-                  )}
-                </div>
-                <label className="menu-row menu-row-input">
-                  Prénom
-                  <input
-                    type="text"
-                    value={profile.firstName}
-                    onChange={(event) => setProfile((current) => ({ ...current, firstName: event.target.value }))}
-                  />
-                </label>
-                <label className="menu-row menu-row-input">
-                  Nom
-                  <input
-                    type="text"
-                    value={profile.lastName}
-                    onChange={(event) => setProfile((current) => ({ ...current, lastName: event.target.value }))}
-                  />
-                </label>
-                <label className="menu-row menu-row-input">
-                  Email
-                  <input
-                    type="email"
-                    value={profile.email}
-                    onChange={(event) => setProfile((current) => ({ ...current, email: event.target.value }))}
-                  />
-                </label>
-                <div className="menu-row menu-row-input">
-                  <span>Gradient avatar</span>
-                  <div className="avatar-gradient-grid">
-                    {AVATAR_GRADIENTS.map((gradient) => (
-                      <button
-                        key={gradient}
-                        type="button"
-                        className={`avatar-gradient-dot ${profile.avatarGradient === gradient ? 'active' : ''}`}
-                        style={{ background: gradient }}
-                        onClick={() => setProfile((current) => ({ ...current, avatarGradient: gradient }))}
-                        aria-label="Choisir ce gradient avatar"
-                        title="Choisir ce gradient avatar"
-                      />
-                    ))}
-                  </div>
-                </div>
-                <button type="button" className="menu-action-btn" onClick={() => void handleLogout()}>
-                  Déconnexion ({authUser?.email ?? 'session'})
-                </button>
-              </div>
-            ) : null}
           </div>
         </div>
       </aside>
