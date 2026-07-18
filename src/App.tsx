@@ -7155,19 +7155,6 @@ function getPasswordStrengthMeta(password: string) {
                     <div id="flashcards-section" className="quiz-config-head item-detail-card item-detail-tab-panel item-detail-tab-panel-flashcards">
                     <div className="quiz-config-title-row">
                       <h3>Flashcards & Quiz</h3>
-                      <button
-                        type="button"
-                        className={`quiz-trigger-btn ${quizPulseByItem[effectiveSelectedItem.itemNumber] ? 'pulse' : ''}`}
-                        onClick={() => openQuiz(effectiveSelectedItem.itemNumber)}
-                        disabled={!effectiveSelectedItem.tracking.quiz.enabled}
-                        title={
-                          effectiveSelectedItem.tracking.quiz.enabled
-                            ? "Lancer le quiz de l'item"
-                            : 'Quiz désactivé pour cet item'
-                        }
-                      >
-                        Quiz
-                      </button>
                     </div>
                     <button
                       type="button"
