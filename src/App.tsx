@@ -3843,19 +3843,31 @@ function getPasswordStrengthMeta(password: string) {
 
   useEffect(() => {
     if (!effectiveSelectedItem) {
+      setItemDetailTab('tracking')
+      setItemVisualSectionOpen(false)
+      return
+    }
+    setItemDetailTab('tracking')
+    setItemVisualSectionOpen(false)
+  }, [effectiveSelectedItem?.itemNumber])
+
+  useEffect(() => {
+    if (!effectiveSelectedItem) {
       setYoutubeInput('')
       setYoutubeInputError('')
       setUsefulLinkInput('')
       setUsefulLinkInputError('')
       return
     }
-    setItemDetailTab('tracking')
-    setItemVisualSectionOpen(false)
     setYoutubeInput(effectiveSelectedItem.tracking.youtubeUrl)
     setYoutubeInputError('')
     setUsefulLinkInput(effectiveSelectedItem.tracking.usefulLinkUrl)
     setUsefulLinkInputError('')
-  }, [effectiveSelectedItem])
+  }, [
+    effectiveSelectedItem?.itemNumber,
+    effectiveSelectedItem?.tracking.youtubeUrl,
+    effectiveSelectedItem?.tracking.usefulLinkUrl,
+  ])
 
   const selectedYouTubeVideoId = useMemo(
     () => (effectiveSelectedItem ? extractYouTubeVideoId(effectiveSelectedItem.tracking.youtubeUrl) : null),
