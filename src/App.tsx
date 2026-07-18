@@ -71,7 +71,7 @@ type QuizAnimationStyle = 'flip' | 'fade'
 type RewardIntensity = 'low' | 'medium' | 'high'
 type QuizResult = 'again' | 'hard' | 'medium' | 'good' | 'easy'
 type QuizImageSlot = 'front' | 'back'
-type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'stats'
+type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'settings' | 'stats'
 type ItemDetailTab = 'tracking' | 'resources' | 'flashcards' | 'assignments'
 type FlashGeneratorScope = 'items' | 'colleges'
 type FlashDisplayMode = 'colleges' | 'items'
@@ -79,7 +79,7 @@ type FlashFeelingFilter = 'none' | QuizResult
 type FlashCollegeLevelFilter = 'ALL' | FlashFeelingFilter
 type FlashCollegeSort = 'progress' | 'name' | 'items'
 type CollegeDetailFilter = 'all' | 'review' | 'hard' | 'mastered'
-type SidebarNavBubbleKey = Exclude<NavView, 'stats'>
+type SidebarNavBubbleKey = Exclude<NavView, 'settings' | 'stats'>
 
 type ItemBase = {
   itemNumber: number
@@ -2201,7 +2201,6 @@ function App() {
   const [selectedCollegeDetail, setSelectedCollegeDetail] = useState<string | null>(null)
   const [collegeDetailFilter, setCollegeDetailFilter] = useState<CollegeDetailFilter>('all')
   const [profileMenuOpen, setProfileMenuOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [flashGeneratorScope, setFlashGeneratorScope] = useState<FlashGeneratorScope>('items')
   const [flashCollegeFilter, setFlashCollegeFilter] = useState<string>('ALL')
@@ -2367,6 +2366,10 @@ function App() {
   }, [remotePayload])
 
   useLayoutEffect(() => {
+    if (activeView === 'settings') {
+      setSidebarNavBubble((current) => ({ ...current, ready: false }))
+      return
+    }
     const activeKey = (activeView === 'stats' ? 'dashboard' : activeView) as SidebarNavBubbleKey
     const navElement = sidebarNavRef.current
     const activeButton = sidebarNavButtonRefs.current[activeKey]
@@ -6151,6 +6154,35 @@ function getPasswordStrengthMeta(password: string) {
     )
   }
 
+  const allQuizCards = items.flatMap((item) => item.tracking.quiz.cards)
+  const storageImageBytes = allQuizCards.reduce(
+    (sum, card) => sum + card.frontImageDataUrl.length + card.backImageDataUrl.length,
+    0,
+  )
+  const storageFlashcardBytes = allQuizCards.reduce((sum, card) => sum + card.question.length + card.answer.length, 0)
+  const storageQuizBytes = JSON.stringify(
+    items.map((item) => ({
+      itemNumber: item.itemNumber,
+      quiz: item.tracking.quiz,
+      quizCount: item.tracking.quizCount,
+      lastQuizResult: item.tracking.lastQuizResult,
+    })),
+  ).length
+  const storageBackupBytes = JSON.stringify(remotePayload).length
+  const storageTotalBytes = storageBackupBytes
+  const storageLimitBytes = 2 * 1024 * 1024 * 1024
+  const formatStorage = (bytes: number) => {
+    const megabytes = bytes / (1024 * 1024)
+    if (megabytes >= 1024) {
+      const gigabytes = megabytes / 1024
+      return `${Number.isInteger(gigabytes) ? gigabytes.toFixed(0) : gigabytes.toFixed(1)} Go`
+    }
+    return megabytes >= 10 ? `${Math.round(megabytes)} Mo` : `${megabytes.toFixed(1)} Mo`
+  }
+  const storageUsagePercent = Math.min(100, Math.round((storageTotalBytes / storageLimitBytes) * 1000) / 10)
+  const settingsEmail = profile.email || authUser?.email || ''
+  const settingsDisplayName = [profile.firstName, profile.lastName].filter(Boolean).join(' ') || authUser?.displayName || 'Setup'
+
   return (
     <div
       className={`dashboard-layout ${sidebarCollapsed ? 'is-sidebar-collapsed' : ''} ${
@@ -6268,72 +6300,19 @@ function getPasswordStrengthMeta(password: string) {
         <div className="sidebar-footer">
           <div className="menu-wrap">
             <button
-              className="ghost-btn sidebar-settings-btn"
-              title="Settings"
-              aria-label="Settings"
-              onClick={() => setSettingsOpen((value) => !value)}
+              className={`ghost-btn sidebar-settings-btn ${activeView === 'settings' ? 'active' : ''}`}
+              title="Réglages"
+              aria-label="Réglages"
+              onClick={() => {
+                setActiveView('settings')
+                setProfileMenuOpen(false)
+              }}
             >
               <span className="sidebar-settings-icon" aria-hidden="true">
                 ⚙
               </span>
-              <span className="sidebar-settings-label">Reglages</span>
+              <span className="sidebar-settings-label">Réglages</span>
             </button>
-            {settingsOpen ? (
-              <div className="menu-popover">
-                <p className="menu-title">Settings</p>
-                <label className="menu-row">
-                  Theme
-                  <select value={theme} onChange={(event) => setTheme(event.target.value as Theme)}>
-                    <option value="light">Light</option>
-                    <option value="dark">Dark</option>
-                  </select>
-                </label>
-                <label className="menu-row">
-                  Focus mode
-                  <input type="checkbox" checked={focusMode} onChange={(event) => setFocusMode(event.target.checked)} />
-                </label>
-                <div className="menu-row-input menu-row-highlight">
-                  <span>Affichage vidéo YouTube</span>
-                  <div className="youtube-view-mode" role="group" aria-label="Choix affichage YouTube">
-                    <button
-                      type="button"
-                      className={`ghost-btn ${youtubeDisplayMode === 'embed' ? 'active' : ''}`}
-                      onClick={() => setYoutubeDisplayMode('embed')}
-                    >
-                      Vidéo
-                    </button>
-                    <button
-                      type="button"
-                      className={`ghost-btn ${youtubeDisplayMode === 'external' ? 'active' : ''}`}
-                      onClick={() => setYoutubeDisplayMode('external')}
-                    >
-                      Bouton
-                    </button>
-                  </div>
-                </div>
-                <div className="menu-actions">
-                  <button type="button" className="menu-action-btn" onClick={exportBackup}>
-                    Exporter sauvegarde
-                  </button>
-                  <button type="button" className="menu-action-btn" onClick={() => backupInputRef.current?.click()}>
-                    Charger sauvegarde
-                  </button>
-                  <input
-                    ref={backupInputRef}
-                    type="file"
-                    accept="application/json,.json"
-                    className="hidden-file-input"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0]
-                      if (file) {
-                        void importBackup(file)
-                      }
-                      event.target.value = ''
-                    }}
-                  />
-                </div>
-              </div>
-            ) : null}
           </div>
           <button
             type="button"
@@ -9365,6 +9344,312 @@ function getPasswordStrengthMeta(password: string) {
             </article>
           </section>
         )
+      ) : null}
+
+      {activeView === 'settings' ? (
+        <section className="settings-page" aria-labelledby="settings-title">
+          <div className="settings-hero">
+            <div>
+              <p className="settings-kicker">Réglages</p>
+              <h1 id="settings-title">Paramètres de l'application</h1>
+              <p>Centralise ton compte, tes préférences, les rappels, les quiz et les données.</p>
+            </div>
+          </div>
+
+          <div className="settings-grid">
+            <article className="settings-card settings-card-wide">
+              <div className="settings-card-head">
+                <span aria-hidden="true">👤</span>
+                <div>
+                  <h2>Compte</h2>
+                  <p>Profil, sécurité et données personnelles.</p>
+                </div>
+              </div>
+              <div className="settings-profile-row">
+                {profile.photoUrl ? (
+                  <img className="settings-avatar" src={profile.photoUrl} alt="Avatar" />
+                ) : (
+                  <span className="settings-avatar profile-avatar-fallback" style={{ background: profile.avatarGradient }}>
+                    {getProfileInitials(profile)}
+                  </span>
+                )}
+                <div>
+                  <strong>{settingsDisplayName}</strong>
+                  <small>{settingsEmail || 'Aucun e-mail renseigné'}</small>
+                </div>
+              </div>
+              <div className="settings-form-grid">
+                <label className="settings-field">
+                  Nom
+                  <div className="settings-name-grid">
+                    <input
+                      type="text"
+                      value={profile.firstName}
+                      placeholder="Prénom"
+                      onChange={(event) => setProfile((current) => ({ ...current, firstName: event.target.value }))}
+                    />
+                    <input
+                      type="text"
+                      value={profile.lastName}
+                      placeholder="Nom"
+                      onChange={(event) => setProfile((current) => ({ ...current, lastName: event.target.value }))}
+                    />
+                  </div>
+                </label>
+                <label className="settings-field">
+                  E-mail
+                  <input
+                    type="email"
+                    value={profile.email}
+                    placeholder={authUser?.email ?? 'email@example.com'}
+                    onChange={(event) => setProfile((current) => ({ ...current, email: event.target.value }))}
+                  />
+                </label>
+                <label className="settings-field">
+                  Avatar
+                  <input
+                    type="url"
+                    value={profile.photoUrl}
+                    placeholder="URL de l'avatar"
+                    onChange={(event) => setProfile((current) => ({ ...current, photoUrl: event.target.value }))}
+                  />
+                </label>
+                <div className="settings-field">
+                  Couleur d'avatar
+                  <div className="avatar-gradient-grid">
+                    {AVATAR_GRADIENTS.map((gradient) => (
+                      <button
+                        key={gradient}
+                        type="button"
+                        className={`avatar-gradient-dot ${profile.avatarGradient === gradient ? 'active' : ''}`}
+                        style={{ background: gradient }}
+                        onClick={() => setProfile((current) => ({ ...current, avatarGradient: gradient }))}
+                        aria-label="Choisir cette couleur d'avatar"
+                        title="Choisir cette couleur d'avatar"
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div className="settings-subsection">
+                <h3>Sécurité</h3>
+                <div className="settings-action-row">
+                  <button type="button" className="ghost-btn" disabled>
+                    Modifier le mot de passe
+                  </button>
+                  <span className="settings-badge">Bientôt disponible</span>
+                </div>
+                <label className="settings-toggle-row is-disabled">
+                  <span>Authentification à deux facteurs</span>
+                  <input type="checkbox" disabled />
+                </label>
+              </div>
+              <div className="settings-subsection">
+                <h3>Données</h3>
+                <div className="settings-action-row">
+                  <button type="button" className="ghost-btn" onClick={exportBackup}>
+                    Exporter toutes mes données
+                  </button>
+                  <button type="button" className="ghost-btn" onClick={() => backupInputRef.current?.click()}>
+                    Importer une sauvegarde
+                  </button>
+                  <input
+                    ref={backupInputRef}
+                    type="file"
+                    accept="application/json,.json"
+                    className="hidden-file-input"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0]
+                      if (file) {
+                        void importBackup(file)
+                      }
+                      event.target.value = ''
+                    }}
+                  />
+                </div>
+              </div>
+            </article>
+
+            <article className="settings-card">
+              <div className="settings-card-head">
+                <span aria-hidden="true">🌐</span>
+                <div>
+                  <h2>Général</h2>
+                  <p>Préférences globales.</p>
+                </div>
+              </div>
+              <label className="settings-field">
+                Langue de l'interface
+                <select value="fr" disabled>
+                  <option value="fr">Français</option>
+                </select>
+              </label>
+              <label className="settings-field">
+                Format de date
+                <select defaultValue="fr-short">
+                  <option value="fr-short">17 juil. 2026</option>
+                  <option value="fr-long">17 juillet 2026</option>
+                  <option value="iso">2026-07-17</option>
+                </select>
+              </label>
+              <label className="settings-field">
+                Fuseau horaire
+                <select defaultValue="auto">
+                  <option value="auto">Automatique</option>
+                  <option value="Europe/Paris">Europe/Paris</option>
+                  <option value="Asia/Ho_Chi_Minh">Asia/Ho Chi Minh</option>
+                </select>
+              </label>
+              <label className="settings-toggle-row">
+                <span>Mode focus</span>
+                <input type="checkbox" checked={focusMode} onChange={(event) => setFocusMode(event.target.checked)} />
+              </label>
+              <label className="settings-toggle-row">
+                <span>Thème sombre</span>
+                <input
+                  type="checkbox"
+                  checked={theme === 'dark'}
+                  onChange={(event) => setTheme(event.target.checked ? 'dark' : 'light')}
+                />
+              </label>
+            </article>
+
+            <article className="settings-card">
+              <div className="settings-card-head">
+                <span aria-hidden="true">🔔</span>
+                <div>
+                  <h2>Notifications</h2>
+                  <p>Rappels de révision.</p>
+                </div>
+              </div>
+              <label className="settings-toggle-row is-disabled">
+                <span>Activer les rappels quotidiens</span>
+                <input type="checkbox" disabled />
+              </label>
+              <label className="settings-field">
+                Heure du rappel
+                <input type="time" defaultValue="19:00" disabled />
+              </label>
+              <div className="settings-weekdays" aria-label="Jours de la semaine">
+                {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day, index) => (
+                  <button key={`${day}-${index}`} type="button" disabled>
+                    {day}
+                  </button>
+                ))}
+              </div>
+              <p className="settings-muted">Les notifications ne sont pas encore configurées.</p>
+            </article>
+
+            <article className="settings-card">
+              <div className="settings-card-head">
+                <span aria-hidden="true">📝</span>
+                <div>
+                  <h2>Quiz</h2>
+                  <p>Comportement des sessions d'évaluation.</p>
+                </div>
+              </div>
+              <label className="settings-toggle-row is-disabled">
+                <span>Mélanger les réponses</span>
+                <input type="checkbox" disabled />
+              </label>
+              <div className="settings-field">
+                Affichage vidéo YouTube
+                <div className="youtube-view-mode" role="group" aria-label="Choix affichage YouTube">
+                  <button
+                    type="button"
+                    className={`ghost-btn ${youtubeDisplayMode === 'embed' ? 'active' : ''}`}
+                    onClick={() => setYoutubeDisplayMode('embed')}
+                  >
+                    Vidéo
+                  </button>
+                  <button
+                    type="button"
+                    className={`ghost-btn ${youtubeDisplayMode === 'external' ? 'active' : ''}`}
+                    onClick={() => setYoutubeDisplayMode('external')}
+                  >
+                    Bouton
+                  </button>
+                </div>
+              </div>
+            </article>
+
+            <article className="settings-card settings-card-wide">
+              <div className="settings-card-head">
+                <span aria-hidden="true">⭐</span>
+                <div>
+                  <h2>Premium</h2>
+                  <p>Abonnement, facturation et stockage.</p>
+                </div>
+              </div>
+              <div className="settings-premium-grid">
+                <div>
+                  <h3>Abonnement</h3>
+                  <p className="settings-muted">Aucun abonnement actif pour le moment.</p>
+                  <div className="settings-action-row">
+                    <button type="button" className="ghost-btn" disabled>
+                      Gérer mon abonnement
+                    </button>
+                    <button type="button" className="ghost-btn" disabled>
+                      Historique de facturation
+                    </button>
+                  </div>
+                </div>
+                <label className="settings-field">
+                  Code de parrainage
+                  <input type="text" placeholder="Bientôt disponible" disabled />
+                </label>
+              </div>
+              <div className="settings-storage">
+                <div className="settings-storage-head">
+                  <div>
+                    <h3>Stockage</h3>
+                    <p>
+                      {formatStorage(storageTotalBytes)} / {formatStorage(storageLimitBytes)}
+                    </p>
+                  </div>
+                  <strong>{storageUsagePercent}%</strong>
+                </div>
+                <div className="settings-storage-bar" aria-hidden="true">
+                  <span style={{ width: `${storageUsagePercent}%` }} />
+                </div>
+                <div className="settings-storage-list">
+                  <span>Images <strong>{formatStorage(storageImageBytes)}</strong></span>
+                  <span>Flashcards <strong>{formatStorage(storageFlashcardBytes)}</strong></span>
+                  <span>Quiz <strong>{formatStorage(storageQuizBytes)}</strong></span>
+                  <span>Sauvegardes <strong>{formatStorage(storageBackupBytes)}</strong></span>
+                </div>
+              </div>
+            </article>
+
+            <article className="settings-card settings-card-wide">
+              <div className="settings-card-head">
+                <span aria-hidden="true">ℹ️</span>
+                <div>
+                  <h2>À propos</h2>
+                  <p>Informations légales et support.</p>
+                </div>
+              </div>
+              <div className="settings-about-grid">
+                <div className="settings-info-row">
+                  <span>Version de l'application</span>
+                  <strong>0.0.0</strong>
+                </div>
+                <button type="button" className="settings-link-btn" disabled>
+                  Changelog
+                </button>
+                <button type="button" className="settings-link-btn" disabled>
+                  Conditions d'utilisation
+                </button>
+                <button type="button" className="settings-link-btn" disabled>
+                  Politique de confidentialité
+                </button>
+                <a className="settings-link-btn" href={`mailto:${authUser?.email ?? 'hello@setup-hub.com'}?subject=Support ItemsTracker`}>
+                  Support / Contacter l'équipe
+                </a>
+              </div>
+            </article>
+          </div>
+        </section>
       ) : null}
 
       {activeView === 'stats' ? (
