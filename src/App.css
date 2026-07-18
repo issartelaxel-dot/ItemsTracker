@@ -7274,6 +7274,12 @@ tbody tr.selected {
   background: color-mix(in oklab, var(--selected) 68%, white);
 }
 
+.item-detail-stat-svg {
+  width: 17px;
+  height: 17px;
+  display: block;
+}
+
 .item-detail-feeling-stat .item-detail-stat-icon {
   color: var(--muted);
   background: color-mix(in oklab, var(--surface-soft) 78%, var(--panel-bg));
