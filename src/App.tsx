@@ -8034,7 +8034,7 @@ function getPasswordStrengthMeta(password: string) {
                       className="flashcard-editor-action flashcard-editor-save-action"
                       onClick={() => setQuizEditMode(false)}
                     >
-                      <span aria-hidden="true">▣</span>
+                      <span className="flashcard-editor-save-icon" aria-hidden="true" />
                       Enregistrer
                     </button>
                     <button type="button" className="flashcard-editor-action" onClick={closeQuiz}>
