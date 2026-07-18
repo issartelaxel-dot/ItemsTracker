@@ -6094,28 +6094,6 @@ tbody tr.selected {
   max-width: 460px;
 }
 
-.youtube-view-mode {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.22rem;
-  padding: 0.22rem;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--input-bg);
-  width: fit-content;
-}
-
-.youtube-view-mode .ghost-btn {
-  min-width: 76px;
-  border-radius: 999px;
-  padding: 0.28rem 0.58rem;
-}
-
-.youtube-view-mode .ghost-btn.active {
-  background: color-mix(in oklab, var(--accent) 16%, var(--input-bg));
-  border-color: color-mix(in oklab, var(--accent) 45%, var(--border));
-}
-
 .youtube-input-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto auto auto;

@@ -186,6 +186,7 @@ type BackupPayload = {
     theme: Theme
     focusMode: boolean
     youtubeDisplayMode?: YouTubeDisplayMode
+    shuffleQuizCards?: boolean
     profile?: ProfileState
   }
 }
@@ -1233,6 +1234,23 @@ function ItemDetailFeelingIcon({ mastery }: { mastery: Mastery | 'Non évalué' 
   )
 }
 
+function shuffleQuizCardIds(cards: QuizCard[], preferredCardId?: string) {
+  const ids = cards.map((card) => card.id)
+
+  for (let index = ids.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    const currentId = ids[index]
+    ids[index] = ids[swapIndex]
+    ids[swapIndex] = currentId
+  }
+
+  if (!preferredCardId || !ids.includes(preferredCardId)) {
+    return ids
+  }
+
+  return [preferredCardId, ...ids.filter((id) => id !== preferredCardId)]
+}
+
 const COLLEGES = [
   'ANATOMIE ET CYTOLOGIE PATHOLOGIQUES',
   'ANESTHÉSIE - RÉANIMATION',
@@ -1954,6 +1972,7 @@ type PersistStatePayload = {
   theme: Theme
   focusMode: boolean
   youtubeDisplayMode: YouTubeDisplayMode
+  shuffleQuizCards: boolean
   profile: ProfileState
 }
 
@@ -2054,6 +2073,7 @@ function buildRemotePersistPayload(payload: PersistStatePayload): { body: string
       theme: payload.theme,
       focusMode: payload.focusMode,
       youtubeDisplayMode: payload.youtubeDisplayMode,
+      shuffleQuizCards: payload.shuffleQuizCards,
       profile: sanitizeProfileForRemote(payload.profile, strategy.allowProfilePhoto),
     }
 
@@ -2081,6 +2101,7 @@ function parsePersistStatePayloadBody(body: string, authUser: AuthUser | null): 
       theme: parsed.theme === 'dark' ? 'dark' : 'light',
       focusMode: Boolean(parsed.focusMode),
       youtubeDisplayMode: parsed.youtubeDisplayMode === 'external' ? 'external' : 'embed',
+      shuffleQuizCards: Boolean(parsed.shuffleQuizCards),
       profile: normalizeProfileInput(parsed.profile, authUser),
     }
   } catch {
@@ -2357,6 +2378,7 @@ function App() {
   const [trackingState, setTrackingState] = useState<TrackerState>(getInitialTrackingState())
   const [theme, setTheme] = useState<Theme>('light')
   const [youtubeDisplayMode, setYoutubeDisplayMode] = useState<YouTubeDisplayMode>('embed')
+  const [shuffleQuizCards, setShuffleQuizCards] = useState<boolean>(false)
   const [focusMode, setFocusMode] = useState<boolean>(false)
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [search, setSearch] = useState('')
@@ -2433,6 +2455,7 @@ function App() {
   const [quizSide, setQuizSide] = useState<'front' | 'back'>('front')
   const [quizFeedback, setQuizFeedback] = useState<QuizResult | null>(null)
   const [quizEditMode, setQuizEditMode] = useState(false)
+  const [quizSessionCardIds, setQuizSessionCardIds] = useState<string[]>([])
   const [quizImageErrors, setQuizImageErrors] = useState<Record<QuizImageSlot, string>>({ front: '', back: '' })
   const [quizImageFileNames, setQuizImageFileNames] = useState<Record<QuizImageSlot, string>>({ front: '', back: '' })
   const [imageLightboxSrc, setImageLightboxSrc] = useState<string | null>(null)
@@ -2514,9 +2537,10 @@ function App() {
         theme,
         focusMode,
         youtubeDisplayMode,
+        shuffleQuizCards,
         profile,
       }),
-    [trackingState, theme, focusMode, youtubeDisplayMode, profile],
+    [trackingState, theme, focusMode, youtubeDisplayMode, shuffleQuizCards, profile],
   )
   const remotePayloadRef = useRef(remotePayload)
 
@@ -2691,6 +2715,7 @@ function App() {
               theme?: unknown
               focusMode?: unknown
               youtubeDisplayMode?: unknown
+              shuffleQuizCards?: unknown
               profile?: unknown
               updatedAt?: unknown
             }
@@ -2701,6 +2726,7 @@ function App() {
         let nextTheme: Theme = 'light'
         let nextFocusMode = false
         let nextYoutubeDisplayMode: YouTubeDisplayMode = 'embed'
+        let nextShuffleQuizCards = false
         let nextProfile = getProfileFromAuthUser(authUser)
         let remoteUpdatedAtMs = 0
         let nextLastSavedAt: string | null = null
@@ -2712,6 +2738,7 @@ function App() {
           nextTheme = remoteState.theme === 'dark' ? 'dark' : 'light'
           nextFocusMode = Boolean(remoteState.focusMode)
           nextYoutubeDisplayMode = remoteState.youtubeDisplayMode === 'external' ? 'external' : 'embed'
+          nextShuffleQuizCards = Boolean(remoteState.shuffleQuizCards)
           nextProfile = normalizeProfileInput(remoteState.profile, authUser)
           const updatedAtRaw = typeof remoteState.updatedAt === 'string' ? remoteState.updatedAt : null
           if (updatedAtRaw) {
@@ -2749,6 +2776,7 @@ function App() {
         setTheme(nextTheme)
         setFocusMode(nextFocusMode)
         setYoutubeDisplayMode(nextYoutubeDisplayMode)
+        setShuffleQuizCards(nextShuffleQuizCards)
         setProfile(nextProfile)
         setLastSavedAt(nextLastSavedAt)
         setSaveErrorMessage('')
@@ -2844,7 +2872,17 @@ function App() {
     }, AUTO_SAVE_DEBOUNCE_MS)
 
     return () => window.clearTimeout(timer)
-  }, [authStatus, authUser?.id, hasLoadedRemoteState, trackingState, theme, focusMode, youtubeDisplayMode, profile])
+  }, [
+    authStatus,
+    authUser?.id,
+    hasLoadedRemoteState,
+    trackingState,
+    theme,
+    focusMode,
+    youtubeDisplayMode,
+    shuffleQuizCards,
+    profile,
+  ])
 
   useEffect(() => {
     if (authStatus !== 'authed' || dashboardIntroPhase !== 'entering') {
@@ -3427,6 +3465,7 @@ function App() {
     setTheme('light')
     setFocusMode(false)
     setYoutubeDisplayMode('embed')
+    setShuffleQuizCards(false)
     setProfile(getDefaultProfile())
     setLastSavedAt(null)
     setStorageUsage(null)
@@ -4119,16 +4158,31 @@ function getPasswordStrengthMeta(password: string) {
     return items.find((item) => item.itemNumber === quizItemId) ?? null
   }, [quizItemId, items])
 
+  const quizSessionCards = useMemo(() => {
+    if (!quizItem) {
+      return []
+    }
+
+    const cardsById = new Map(quizItem.tracking.quiz.cards.map((card) => [card.id, card]))
+    const orderedCards = quizSessionCardIds
+      .map((cardId) => cardsById.get(cardId))
+      .filter((card): card is QuizCard => Boolean(card))
+    const orderedCardIds = new Set(orderedCards.map((card) => card.id))
+    const missingCards = quizItem.tracking.quiz.cards.filter((card) => !orderedCardIds.has(card.id))
+
+    return [...orderedCards, ...missingCards]
+  }, [quizItem, quizSessionCardIds])
+
   const activeQuizCard = useMemo(() => {
     if (!quizItem) {
       return null
     }
     return (
-      quizItem.tracking.quiz.cards.find((card) => card.id === quizItem.tracking.quiz.activeCardId) ??
-      quizItem.tracking.quiz.cards[0] ??
+      quizSessionCards.find((card) => card.id === quizItem.tracking.quiz.activeCardId) ??
+      quizSessionCards[0] ??
       null
     )
-  }, [quizItem])
+  }, [quizItem, quizSessionCards])
 
   const quizQuestion = useMemo(() => {
     if (!quizItem) {
@@ -4800,8 +4854,21 @@ function getPasswordStrengthMeta(password: string) {
     if (!item || (item.tracking.quiz.cards.length === 0 && !options.allowDisabled)) {
       return
     }
-    if (cardId && item.tracking.quiz.activeCardId !== cardId) {
-      updateItemQuizConfig(itemNumber, { activeCardId: cardId })
+
+    const cards = item.tracking.quiz.cards
+    const orderedCardIds = shuffleQuizCards ? shuffleQuizCardIds(cards, cardId) : cards.map((card) => card.id)
+    const activeCardId =
+      cardId && orderedCardIds.includes(cardId)
+        ? cardId
+        : shuffleQuizCards
+          ? orderedCardIds[0]
+          : orderedCardIds.includes(item.tracking.quiz.activeCardId ?? '')
+            ? item.tracking.quiz.activeCardId
+            : orderedCardIds[0]
+
+    setQuizSessionCardIds(orderedCardIds)
+    if (activeCardId && item.tracking.quiz.activeCardId !== activeCardId) {
+      updateItemQuizConfig(itemNumber, { activeCardId })
     }
     triggerQuizButtonPulse(itemNumber)
     setQuizItemId(itemNumber)
@@ -4820,6 +4887,7 @@ function getPasswordStrengthMeta(password: string) {
 
   function closeQuiz() {
     setQuizItemId(null)
+    setQuizSessionCardIds([])
     setQuizSide('front')
     setQuizFeedback(null)
     setQuizEditMode(false)
@@ -4839,7 +4907,7 @@ function getPasswordStrengthMeta(password: string) {
     if (!quizItem) {
       return
     }
-    const cards = quizItem.tracking.quiz.cards
+    const cards = quizSessionCards.length > 0 ? quizSessionCards : quizItem.tracking.quiz.cards
     if (cards.length <= 1) {
       return
     }
@@ -6097,6 +6165,7 @@ function getPasswordStrengthMeta(password: string) {
         theme,
         focusMode,
         youtubeDisplayMode,
+        shuffleQuizCards,
         profile,
       },
     }
@@ -6131,6 +6200,7 @@ function getPasswordStrengthMeta(password: string) {
       setTheme(parsed.data.theme === 'dark' ? 'dark' : 'light')
       setFocusMode(Boolean(parsed.data.focusMode))
       setYoutubeDisplayMode(parsed.data.youtubeDisplayMode === 'external' ? 'external' : 'embed')
+      setShuffleQuizCards(Boolean(parsed.data.shuffleQuizCards))
       if (parsed.data.profile) {
         setProfile({
           firstName: parsed.data.profile.firstName ?? '',
@@ -7224,31 +7294,19 @@ function getPasswordStrengthMeta(password: string) {
                               Supprimer
                             </button>
                           ) : null}
-                          {selectedYouTubeVideoId && youtubeDisplayMode === 'external' ? (
-                            <a
-                              href={makeYouTubeWatchUrl(selectedYouTubeVideoId)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="ghost-btn youtube-open-link"
-                            >
-                              Voir vidéo
-                            </a>
-                          ) : null}
                         </div>
                         {youtubeInputError ? <p className="youtube-error">{youtubeInputError}</p> : null}
                         {selectedYouTubeVideoId && itemDetailTab === 'resources' ? (
                           <div className="youtube-preview">
-                            {youtubeDisplayMode === 'embed' ? (
-                              <div className="youtube-embed-wrap">
-                                <iframe
-                                  src={`https://www.youtube-nocookie.com/embed/${selectedYouTubeVideoId}`}
-                                  title={`Vidéo item ${effectiveSelectedItem.itemNumber}`}
-                                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                                  referrerPolicy="strict-origin-when-cross-origin"
-                                  allowFullScreen
-                                />
-                              </div>
-                            ) : null}
+                            <div className="youtube-embed-wrap">
+                              <iframe
+                                src={`https://www.youtube-nocookie.com/embed/${selectedYouTubeVideoId}`}
+                                title={`Vidéo item ${effectiveSelectedItem.itemNumber}`}
+                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                                referrerPolicy="strict-origin-when-cross-origin"
+                                allowFullScreen
+                              />
+                            </div>
                           </div>
                         ) : effectiveSelectedItem.tracking.youtubeUrl ? (
                           <p className="muted">Le lien YouTube sauvegardé est invalide.</p>
@@ -8181,9 +8239,11 @@ function getPasswordStrengthMeta(password: string) {
                     <span className="quiz-card-counter">
                       {Math.max(
                         1,
-                        quizItem.tracking.quiz.cards.findIndex((card) => card.id === quizItem.tracking.quiz.activeCardId) + 1,
+                        (quizSessionCards.length > 0 ? quizSessionCards : quizItem.tracking.quiz.cards).findIndex(
+                          (card) => card.id === quizItem.tracking.quiz.activeCardId,
+                        ) + 1,
                       )}
-                      /{Math.max(1, quizItem.tracking.quiz.cards.length)}
+                      /{Math.max(1, (quizSessionCards.length > 0 ? quizSessionCards : quizItem.tracking.quiz.cards).length)}
                     </span>
                     <button
                       type="button"
@@ -9565,29 +9625,14 @@ function getPasswordStrengthMeta(password: string) {
                   <p>Comportement des sessions d'évaluation.</p>
                 </div>
               </div>
-              <label className="settings-toggle-row is-disabled">
-                <span>Mélanger les réponses</span>
-                <input type="checkbox" disabled />
+              <label className="settings-toggle-row">
+                <span>Mélanger les flashcards des quiz</span>
+                <input
+                  type="checkbox"
+                  checked={shuffleQuizCards}
+                  onChange={(event) => setShuffleQuizCards(event.target.checked)}
+                />
               </label>
-              <div className="settings-field">
-                Affichage vidéo YouTube
-                <div className="youtube-view-mode" role="group" aria-label="Choix affichage YouTube">
-                  <button
-                    type="button"
-                    className={`ghost-btn ${youtubeDisplayMode === 'embed' ? 'active' : ''}`}
-                    onClick={() => setYoutubeDisplayMode('embed')}
-                  >
-                    Vidéo
-                  </button>
-                  <button
-                    type="button"
-                    className={`ghost-btn ${youtubeDisplayMode === 'external' ? 'active' : ''}`}
-                    onClick={() => setYoutubeDisplayMode('external')}
-                  >
-                    Bouton
-                  </button>
-                </div>
-              </div>
             </article>
 
             <article className="settings-card settings-card-wide">
