@@ -2314,7 +2314,6 @@ function App() {
   const [quizSide, setQuizSide] = useState<'front' | 'back'>('front')
   const [quizFeedback, setQuizFeedback] = useState<QuizResult | null>(null)
   const [quizEditMode, setQuizEditMode] = useState(false)
-  const [quizConfigExpanded, setQuizConfigExpanded] = useState(false)
   const [quizImageErrors, setQuizImageErrors] = useState<Record<QuizImageSlot, string>>({ front: '', back: '' })
   const [quizImageFileNames, setQuizImageFileNames] = useState<Record<QuizImageSlot, string>>({ front: '', back: '' })
   const [imageLightboxSrc, setImageLightboxSrc] = useState<string | null>(null)
@@ -7182,21 +7181,6 @@ function getPasswordStrengthMeta(password: string) {
                   </div>
 
                 <aside className="item-detail-side-column">
-                    <div id="flashcards-section" className="quiz-config-head item-detail-card item-detail-tab-panel item-detail-tab-panel-flashcards">
-                    <div className="quiz-config-title-row">
-                      <h3>Flashcards & Quiz</h3>
-                    </div>
-                    <button
-                      type="button"
-                      className={`ghost-btn quiz-config-toggle ${quizConfigExpanded ? 'open' : ''}`}
-                      onClick={() => setQuizConfigExpanded((current) => !current)}
-                      aria-expanded={quizConfigExpanded}
-                      aria-label={quizConfigExpanded ? 'Masquer les détails du quiz' : 'Afficher les détails du quiz'}
-                      title={quizConfigExpanded ? 'Masquer les détails' : 'Afficher les détails'}
-                    >
-                      ▾
-                    </button>
-                  </div>
                     <div className="quiz-config-grid item-detail-card item-detail-tab-panel item-detail-tab-panel-flashcards">
                     <label className="checkline">
                       <input
@@ -7276,151 +7260,6 @@ function getPasswordStrengthMeta(password: string) {
                     </button>
                   </div>
                 </label>
-                {quizConfigExpanded ? (
-                  <>
-                    {effectiveSelectedItem.tracking.quiz.cards
-                      .filter((card) => card.id === effectiveSelectedItem.tracking.quiz.activeCardId)
-                      .map((activeCard) => (
-                        <div key={activeCard.id} className="quiz-card-editor">
-                          <label className="block-label">
-                            Question carte active
-                            <QuizRichTextEditor
-                              placeholder="Laisser vide pour question auto..."
-                              value={activeCard.question}
-                              onChange={(value) =>
-                                updateQuizCard(effectiveSelectedItem.itemNumber, activeCard.id, {
-                                  question: value,
-                                })
-                              }
-                            />
-                          </label>
-                          <label className="block-label">
-                            Réponse carte active
-                            <QuizRichTextEditor
-                              placeholder="Laisser vide pour utiliser la description de l'item..."
-                              value={activeCard.answer}
-                              onChange={(value) =>
-                                updateQuizCard(effectiveSelectedItem.itemNumber, activeCard.id, {
-                                  answer: value,
-                                })
-                              }
-                            />
-                          </label>
-                          <label className="block-label">
-                            Image recto (max 1 MB)
-                            <div className="quiz-file-input-row">
-                              <button
-                                type="button"
-                                className="ghost-btn quiz-file-picker-btn"
-                                onClick={() =>
-                                  openQuizCardImagePicker(effectiveSelectedItem.itemNumber, activeCard.id, 'front')
-                                }
-                              >
-                                Choose File
-                              </button>
-                              {quizImageErrors.front ? (
-                                <span className="quiz-file-name quiz-file-name-error">{quizImageErrors.front}</span>
-                              ) : quizImageFileNames.front ? (
-                                <span className="quiz-file-name">{quizImageFileNames.front}</span>
-                              ) : null}
-                            </div>
-                          </label>
-                          <label className="block-label">
-                            Image verso (max 1 MB)
-                            <div className="quiz-file-input-row">
-                              <button
-                                type="button"
-                                className="ghost-btn quiz-file-picker-btn"
-                                onClick={() =>
-                                  openQuizCardImagePicker(effectiveSelectedItem.itemNumber, activeCard.id, 'back')
-                                }
-                              >
-                                Choose File
-                              </button>
-                              {quizImageErrors.back ? (
-                                <span className="quiz-file-name quiz-file-name-error">{quizImageErrors.back}</span>
-                              ) : quizImageFileNames.back ? (
-                                <span className="quiz-file-name">{quizImageFileNames.back}</span>
-                              ) : null}
-                            </div>
-                          </label>
-                          <div className="quiz-card-media-actions">
-                            <button
-                              type="button"
-                              className="ghost-btn"
-                              onClick={() => {
-                                  setQuizImageFeedback('front', { fileName: '', error: '' })
-                                  updateQuizCard(
-                                    effectiveSelectedItem.itemNumber,
-                                    activeCard.id,
-                                    getQuizCardImagePatch('front', '', false),
-                                  )
-                                }}
-                              disabled={!activeCard.frontImageDataUrl && !activeCard.hasFrontImageDataUrl}
-                            >
-                              Retirer image recto
-                            </button>
-                            <button
-                              type="button"
-                              className="ghost-btn"
-                              onClick={() => {
-                                  setQuizImageFeedback('back', { fileName: '', error: '' })
-                                  updateQuizCard(
-                                    effectiveSelectedItem.itemNumber,
-                                    activeCard.id,
-                                    getQuizCardImagePatch('back', '', false),
-                                  )
-                                }}
-                              disabled={!activeCard.backImageDataUrl && !activeCard.hasBackImageDataUrl}
-                            >
-                              Retirer image verso
-                            </button>
-                          </div>
-                        </div>
-                      ))}
-                    <label className="block-label">
-                      Animation
-                      <select
-                        value={effectiveSelectedItem.tracking.quiz.animationStyle}
-                        onChange={(event) =>
-                          updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
-                            animationStyle: event.target.value as QuizAnimationStyle,
-                          })
-                        }
-                      >
-                        <option value="flip">Flip</option>
-                        <option value="fade">Fade</option>
-                      </select>
-                    </label>
-                    <div className="quiz-last-result">
-                      <span className="quiz-last-result-label">Niveau carte active</span>
-                      {effectiveSelectedItem.tracking.quiz.cards
-                        .filter((card) => card.id === effectiveSelectedItem.tracking.quiz.activeCardId)
-                        .map((card) =>
-                          card.lastResult ? (
-                            <span key={card.id} className={`quiz-last-result-pill ${card.lastResult}`}>
-                              {QUIZ_RESULT_META[card.lastResult].icon} {QUIZ_RESULT_META[card.lastResult].label}
-                            </span>
-                          ) : (
-                            <span key={card.id} className="quiz-last-result-pill none">
-                              {FLASH_FEELING_LABELS.none}
-                            </span>
-                          ),
-                        )}
-                      {!effectiveSelectedItem.tracking.quiz.cards.some(
-                        (card) => card.id === effectiveSelectedItem.tracking.quiz.activeCardId,
-                      ) ? (
-                        <span className="quiz-last-result-pill none">{FLASH_FEELING_LABELS.none}</span>
-                      ) : null}
-                      <span className="quiz-last-result-count">
-                        Quiz faits (carte active):{' '}
-                        {effectiveSelectedItem.tracking.quiz.cards.find(
-                          (card) => card.id === effectiveSelectedItem.tracking.quiz.activeCardId,
-                        )?.quizCount ?? 0}
-                      </span>
-              </div>
-              </>
-                ) : null}
               </div>
 
                 <h3 className="item-detail-tab-panel item-detail-tab-panel-assignments">Assignation collèges</h3>
