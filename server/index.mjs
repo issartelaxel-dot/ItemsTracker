@@ -40,6 +40,7 @@ const STATE_WRITE_LIMIT_PER_MIN = Number(process.env.STATE_WRITE_LIMIT_PER_MIN |
 const STATE_MAX_IMAGE_UPSERT_PER_REQUEST = Number(process.env.STATE_MAX_IMAGE_UPSERT_PER_REQUEST || 80)
 const STATE_MAX_TOTAL_IMAGES_PER_USER = Number(process.env.STATE_MAX_TOTAL_IMAGES_PER_USER || 5000)
 const STATE_MAX_IMAGE_DATA_LENGTH = Number(process.env.STATE_MAX_IMAGE_DATA_LENGTH || 1_800_000)
+const STORAGE_LIMIT_BYTES = Number(process.env.STORAGE_LIMIT_BYTES || 2 * 1024 * 1024 * 1024)
 
 if (!JWT_SECRET || JWT_SECRET.length < 32) {
   console.error('JWT_SECRET must be set and at least 32 chars long.')
@@ -986,6 +987,90 @@ app.get('/api/state/images/:itemNumber/:cardId', enforceClientVersion, async (re
   }
   const refreshedToken = refreshAuthCookie(res, auth)
   res.json({ frontImageDataUrl, backImageDataUrl, ...(refreshedToken ? { token: refreshedToken } : {}) })
+})
+
+app.get('/api/storage-usage', enforceClientVersion, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  const uid = Number(auth.uid)
+  if (!Number.isFinite(uid)) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  const result = await pool.query(
+    `
+      WITH
+        state_usage AS (
+          SELECT COALESCE(SUM(pg_column_size(s)), 0)::bigint AS bytes
+          FROM user_state s
+          WHERE s.user_id = $1
+        ),
+        image_usage AS (
+          SELECT
+            COALESCE(SUM(pg_column_size(i)), 0)::bigint AS bytes,
+            COUNT(*)::int AS count
+          FROM user_quiz_images i
+          WHERE i.user_id = $1
+        ),
+        snapshot_usage AS (
+          SELECT
+            COALESCE(SUM(pg_column_size(sn)), 0)::bigint AS bytes,
+            COUNT(*)::int AS count
+          FROM user_state_snapshots sn
+          WHERE sn.user_id = $1
+        ),
+        idempotency_usage AS (
+          SELECT
+            COALESCE(SUM(pg_column_size(idem)), 0)::bigint AS bytes,
+            COUNT(*)::int AS count
+          FROM user_state_idempotency idem
+          WHERE idem.user_id = $1
+        )
+      SELECT
+        state_usage.bytes AS "currentStateBytes",
+        image_usage.bytes AS "imagesBytes",
+        image_usage.count AS "imageCount",
+        snapshot_usage.bytes AS "snapshotsBytes",
+        snapshot_usage.count AS "snapshotCount",
+        idempotency_usage.bytes AS "idempotencyBytes",
+        idempotency_usage.count AS "idempotencyCount"
+      FROM state_usage, image_usage, snapshot_usage, idempotency_usage
+    `,
+    [uid],
+  )
+  const row = result.rows[0] ?? {}
+  const currentStateBytes = Number(row.currentStateBytes || 0)
+  const imagesBytes = Number(row.imagesBytes || 0)
+  const snapshotsBytes = Number(row.snapshotsBytes || 0)
+  const idempotencyBytes = Number(row.idempotencyBytes || 0)
+  const usedBytes = currentStateBytes + imagesBytes + snapshotsBytes + idempotencyBytes
+  const refreshedToken = refreshAuthCookie(res, auth)
+
+  res.json({
+    ok: true,
+    storage: {
+      usedBytes,
+      limitBytes: Number.isFinite(STORAGE_LIMIT_BYTES) && STORAGE_LIMIT_BYTES > 0 ? STORAGE_LIMIT_BYTES : 2 * 1024 * 1024 * 1024,
+      measuredAt: new Date().toISOString(),
+      breakdown: {
+        currentStateBytes,
+        imagesBytes,
+        snapshotsBytes,
+        idempotencyBytes,
+      },
+      counts: {
+        images: Number(row.imageCount || 0),
+        snapshots: Number(row.snapshotCount || 0),
+        idempotencyEntries: Number(row.idempotencyCount || 0),
+      },
+    },
+    ...(refreshedToken ? { token: refreshedToken } : {}),
+  })
 })
 
 app.put('/api/state', enforceClientVersion, stateWriteLimiter, async (req, res) => {

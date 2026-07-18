@@ -234,6 +234,22 @@ type AuthUser = {
   email: string
   displayName: string
 }
+type StorageUsage = {
+  usedBytes: number
+  limitBytes: number
+  measuredAt: string | null
+  breakdown: {
+    currentStateBytes: number
+    imagesBytes: number
+    snapshotsBytes: number
+    idempotencyBytes: number
+  }
+  counts: {
+    images: number
+    snapshots: number
+    idempotencyEntries: number
+  }
+}
 type SaveLockReason = 'session-expired' | 'client-stale'
 type IdleLogoutPending = {
   userId: number
@@ -2187,6 +2203,37 @@ function getSaveLockMessage(reason: SaveLockReason) {
   return 'Sauvegarde bloquée: session expirée. Reconnecte-toi puis reprends.'
 }
 
+function toFiniteStorageNumber(value: unknown): number {
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) && numberValue >= 0 ? numberValue : 0
+}
+
+function parseStorageUsagePayload(rawStorage: unknown): StorageUsage | null {
+  if (!rawStorage || typeof rawStorage !== 'object') {
+    return null
+  }
+  const storage = rawStorage as Partial<StorageUsage>
+  const rawBreakdown =
+    storage.breakdown && typeof storage.breakdown === 'object' ? (storage.breakdown as Partial<StorageUsage['breakdown']>) : {}
+  const rawCounts = storage.counts && typeof storage.counts === 'object' ? (storage.counts as Partial<StorageUsage['counts']>) : {}
+  return {
+    usedBytes: toFiniteStorageNumber(storage.usedBytes),
+    limitBytes: toFiniteStorageNumber(storage.limitBytes),
+    measuredAt: typeof storage.measuredAt === 'string' ? storage.measuredAt : null,
+    breakdown: {
+      currentStateBytes: toFiniteStorageNumber(rawBreakdown.currentStateBytes),
+      imagesBytes: toFiniteStorageNumber(rawBreakdown.imagesBytes),
+      snapshotsBytes: toFiniteStorageNumber(rawBreakdown.snapshotsBytes),
+      idempotencyBytes: toFiniteStorageNumber(rawBreakdown.idempotencyBytes),
+    },
+    counts: {
+      images: toFiniteStorageNumber(rawCounts.images),
+      snapshots: toFiniteStorageNumber(rawCounts.snapshots),
+      idempotencyEntries: toFiniteStorageNumber(rawCounts.idempotencyEntries),
+    },
+  }
+}
+
 function App() {
   const [trackingState, setTrackingState] = useState<TrackerState>(getInitialTrackingState())
   const [theme, setTheme] = useState<Theme>('light')
@@ -2246,6 +2293,9 @@ function App() {
   const [saveErrorMessage, setSaveErrorMessage] = useState('')
   const [localShadowNotice, setLocalShadowNotice] = useState<LocalShadowNotice | null>(null)
   const [saveLockReason, setSaveLockReason] = useState<SaveLockReason | null>(null)
+  const [storageUsage, setStorageUsage] = useState<StorageUsage | null>(null)
+  const [storageUsageStatus, setStorageUsageStatus] = useState<'idle' | 'loading' | 'ready' | 'error'>('idle')
+  const [storageUsageError, setStorageUsageError] = useState('')
   const [idleLogoutPending, setIdleLogoutPending] = useState<IdleLogoutPending | null>(null)
   const [firstNameInput, setFirstNameInput] = useState('')
   const [lastNameInput, setLastNameInput] = useState('')
@@ -2363,6 +2413,51 @@ function App() {
   useEffect(() => {
     remotePayloadRef.current = remotePayload
   }, [remotePayload])
+
+  useEffect(() => {
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState || activeView !== 'settings') {
+      if (authStatus !== 'authed') {
+        setStorageUsage(null)
+        setStorageUsageStatus('idle')
+        setStorageUsageError('')
+      }
+      return
+    }
+
+    let cancelled = false
+    const loadStorageUsage = async () => {
+      setStorageUsageStatus((current) => (current === 'ready' ? 'ready' : 'loading'))
+      setStorageUsageError('')
+      try {
+        const payload = await apiRequest('/api/storage-usage', undefined, { requireServerAppHeader: true })
+        if (cancelled) {
+          return
+        }
+        const nextStorageUsage = parseStorageUsagePayload(payload.storage)
+        if (!nextStorageUsage) {
+          throw new Error('Réponse stockage invalide.')
+        }
+        setStorageUsage(nextStorageUsage)
+        setStorageUsageStatus('ready')
+      } catch (error) {
+        if (cancelled) {
+          return
+        }
+        const lockReason = getSaveLockReason(error)
+        if (lockReason) {
+          activateSaveProtection(lockReason)
+        }
+        setStorageUsageStatus('error')
+        setStorageUsageError(error instanceof Error ? error.message : 'Impossible de mesurer le stockage.')
+      }
+    }
+
+    void loadStorageUsage()
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeView, authStatus, authUser, hasLoadedRemoteState, lastSavedAt])
 
   useLayoutEffect(() => {
     if (activeView === 'settings') {
@@ -3216,6 +3311,9 @@ function App() {
     setYoutubeDisplayMode('embed')
     setProfile(getDefaultProfile())
     setLastSavedAt(null)
+    setStorageUsage(null)
+    setStorageUsageStatus('idle')
+    setStorageUsageError('')
     if (authMessage) {
       setAuthError(authMessage)
     }
@@ -6154,12 +6252,12 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   const allQuizCards = items.flatMap((item) => item.tracking.quiz.cards)
-  const storageImageBytes = allQuizCards.reduce(
+  const fallbackStorageImageBytes = allQuizCards.reduce(
     (sum, card) => sum + card.frontImageDataUrl.length + card.backImageDataUrl.length,
     0,
   )
-  const storageFlashcardBytes = allQuizCards.reduce((sum, card) => sum + card.question.length + card.answer.length, 0)
-  const storageQuizBytes = JSON.stringify(
+  const fallbackStorageFlashcardBytes = allQuizCards.reduce((sum, card) => sum + card.question.length + card.answer.length, 0)
+  const fallbackStorageQuizBytes = JSON.stringify(
     items.map((item) => ({
       itemNumber: item.itemNumber,
       quiz: item.tracking.quiz,
@@ -6167,9 +6265,9 @@ function getPasswordStrengthMeta(password: string) {
       lastQuizResult: item.tracking.lastQuizResult,
     })),
   ).length
-  const storageBackupBytes = JSON.stringify(remotePayload).length
-  const storageTotalBytes = storageBackupBytes
-  const storageLimitBytes = 2 * 1024 * 1024 * 1024
+  const fallbackStorageBackupBytes = JSON.stringify(remotePayload).length
+  const storageTotalBytes = storageUsage?.usedBytes ?? fallbackStorageBackupBytes
+  const storageLimitBytes = storageUsage?.limitBytes || 2 * 1024 * 1024 * 1024
   const formatStorage = (bytes: number) => {
     const megabytes = bytes / (1024 * 1024)
     if (megabytes >= 1024) {
@@ -6179,6 +6277,19 @@ function getPasswordStrengthMeta(password: string) {
     return megabytes >= 10 ? `${Math.round(megabytes)} Mo` : `${megabytes.toFixed(1)} Mo`
   }
   const storageUsagePercent = Math.min(100, Math.round((storageTotalBytes / storageLimitBytes) * 1000) / 10)
+  const storageBreakdownItems = storageUsage
+    ? [
+        { label: 'Données actives', value: storageUsage.breakdown.currentStateBytes },
+        { label: 'Images', value: storageUsage.breakdown.imagesBytes },
+        { label: 'Sauvegardes', value: storageUsage.breakdown.snapshotsBytes },
+        { label: 'Synchronisation', value: storageUsage.breakdown.idempotencyBytes },
+      ]
+    : [
+        { label: 'Images', value: fallbackStorageImageBytes },
+        { label: 'Flashcards', value: fallbackStorageFlashcardBytes },
+        { label: 'Quiz', value: fallbackStorageQuizBytes },
+        { label: 'Sauvegardes', value: fallbackStorageBackupBytes },
+      ]
   const settingsEmail = profile.email || authUser?.email || ''
   const settingsDisplayName = [profile.firstName, profile.lastName].filter(Boolean).join(' ') || authUser?.displayName || 'Setup'
 
@@ -9534,6 +9645,15 @@ function getPasswordStrengthMeta(password: string) {
                     <p>
                       {formatStorage(storageTotalBytes)} / {formatStorage(storageLimitBytes)}
                     </p>
+                    <p className="settings-muted">
+                      {storageUsageStatus === 'loading'
+                        ? 'Mesure serveur en cours...'
+                        : storageUsageStatus === 'error'
+                          ? `Mesure serveur indisponible: ${storageUsageError}`
+                          : storageUsage
+                            ? 'Mesure réelle côté serveur.'
+                            : 'Estimation locale en attendant la mesure serveur.'}
+                    </p>
                   </div>
                   <strong>{storageUsagePercent}%</strong>
                 </div>
@@ -9541,10 +9661,11 @@ function getPasswordStrengthMeta(password: string) {
                   <span style={{ width: `${storageUsagePercent}%` }} />
                 </div>
                 <div className="settings-storage-list">
-                  <span>Images <strong>{formatStorage(storageImageBytes)}</strong></span>
-                  <span>Flashcards <strong>{formatStorage(storageFlashcardBytes)}</strong></span>
-                  <span>Quiz <strong>{formatStorage(storageQuizBytes)}</strong></span>
-                  <span>Sauvegardes <strong>{formatStorage(storageBackupBytes)}</strong></span>
+                  {storageBreakdownItems.map((entry) => (
+                    <span key={entry.label}>
+                      {entry.label} <strong>{formatStorage(entry.value)}</strong>
+                    </span>
+                  ))}
                 </div>
               </div>
             </article>
