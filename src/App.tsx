@@ -4678,7 +4678,7 @@ function getPasswordStrengthMeta(password: string) {
 
   function openQuiz(itemNumber: number, cardId?: string, options: { allowDisabled?: boolean } = {}) {
     const item = items.find((entry) => entry.itemNumber === itemNumber)
-    if (!item || (!item.tracking.quiz.enabled && !options.allowDisabled)) {
+    if (!item || (item.tracking.quiz.cards.length === 0 && !options.allowDisabled)) {
       return
     }
     if (cardId && item.tracking.quiz.activeCardId !== cardId) {
@@ -6921,11 +6921,11 @@ function getPasswordStrengthMeta(password: string) {
                     type="button"
                     className={`quiz-trigger-btn ${quizPulseByItem[effectiveSelectedItem.itemNumber] ? 'pulse' : ''}`}
                     onClick={() => openQuiz(effectiveSelectedItem.itemNumber)}
-                    disabled={!effectiveSelectedItem.tracking.quiz.enabled}
+                    disabled={effectiveSelectedItem.tracking.quiz.cards.length === 0}
                     title={
-                      effectiveSelectedItem.tracking.quiz.enabled
+                      effectiveSelectedItem.tracking.quiz.cards.length > 0
                         ? "Lancer le quiz de l'item"
-                        : 'Quiz désactivé pour cet item'
+                        : 'Ajoute une flashcard pour lancer le quiz'
                     }
                   >
                     Lancer le quiz
@@ -7182,16 +7182,6 @@ function getPasswordStrengthMeta(password: string) {
 
                 <aside className="item-detail-side-column">
                     <div className="quiz-config-grid item-detail-card item-detail-tab-panel item-detail-tab-panel-flashcards">
-                    <label className="checkline">
-                      <input
-                        type="checkbox"
-                        checked={effectiveSelectedItem.tracking.quiz.enabled}
-                        onChange={(event) =>
-                          updateItemQuizConfig(effectiveSelectedItem.itemNumber, { enabled: event.target.checked })
-                        }
-                      />
-                      Activer quiz pour cet item
-                    </label>
                     <label className="block-label">
                       Cartes quiz
                   <div className="quiz-card-list">
