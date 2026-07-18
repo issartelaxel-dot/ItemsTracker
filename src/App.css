@@ -7693,26 +7693,6 @@ tbody tr.selected {
   max-height: 190px;
 }
 
-.item-detail-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.8rem;
-  border-top: 1px solid var(--border);
-  padding-top: 0.7rem;
-  color: var(--muted);
-  font-size: 0.72rem;
-}
-
-.item-detail-delete-btn {
-  border: 0;
-  background: transparent;
-  color: #ef1f30;
-  font-size: 0.72rem;
-  font-weight: 800;
-  cursor: not-allowed;
-}
-
 :root[data-theme='dark'] .items-only-view .table-panel,
 :root[data-theme='dark'] .items-only-view .item-detail-panel,
 :root[data-theme='dark'] .items-list-wrap,

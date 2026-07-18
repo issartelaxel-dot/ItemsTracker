@@ -7921,12 +7921,6 @@ function getPasswordStrengthMeta(password: string) {
               </div>
                 </aside>
                 </div>
-                <div className="item-detail-footer">
-                  <span>Créé le 12 févr. 2026 par Dr. Martin</span>
-                  <button type="button" className="item-detail-delete-btn" disabled title="Suppression d'item non disponible">
-                    Supprimer cet item
-                  </button>
-                </div>
             </>
           ) : null}
         </article>
