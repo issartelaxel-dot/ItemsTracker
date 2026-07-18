@@ -7461,8 +7461,9 @@ tbody tr.selected {
 }
 
 .item-detail-tab-tracking {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
   gap: 0.72rem;
+  align-items: start;
 }
 
 .item-detail-tab-tracking .item-detail-main-column,
@@ -7478,8 +7479,11 @@ tbody tr.selected {
 
 .item-detail-tab-tracking .item-detail-section-title-lisa,
 .item-detail-tab-tracking .item-detail-section-title-platform,
+.item-detail-tab-tracking .item-detail-section-title-lisa + .checkline,
+.item-detail-tab-tracking .item-detail-section-title-platform + .checkline,
 .item-detail-tab-tracking .reference-grid {
   grid-column: 2;
+  min-width: 0;
 }
 
 .item-detail-tab-tracking .item-detail-section-title {
@@ -7525,6 +7529,10 @@ tbody tr.selected {
 
 .item-detail-tab-tracking .tracking-grid,
 .item-detail-tab-tracking .reference-grid {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow: hidden;
   max-height: none;
   margin: 0;
   padding: 0.58rem;
@@ -7543,17 +7551,18 @@ tbody tr.selected {
 }
 
 .item-detail-tracking-table-head {
-  grid-template-columns: minmax(120px, 1.3fr) 92px 102px minmax(120px, 1fr);
+  grid-template-columns: minmax(96px, 1.2fr) 76px minmax(92px, 0.85fr) minmax(96px, 1fr);
 }
 
 .item-detail-reference-table-head {
-  grid-template-columns: minmax(120px, 1.35fr) 92px 102px minmax(120px, 1fr) 30px;
+  grid-template-columns: minmax(88px, 1fr) 76px minmax(88px, 0.78fr) minmax(96px, 1fr) 26px;
 }
 
 .item-detail-tab-tracking .college-card,
 .item-detail-tab-tracking .reference-card {
   display: grid;
   align-items: center;
+  min-width: 0;
   gap: 0.5rem;
   border: 0;
   border-top: 1px solid var(--border);
@@ -7563,11 +7572,11 @@ tbody tr.selected {
 }
 
 .item-detail-tab-tracking .college-card {
-  grid-template-columns: minmax(120px, 1.3fr) 92px 102px minmax(120px, 1fr);
+  grid-template-columns: minmax(96px, 1.2fr) 76px minmax(92px, 0.85fr) minmax(96px, 1fr);
 }
 
 .item-detail-tab-tracking .reference-card {
-  grid-template-columns: minmax(120px, 1.35fr) 92px 102px minmax(120px, 1fr) 30px;
+  grid-template-columns: minmax(88px, 1fr) 76px minmax(88px, 0.78fr) minmax(96px, 1fr) 26px;
 }
 
 .item-detail-tab-tracking .college-card-head {
@@ -7590,6 +7599,7 @@ tbody tr.selected {
 
 .item-detail-tab-tracking .control-row {
   margin: 0;
+  min-width: 0;
   justify-content: center;
 }
 
@@ -7615,6 +7625,8 @@ tbody tr.selected {
 .item-detail-tab-tracking .block-label select,
 .item-detail-tab-tracking .block-label textarea,
 .item-detail-tab-tracking .reference-row input {
+  width: 100%;
+  min-width: 0;
   font-size: 0.68rem;
 }
 
@@ -8282,6 +8294,23 @@ tbody tr.selected {
   .reference-row .remove-ref-btn {
     grid-column: 2 / 3;
     width: 100%;
+  }
+}
+
+@media (max-width: 1500px) {
+  .main-grid.items-only-view.has-detail .item-detail-tab-tracking {
+    grid-template-columns: 1fr;
+  }
+
+  .main-grid.items-only-view.has-detail .item-detail-tab-tracking .item-detail-upcoming-card,
+  .main-grid.items-only-view.has-detail .item-detail-tab-tracking .item-detail-section-title-colleges,
+  .main-grid.items-only-view.has-detail .item-detail-tab-tracking #item-detail-tracking,
+  .main-grid.items-only-view.has-detail .item-detail-tab-tracking .item-detail-section-title-lisa,
+  .main-grid.items-only-view.has-detail .item-detail-tab-tracking .item-detail-section-title-platform,
+  .main-grid.items-only-view.has-detail .item-detail-tab-tracking .item-detail-section-title-lisa + .checkline,
+  .main-grid.items-only-view.has-detail .item-detail-tab-tracking .item-detail-section-title-platform + .checkline,
+  .main-grid.items-only-view.has-detail .item-detail-tab-tracking .reference-grid {
+    grid-column: 1;
   }
 }
 
