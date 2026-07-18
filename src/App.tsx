@@ -7070,7 +7070,7 @@ function getPasswordStrengthMeta(password: string) {
                           ) : null}
                         </div>
                         {youtubeInputError ? <p className="youtube-error">{youtubeInputError}</p> : null}
-                        {selectedYouTubeVideoId ? (
+                        {selectedYouTubeVideoId && itemDetailTab === 'resources' ? (
                           <div className="youtube-preview">
                             {youtubeDisplayMode === 'embed' ? (
                               <div className="youtube-embed-wrap">
