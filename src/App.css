@@ -6826,9 +6826,10 @@ tbody tr.selected {
 }
 
 .item-detail-edit-popover {
-  position: absolute;
-  top: calc(100% + 0.55rem);
-  right: 0;
+  position: fixed;
+  top: 5.4rem;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 120;
   width: min(620px, calc(100vw - 2rem));
   max-height: min(72vh, 520px);
@@ -6860,7 +6861,7 @@ tbody tr.selected {
 }
 
 .item-detail-edit-popover .item-visual-editor {
-  grid-template-columns: 90px 130px minmax(220px, 1fr);
+  grid-template-columns: minmax(74px, 0.55fr) minmax(120px, 0.8fr) minmax(180px, 1.6fr);
   align-items: end;
   gap: 0.55rem;
   margin: 0;
@@ -8862,6 +8863,7 @@ tbody tr.selected {
   .item-detail-edit-popover {
     position: fixed;
     inset: 4.8rem 0.75rem auto;
+    transform: none;
     width: auto;
     max-height: calc(100dvh - 5.6rem);
   }
