@@ -5967,7 +5967,7 @@ tbody tr.selected {
 .youtube-embed-wrap {
   position: relative;
   width: min(100%, 460px);
-  padding-top: 56.25%;
+  aspect-ratio: 16 / 9;
   border-radius: 12px;
   overflow: hidden;
   border: 1px solid var(--border);
@@ -7454,6 +7454,12 @@ tbody tr.selected {
 .item-detail-tab-resources .item-detail-video-card .youtube-embed-wrap {
   width: 100%;
   max-width: none;
+  justify-self: stretch;
+}
+
+.item-detail-tab-resources .item-detail-video-card .youtube-embed-wrap {
+  min-height: 0;
+  padding-top: 0;
 }
 
 .item-detail-card,
