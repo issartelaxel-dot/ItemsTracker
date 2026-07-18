@@ -6784,11 +6784,11 @@ function getPasswordStrengthMeta(password: string) {
                     {itemVisualSectionOpen ? (
                       <div className="item-detail-edit-popover">
                         <div className="item-detail-edit-popover-head">
-                          <h3>Commentaires</h3>
+                          <h3>Marqueur d'item</h3>
                           <button
                             type="button"
                             className="ghost-btn item-detail-edit-close"
-                            aria-label="Fermer les commentaires"
+                            aria-label="Fermer le marqueur d'item"
                             onClick={() => setItemVisualSectionOpen(false)}
                           >
                             ✕

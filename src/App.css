@@ -6673,6 +6673,8 @@ tbody tr.selected {
 }
 
 .item-detail-hero {
+  position: relative;
+  z-index: 80;
   align-items: flex-start;
   gap: 0.9rem;
   margin: 0;
@@ -6712,6 +6714,8 @@ tbody tr.selected {
 }
 
 .item-detail-panel .detail-head-actions {
+  position: relative;
+  z-index: 90;
   align-items: center;
   justify-content: flex-end;
   flex-wrap: nowrap;
@@ -6818,14 +6822,17 @@ tbody tr.selected {
 
 .item-detail-edit-menu {
   position: relative;
+  z-index: 90;
 }
 
 .item-detail-edit-popover {
   position: absolute;
   top: calc(100% + 0.55rem);
   right: 0;
-  z-index: 30;
-  width: min(360px, calc(100vw - 2rem));
+  z-index: 120;
+  width: min(620px, calc(100vw - 2rem));
+  max-height: min(72vh, 520px);
+  overflow: auto;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--panel-bg);
@@ -6850,6 +6857,23 @@ tbody tr.selected {
   width: 34px;
   min-height: 34px;
   padding: 0;
+}
+
+.item-detail-edit-popover .item-visual-editor {
+  grid-template-columns: 90px 130px minmax(220px, 1fr);
+  align-items: end;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.item-detail-edit-popover .item-visual-actions {
+  grid-column: 1 / -1;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.item-detail-edit-popover .item-visual-actions .ghost-btn {
+  min-height: 34px;
 }
 
 .item-detail-content-grid {
@@ -8832,6 +8856,17 @@ tbody tr.selected {
   }
 
   .item-visual-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .item-detail-edit-popover {
+    position: fixed;
+    inset: 4.8rem 0.75rem auto;
+    width: auto;
+    max-height: calc(100dvh - 5.6rem);
+  }
+
+  .item-detail-edit-popover .item-visual-editor {
     grid-template-columns: 1fr;
   }
 
