@@ -11,13 +11,52 @@ import {
   type MouseEvent as ReactMouseEvent,
   type PointerEvent,
 } from 'react'
+import {
+  Bell,
+  Book,
+  Calendar,
+  Check,
+  CheckCircle,
+  ClockRotateRight,
+  Copy,
+  Crown,
+  Dashboard,
+  DatabaseStats,
+  DotsGrid3x3,
+  EditPencil,
+  Eye,
+  EyeClosed,
+  Flash,
+  FloppyDisk,
+  Globe,
+  HalfMoon,
+  HelpCircle,
+  InfoCircle,
+  Key,
+  Learning,
+  List,
+  Lock,
+  LogOut,
+  Mail,
+  MoreHoriz,
+  MultiplePages,
+  NavArrowLeft,
+  NavArrowRight,
+  Notes,
+  Page,
+  Play,
+  Plus,
+  ProfileCircle,
+  Refresh,
+  Search,
+  SidebarCollapse,
+  Star,
+  SunLight,
+  Trash,
+  WarningTriangle,
+  Xmark,
+} from 'iconoir-react'
 import itemsData from './data/items.json'
-import navCollegesIcon from './assets/nav/colleges.svg'
-import navDashboardIcon from './assets/nav/dashboard.svg'
-import navFlashcardsIcon from './assets/nav/flashcards.svg'
-import navInsightsIcon from './assets/nav/insights.svg'
-import navItemsIcon from './assets/nav/items.svg'
-import logoutIcon from './assets/nav/logout.svg'
 import dashboardMountainBg from './assets/dashboard-mountain-bg.png'
 import anatomyIcon from 'healthicons/public/icons/svg/outline/devices/microscope.svg?raw'
 import anesthesiaIcon from 'healthicons/public/icons/svg/outline/ppe/ppe_face_mask.svg?raw'
@@ -1098,6 +1137,22 @@ const FLASH_FEELING_LABELS: Record<FlashFeelingFilter, string> = {
 }
 const UNRATED_FEELING_LABEL = 'Non évalué'
 
+function QuizResultIcon({ result, className = 'inline-btn-icon' }: { result: QuizResult; className?: string }) {
+  if (result === 'again') {
+    return <Refresh className={className} aria-hidden="true" />
+  }
+  if (result === 'hard') {
+    return <WarningTriangle className={className} aria-hidden="true" />
+  }
+  if (result === 'medium') {
+    return <HelpCircle className={className} aria-hidden="true" />
+  }
+  if (result === 'good') {
+    return <CheckCircle className={className} aria-hidden="true" />
+  }
+  return <Star className={className} aria-hidden="true" />
+}
+
 function getMasteryFeelingLabel(mastery: Mastery) {
   if (mastery === 'Mauvais') return 'À revoir'
   if (mastery === 'Moyen') return 'Difficile'
@@ -1109,129 +1164,43 @@ function getMasteryFeelingLabel(mastery: Mastery) {
 type ItemDetailStatIconName = 'reviews' | 'lastReview' | 'resources' | 'cards'
 
 function ItemDetailStatIcon({ name }: { name: ItemDetailStatIconName }) {
-  const common = {
-    className: 'item-detail-stat-svg',
-    viewBox: '0 0 24 24',
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: 2,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-    'aria-hidden': true,
-  }
-
   if (name === 'reviews') {
-    return (
-      <svg {...common}>
-        <path d="M4 19V9" />
-        <path d="M10 19V5" />
-        <path d="M16 19v-7" />
-        <path d="M22 19H2" />
-      </svg>
-    )
+    return <DatabaseStats className="item-detail-stat-svg" aria-hidden="true" />
   }
 
   if (name === 'lastReview') {
-    return (
-      <svg {...common}>
-        <path d="M8 2v4" />
-        <path d="M16 2v4" />
-        <rect x="3" y="5" width="18" height="16" rx="3" />
-        <path d="M3 10h18" />
-        <path d="M9 15h.01" />
-        <path d="M13 15h.01" />
-      </svg>
-    )
+    return <Calendar className="item-detail-stat-svg" aria-hidden="true" />
   }
 
   if (name === 'resources') {
-    return (
-      <svg {...common}>
-        <path d="M4 19.5V5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5" />
-        <path d="M8 7h8" />
-        <path d="M8 11h6" />
-      </svg>
-    )
+    return <Book className="item-detail-stat-svg" aria-hidden="true" />
   }
 
-  return (
-    <svg {...common}>
-      <rect x="4" y="6" width="16" height="12" rx="2" />
-      <path d="M8 6V4h8v2" />
-      <path d="M8 10h8" />
-      <path d="M8 14h5" />
-    </svg>
-  )
+  return <MultiplePages className="item-detail-stat-svg" aria-hidden="true" />
 }
 
 function ItemDetailFeelingIcon({ mastery }: { mastery: Mastery | 'Non évalué' }) {
-  const common = {
-    className: 'item-detail-stat-svg',
-    viewBox: '0 0 24 24',
-    fill: 'none',
-    stroke: 'currentColor',
-    strokeWidth: 2,
-    strokeLinecap: 'round' as const,
-    strokeLinejoin: 'round' as const,
-    'aria-hidden': true,
-  }
-
   if (mastery === 'Mauvais') {
-    return (
-      <svg {...common}>
-        <path d="M3 12a9 9 0 0 1 15.4-6.36L21 8" />
-        <path d="M21 3v5h-5" />
-        <path d="M21 12a9 9 0 0 1-15.4 6.36L3 16" />
-        <path d="M3 21v-5h5" />
-      </svg>
-    )
+    return <Refresh className="item-detail-stat-svg" aria-hidden="true" />
   }
 
   if (mastery === 'Moyen') {
-    return (
-      <svg {...common}>
-        <path d="M12 3 2.5 20.5h19L12 3Z" />
-        <path d="M12 9v4" />
-        <path d="M12 17h.01" />
-      </svg>
-    )
+    return <WarningTriangle className="item-detail-stat-svg" aria-hidden="true" />
   }
 
   if (mastery === 'Bon') {
-    return (
-      <svg {...common}>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M8 12h8" />
-      </svg>
-    )
+    return <HelpCircle className="item-detail-stat-svg" aria-hidden="true" />
   }
 
   if (mastery === 'Très bon') {
-    return (
-      <svg {...common}>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M8 10h.01" />
-        <path d="M16 10h.01" />
-        <path d="M8.5 15a5 5 0 0 0 7 0" />
-      </svg>
-    )
+    return <CheckCircle className="item-detail-stat-svg" aria-hidden="true" />
   }
 
   if (mastery === 'Parfait') {
-    return (
-      <svg {...common}>
-        <path d="m12 3 2.77 5.61 6.19.9-4.48 4.36 1.06 6.16L12 17.11l-5.54 2.92 1.06-6.16-4.48-4.36 6.19-.9L12 3Z" />
-      </svg>
-    )
+    return <Star className="item-detail-stat-svg" aria-hidden="true" />
   }
 
-  return (
-    <svg {...common}>
-      <circle cx="12" cy="12" r="9" />
-      <path d="M9.1 9a3 3 0 1 1 5.8 1c-.5 1.1-1.7 1.5-2.2 2.2-.4.5-.5 1-.5 1.8" />
-      <path d="M12 17h.01" />
-    </svg>
-  )
+  return <HelpCircle className="item-detail-stat-svg" aria-hidden="true" />
 }
 
 function shuffleQuizCardIds(cards: QuizCard[], preferredCardId?: string) {
@@ -6265,7 +6234,7 @@ function getPasswordStrengthMeta(password: string) {
                   <div className="auth-grid">
                     <label className="auth-input-wrap auth-input-full">
                       <span className="auth-input-icon" aria-hidden="true">
-                        ✉
+                        <Mail className="ui-icon" aria-hidden="true" />
                       </span>
                       <input
                         type="email"
@@ -6276,7 +6245,7 @@ function getPasswordStrengthMeta(password: string) {
                     </label>
                     <label className="auth-input-wrap auth-input-full">
                       <span className="auth-input-icon" aria-hidden="true">
-                        🔒
+                        <Lock className="ui-icon" aria-hidden="true" />
                       </span>
                       <input
                         type={showPassword ? 'text' : 'password'}
@@ -6290,7 +6259,11 @@ function getPasswordStrengthMeta(password: string) {
                         onClick={() => setShowPassword((value) => !value)}
                         aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                       >
-                        {showPassword ? '🙈' : '👁️'}
+                        {showPassword ? (
+                          <EyeClosed className="ui-icon" aria-hidden="true" />
+                        ) : (
+                          <Eye className="ui-icon" aria-hidden="true" />
+                        )}
                       </button>
                     </label>
                   </div>
@@ -6325,7 +6298,7 @@ function getPasswordStrengthMeta(password: string) {
                         />
                         <label className="auth-input-wrap">
                           <span className="auth-input-icon" aria-hidden="true">
-                            🔑
+                            <Key className="ui-icon" aria-hidden="true" />
                           </span>
                           <input
                             type={showResetPassword ? 'text' : 'password'}
@@ -6339,7 +6312,11 @@ function getPasswordStrengthMeta(password: string) {
                             onClick={() => setShowResetPassword((value) => !value)}
                             aria-label={showResetPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                           >
-                            {showResetPassword ? '🙈' : '👁️'}
+                            {showResetPassword ? (
+                              <EyeClosed className="ui-icon" aria-hidden="true" />
+                            ) : (
+                              <Eye className="ui-icon" aria-hidden="true" />
+                            )}
                           </button>
                         </label>
                       </div>
@@ -6367,7 +6344,7 @@ function getPasswordStrengthMeta(password: string) {
                     <input placeholder="Nom" value={lastNameInput} onChange={(event) => setLastNameInput(event.target.value)} />
                     <label className="auth-input-wrap auth-input-full">
                       <span className="auth-input-icon" aria-hidden="true">
-                        ✉
+                        <Mail className="ui-icon" aria-hidden="true" />
                       </span>
                       <input
                         type="email"
@@ -6378,7 +6355,7 @@ function getPasswordStrengthMeta(password: string) {
                     </label>
                     <label className="auth-input-wrap auth-input-full">
                       <span className="auth-input-icon" aria-hidden="true">
-                        🔒
+                        <Lock className="ui-icon" aria-hidden="true" />
                       </span>
                       <input
                         type={showPassword ? 'text' : 'password'}
@@ -6392,7 +6369,11 @@ function getPasswordStrengthMeta(password: string) {
                         onClick={() => setShowPassword((value) => !value)}
                         aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                       >
-                        {showPassword ? '🙈' : '👁️'}
+                        {showPassword ? (
+                          <EyeClosed className="ui-icon" aria-hidden="true" />
+                        ) : (
+                          <Eye className="ui-icon" aria-hidden="true" />
+                        )}
                       </button>
                     </label>
                     <input
@@ -6539,7 +6520,7 @@ function getPasswordStrengthMeta(password: string) {
             onClick={() => setActiveView('dashboard')}
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
-              <img src={navDashboardIcon} className="sidebar-nav-icon-img" alt="" />
+              <Dashboard className="sidebar-nav-icon-img" aria-hidden="true" />
             </span>
             <span className="sidebar-nav-label">Dashboard</span>
           </button>
@@ -6552,7 +6533,7 @@ function getPasswordStrengthMeta(password: string) {
             onClick={() => setActiveView('items')}
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
-              <img src={navItemsIcon} className="sidebar-nav-icon-img" alt="" />
+              <Page className="sidebar-nav-icon-img" aria-hidden="true" />
             </span>
             <span className="sidebar-nav-label">Items</span>
           </button>
@@ -6565,7 +6546,7 @@ function getPasswordStrengthMeta(password: string) {
             onClick={() => setActiveView('flashcards')}
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
-              <img src={navFlashcardsIcon} className="sidebar-nav-icon-img" alt="" />
+              <MultiplePages className="sidebar-nav-icon-img" aria-hidden="true" />
             </span>
             <span className="sidebar-nav-label">Flashcards</span>
           </button>
@@ -6578,7 +6559,7 @@ function getPasswordStrengthMeta(password: string) {
             onClick={() => setActiveView('colleges')}
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
-              <img src={navCollegesIcon} className="sidebar-nav-icon-img" alt="" />
+              <Learning className="sidebar-nav-icon-img" aria-hidden="true" />
             </span>
             <span className="sidebar-nav-label">Collèges</span>
           </button>
@@ -6590,7 +6571,7 @@ function getPasswordStrengthMeta(password: string) {
             aria-label="Insights bientôt disponible"
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
-              <img src={navInsightsIcon} className="sidebar-nav-icon-img" alt="" />
+              <DatabaseStats className="sidebar-nav-icon-img" aria-hidden="true" />
             </span>
             <span className="sidebar-nav-label">Insights</span>
           </button>
@@ -6603,7 +6584,7 @@ function getPasswordStrengthMeta(password: string) {
             aria-label={theme === 'light' ? 'Activer le thème sombre' : 'Activer le thème clair'}
           >
             <span className={`sidebar-footer-icon ${theme === 'light' ? 'sidebar-sun-icon' : 'sidebar-moon-icon'}`} aria-hidden="true">
-              {theme === 'light' ? '☀' : '☾'}
+              {theme === 'light' ? <SunLight aria-hidden="true" /> : <HalfMoon aria-hidden="true" />}
             </span>
             <span className="sidebar-footer-label">{theme === 'light' ? 'Thème clair' : 'Thème sombre'}</span>
             <span className={`sidebar-theme-switch ${theme === 'light' ? 'is-light' : 'is-dark'}`} aria-hidden="true">
@@ -6612,7 +6593,7 @@ function getPasswordStrengthMeta(password: string) {
           </button>
           <button type="button" className="sidebar-footer-action" onClick={() => void handleLogout()}>
             <span className="sidebar-footer-icon" aria-hidden="true">
-              <img src={logoutIcon} className="sidebar-footer-icon-img" alt="" />
+              <LogOut className="sidebar-footer-icon-img" aria-hidden="true" />
             </span>
             <span className="sidebar-footer-label">Déconnexion</span>
           </button>
@@ -6655,7 +6636,11 @@ function getPasswordStrengthMeta(password: string) {
               aria-label={sidebarCollapsed ? 'Etendre le menu' : 'Replier le menu'}
               title={sidebarCollapsed ? 'Etendre le menu' : 'Replier le menu'}
             >
-              {sidebarCollapsed ? '→' : '←'}
+              {sidebarCollapsed ? (
+                <NavArrowRight className="ui-icon" aria-hidden="true" />
+              ) : (
+                <SidebarCollapse className="ui-icon" aria-hidden="true" />
+              )}
             </button>
             {saveErrorMessage ? (
               <span className="topbar-save-warning">{saveErrorMessage}</span>
@@ -6672,7 +6657,9 @@ function getPasswordStrengthMeta(password: string) {
           </div>
           <div className="topbar-actions" aria-label="Actions globales">
             <label className="topbar-search">
-              <span aria-hidden="true">⌕</span>
+              <span aria-hidden="true">
+                <Search className="ui-icon" aria-hidden="true" />
+              </span>
               <input
                 type="search"
                 placeholder="Rechercher un item..."
@@ -6691,7 +6678,9 @@ function getPasswordStrengthMeta(password: string) {
               aria-label="Notifications non configurées"
               title="Notifications non configurées"
             >
-              <span aria-hidden="true">!</span>
+              <span aria-hidden="true">
+                <Bell className="ui-icon" aria-hidden="true" />
+              </span>
               <span className="topbar-notification-tooltip">Notifications non configurées</span>
             </button>
           </div>
@@ -6720,7 +6709,7 @@ function getPasswordStrengthMeta(password: string) {
               <article className="dashboard-stat-card dashboard-progress-card">
                 <div className="dashboard-stat-head">
                   <p>Progression globale</p>
-                  <span className="dashboard-trend-icon" aria-hidden="true">⌁</span>
+                  <DatabaseStats className="dashboard-trend-icon" aria-hidden="true" />
                 </div>
                 <strong>{Math.round(globalStats.overallProgress)}%</strong>
                 <span className="dashboard-positive">+{Math.max(1, Math.round(globalStats.overallProgress * 0.12))}% depuis la semaine dernière</span>
@@ -6730,7 +6719,9 @@ function getPasswordStrengthMeta(password: string) {
               </article>
 
               <article className="dashboard-stat-card">
-                <div className="dashboard-stat-icon dashboard-stat-fire" aria-hidden="true">🔥</div>
+                <div className="dashboard-stat-icon dashboard-stat-fire" aria-hidden="true">
+                  <Flash className="ui-icon" aria-hidden="true" />
+                </div>
                 <p>Série actuelle</p>
                 <strong>{dashboardStudyStats.currentStreak}</strong>
                 <span>jours d’affilée</span>
@@ -6738,7 +6729,9 @@ function getPasswordStrengthMeta(password: string) {
               </article>
 
               <article className="dashboard-stat-card">
-                <div className="dashboard-stat-icon" aria-hidden="true">▣</div>
+                <div className="dashboard-stat-icon" aria-hidden="true">
+                  <ClockRotateRight className="ui-icon" aria-hidden="true" />
+                </div>
                 <p>Révisions dues</p>
                 <strong>{dashboardDueCount}</strong>
                 <span>items à revoir</span>
@@ -6790,12 +6783,12 @@ function getPasswordStrengthMeta(password: string) {
                       jumpToQuizGeneratorSetup()
                     }}
                   >
-                    <span aria-hidden="true">▷</span>
+                    <Play className="dashboard-action-icon" aria-hidden="true" />
                     <strong>Lancer un quiz</strong>
                     <small>Testez vos connaissances</small>
                   </button>
                   <button type="button" className="dashboard-action-tile dashboard-action-items" onClick={() => setActiveView('items')}>
-                    <span aria-hidden="true">☷</span>
+                    <List className="dashboard-action-icon" aria-hidden="true" />
                     <strong>Réviser mes items</strong>
                     <small>Reprenez là où vous en étiez</small>
                   </button>
@@ -6806,7 +6799,7 @@ function getPasswordStrengthMeta(password: string) {
                       openFlashcardCreator()
                     }}
                   >
-                    <span aria-hidden="true">▣</span>
+                    <MultiplePages className="dashboard-action-icon" aria-hidden="true" />
                     <strong>Créer des flashcards</strong>
                     <small>Transformez vos notions</small>
                   </button>
@@ -6953,15 +6946,28 @@ function getPasswordStrengthMeta(password: string) {
                       </span>
                     ) : null}
                     <span className="items-list-metrics" aria-label="Métriques item">
-                      <span title="Collèges assignés">♙ {item.tracking.assignedColleges.length}</span>
-                      <span title="Flashcards">▧ {item.tracking.quiz.cards.length}</span>
-                      <span title="Révisions">↻ {item.totalReviews}</span>
+                      <span title="Collèges assignés">
+                        <Learning className="items-list-metric-icon" aria-hidden="true" />
+                        {item.tracking.assignedColleges.length}
+                      </span>
+                      <span title="Flashcards">
+                        <MultiplePages className="items-list-metric-icon" aria-hidden="true" />
+                        {item.tracking.quiz.cards.length}
+                      </span>
+                      <span title="Révisions">
+                        <Refresh className="items-list-metric-icon" aria-hidden="true" />
+                        {item.totalReviews}
+                      </span>
                     </span>
                   </span>
                   <span className="items-list-status">
                     <span className={`pill progress-pill ${progressTier}`}>
                       {progressPercent}%
-                      {progressPercent >= 100 ? <span className="progress-pill-check">✓</span> : null}
+                      {progressPercent >= 100 ? (
+                        <span className="progress-pill-check">
+                          <Check className="items-list-metric-icon" aria-hidden="true" />
+                        </span>
+                      ) : null}
                     </span>
                     <span className={`item-mastery-pill ${masteryToneClass}`}>
                       {item.tracking.itemMastery === 'Non évalué'
@@ -6969,7 +6975,9 @@ function getPasswordStrengthMeta(password: string) {
                         : getMasteryFeelingLabel(item.tracking.itemMastery)}
                     </span>
                   </span>
-                  <span className="items-list-chevron" aria-hidden="true">›</span>
+                  <span className="items-list-chevron" aria-hidden="true">
+                    <NavArrowRight className="ui-icon" aria-hidden="true" />
+                  </span>
                 </button>
               )
             })}
@@ -7009,7 +7017,7 @@ function getPasswordStrengthMeta(password: string) {
                             aria-label="Fermer le marqueur d'item"
                             onClick={() => setItemVisualSectionOpen(false)}
                           >
-                            ✕
+                            <Xmark className="ui-icon" aria-hidden="true" />
                           </button>
                         </div>
                         <div className="item-visual-editor">
@@ -7063,7 +7071,7 @@ function getPasswordStrengthMeta(password: string) {
                                 )
                               }
                             >
-                              ⭐️
+                              <Star className="ui-icon" aria-hidden="true" />
                             </button>
                             <button
                               type="button"
@@ -7082,7 +7090,7 @@ function getPasswordStrengthMeta(password: string) {
                                 )
                               }
                             >
-                              ⚠️
+                              <WarningTriangle className="ui-icon" aria-hidden="true" />
                             </button>
                             <button
                               type="button"
@@ -7126,29 +7134,7 @@ function getPasswordStrengthMeta(password: string) {
                     aria-label={`Afficher l'historique de l'item ${effectiveSelectedItem.itemNumber}`}
                     onClick={() => setHistoryItemId(effectiveSelectedItem.itemNumber)}
                   >
-                    <svg className="item-detail-action-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                      <path
-                        d="M3 12a9 9 0 1 0 3-6.7"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M3 4v5h5"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M12 7v5l3 2"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    <ClockRotateRight className="item-detail-action-icon" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
@@ -7157,7 +7143,7 @@ function getPasswordStrengthMeta(password: string) {
                     aria-label="Masquer le panneau item"
                     onClick={() => setSelectedItemId(null)}
                   >
-                    ✕
+                    <Xmark className="item-detail-action-icon" aria-hidden="true" />
                   </button>
                   {focusMode ? (
                     <button className="ghost-btn" onClick={nextFocusItem}>
@@ -7350,7 +7336,7 @@ function getPasswordStrengthMeta(password: string) {
                           >
                             {effectiveSelectedItem.tracking.usefulLinkUrl ? (
                               <span className="link-icon-glyph" aria-hidden="true">
-                                ✏️
+                                <EditPencil className="ui-icon" aria-hidden="true" />
                               </span>
                             ) : (
                               'Ajouter'
@@ -7365,7 +7351,7 @@ function getPasswordStrengthMeta(password: string) {
                               onClick={handleUsefulLinkClear}
                             >
                               <span className="link-icon-glyph" aria-hidden="true">
-                                🗑️
+                                <Trash className="ui-icon" aria-hidden="true" />
                               </span>
                             </button>
                           ) : null}
@@ -7417,7 +7403,7 @@ function getPasswordStrengthMeta(password: string) {
                               : FLASH_FEELING_LABELS.none
                           }
                         >
-                            {card.lastResult ? QUIZ_RESULT_META[card.lastResult].icon : '•'}{' '}
+                            {card.lastResult ? <QuizResultIcon result={card.lastResult} className="flash-card-row-feeling-icon" /> : '•'}{' '}
                             {card.lastResult ? QUIZ_RESULT_META[card.lastResult].label : FLASH_FEELING_LABELS.none}
                           </span>
                           <button
@@ -7453,7 +7439,8 @@ function getPasswordStrengthMeta(password: string) {
                       className="quiz-card-add"
                       onClick={() => addQuizCard(effectiveSelectedItem.itemNumber)}
                     >
-                      + Ajouter carte
+                      <Plus className="inline-btn-icon" aria-hidden="true" />
+                      Ajouter carte
                     </button>
                   </div>
                 </label>
@@ -8046,11 +8033,11 @@ function getPasswordStrengthMeta(password: string) {
                   </span>
                   <div className="flashcard-editor-actions">
                     <button type="button" className="flashcard-editor-action" onClick={() => navigateQuizCard('prev')}>
-                      <span aria-hidden="true">←</span>
+                      <NavArrowLeft className="flashcard-editor-action-icon" aria-hidden="true" />
                       Précédente
                     </button>
                     <button type="button" className="flashcard-editor-action" onClick={() => navigateQuizCard('next')}>
-                      <span aria-hidden="true">→</span>
+                      <NavArrowRight className="flashcard-editor-action-icon" aria-hidden="true" />
                       Suivante
                     </button>
                     <button
@@ -8058,11 +8045,11 @@ function getPasswordStrengthMeta(password: string) {
                       className="flashcard-editor-action"
                       onClick={() => duplicateQuizCard(quizItem.itemNumber, activeQuizCard.id)}
                     >
-                      <span className="flashcard-editor-duplicate-icon" aria-hidden="true" />
+                      <Copy className="flashcard-editor-action-icon" aria-hidden="true" />
                       Dupliquer
                     </button>
                     <button type="button" className="flashcard-editor-action danger" onClick={removeActiveQuizCardWithConfirm}>
-                      <span aria-hidden="true">⌫</span>
+                      <Trash className="flashcard-editor-action-icon" aria-hidden="true" />
                       Supprimer
                     </button>
                     <button
@@ -8070,11 +8057,11 @@ function getPasswordStrengthMeta(password: string) {
                       className="flashcard-editor-action flashcard-editor-save-action"
                       onClick={() => setQuizEditMode(false)}
                     >
-                      <span className="flashcard-editor-save-icon" aria-hidden="true" />
+                      <FloppyDisk className="flashcard-editor-action-icon" aria-hidden="true" />
                       Enregistrer
                     </button>
                     <button type="button" className="flashcard-editor-action" onClick={closeQuiz}>
-                      <span aria-hidden="true">×</span>
+                      <Xmark className="flashcard-editor-action-icon" aria-hidden="true" />
                       Fermer
                     </button>
                   </div>
@@ -8086,7 +8073,7 @@ function getPasswordStrengthMeta(password: string) {
                     className={quizSide === 'front' ? 'active' : ''}
                     onClick={() => setQuizSide('front')}
                   >
-                    <span aria-hidden="true">▱</span>
+                    <Page className="flashcard-editor-tab-icon" aria-hidden="true" />
                     Recto
                   </button>
                   <button
@@ -8094,14 +8081,14 @@ function getPasswordStrengthMeta(password: string) {
                     className={quizSide === 'back' ? 'active' : ''}
                     onClick={() => setQuizSide('back')}
                   >
-                    <span aria-hidden="true">▰</span>
+                    <Page className="flashcard-editor-tab-icon" aria-hidden="true" />
                     Verso
                   </button>
                 </div>
 
                 <section className="flashcard-editor-preview" aria-label={`Aperçu du ${quizSide === 'front' ? 'recto' : 'verso'}`}>
                   <p className="flashcard-editor-section-label">
-                    <span aria-hidden="true">◉</span>
+                    <Eye className="flashcard-editor-label-icon" aria-hidden="true" />
                     Aperçu du {quizSide === 'front' ? 'recto' : 'verso'}
                   </p>
                   <div className="flashcard-editor-preview-body">
@@ -8168,7 +8155,8 @@ function getPasswordStrengthMeta(password: string) {
                         className="ghost-btn"
                         onClick={() => openQuizCardImagePicker(quizItem.itemNumber, activeQuizCard.id, quizSide)}
                       >
-                        ↻ Remplacer
+                        <Refresh className="inline-btn-icon" aria-hidden="true" />
+                        Remplacer
                       </button>
                       <button
                         type="button"
@@ -8183,7 +8171,8 @@ function getPasswordStrengthMeta(password: string) {
                             : !activeQuizCard.backImageDataUrl && !activeQuizCard.hasBackImageDataUrl
                         }
                       >
-                        ⌫ Retirer
+                        <Trash className="inline-btn-icon" aria-hidden="true" />
+                        Retirer
                       </button>
                     </div>
                   </aside>
@@ -8191,7 +8180,7 @@ function getPasswordStrengthMeta(password: string) {
 
                 <details className="flashcard-editor-notes">
                   <summary>
-                    <span aria-hidden="true">▤</span>
+                    <Notes className="inline-btn-icon" aria-hidden="true" />
                     Notes personnelles <small>(optionnel)</small>
                   </summary>
                   <textarea
@@ -8206,19 +8195,24 @@ function getPasswordStrengthMeta(password: string) {
                 <div className="flashcard-editor-footer">
                   <div className="flashcard-editor-rates">
                     <button type="button" className="ghost-btn quiz-rate-btn again" onClick={() => handleQuizResult('again')}>
-                      ↺ À revoir
+                      <Refresh className="inline-btn-icon" aria-hidden="true" />
+                      À revoir
                     </button>
                     <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleQuizResult('hard')}>
-                      ⚠ Difficile
+                      <WarningTriangle className="inline-btn-icon" aria-hidden="true" />
+                      Difficile
                     </button>
                     <button type="button" className="ghost-btn quiz-rate-btn medium" onClick={() => handleQuizResult('medium')}>
-                      ⊖ Moyen
+                      <HelpCircle className="inline-btn-icon" aria-hidden="true" />
+                      Moyen
                     </button>
                     <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleQuizResult('good')}>
-                      ✓ Facile
+                      <CheckCircle className="inline-btn-icon" aria-hidden="true" />
+                      Facile
                     </button>
                     <button type="button" className="ghost-btn quiz-rate-btn easy" onClick={() => handleQuizResult('easy')}>
-                      ☆ Très facile
+                      <Star className="inline-btn-icon" aria-hidden="true" />
+                      Très facile
                     </button>
                   </div>
                 </div>
@@ -8226,7 +8220,8 @@ function getPasswordStrengthMeta(password: string) {
                 {quizFeedback ? (
                   <div className={`quiz-feedback ${quizFeedback} reward-${quizItem.tracking.quiz.rewardIntensity}`}>
                     <span className="quiz-feedback-main">
-                      {QUIZ_RESULT_META[quizFeedback].icon} {QUIZ_RESULT_META[quizFeedback].label}
+                      <QuizResultIcon result={quizFeedback} className="quiz-feedback-icon" />
+                      {QUIZ_RESULT_META[quizFeedback].label}
                     </span>
                   </div>
                 ) : null}
@@ -8255,7 +8250,7 @@ function getPasswordStrengthMeta(password: string) {
                       }}
                       title="Créer une flashcard"
                     >
-                      ➕
+                      <Plus className="ui-icon" aria-hidden="true" />
                     </button>
                     <button
                       type="button"
@@ -8263,7 +8258,7 @@ function getPasswordStrengthMeta(password: string) {
                       onClick={() => setQuizEditMode(true)}
                       title="Modifier la flashcard"
                     >
-                      ✏️
+                      <EditPencil className="ui-icon" aria-hidden="true" />
                     </button>
                     <button
                       type="button"
@@ -8271,13 +8266,13 @@ function getPasswordStrengthMeta(password: string) {
                       onClick={removeActiveQuizCardWithConfirm}
                       title="Supprimer la flashcard"
                     >
-                      🗑️
+                      <Trash className="ui-icon" aria-hidden="true" />
                     </button>
                     <button type="button" className="ghost-btn" onClick={() => navigateQuizCard('prev')}>
-                      ←
+                      <NavArrowLeft className="ui-icon" aria-hidden="true" />
                     </button>
                     <button type="button" className="ghost-btn" onClick={() => navigateQuizCard('next')}>
-                      →
+                      <NavArrowRight className="ui-icon" aria-hidden="true" />
                     </button>
                     <button type="button" className="ghost-btn" onClick={closeQuiz}>
                       Close
@@ -8353,26 +8348,32 @@ function getPasswordStrengthMeta(password: string) {
                     Flip
                   </button>
                   <button type="button" className="ghost-btn quiz-rate-btn again" onClick={() => handleQuizResult('again')}>
-                    ❌ À revoir
+                    <Refresh className="inline-btn-icon" aria-hidden="true" />
+                    À revoir
                   </button>
                   <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleQuizResult('hard')}>
-                    ⚠️ Difficile
+                    <WarningTriangle className="inline-btn-icon" aria-hidden="true" />
+                    Difficile
                   </button>
                   <button type="button" className="ghost-btn quiz-rate-btn medium" onClick={() => handleQuizResult('medium')}>
-                    ⊖ Moyen
+                    <HelpCircle className="inline-btn-icon" aria-hidden="true" />
+                    Moyen
                   </button>
                   <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleQuizResult('good')}>
-                    ✅ Facile
+                    <CheckCircle className="inline-btn-icon" aria-hidden="true" />
+                    Facile
                   </button>
                   <button type="button" className="ghost-btn quiz-rate-btn easy" onClick={() => handleQuizResult('easy')}>
-                    ⚡ Très facile
+                    <Star className="inline-btn-icon" aria-hidden="true" />
+                    Très facile
                   </button>
                 </div>
 
                 {quizFeedback ? (
                   <div className={`quiz-feedback ${quizFeedback} reward-${quizItem.tracking.quiz.rewardIntensity}`}>
                     <span className="quiz-feedback-main">
-                      {QUIZ_RESULT_META[quizFeedback].icon} {QUIZ_RESULT_META[quizFeedback].label}
+                      <QuizResultIcon result={quizFeedback} className="quiz-feedback-icon" />
+                      {QUIZ_RESULT_META[quizFeedback].label}
                     </span>
                     {quizFeedback === 'good' || quizFeedback === 'easy' ? (
                       <span className="quiz-feedback-plus-one" aria-hidden="true">
@@ -8381,12 +8382,12 @@ function getPasswordStrengthMeta(password: string) {
                     ) : null}
                     {quizFeedback === 'good' ? (
                       <span className="quiz-feedback-check" aria-hidden="true">
-                        ✔️
+                        <Check className="ui-icon" aria-hidden="true" />
                       </span>
                     ) : null}
                     {quizFeedback === 'easy' && quizItem.tracking.quiz.rewardIntensity !== 'low' ? (
                       <span className="quiz-feedback-sparkles" aria-hidden="true">
-                        ✨⚡
+                        <Star className="ui-icon" aria-hidden="true" />
                       </span>
                     ) : null}
                   </div>
@@ -8402,7 +8403,7 @@ function getPasswordStrengthMeta(password: string) {
           <div className="flashcards-generator-callout" aria-label="Générateur de quiz">
             <div className="flashcards-generator-copy">
               <p className="flashcards-generator-kicker">
-                <span aria-hidden="true">✦</span>
+                <Flash className="inline-btn-icon" aria-hidden="true" />
                 Générateur de quiz
               </p>
               <h2>Créez un quiz personnalisé</h2>
@@ -8447,13 +8448,15 @@ function getPasswordStrengthMeta(password: string) {
               </label>
             </div>
             <button type="button" className="flashcards-generator-btn" onClick={startSelectedCollegeGeneratedQuiz}>
-              <span aria-hidden="true">✦</span>
+              <Flash className="inline-btn-icon" aria-hidden="true" />
               Générer le quiz
             </button>
           </div>
           <div className="flashcards-toolbar">
             <label className="flashcards-search">
-              <span className="flashcards-search-icon" aria-hidden="true">⌕</span>
+              <span className="flashcards-search-icon" aria-hidden="true">
+                <Search className="ui-icon" aria-hidden="true" />
+              </span>
               <input
                 type="search"
                 placeholder="Rechercher un item..."
@@ -8488,11 +8491,15 @@ function getPasswordStrengthMeta(password: string) {
               className="flashcards-view-switch"
               onClick={() => setFlashDisplayMode((current) => (current === 'colleges' ? 'items' : 'colleges'))}
             >
-              <span aria-hidden="true">{flashDisplayMode === 'colleges' ? '☷' : '◉'}</span>
+              {flashDisplayMode === 'colleges' ? (
+                <List className="inline-btn-icon" aria-hidden="true" />
+              ) : (
+                <Learning className="inline-btn-icon" aria-hidden="true" />
+              )}
               {flashDisplayMode === 'colleges' ? 'Afficher par items' : 'Afficher par collèges'}
             </button>
             <button type="button" className="flashcards-create-btn" onClick={() => openFlashcardCreator()}>
-              <span aria-hidden="true">＋</span>
+              <Plus className="inline-btn-icon" aria-hidden="true" />
               Créer une flashcard
             </button>
           </div>
@@ -8779,14 +8786,14 @@ function getPasswordStrengthMeta(password: string) {
                                 )
                               }
                             >
-                              ←
+                              <NavArrowLeft className="ui-icon" aria-hidden="true" />
                             </button>
                             <button
                               type="button"
                               className="ghost-btn"
                               onClick={() => setFlashGeneratedIndex((current) => (current + 1) % generatedFlashcards.length)}
                             >
-                              →
+                              <NavArrowRight className="ui-icon" aria-hidden="true" />
                             </button>
                           </div>
                         </div>
@@ -8844,25 +8851,31 @@ function getPasswordStrengthMeta(password: string) {
                             Flip
                           </button>
                           <button type="button" className="ghost-btn quiz-rate-btn again" onClick={() => handleGeneratedFlashResult('again')}>
-                            ❌ À revoir
+                            <Refresh className="inline-btn-icon" aria-hidden="true" />
+                            À revoir
                           </button>
                           <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleGeneratedFlashResult('hard')}>
-                            ⚠️ Difficile
+                            <WarningTriangle className="inline-btn-icon" aria-hidden="true" />
+                            Difficile
                           </button>
                           <button type="button" className="ghost-btn quiz-rate-btn medium" onClick={() => handleGeneratedFlashResult('medium')}>
-                            ⊖ Moyen
+                            <HelpCircle className="inline-btn-icon" aria-hidden="true" />
+                            Moyen
                           </button>
                           <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleGeneratedFlashResult('good')}>
-                            ✅ Facile
+                            <CheckCircle className="inline-btn-icon" aria-hidden="true" />
+                            Facile
                           </button>
                           <button type="button" className="ghost-btn quiz-rate-btn easy" onClick={() => handleGeneratedFlashResult('easy')}>
-                            ⚡ Très facile
+                            <Star className="inline-btn-icon" aria-hidden="true" />
+                            Très facile
                           </button>
                         </div>
                         {flashGeneratedFeedback ? (
                           <div className={`quiz-feedback ${flashGeneratedFeedback} reward-medium`}>
                             <span className="quiz-feedback-main">
-                              {QUIZ_RESULT_META[flashGeneratedFeedback].icon} {QUIZ_RESULT_META[flashGeneratedFeedback].label}
+                              <QuizResultIcon result={flashGeneratedFeedback} className="quiz-feedback-icon" />
+                              {QUIZ_RESULT_META[flashGeneratedFeedback].label}
                             </span>
                           </div>
                         ) : null}
@@ -8963,7 +8976,7 @@ function getPasswordStrengthMeta(password: string) {
                         jumpToQuizGeneratorSetup()
                       }}
                     >
-                      ⋮
+                      <MoreHoriz className="ui-icon" aria-hidden="true" />
                     </button>
                   </div>
                   <div className="flashcards-progress-track" aria-hidden="true">
@@ -8975,7 +8988,7 @@ function getPasswordStrengthMeta(password: string) {
                   </p>
                   <div className="flashcards-card-actions">
                     <button type="button" className="flashcards-card-launch" onClick={() => startCollegeGeneratedQuiz(row.college)}>
-                      <span aria-hidden="true">▶</span>
+                      <Play className="inline-btn-icon" aria-hidden="true" />
                       Lancer le quiz
                     </button>
                     <button
@@ -8985,17 +8998,7 @@ function getPasswordStrengthMeta(password: string) {
                       aria-label={`Voir les cartes ${row.displayName}`}
                       onClick={() => openCollegeFlashcardsList(row.college)}
                     >
-                      <span className="flashcards-grid-icon" aria-hidden="true">
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                      </span>
+                      <DotsGrid3x3 className="flashcards-grid-icon" aria-hidden="true" />
                     </button>
                   </div>
                 </article>
@@ -9031,7 +9034,7 @@ function getPasswordStrengthMeta(password: string) {
                         setFlashGeneratorStep(1)
                       }}
                     >
-                      ⋮
+                      <MoreHoriz className="ui-icon" aria-hidden="true" />
                     </button>
                   </div>
                   <div className="flashcards-progress-track" aria-hidden="true">
@@ -9043,7 +9046,7 @@ function getPasswordStrengthMeta(password: string) {
                   </p>
                   <div className="flashcards-card-actions">
                     <button type="button" className="flashcards-card-launch" onClick={() => startItemGeneratedQuiz(row.itemNumber)}>
-                      <span aria-hidden="true">▶</span>
+                      <Play className="inline-btn-icon" aria-hidden="true" />
                       Lancer le quiz
                     </button>
                     <button
@@ -9053,17 +9056,7 @@ function getPasswordStrengthMeta(password: string) {
                       aria-label={`Voir les cartes item ${row.itemNumber}`}
                       onClick={() => openItemFlashcardsList(row.itemNumber)}
                     >
-                      <span className="flashcards-grid-icon" aria-hidden="true">
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                        <span />
-                      </span>
+                      <DotsGrid3x3 className="flashcards-grid-icon" aria-hidden="true" />
                     </button>
                   </div>
                 </article>
@@ -9106,7 +9099,7 @@ function getPasswordStrengthMeta(password: string) {
                     aria-label="Fermer la liste des cartes"
                     onClick={closeCollegeFlashcardsList}
                   >
-                    ✕
+                    <Xmark className="ui-icon" aria-hidden="true" />
                   </button>
                 </div>
                 <div className="flashcards-list-body">
@@ -9165,7 +9158,8 @@ function getPasswordStrengthMeta(password: string) {
                 setSelectedCollegeDetail(null)
               }}
             >
-              ← Retour aux collèges
+              <NavArrowLeft className="inline-btn-icon" aria-hidden="true" />
+              Retour aux collèges
             </button>
             <header className="college-detail-hero">
               <div className="college-detail-title">
@@ -9184,13 +9178,16 @@ function getPasswordStrengthMeta(password: string) {
                   setSelectedCollegeDetail(null)
                 }}
               >
-                + Ajouter un item
+                <Plus className="inline-btn-icon" aria-hidden="true" />
+                Ajouter un item
               </button>
             </header>
 
             <div className="college-detail-stats">
               <article>
-                <span className="college-detail-stat-icon">▤</span>
+                <span className="college-detail-stat-icon">
+                  <Page className="ui-icon" aria-hidden="true" />
+                </span>
                 <p>Items</p>
                 <strong>{selectedCollegeDetailData.items.length}</strong>
                 <small>dans ce collège</small>
@@ -9202,19 +9199,25 @@ function getPasswordStrengthMeta(password: string) {
                 <small>{selectedCollegeDetailData.averageProgress}% moyenne globale</small>
               </article>
               <article>
-                <span className="college-detail-stat-icon">↻</span>
+                <span className="college-detail-stat-icon">
+                  <Refresh className="ui-icon" aria-hidden="true" />
+                </span>
                 <p>Révisions</p>
                 <strong>{selectedCollegeDetailData.totalReviews}</strong>
                 <small>ce collège</small>
               </article>
               <article>
-                <span className="college-detail-stat-icon">▱</span>
+                <span className="college-detail-stat-icon">
+                  <MultiplePages className="ui-icon" aria-hidden="true" />
+                </span>
                 <p>Flashcards</p>
                 <strong>{selectedCollegeDetailData.flashcardCount}</strong>
                 <small>créées</small>
               </article>
               <article>
-                <span className="college-detail-stat-icon">☺</span>
+                <span className="college-detail-stat-icon">
+                  <CheckCircle className="ui-icon" aria-hidden="true" />
+                </span>
                 <p>Ressenti global</p>
                 <strong className="college-detail-feeling">{selectedCollegeDetailData.globalFeeling}</strong>
                 <small>{selectedCollegeDetailData.flashcardCount} cartes</small>
@@ -9309,14 +9312,16 @@ function getPasswordStrengthMeta(password: string) {
                   <h3>Ressenti global</h3>
                   <div className="college-detail-feelings">
                     {[
-                      ['☺', 'Très facile', selectedCollegeDetailData.resultCounts.easy, 'very-easy'],
-                      ['☺', 'Facile', selectedCollegeDetailData.resultCounts.good, 'easy'],
-                      ['☻', 'Moyen', selectedCollegeDetailData.resultCounts.medium, 'medium'],
-                      ['☹', 'Difficile', selectedCollegeDetailData.resultCounts.hard, 'hard'],
-                      ['☹', 'À revoir', selectedCollegeDetailData.resultCounts.again, 'again'],
-                    ].map(([icon, label, count, tone]) => (
+                      ['easy', 'Très facile', selectedCollegeDetailData.resultCounts.easy, 'very-easy'],
+                      ['good', 'Facile', selectedCollegeDetailData.resultCounts.good, 'easy'],
+                      ['medium', 'Moyen', selectedCollegeDetailData.resultCounts.medium, 'medium'],
+                      ['hard', 'Difficile', selectedCollegeDetailData.resultCounts.hard, 'hard'],
+                      ['again', 'À revoir', selectedCollegeDetailData.resultCounts.again, 'again'],
+                    ].map(([result, label, count, tone]) => (
                       <div key={label}>
-                        <span className={`college-detail-feeling-dot ${tone}`}>{icon}</span>
+                        <span className={`college-detail-feeling-dot ${tone}`}>
+                          <QuizResultIcon result={result as QuizResult} className="ui-icon" />
+                        </span>
                         <small>{label}</small>
                         <strong>{count}</strong>
                       </div>
@@ -9330,7 +9335,9 @@ function getPasswordStrengthMeta(password: string) {
                   <div className="college-detail-upcoming">
                     {selectedCollegeDetailData.upcomingReviews.map((item) => (
                       <div key={`upcoming-${item.itemNumber}`}>
-                        <span>▣</span>
+                        <span>
+                          <Page className="ui-icon" aria-hidden="true" />
+                        </span>
                         <strong>{item.shortDescription}</strong>
                         <small>{item.dueLabel}</small>
                       </div>
@@ -9352,7 +9359,8 @@ function getPasswordStrengthMeta(password: string) {
                       startCollegeGeneratedQuiz(selectedCollegeDetailData.college)
                     }}
                   >
-                    ▶ Lancer un quiz
+                    <Play className="inline-btn-icon" aria-hidden="true" />
+                    Lancer un quiz
                   </button>
                 </article>
                 <article className="college-detail-side-card college-detail-action-card">
@@ -9367,7 +9375,8 @@ function getPasswordStrengthMeta(password: string) {
                       openCollegeFlashcardsList(selectedCollegeDetailData.college)
                     }}
                   >
-                    ▱ Voir les flashcards
+                    <MultiplePages className="inline-btn-icon" aria-hidden="true" />
+                    Voir les flashcards
                   </button>
                 </article>
               </aside>
@@ -9436,7 +9445,9 @@ function getPasswordStrengthMeta(password: string) {
           <div className="settings-grid">
             <article className="settings-card settings-card-wide">
               <div className="settings-card-head">
-                <span aria-hidden="true">👤</span>
+                <span aria-hidden="true">
+                  <ProfileCircle className="settings-card-icon" aria-hidden="true" />
+                </span>
                 <div>
                   <h2>Compte</h2>
                   <p>Profil, sécurité et données personnelles.</p>
@@ -9549,7 +9560,9 @@ function getPasswordStrengthMeta(password: string) {
 
             <article className="settings-card">
               <div className="settings-card-head">
-                <span aria-hidden="true">🌐</span>
+                <span aria-hidden="true">
+                  <Globe className="settings-card-icon" aria-hidden="true" />
+                </span>
                 <div>
                   <h2>Général</h2>
                   <p>Préférences globales.</p>
@@ -9593,7 +9606,9 @@ function getPasswordStrengthMeta(password: string) {
 
             <article className="settings-card">
               <div className="settings-card-head">
-                <span aria-hidden="true">🔔</span>
+                <span aria-hidden="true">
+                  <Bell className="settings-card-icon" aria-hidden="true" />
+                </span>
                 <div>
                   <h2>Notifications</h2>
                   <p>Rappels de révision.</p>
@@ -9619,7 +9634,9 @@ function getPasswordStrengthMeta(password: string) {
 
             <article className="settings-card">
               <div className="settings-card-head">
-                <span aria-hidden="true">📝</span>
+                <span aria-hidden="true">
+                  <Notes className="settings-card-icon" aria-hidden="true" />
+                </span>
                 <div>
                   <h2>Quiz</h2>
                   <p>Comportement des sessions d'évaluation.</p>
@@ -9637,7 +9654,9 @@ function getPasswordStrengthMeta(password: string) {
 
             <article className="settings-card settings-card-wide">
               <div className="settings-card-head">
-                <span aria-hidden="true">⭐</span>
+                <span aria-hidden="true">
+                  <Crown className="settings-card-icon" aria-hidden="true" />
+                </span>
                 <div>
                   <h2>Premium</h2>
                   <p>Abonnement, facturation et stockage.</p>
@@ -9695,7 +9714,9 @@ function getPasswordStrengthMeta(password: string) {
 
             <article className="settings-card settings-card-wide">
               <div className="settings-card-head">
-                <span aria-hidden="true">ℹ️</span>
+                <span aria-hidden="true">
+                  <InfoCircle className="settings-card-icon" aria-hidden="true" />
+                </span>
                 <div>
                   <h2>À propos</h2>
                   <p>Informations légales et support.</p>
