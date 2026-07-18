@@ -6764,6 +6764,12 @@ tbody tr.selected {
   justify-content: center;
 }
 
+.item-detail-action-icon {
+  width: 18px;
+  height: 18px;
+  display: block;
+}
+
 .item-detail-stat-grid {
   grid-template-columns: repeat(5, minmax(112px, 1fr));
   gap: 0;
