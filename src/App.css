@@ -2702,9 +2702,9 @@ h3 {
 
 .flashcards-toolbar {
   display: grid;
-  grid-template-columns: minmax(260px, 1fr) minmax(170px, 0.32fr) minmax(190px, 0.36fr) auto auto;
+  grid-template-columns: minmax(280px, 1fr) minmax(180px, 0.34fr) minmax(210px, 0.38fr) minmax(180px, auto) minmax(190px, auto);
   gap: 1.05rem;
-  align-items: center;
+  align-items: stretch;
 }
 
 .flashcards-search,
@@ -2712,6 +2712,8 @@ h3 {
 .flashcards-random-btn,
 .flashcards-view-switch,
 .flashcards-create-btn {
+  box-sizing: border-box;
+  height: 52px;
   min-height: 52px;
   border: 1px solid #dbe4f2;
   border-radius: 10px;
@@ -2746,7 +2748,10 @@ h3 {
 }
 
 .flashcards-toolbar-select {
+  appearance: auto;
+  display: block;
   padding: 0 1rem;
+  line-height: 52px;
 }
 
 .flashcards-random-btn {
