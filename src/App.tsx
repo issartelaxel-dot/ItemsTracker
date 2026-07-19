@@ -113,6 +113,10 @@ type QuizAnimationStyle = 'flip' | 'fade'
 type RewardIntensity = 'low' | 'medium' | 'high'
 type QuizResult = 'again' | 'hard' | 'medium' | 'good' | 'easy'
 type QuizImageSlot = 'front' | 'back'
+type QuizSessionStep = 'setup' | 'question' | 'answer' | 'summary' | 'errors' | 'complete'
+type QuizSessionPreset = 'today' | 'hard' | 'subject' | 'random' | 'custom'
+type QuizSessionMode = 'flashcards' | 'quiz'
+type QuizSessionObjective = 'learning' | 'evaluation'
 type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'settings' | 'stats'
 type ItemDetailTab = 'tracking' | 'resources' | 'flashcards' | 'assignments'
 type FlashGeneratorScope = 'items' | 'colleges'
@@ -2445,6 +2449,13 @@ function App() {
   const [quizFeedback, setQuizFeedback] = useState<QuizResult | null>(null)
   const [quizEditMode, setQuizEditMode] = useState(false)
   const [quizSessionCardIds, setQuizSessionCardIds] = useState<string[]>([])
+  const [quizSessionStep, setQuizSessionStep] = useState<QuizSessionStep>('setup')
+  const [quizSessionPreset, setQuizSessionPreset] = useState<QuizSessionPreset>('today')
+  const [quizSessionMode, setQuizSessionMode] = useState<QuizSessionMode>('flashcards')
+  const [quizSessionDuration, setQuizSessionDuration] = useState(20)
+  const [quizSessionObjective, setQuizSessionObjective] = useState<QuizSessionObjective>('learning')
+  const [quizSessionStartedAt, setQuizSessionStartedAt] = useState<number | null>(null)
+  const [quizSessionResults, setQuizSessionResults] = useState<Record<string, QuizResult>>({})
   const [quizImageErrors, setQuizImageErrors] = useState<Record<QuizImageSlot, string>>({ front: '', back: '' })
   const [quizImageFileNames, setQuizImageFileNames] = useState<Record<QuizImageSlot, string>>({ front: '', back: '' })
   const [imageLightboxSrc, setImageLightboxSrc] = useState<string | null>(null)
@@ -4205,6 +4216,32 @@ function getPasswordStrengthMeta(password: string) {
     }
   }, [activeQuizCard])
 
+  const quizSessionMetrics = useMemo(() => {
+    const cards = quizSessionCards.length > 0 ? quizSessionCards : quizItem?.tracking.quiz.cards ?? []
+    const answeredEntries = cards
+      .map((card) => quizSessionResults[card.id])
+      .filter((result): result is QuizResult => Boolean(result))
+    const correctCount = answeredEntries.filter((result) => result === 'good' || result === 'easy').length
+    const mistakeCards = cards.filter((card) => {
+      const result = quizSessionResults[card.id]
+      return result === 'again' || result === 'hard'
+    })
+    const activeIndex = activeQuizCard ? Math.max(0, cards.findIndex((card) => card.id === activeQuizCard.id)) : 0
+    const elapsedSeconds = quizSessionStartedAt ? Math.max(0, Math.round((Date.now() - quizSessionStartedAt) / 1000)) : 0
+    const elapsedMinutes = Math.floor(elapsedSeconds / 60)
+    const elapsedRemainder = String(elapsedSeconds % 60).padStart(2, '0')
+
+    return {
+      cards,
+      activeIndex,
+      answeredCount: answeredEntries.length,
+      correctCount,
+      mistakeCards,
+      score: cards.length === 0 ? 0 : Math.round((correctCount / cards.length) * 100),
+      elapsedLabel: `${elapsedMinutes}:${elapsedRemainder}`,
+    }
+  }, [activeQuizCard, quizItem, quizSessionCards, quizSessionResults, quizSessionStartedAt])
+
   const allFlashcards = useMemo<GlobalFlashcard[]>(() => {
     return items.flatMap((item) =>
       item.tracking.quiz.cards.map((card) => ({
@@ -5091,6 +5128,9 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSide('front')
     setQuizFeedback(null)
     setQuizEditMode(false)
+    setQuizSessionStep('setup')
+    setQuizSessionResults({})
+    setQuizSessionStartedAt(null)
   }
 
   function getQuizCardButtonLabel(card: QuizCard, index: number) {
@@ -5107,6 +5147,9 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSide('front')
     setQuizFeedback(null)
     setQuizEditMode(false)
+    setQuizSessionStep('setup')
+    setQuizSessionResults({})
+    setQuizSessionStartedAt(null)
   }
 
   function openImageLightbox(src: string, alt: string) {
@@ -5134,6 +5177,99 @@ function getPasswordStrengthMeta(password: string) {
     updateItemQuizConfig(quizItem.itemNumber, { activeCardId: cards[nextIndex].id })
     setQuizSide('front')
     setQuizFeedback(null)
+  }
+
+  function startQuizSession() {
+    if (!quizItem || quizSessionMetrics.cards.length === 0) {
+      return
+    }
+    const difficultCards = quizSessionMetrics.cards.filter((card) => card.lastResult === 'again' || card.lastResult === 'hard')
+    const scopedCards =
+      quizSessionPreset === 'hard' && difficultCards.length > 0
+        ? difficultCards
+        : quizSessionPreset === 'random' || shuffleQuizCards
+          ? shuffleQuizCardIds(quizSessionMetrics.cards)
+              .map((cardId) => quizSessionMetrics.cards.find((card) => card.id === cardId))
+              .filter((card): card is QuizCard => Boolean(card))
+          : quizSessionMetrics.cards
+    const firstCard = scopedCards[0]
+    setQuizSessionStartedAt(Date.now())
+    setQuizSessionResults({})
+    setQuizSessionCardIds(scopedCards.map((card) => card.id))
+    setQuizFeedback(null)
+    setQuizSide('front')
+    setQuizSessionStep('question')
+    if (firstCard && quizItem.tracking.quiz.activeCardId !== firstCard.id) {
+      updateItemQuizConfig(quizItem.itemNumber, { activeCardId: firstCard.id })
+    }
+  }
+
+  function revealQuizAnswer() {
+    setQuizSide('back')
+    setQuizFeedback(null)
+    setQuizSessionStep('answer')
+  }
+
+  function navigateQuizSessionCard(direction: 'prev' | 'next') {
+    if (!quizItem) {
+      return
+    }
+    const scopedCards =
+      quizSessionStep === 'errors' && quizSessionMetrics.mistakeCards.length > 0
+        ? quizSessionMetrics.mistakeCards
+        : quizSessionMetrics.cards
+    if (scopedCards.length <= 1) {
+      return
+    }
+    const currentIndex = activeQuizCard ? scopedCards.findIndex((card) => card.id === activeQuizCard.id) : 0
+    const safeIndex = currentIndex === -1 ? 0 : currentIndex
+    const nextIndex =
+      direction === 'next' ? (safeIndex + 1) % scopedCards.length : (safeIndex - 1 + scopedCards.length) % scopedCards.length
+    updateItemQuizConfig(quizItem.itemNumber, { activeCardId: scopedCards[nextIndex].id })
+    setQuizSide('front')
+    setQuizFeedback(null)
+    setQuizSessionStep(quizSessionStep === 'errors' ? 'errors' : 'question')
+  }
+
+  function handleQuizSessionResult(result: QuizResult) {
+    if (!quizItem || !activeQuizCard) {
+      return
+    }
+
+    const cardId = activeQuizCard.id
+    const scopedCards =
+      quizSessionStep === 'errors' && quizSessionMetrics.mistakeCards.length > 0
+        ? quizSessionMetrics.mistakeCards
+        : quizSessionMetrics.cards
+    const currentIndex = scopedCards.findIndex((card) => card.id === cardId)
+    const nextCard = currentIndex >= 0 ? scopedCards[currentIndex + 1] : null
+
+    setQuizFeedback(result)
+    setQuizSessionResults((current) => ({ ...current, [cardId]: result }))
+    applyQuizResultToCard(quizItem.itemNumber, cardId, result)
+
+    window.setTimeout(() => {
+      setQuizFeedback((current) => (current === result ? null : current))
+      if (nextCard) {
+        updateItemQuizConfig(quizItem.itemNumber, { activeCardId: nextCard.id })
+        setQuizSide('front')
+        setQuizSessionStep(quizSessionStep === 'errors' ? 'errors' : 'question')
+        return
+      }
+      setQuizSide('front')
+      setQuizSessionStep(quizSessionStep === 'errors' ? 'complete' : 'summary')
+    }, 460)
+  }
+
+  function startQuizMistakeReview() {
+    if (!quizItem || quizSessionMetrics.mistakeCards.length === 0) {
+      setQuizSessionStep('complete')
+      return
+    }
+    updateItemQuizConfig(quizItem.itemNumber, { activeCardId: quizSessionMetrics.mistakeCards[0].id })
+    setQuizSide('front')
+    setQuizFeedback(null)
+    setQuizSessionStep('errors')
   }
 
   function handleQuizResult(result: QuizResult) {
@@ -8635,147 +8771,349 @@ function getPasswordStrengthMeta(password: string) {
                 ) : null}
               </>
             ) : (
-              <>
-                <div className="quiz-modal-head">
-                  <h3>Quiz item #{quizItem.itemNumber}</h3>
-                  <div className="quiz-head-actions">
-                    <span className="quiz-card-counter">
-                      {Math.max(
-                        1,
-                        (quizSessionCards.length > 0 ? quizSessionCards : quizItem.tracking.quiz.cards).findIndex(
-                          (card) => card.id === quizItem.tracking.quiz.activeCardId,
-                        ) + 1,
-                      )}
-                      /{Math.max(1, (quizSessionCards.length > 0 ? quizSessionCards : quizItem.tracking.quiz.cards).length)}
-                    </span>
-                    <button
-                      type="button"
-                      className="ghost-btn quiz-manage-btn"
-                      onClick={() => {
-                        addQuizCard(quizItem.itemNumber)
-                        setQuizSide('front')
-                        setQuizEditMode(true)
-                      }}
-                      title="Créer une flashcard"
-                    >
-                      <Plus className="ui-icon" aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className="ghost-btn quiz-manage-btn"
-                      onClick={() => setQuizEditMode(true)}
-                      title="Modifier la flashcard"
-                    >
-                      <EditPencil className="ui-icon" aria-hidden="true" />
-                    </button>
-                    <button
-                      type="button"
-                      className="ghost-btn quiz-manage-btn danger"
-                      onClick={removeActiveQuizCardWithConfirm}
-                      title="Supprimer la flashcard"
-                    >
-                      <Trash className="ui-icon" aria-hidden="true" />
-                    </button>
-                    <button type="button" className="ghost-btn" onClick={() => navigateQuizCard('prev')}>
-                      <NavArrowLeft className="ui-icon" aria-hidden="true" />
-                    </button>
-                    <button type="button" className="ghost-btn" onClick={() => navigateQuizCard('next')}>
-                      <NavArrowRight className="ui-icon" aria-hidden="true" />
-                    </button>
-                    <button type="button" className="ghost-btn" onClick={closeQuiz}>
-                      Close
-                    </button>
-                  </div>
-                </div>
+              <section className={`quiz-session-shell quiz-session-${quizSessionStep}`}>
+                {quizSessionStep === 'setup' ? (
+                  <>
+                    <div className="quiz-session-kicker">
+                      <span>1. Choisissez votre session</span>
+                      <button type="button" className="ghost-btn quiz-session-close" onClick={closeQuiz}>
+                        Quitter
+                      </button>
+                    </div>
+                    <p className="quiz-session-subtitle">Adaptez votre session à vos objectifs et au temps dont vous disposez.</p>
+                    <div className="quiz-session-setup-panel">
+                      <div className="quiz-session-presets" aria-label="Nouvelle session">
+                        {[
+                          { id: 'today', icon: Learning, title: 'À réviser aujourd’hui', detail: `${quizSessionMetrics.cards.length} cartes`, badge: 'Recommandé' },
+                          { id: 'hard', icon: WarningTriangle, title: 'Cartes difficiles', detail: `${quizSessionMetrics.mistakeCards.length} cartes` },
+                          { id: 'subject', icon: Page, title: 'Par matière', detail: quizItem.tracking.assignedColleges[0] ?? 'Choisir une matière' },
+                          { id: 'random', icon: Refresh, title: 'Cartes aléatoires', detail: 'Toutes les matières' },
+                          { id: 'custom', icon: Plus, title: 'Nouveau quiz', detail: 'Créer un quiz personnalisé' },
+                        ].map((preset) => {
+                          const PresetIcon = preset.icon
+                          return (
+                            <button
+                              key={preset.id}
+                              type="button"
+                              className={`quiz-session-preset ${quizSessionPreset === preset.id ? 'active' : ''}`}
+                              onClick={() => setQuizSessionPreset(preset.id as QuizSessionPreset)}
+                            >
+                              <span className="quiz-session-preset-icon">
+                                <PresetIcon className="ui-icon" aria-hidden="true" />
+                              </span>
+                              <span className="quiz-session-preset-copy">
+                                <strong>{preset.title}</strong>
+                                <small>{preset.detail}</small>
+                              </span>
+                              {preset.badge ? <em>{preset.badge}</em> : null}
+                              {quizSessionPreset === preset.id ? <CheckCircle className="quiz-session-check" aria-hidden="true" /> : null}
+                            </button>
+                          )
+                        })}
+                      </div>
+                      <div className="quiz-session-options">
+                        <label>
+                          Mode
+                          <span className="quiz-session-segment">
+                            <button
+                              type="button"
+                              className={quizSessionMode === 'flashcards' ? 'active' : ''}
+                              onClick={() => setQuizSessionMode('flashcards')}
+                            >
+                              Flashcards
+                            </button>
+                            <button
+                              type="button"
+                              className={quizSessionMode === 'quiz' ? 'active' : ''}
+                              onClick={() => setQuizSessionMode('quiz')}
+                            >
+                              Quiz
+                            </button>
+                          </span>
+                        </label>
+                        <label>
+                          Durée
+                          <span className="quiz-session-chips">
+                            {[15, 20, 30].map((duration) => (
+                              <button
+                                key={duration}
+                                type="button"
+                                className={quizSessionDuration === duration ? 'active' : ''}
+                                onClick={() => setQuizSessionDuration(duration)}
+                              >
+                                {duration} min
+                              </button>
+                            ))}
+                            <button
+                              type="button"
+                              className={quizSessionDuration === 0 ? 'active' : ''}
+                              onClick={() => setQuizSessionDuration(0)}
+                            >
+                              Perso.
+                            </button>
+                          </span>
+                        </label>
+                        <label>
+                          Objectif
+                          <span className="quiz-session-segment">
+                            <button
+                              type="button"
+                              className={quizSessionObjective === 'learning' ? 'active' : ''}
+                              onClick={() => setQuizSessionObjective('learning')}
+                            >
+                              Apprentissage
+                            </button>
+                            <button
+                              type="button"
+                              className={quizSessionObjective === 'evaluation' ? 'active' : ''}
+                              onClick={() => setQuizSessionObjective('evaluation')}
+                            >
+                              Évaluation
+                            </button>
+                          </span>
+                        </label>
+                        <button
+                          type="button"
+                          className="quiz-session-primary"
+                          onClick={startQuizSession}
+                          disabled={quizSessionMetrics.cards.length === 0}
+                        >
+                          <Play className="inline-btn-icon" aria-hidden="true" />
+                          Commencer
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                ) : null}
 
-                <div
-                  className={`quiz-flashcard ${quizItem.tracking.quiz.animationStyle} ${
-                    quizSide === 'back' ? 'is-back' : 'is-front'
-                  }`}
-                  onClick={() => setQuizSide((current) => (current === 'front' ? 'back' : 'front'))}
-                >
-                  <div className="quiz-face quiz-front">
-                    <p className="quiz-face-label">
-                      <span>Question</span>
-                      {quizCurrentCardFeeling ? (
-                        <span className={`quiz-face-feeling ${quizCurrentCardFeeling.toneClass}`}>
-                          Feeling: {quizCurrentCardFeeling.label}
-                        </span>
-                      ) : null}
+                {quizSessionStep === 'question' || quizSessionStep === 'answer' || quizSessionStep === 'errors' ? (
+                  <>
+                    <div className="quiz-session-kicker">
+                      <span>
+                        {quizSessionStep === 'errors'
+                          ? '7. Revue des erreurs'
+                          : quizSessionStep === 'answer'
+                            ? '3. Révélez & apprenez'
+                            : '2. Découvrez la carte'}
+                      </span>
+                      <button type="button" className="ghost-btn quiz-session-close" onClick={closeQuiz}>
+                        Quitter
+                      </button>
+                    </div>
+                    <p className="quiz-session-subtitle">
+                      {quizSessionStep === 'errors'
+                        ? 'Repassez vos erreurs pour transformer vos faiblesses en forces.'
+                        : quizSessionStep === 'answer'
+                          ? 'Comprenez, mémorisez, et ancrez la connaissance.'
+                          : 'Prenez le temps de réfléchir avant de révéler la réponse.'}
                     </p>
-                    <div className="quiz-face-body">
-                      <div
-                        className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizQuestion))} quiz-rich-rendered`}
-                        dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizQuestion) }}
-                      />
-                      {activeQuizCard?.frontImageDataUrl ? (
-                        <img
-                          className="quiz-face-media"
-                          src={activeQuizCard.frontImageDataUrl}
-                          alt="Illustration du recto"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            openImageLightbox(activeQuizCard.frontImageDataUrl, 'Illustration du recto')
+                    <div className="quiz-study-stage">
+                      <div className="quiz-session-progress">
+                        <span
+                          style={{
+                            width: `${Math.max(
+                              4,
+                              Math.round(
+                                ((quizSessionMetrics.activeIndex + 1) / Math.max(1, quizSessionMetrics.cards.length)) * 100,
+                              ),
+                            )}%`,
                           }}
                         />
+                        <small>
+                          {quizSessionMetrics.activeIndex + 1} / {Math.max(1, quizSessionMetrics.cards.length)}
+                        </small>
+                      </div>
+                      <button type="button" className="quiz-session-nav prev" onClick={() => navigateQuizSessionCard('prev')}>
+                        <NavArrowLeft className="ui-icon" aria-hidden="true" />
+                      </button>
+                      <article className={`quiz-study-card ${quizSessionStep === 'answer' ? 'is-answer' : ''}`}>
+                        <div className="quiz-study-card-meta">
+                          <span>{quizItem.tracking.assignedColleges[0] ?? 'Item'}</span>
+                          {quizCurrentCardFeeling ? <small>{quizCurrentCardFeeling.label}</small> : <small>Carte active</small>}
+                          <Star className="quiz-study-star" aria-hidden="true" />
+                        </div>
+                        <div className="quiz-study-card-body">
+                          <div
+                            className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizQuestion))} quiz-rich-rendered`}
+                            dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizQuestion) }}
+                          />
+                          {quizSessionStep === 'answer' || quizSessionStep === 'errors' ? (
+                            <div className="quiz-study-answer">
+                              <p>Réponse</p>
+                              <div
+                                className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizAnswer))} quiz-rich-rendered`}
+                                dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizAnswer) }}
+                              />
+                            </div>
+                          ) : null}
+                        </div>
+                        {(quizSessionStep === 'question' && activeQuizCard?.frontImageDataUrl) ||
+                        ((quizSessionStep === 'answer' || quizSessionStep === 'errors') && activeQuizCard?.backImageDataUrl) ? (
+                          <img
+                            className="quiz-study-media"
+                            src={
+                              quizSessionStep === 'question'
+                                ? activeQuizCard?.frontImageDataUrl
+                                : activeQuizCard?.backImageDataUrl
+                            }
+                            alt={quizSessionStep === 'question' ? 'Illustration du recto' : 'Illustration du verso'}
+                            onClick={() =>
+                              openImageLightbox(
+                                quizSessionStep === 'question'
+                                  ? activeQuizCard?.frontImageDataUrl ?? ''
+                                  : activeQuizCard?.backImageDataUrl ?? '',
+                                quizSessionStep === 'question' ? 'Illustration du recto' : 'Illustration du verso',
+                              )
+                            }
+                          />
+                        ) : null}
+                      </article>
+                      <button type="button" className="quiz-session-nav next" onClick={() => navigateQuizSessionCard('next')}>
+                        <NavArrowRight className="ui-icon" aria-hidden="true" />
+                      </button>
+                      {quizSessionStep === 'question' ? (
+                        <button type="button" className="quiz-session-reveal" onClick={revealQuizAnswer}>
+                          <Eye className="inline-btn-icon" aria-hidden="true" />
+                          Afficher la réponse
+                        </button>
                       ) : (
-                        <span className="quiz-face-media-placeholder" aria-hidden="true">IMG</span>
+                        <div className="quiz-session-rates">
+                          <button type="button" className="quiz-rate-btn again" onClick={() => handleQuizSessionResult('again')}>
+                            Je ne savais pas
+                          </button>
+                          <button type="button" className="quiz-rate-btn hard" onClick={() => handleQuizSessionResult('hard')}>
+                            Difficile
+                          </button>
+                          <button type="button" className="quiz-rate-btn medium" onClick={() => handleQuizSessionResult('medium')}>
+                            Moyen
+                          </button>
+                          <button type="button" className="quiz-rate-btn good" onClick={() => handleQuizSessionResult('good')}>
+                            Facile
+                          </button>
+                        </div>
                       )}
                     </div>
-                  </div>
-                  <div className="quiz-face quiz-back">
-                    <p className="quiz-face-label">Réponse</p>
-                    <div className="quiz-face-body">
-                      <div
-                        className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizAnswer))} quiz-rich-rendered`}
-                        dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizAnswer) }}
-                      />
-                      {activeQuizCard?.backImageDataUrl ? (
-                        <img
-                          className="quiz-face-media"
-                          src={activeQuizCard.backImageDataUrl}
-                          alt="Illustration du verso"
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            openImageLightbox(activeQuizCard.backImageDataUrl, 'Illustration du verso')
-                          }}
-                        />
-                      ) : (
-                        <span className="quiz-face-media-placeholder" aria-hidden="true">IMG</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+                  </>
+                ) : null}
 
-                <div className="quiz-actions">
-                  <button
-                    type="button"
-                    className="ghost-btn"
-                    onClick={() => setQuizSide((current) => (current === 'front' ? 'back' : 'front'))}
-                  >
-                    Flip
-                  </button>
-                  <button type="button" className="ghost-btn quiz-rate-btn again" onClick={() => handleQuizResult('again')}>
-                    <Refresh className="inline-btn-icon" aria-hidden="true" />
-                    À revoir
-                  </button>
-                  <button type="button" className="ghost-btn quiz-rate-btn hard" onClick={() => handleQuizResult('hard')}>
-                    <WarningTriangle className="inline-btn-icon" aria-hidden="true" />
-                    Difficile
-                  </button>
-                  <button type="button" className="ghost-btn quiz-rate-btn medium" onClick={() => handleQuizResult('medium')}>
-                    <HelpCircle className="inline-btn-icon" aria-hidden="true" />
-                    Moyen
-                  </button>
-                  <button type="button" className="ghost-btn quiz-rate-btn good" onClick={() => handleQuizResult('good')}>
-                    <CheckCircle className="inline-btn-icon" aria-hidden="true" />
-                    Facile
-                  </button>
-                  <button type="button" className="ghost-btn quiz-rate-btn easy" onClick={() => handleQuizResult('easy')}>
-                    <Star className="inline-btn-icon" aria-hidden="true" />
-                    Très facile
-                  </button>
-                </div>
+                {quizSessionStep === 'summary' ? (
+                  <>
+                    <div className="quiz-session-kicker">
+                      <span>6. Résumé de session</span>
+                      <button type="button" className="ghost-btn quiz-session-close" onClick={closeQuiz}>
+                        Quitter
+                      </button>
+                    </div>
+                    <p className="quiz-session-subtitle">Analysez vos performances et vos points d’amélioration.</p>
+                    <div className="quiz-summary-grid">
+                      <section className="quiz-score-card">
+                        <div className="quiz-score-ring" style={{ '--quiz-score': `${quizSessionMetrics.score}%` } as CSSProperties}>
+                          <span>{quizSessionMetrics.score}%</span>
+                        </div>
+                        <strong>{quizSessionMetrics.score >= 70 ? 'Excellent travail !' : 'Session terminée'}</strong>
+                        <small>Vous avez bien progressé.</small>
+                      </section>
+                      <section className="quiz-summary-stats">
+                        <p>
+                          <span>Cartes vues</span>
+                          <strong>{quizSessionMetrics.cards.length}</strong>
+                        </p>
+                        <p>
+                          <span>Réponses correctes</span>
+                          <strong>{quizSessionMetrics.correctCount}</strong>
+                        </p>
+                        <p>
+                          <span>Erreurs</span>
+                          <strong>{quizSessionMetrics.mistakeCards.length}</strong>
+                        </p>
+                        <p>
+                          <span>Temps total</span>
+                          <strong>{quizSessionMetrics.elapsedLabel}</strong>
+                        </p>
+                      </section>
+                      <section className="quiz-review-card">
+                        <h4>Matières à revoir</h4>
+                        {(quizItem.tracking.assignedColleges.length > 0 ? quizItem.tracking.assignedColleges : ['Item']).slice(0, 3).map(
+                          (collegeName, index) => (
+                            <p key={collegeName}>
+                              <span>
+                                <Learning className="inline-btn-icon" aria-hidden="true" />
+                                {collegeName}
+                                <small>{Math.max(1, quizSessionMetrics.mistakeCards.length + index)} cartes à revoir</small>
+                              </span>
+                              <strong>{Math.max(0, quizSessionMetrics.score - index * 7)}%</strong>
+                            </p>
+                          ),
+                        )}
+                      </section>
+                    </div>
+                    <div className="quiz-summary-actions">
+                      <button
+                        type="button"
+                        className="ghost-btn"
+                        onClick={() => {
+                          closeQuiz()
+                          setActiveView('dashboard')
+                        }}
+                      >
+                        <NavArrowLeft className="inline-btn-icon" aria-hidden="true" />
+                        Retour au dashboard
+                      </button>
+                      <button type="button" className="quiz-session-primary" onClick={startQuizMistakeReview}>
+                        <Page className="inline-btn-icon" aria-hidden="true" />
+                        Revoir mes erreurs ({quizSessionMetrics.mistakeCards.length})
+                      </button>
+                      <button type="button" className="ghost-btn" onClick={() => setQuizSessionStep('complete')}>
+                        Terminer
+                      </button>
+                    </div>
+                  </>
+                ) : null}
+
+                {quizSessionStep === 'complete' ? (
+                  <>
+                    <div className="quiz-session-kicker">
+                      <span>8. Fin de session & gamification</span>
+                      <button type="button" className="ghost-btn quiz-session-close" onClick={closeQuiz}>
+                        Fermer
+                      </button>
+                    </div>
+                    <p className="quiz-session-subtitle">Célébrez vos efforts et gardez la motivation.</p>
+                    <section className="quiz-complete-card">
+                      <div className="quiz-complete-star">
+                        <Star className="ui-icon" aria-hidden="true" />
+                      </div>
+                      <h3>Session terminée !</h3>
+                      <p>
+                        Vous faites partie des <strong>24%</strong> d’étudiants les plus réguliers cette semaine.
+                      </p>
+                      <div className="quiz-complete-rewards">
+                        <span>
+                          <strong>+82</strong>
+                          XP
+                        </span>
+                        <span>
+                          <strong>{dashboardStudyStats.currentStreak}</strong>
+                          Série
+                        </span>
+                        <span>
+                          <strong>+1</strong>
+                          Badge
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        className="quiz-session-primary"
+                        onClick={() => {
+                          closeQuiz()
+                          setActiveView('stats')
+                        }}
+                      >
+                        Voir mes statistiques
+                      </button>
+                    </section>
+                  </>
+                ) : null}
 
                 {quizFeedback ? (
                   <div className={`quiz-feedback ${quizFeedback} reward-${quizItem.tracking.quiz.rewardIntensity}`}>
@@ -8783,24 +9121,9 @@ function getPasswordStrengthMeta(password: string) {
                       <QuizResultIcon result={quizFeedback} className="quiz-feedback-icon" />
                       {QUIZ_RESULT_META[quizFeedback].label}
                     </span>
-                    {quizFeedback === 'good' || quizFeedback === 'easy' ? (
-                      <span className="quiz-feedback-plus-one" aria-hidden="true">
-                        +1
-                      </span>
-                    ) : null}
-                    {quizFeedback === 'good' ? (
-                      <span className="quiz-feedback-check" aria-hidden="true">
-                        <Check className="ui-icon" aria-hidden="true" />
-                      </span>
-                    ) : null}
-                    {quizFeedback === 'easy' && quizItem.tracking.quiz.rewardIntensity !== 'low' ? (
-                      <span className="quiz-feedback-sparkles" aria-hidden="true">
-                        <Star className="ui-icon" aria-hidden="true" />
-                      </span>
-                    ) : null}
                   </div>
                 ) : null}
-              </>
+              </section>
             )}
           </div>
         </div>
