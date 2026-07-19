@@ -19,6 +19,7 @@ import {
   CheckCircle,
   ClockRotateRight,
   Copy,
+  CreditCards,
   Crown,
   Dashboard,
   DatabaseStats,
@@ -40,7 +41,6 @@ import {
   LogOut,
   Mail,
   MoreHoriz,
-  MultiplePages,
   NavArrowLeft,
   NavArrowRight,
   Notes,
@@ -1177,7 +1177,7 @@ function ItemDetailStatIcon({ name }: { name: ItemDetailStatIconName }) {
     return <Book className="item-detail-stat-svg" aria-hidden="true" />
   }
 
-  return <MultiplePages className="item-detail-stat-svg" aria-hidden="true" />
+  return <CreditCards className="item-detail-stat-svg" aria-hidden="true" />
 }
 
 function ItemDetailFeelingIcon({ mastery }: { mastery: Mastery | 'Non évalué' }) {
@@ -6547,7 +6547,7 @@ function getPasswordStrengthMeta(password: string) {
             onClick={() => setActiveView('flashcards')}
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
-              <MultiplePages className="sidebar-nav-icon-img" aria-hidden="true" />
+              <CreditCards className="sidebar-nav-icon-img" aria-hidden="true" />
             </span>
             <span className="sidebar-nav-label">Flashcards</span>
           </button>
@@ -6799,7 +6799,7 @@ function getPasswordStrengthMeta(password: string) {
                       openFlashcardCreator()
                     }}
                   >
-                    <MultiplePages className="dashboard-action-icon" aria-hidden="true" />
+                    <CreditCards className="dashboard-action-icon" aria-hidden="true" />
                     <strong>Créer des flashcards</strong>
                     <small>Transformez vos notions</small>
                   </button>
@@ -6951,7 +6951,7 @@ function getPasswordStrengthMeta(password: string) {
                         {item.tracking.assignedColleges.length}
                       </span>
                       <span title="Flashcards">
-                        <MultiplePages className="items-list-metric-icon" aria-hidden="true" />
+                        <CreditCards className="items-list-metric-icon" aria-hidden="true" />
                         {item.tracking.quiz.cards.length}
                       </span>
                       <span title="Révisions">
@@ -9208,7 +9208,7 @@ function getPasswordStrengthMeta(password: string) {
               </article>
               <article>
                 <span className="college-detail-stat-icon">
-                  <MultiplePages className="ui-icon" aria-hidden="true" />
+                  <CreditCards className="ui-icon" aria-hidden="true" />
                 </span>
                 <p>Flashcards</p>
                 <strong>{selectedCollegeDetailData.flashcardCount}</strong>
@@ -9375,7 +9375,7 @@ function getPasswordStrengthMeta(password: string) {
                       openCollegeFlashcardsList(selectedCollegeDetailData.college)
                     }}
                   >
-                    <MultiplePages className="inline-btn-icon" aria-hidden="true" />
+                    <CreditCards className="inline-btn-icon" aria-hidden="true" />
                     Voir les flashcards
                   </button>
                 </article>
