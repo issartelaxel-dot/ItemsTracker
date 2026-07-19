@@ -4755,7 +4755,20 @@ function getPasswordStrengthMeta(password: string) {
       currentStreak += 1
     }
 
-    return { currentStreak, bestStreak }
+    const currentWeekStart = startOfWeek(today)
+    const weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((label, dayOffset) => {
+      const day = new Date(currentWeekStart)
+      day.setDate(currentWeekStart.getDate() + dayOffset)
+      const dateKey = toDayKey(day)
+      return {
+        label,
+        dateKey,
+        count: countsByDay.get(dateKey) ?? 0,
+        isToday: dateKey === toDayKey(today),
+      }
+    })
+
+    return { currentStreak, bestStreak, weekDays }
   }, [weeklyReviewSeries])
 
   const dashboardReviewQueue = useMemo(() => {
@@ -7063,14 +7076,29 @@ function getPasswordStrengthMeta(password: string) {
                 </div>
               </article>
 
-              <article className="dashboard-stat-card">
-                <div className="dashboard-stat-icon dashboard-stat-fire" aria-hidden="true">
-                  <FireFlame className="ui-icon" aria-hidden="true" />
-                </div>
+              <article className="dashboard-stat-card dashboard-streak-card">
                 <p>Série actuelle</p>
-                <strong>{dashboardStudyStats.currentStreak}</strong>
-                <span>jours d’affilée</span>
-                <small>Votre meilleure série : {dashboardStudyStats.bestStreak} jours</small>
+                <div className="dashboard-streak-main">
+                  <div className="dashboard-stat-icon dashboard-stat-fire" aria-hidden="true">
+                    <FireFlame className="ui-icon" aria-hidden="true" />
+                  </div>
+                  <div>
+                    <strong>{dashboardStudyStats.currentStreak}</strong>
+                    <span>jours consécutifs</span>
+                  </div>
+                </div>
+                <div className="dashboard-streak-week" aria-label="Activité de la semaine">
+                  {dashboardStudyStats.weekDays.map((day) => (
+                    <span
+                      key={day.dateKey}
+                      className={`dashboard-streak-day ${day.count > 0 ? 'is-active' : ''} ${day.isToday ? 'is-today' : ''}`}
+                      title={`${day.label} : ${day.count} révision${day.count > 1 ? 's' : ''}`}
+                    >
+                      <span>{day.label}</span>
+                      <i aria-hidden="true" />
+                    </span>
+                  ))}
+                </div>
               </article>
 
               <article className="dashboard-stat-card">

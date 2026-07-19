@@ -102,6 +102,89 @@
   background: #fff1e7;
 }
 
+.dashboard-streak-card {
+  align-content: start;
+  gap: 0.72rem;
+}
+
+.dashboard-streak-main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.dashboard-streak-card .dashboard-stat-fire {
+  width: 54px;
+  height: 54px;
+  color: #ff7a1a;
+  background: #fff0e7;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-streak-card .dashboard-stat-fire {
+  width: 54px;
+  height: 54px;
+}
+
+.dashboard-streak-card .dashboard-stat-fire .ui-icon {
+  width: 31px;
+  height: 31px;
+}
+
+.dashboard-streak-card strong {
+  display: block;
+  font-size: 1.82rem;
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-streak-card strong {
+  font-size: 1.82rem;
+}
+
+.dashboard-streak-card span:not(.dashboard-streak-day):not(.dashboard-streak-day span) {
+  display: block;
+  margin-top: 0.12rem;
+  color: #304462;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.dashboard-streak-week {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  align-items: end;
+  gap: 0.28rem;
+  margin-top: auto;
+  padding-left: 3.75rem;
+}
+
+.dashboard-streak-day {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.18rem;
+  color: #8aa0bd;
+  font-size: 0.62rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.dashboard-streak-day i {
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  border: 1px solid #9bb6e6;
+  background: transparent;
+}
+
+.dashboard-streak-day.is-active i {
+  border-color: #1d65e8;
+  background: #1d65e8;
+}
+
+.dashboard-streak-day.is-today i {
+  box-shadow: 0 0 0 3px rgba(29, 101, 232, 0.12);
+}
+
 .dashboard-habit-card {
   min-width: 0;
   min-height: 146px;
@@ -465,6 +548,28 @@
 :root[data-theme='dark'] .dashboard-stat-card p,
 :root[data-theme='dark'] .dashboard-habit-card p {
   color: #eaf2ff;
+}
+
+:root[data-theme='dark'] .dashboard-streak-card .dashboard-stat-fire {
+  color: #ff9a3d;
+  background: rgba(255, 122, 26, 0.14);
+}
+
+:root[data-theme='dark'] .dashboard-streak-card span:not(.dashboard-streak-day):not(.dashboard-streak-day span) {
+  color: #b6c8e4;
+}
+
+:root[data-theme='dark'] .dashboard-streak-day {
+  color: #7f93b7;
+}
+
+:root[data-theme='dark'] .dashboard-streak-day i {
+  border-color: #536d9d;
+}
+
+:root[data-theme='dark'] .dashboard-streak-day.is-active i {
+  border-color: #4f8fff;
+  background: #4f8fff;
 }
 
 :root[data-theme='dark'] .dashboard-action-tile {
