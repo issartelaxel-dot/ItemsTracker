@@ -1166,6 +1166,11 @@ h3 {
   box-shadow: 0 10px 28px rgba(34, 72, 125, 0.06);
 }
 
+.topbar-search-wrap {
+  position: relative;
+  min-width: 0;
+}
+
 .topbar-search span {
   color: #0d2353;
   font-size: 1rem;
@@ -1186,6 +1191,149 @@ h3 {
 
 .topbar-search input::placeholder {
   color: #7084a4;
+}
+
+.global-search-panel {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  left: 0;
+  right: 0;
+  z-index: 80;
+  border: 1px solid #d8e3f1;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 18px 42px rgba(19, 45, 82, 0.16);
+  overflow: hidden;
+}
+
+.global-search-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.7rem 0.8rem;
+  border-bottom: 1px solid #edf2f8;
+  color: #14233a;
+  font-size: 0.82rem;
+}
+
+.global-search-panel-head span {
+  color: #63748b;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.global-search-list {
+  display: grid;
+  max-height: min(56vh, 430px);
+  overflow-y: auto;
+  padding: 0.35rem;
+}
+
+.global-search-result {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  gap: 0.7rem;
+  align-items: center;
+  padding: 0.62rem;
+  color: #18263b;
+  text-align: left;
+  cursor: pointer;
+}
+
+.global-search-result:hover,
+.global-search-result:focus-visible {
+  background: #eef6ff;
+  outline: 0;
+}
+
+.global-search-result-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #edf4ff;
+  color: #2067f2;
+  display: grid;
+  place-items: center;
+}
+
+.global-search-result-main {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.global-search-result-title {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 900;
+  color: #10213a;
+}
+
+.global-search-result-detail,
+.global-search-result-meta small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #62738b;
+  font-size: 0.76rem;
+  font-weight: 650;
+}
+
+.global-search-result-meta {
+  min-width: 92px;
+  max-width: 150px;
+  display: grid;
+  justify-items: end;
+  gap: 0.12rem;
+  color: #2067f2;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.global-search-empty {
+  padding: 0.95rem;
+  color: #63748b;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.global-search-result.result-college .global-search-result-icon {
+  background: #e8f8ee;
+  color: #0e9f62;
+}
+
+.global-search-result.result-flashcard .global-search-result-icon {
+  background: #eef2ff;
+  color: #4f46e5;
+}
+
+.global-search-result.result-youtube .global-search-result-icon {
+  background: #fff0f0;
+  color: #e11d48;
+}
+
+.global-search-result.result-link .global-search-result-icon {
+  background: #eef9ff;
+  color: #0284c7;
+}
+
+.global-search-result.result-lisa .global-search-result-icon {
+  background: #fff8da;
+  color: #c98b00;
+}
+
+.global-search-result.result-platform .global-search-result-icon {
+  background: #f4efff;
+  color: #8b5cf6;
 }
 
 .topbar-notification-btn {
@@ -1245,7 +1393,8 @@ h3 {
 
 :root[data-theme='dark'] .topbar-search,
 :root[data-theme='dark'] .topbar-notification-btn,
-:root[data-theme='dark'] .topbar-notification-tooltip {
+:root[data-theme='dark'] .topbar-notification-tooltip,
+:root[data-theme='dark'] .global-search-panel {
   border-color: rgba(73, 118, 171, 0.55);
   background: rgba(11, 34, 73, 0.76);
   color: #d9e8ff;
@@ -1259,6 +1408,27 @@ h3 {
 
 :root[data-theme='dark'] .topbar-search input::placeholder {
   color: #95a9c8;
+}
+
+:root[data-theme='dark'] .global-search-panel-head {
+  border-color: rgba(73, 118, 171, 0.45);
+  color: #eaf2ff;
+}
+
+:root[data-theme='dark'] .global-search-panel-head span,
+:root[data-theme='dark'] .global-search-result-detail,
+:root[data-theme='dark'] .global-search-result-meta small,
+:root[data-theme='dark'] .global-search-empty {
+  color: #9fb3cf;
+}
+
+:root[data-theme='dark'] .global-search-result-title {
+  color: #f0f6ff;
+}
+
+:root[data-theme='dark'] .global-search-result:hover,
+:root[data-theme='dark'] .global-search-result:focus-visible {
+  background: rgba(48, 90, 150, 0.38);
 }
 
 .save-popup {
@@ -8677,6 +8847,7 @@ tbody tr.selected {
 
   .topbar,
   .topbar-actions,
+  .topbar-search-wrap,
   .topbar-search {
     min-width: 0;
     max-width: 100%;
@@ -8878,6 +9049,21 @@ tbody tr.selected {
   .topbar-notification-btn {
     min-height: 44px;
     height: 44px;
+  }
+
+  .global-search-result {
+    grid-template-columns: 30px minmax(0, 1fr);
+  }
+
+  .global-search-result-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .global-search-result-meta {
+    grid-column: 2;
+    justify-items: start;
+    max-width: 100%;
   }
 
   .filters-row,

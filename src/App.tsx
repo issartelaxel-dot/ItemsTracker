@@ -121,6 +121,19 @@ type FlashCollegeLevelFilter = 'ALL' | FlashFeelingFilter
 type FlashCollegeSort = 'progress' | 'name' | 'items'
 type CollegeDetailFilter = 'all' | 'review' | 'hard' | 'mastered'
 type SidebarNavBubbleKey = Exclude<NavView, 'settings' | 'stats'>
+type GlobalSearchResultKind = 'item' | 'college' | 'flashcard' | 'youtube' | 'link' | 'lisa' | 'platform'
+type GlobalSearchResult = {
+  id: string
+  kind: GlobalSearchResultKind
+  label: string
+  detail: string
+  meta: string
+  itemNumber?: number
+  college?: string
+  cardId?: string
+  sheetKind?: SheetKind
+  href?: string
+}
 
 type ItemBase = {
   itemNumber: number
@@ -2353,6 +2366,8 @@ function App() {
   const [focusMode, setFocusMode] = useState<boolean>(false)
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [search, setSearch] = useState('')
+  const [globalSearch, setGlobalSearch] = useState('')
+  const [globalSearchOpen, setGlobalSearchOpen] = useState(false)
   const [collegeFilter, setCollegeFilter] = useState<string>('ALL')
   const [masteryFilter, setMasteryFilter] = useState<string>('ALL')
   const [sortKey, setSortKey] = useState<SortKey>('reviews')
@@ -4209,6 +4224,167 @@ function getPasswordStrengthMeta(password: string) {
     )
   }, [items])
 
+  const globalSearchResults = useMemo<GlobalSearchResult[]>(() => {
+    const normalizedQuery = normalizeText(globalSearch)
+    if (!normalizedQuery) {
+      return []
+    }
+
+    const matches = (values: Array<string | number | null | undefined>) =>
+      normalizeText(values.filter((value) => value !== null && value !== undefined).join(' ')).includes(normalizedQuery)
+
+    const score = (values: Array<string | number | null | undefined>) => {
+      const normalizedValues = values.map((value) => normalizeText(String(value ?? ''))).filter(Boolean)
+      if (normalizedValues.some((value) => value === normalizedQuery)) return 0
+      if (normalizedValues.some((value) => value.startsWith(normalizedQuery))) return 1
+      return 2
+    }
+
+    const results: Array<GlobalSearchResult & { rank: number }> = []
+
+    for (const item of items) {
+      const itemLabel = `Item #${item.itemNumber}`
+      const itemSearchValues = [
+        'item',
+        'notion',
+        'notion officielle',
+        itemLabel,
+        item.itemNumber,
+        item.shortDescription,
+        item.tagCodes.join(' '),
+        item.tagLabels.join(' '),
+        item.tracking.itemLabel,
+        item.tracking.itemComment,
+      ]
+      if (matches(itemSearchValues)) {
+        results.push({
+          id: `item-${item.itemNumber}`,
+          kind: 'item',
+          label: itemLabel,
+          detail: item.shortDescription,
+          meta: item.tagLabels.join(' • ') || 'Item',
+          itemNumber: item.itemNumber,
+          rank: score([item.itemNumber, itemLabel, item.shortDescription]),
+        })
+      }
+
+      if (
+        item.tracking.youtubeUrl &&
+        matches(['youtube', 'video youtube', 'vidéo youtube', 'ressource youtube', item.tracking.youtubeUrl, item.shortDescription, item.itemNumber])
+      ) {
+        results.push({
+          id: `youtube-${item.itemNumber}`,
+          kind: 'youtube',
+          label: `Vidéo YouTube · Item #${item.itemNumber}`,
+          detail: item.shortDescription,
+          meta: item.tracking.youtubeUrl,
+          itemNumber: item.itemNumber,
+          href: item.tracking.youtubeUrl,
+          rank: score(['youtube', 'video youtube', item.tracking.youtubeUrl, item.itemNumber, item.shortDescription]) + 1,
+        })
+      }
+
+      if (
+        item.tracking.usefulLinkUrl &&
+        matches(['lien utile', 'lien', 'ressource', item.tracking.usefulLinkUrl, item.shortDescription, item.itemNumber])
+      ) {
+        results.push({
+          id: `link-${item.itemNumber}`,
+          kind: 'link',
+          label: `Lien utile · Item #${item.itemNumber}`,
+          detail: item.shortDescription,
+          meta: item.tracking.usefulLinkUrl,
+          itemNumber: item.itemNumber,
+          href: item.tracking.usefulLinkUrl,
+          rank: score(['lien utile', 'lien', 'ressource', item.tracking.usefulLinkUrl, item.itemNumber, item.shortDescription]) + 1,
+        })
+      }
+
+      for (const sheet of item.tracking.lisaSheets) {
+        if (
+          matches(['fiche lisa', 'lisa', 'fiche', sheet.name, sheet.url, sheet.tracking.comments, item.shortDescription, item.itemNumber])
+        ) {
+          results.push({
+            id: `lisa-${item.itemNumber}-${sheet.id}`,
+            kind: 'lisa',
+            label: sheet.name || `Fiche LISA · Item #${item.itemNumber}`,
+            detail: item.shortDescription,
+            meta: sheet.url || 'Fiche LISA',
+            itemNumber: item.itemNumber,
+            sheetKind: 'lisaSheets',
+            href: sheet.url,
+            rank: score(['fiche lisa', 'lisa', sheet.name, sheet.url, item.itemNumber]) + 1,
+          })
+        }
+      }
+
+      for (const sheet of item.tracking.platformSheets) {
+        if (
+          matches([
+            'fiche plateforme',
+            'plateforme',
+            'fiche',
+            sheet.name,
+            sheet.url,
+            sheet.tracking.comments,
+            item.shortDescription,
+            item.itemNumber,
+          ])
+        ) {
+          results.push({
+            id: `platform-${item.itemNumber}-${sheet.id}`,
+            kind: 'platform',
+            label: sheet.name || `Fiche plateforme · Item #${item.itemNumber}`,
+            detail: item.shortDescription,
+            meta: sheet.url || 'Fiche plateforme',
+            itemNumber: item.itemNumber,
+            sheetKind: 'platformSheets',
+            href: sheet.url,
+            rank: score(['fiche plateforme', 'plateforme', sheet.name, sheet.url, item.itemNumber]) + 1,
+          })
+        }
+      }
+    }
+
+    for (const college of COLLEGES) {
+      const displayName = getFlashCollegeDisplayName(college)
+      if (matches(['college', 'collège', 'specialite medicale', 'spécialité médicale', college, displayName])) {
+        const collegeItems = items.filter((item) => item.tracking.assignedColleges.includes(college))
+        results.push({
+          id: `college-${college}`,
+          kind: 'college',
+          label: displayName,
+          detail: `${collegeItems.length} items dans ce collège`,
+          meta: 'Collège',
+          college,
+          rank: score([displayName, college, 'college', 'collège']),
+        })
+      }
+    }
+
+    for (const card of allFlashcards) {
+      const question = getQuizRichTextPlainText(card.question)
+      const answer = getQuizRichTextPlainText(card.answer)
+      if (matches(['flashcard', 'carte', 'carte question réponse', question, answer, card.personalNotes, card.itemNumber, card.colleges.join(' ')])) {
+        results.push({
+          id: `flashcard-${card.itemNumber}-${card.cardId}`,
+          kind: 'flashcard',
+          label: question || `Flashcard · Item #${card.itemNumber}`,
+          detail: answer || `Item #${card.itemNumber}`,
+          meta: `Flashcard · Item #${card.itemNumber}`,
+          itemNumber: card.itemNumber,
+          cardId: card.cardId,
+          rank: score(['flashcard', 'carte', question, answer, card.itemNumber]) + 1,
+        })
+      }
+    }
+
+    return results
+      .sort((a, b) => a.rank - b.rank || a.kind.localeCompare(b.kind, 'fr') || a.label.localeCompare(b.label, 'fr'))
+      .slice(0, 12)
+      .map(({ rank: _rank, ...result }) => result)
+  }, [allFlashcards, globalSearch, items])
+
   const flashcardsByKey = useMemo(() => {
     return new Map(allFlashcards.map((card) => [`${card.itemNumber}:${card.cardId}`, card]))
   }, [allFlashcards])
@@ -4806,6 +4982,58 @@ function getPasswordStrengthMeta(password: string) {
 
   function setSelectedItem(itemNumber: number) {
     setSelectedItemId((current) => (current === itemNumber ? null : itemNumber))
+  }
+
+  function getGlobalSearchResultLabel(kind: GlobalSearchResultKind) {
+    if (kind === 'item') return 'Item'
+    if (kind === 'college') return 'Collège'
+    if (kind === 'flashcard') return 'Flashcard'
+    if (kind === 'youtube') return 'YouTube'
+    if (kind === 'link') return 'Lien'
+    if (kind === 'lisa') return 'Fiche LISA'
+    return 'Fiche plateforme'
+  }
+
+  function renderGlobalSearchResultIcon(kind: GlobalSearchResultKind) {
+    if (kind === 'item') return <Page className="ui-icon" aria-hidden="true" />
+    if (kind === 'college') return <Learning className="ui-icon" aria-hidden="true" />
+    if (kind === 'flashcard') return <CreditCards className="ui-icon" aria-hidden="true" />
+    if (kind === 'youtube') return <Play className="ui-icon" aria-hidden="true" />
+    if (kind === 'link') return <NavArrowRight className="ui-icon" aria-hidden="true" />
+    if (kind === 'lisa') return <Book className="ui-icon" aria-hidden="true" />
+    return <OpenBook className="ui-icon" aria-hidden="true" />
+  }
+
+  function openGlobalSearchResult(result: GlobalSearchResult) {
+    setGlobalSearchOpen(false)
+    setGlobalSearch('')
+
+    if (result.kind === 'college' && result.college) {
+      setActiveView('colleges')
+      setSelectedCollegeDetail(result.college)
+      setCollegeDetailFilter('all')
+      return
+    }
+
+    if (typeof result.itemNumber !== 'number') {
+      return
+    }
+
+    setActiveView('items')
+    setSelectedItemId(result.itemNumber)
+    setSearch('')
+
+    let targetTab: ItemDetailTab = 'tracking'
+    if (result.kind === 'youtube' || result.kind === 'link') {
+      targetTab = 'resources'
+    } else if (result.kind === 'flashcard') {
+      targetTab = 'flashcards'
+      if (result.cardId) {
+        updateItemQuizConfig(result.itemNumber, { activeCardId: result.cardId })
+      }
+    }
+
+    window.setTimeout(() => setItemDetailTab(targetTab), 0)
   }
 
   function triggerQuizButtonPulse(itemNumber: number) {
@@ -6716,22 +6944,79 @@ function getPasswordStrengthMeta(password: string) {
             ) : null}
           </div>
           <div className="topbar-actions" aria-label="Actions globales">
-            <label className="topbar-search">
-              <span aria-hidden="true">
-                <Search className="ui-icon" aria-hidden="true" />
-              </span>
-              <input
-                type="search"
-                placeholder="Rechercher un item..."
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter') {
-                    setActiveView('items')
-                  }
-                }}
-              />
-            </label>
+            <div
+              className="topbar-search-wrap"
+              onBlur={(event) => {
+                const nextTarget = event.relatedTarget
+                if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
+                  setGlobalSearchOpen(false)
+                }
+              }}
+            >
+              <label className="topbar-search">
+                <span aria-hidden="true">
+                  <Search className="ui-icon" aria-hidden="true" />
+                </span>
+                <input
+                  type="search"
+                  placeholder="Recherche globale..."
+                  value={globalSearch}
+                  aria-label="Recherche globale"
+                  aria-expanded={globalSearchOpen && globalSearch.trim().length > 0}
+                  onFocus={() => setGlobalSearchOpen(true)}
+                  onChange={(event) => {
+                    setGlobalSearch(event.target.value)
+                    setGlobalSearchOpen(true)
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Escape') {
+                      setGlobalSearchOpen(false)
+                      return
+                    }
+                    if (event.key === 'Enter' && globalSearchResults[0]) {
+                      event.preventDefault()
+                      openGlobalSearchResult(globalSearchResults[0])
+                    }
+                  }}
+                />
+              </label>
+              {globalSearchOpen && globalSearch.trim().length > 0 ? (
+                <div className="global-search-panel" role="listbox" aria-label="Résultats de recherche globale">
+                  <div className="global-search-panel-head">
+                    <strong>Recherche globale</strong>
+                    <span>{globalSearchResults.length} résultat{globalSearchResults.length > 1 ? 's' : ''}</span>
+                  </div>
+                  {globalSearchResults.length > 0 ? (
+                    <div className="global-search-list">
+                      {globalSearchResults.map((result) => (
+                        <button
+                          key={result.id}
+                          type="button"
+                          className={`global-search-result result-${result.kind}`}
+                          onMouseDown={(event) => event.preventDefault()}
+                          onClick={() => openGlobalSearchResult(result)}
+                          role="option"
+                        >
+                          <span className="global-search-result-icon">{renderGlobalSearchResultIcon(result.kind)}</span>
+                          <span className="global-search-result-main">
+                            <span className="global-search-result-title">{result.label}</span>
+                            <span className="global-search-result-detail">{result.detail}</span>
+                          </span>
+                          <span className="global-search-result-meta">
+                            <span>{getGlobalSearchResultLabel(result.kind)}</span>
+                            {result.meta ? <small>{result.meta}</small> : null}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="global-search-empty">
+                      Aucun résultat dans les items, collèges, flashcards ou ressources.
+                    </div>
+                  )}
+                </div>
+              ) : null}
+            </div>
             <button
               type="button"
               className="topbar-notification-btn"
