@@ -4755,16 +4755,17 @@ function getPasswordStrengthMeta(password: string) {
       currentStreak += 1
     }
 
-    const currentWeekStart = startOfWeek(today)
-    const weekDays = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((label, dayOffset) => {
-      const day = new Date(currentWeekStart)
-      day.setDate(currentWeekStart.getDate() + dayOffset)
+    const todayKey = toDayKey(today)
+    const dayLabels = ['D', 'L', 'M', 'M', 'J', 'V', 'S']
+    const weekDays = [-2, -1, 0, 1, 2, 3, 4].map((dayOffset) => {
+      const day = new Date(today)
+      day.setDate(today.getDate() + dayOffset)
       const dateKey = toDayKey(day)
       return {
-        label,
+        label: dayLabels[day.getDay()],
         dateKey,
         count: countsByDay.get(dateKey) ?? 0,
-        isToday: dateKey === toDayKey(today),
+        isToday: dateKey === todayKey,
       }
     })
 

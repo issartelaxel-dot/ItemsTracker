@@ -115,20 +115,8 @@
 }
 
 .dashboard-streak-card .dashboard-stat-fire {
-  width: 54px;
-  height: 54px;
   color: #ff7a1a;
   background: #fff0e7;
-}
-
-.dashboard-shell.dashboard-view-shell .dashboard-streak-card .dashboard-stat-fire {
-  width: 54px;
-  height: 54px;
-}
-
-.dashboard-streak-card .dashboard-stat-fire .ui-icon {
-  width: 31px;
-  height: 31px;
 }
 
 .dashboard-streak-card strong {
@@ -154,7 +142,11 @@
   align-items: end;
   gap: 0.28rem;
   margin-top: auto;
-  padding-left: 3.75rem;
+  padding-left: calc(42px + 0.75rem);
+}
+
+.dashboard-shell.dashboard-view-shell .dashboard-streak-week {
+  padding-left: calc(34px + 0.75rem);
 }
 
 .dashboard-streak-day {
@@ -182,7 +174,9 @@
 }
 
 .dashboard-streak-day.is-today i {
-  box-shadow: 0 0 0 3px rgba(29, 101, 232, 0.12);
+  box-shadow:
+    0 0 0 3px rgba(29, 101, 232, 0.16),
+    0 5px 10px rgba(29, 101, 232, 0.22);
 }
 
 .dashboard-habit-card {
