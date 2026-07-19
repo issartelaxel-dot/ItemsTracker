@@ -8384,7 +8384,10 @@ function getPasswordStrengthMeta(password: string) {
       ) : null}
 
       {quizItem ? (
-        <div className="quiz-modal-backdrop" onClick={closeQuiz}>
+        <div
+          className={`quiz-modal-backdrop ${quizEditMode && activeQuizCard ? 'flashcard-editor-backdrop' : ''}`}
+          onClick={closeQuiz}
+        >
           <div className={`quiz-modal ${quizEditMode && activeQuizCard ? 'flashcard-editor-modal' : ''}`} onClick={(event) => event.stopPropagation()}>
             {quizEditMode && activeQuizCard ? (
               <>
