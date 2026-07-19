@@ -66,7 +66,7 @@ import anesthesiaIcon from 'healthicons/public/icons/svg/outline/ppe/ppe_face_ma
 import cancerIcon from 'healthicons/public/icons/svg/outline/conditions/ribbon.svg?raw'
 import digestiveSurgeryIcon from 'healthicons/public/icons/svg/outline/body/stomach.svg?raw'
 import maxillofacialSurgeryIcon from 'healthicons/public/icons/svg/outline/body/head.svg?raw'
-import dermatologyIcon from 'healthicons/public/icons/svg/outline/body/body.svg?raw'
+import dermatologyIcon from 'healthicons/public/icons/svg/outline/conditions/allergies.svg?raw'
 import palliativeCareIcon from 'healthicons/public/icons/svg/outline/symbols/palliative-care.svg?raw'
 import endocrinologyIcon from 'healthicons/public/icons/svg/outline/body/thyroid.svg?raw'
 import geneticsIcon from 'healthicons/public/icons/svg/outline/body/dna.svg?raw'
