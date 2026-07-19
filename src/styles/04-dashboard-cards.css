@@ -1,0 +1,497 @@
+.dashboard-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(150px, 1fr)) minmax(320px, 2.25fr);
+  gap: 0.8rem;
+  align-items: stretch;
+}
+
+.dashboard-stat-card,
+.dashboard-habit-card,
+.dashboard-action-card,
+.dashboard-resume-card,
+.dashboard-quote-card,
+.dashboard-college-card {
+  border: 1px solid rgba(211, 222, 231, 0.82);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 18px 42px rgba(23, 48, 86, 0.07);
+}
+
+.dashboard-stat-card {
+  min-height: 146px;
+  padding: 1.05rem 1rem;
+  display: grid;
+  align-content: start;
+  gap: 0.42rem;
+}
+
+.dashboard-stat-card p,
+.dashboard-habit-card p {
+  margin: 0;
+  color: #0c1d43;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.dashboard-stat-card strong {
+  color: #07183f;
+  font-size: 2.05rem;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.dashboard-stat-card span,
+.dashboard-stat-card small {
+  color: #4f6583;
+  font-size: 0.76rem;
+}
+
+.dashboard-stat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.dashboard-trend-icon {
+  color: #2c6df0;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.dashboard-positive {
+  color: #1767f2 !important;
+  font-weight: 700;
+}
+
+.dashboard-mini-progress,
+.dashboard-college-progress {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: #e6ebf2;
+  overflow: hidden;
+}
+
+.dashboard-mini-progress {
+  align-self: end;
+  margin-top: 0.45rem;
+}
+
+.dashboard-mini-progress span,
+.dashboard-college-progress span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #1976ff, #0f5dea);
+}
+
+.dashboard-stat-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #eef4ff;
+  color: #1d65e8;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.dashboard-stat-fire {
+  background: #fff1e7;
+}
+
+.dashboard-habit-card {
+  min-width: 0;
+  min-height: 146px;
+  padding: 1.05rem 1rem 0.9rem;
+  overflow: hidden;
+}
+
+.dashboard-habit-wrap {
+  padding: 0.65rem 0.1rem 0.75rem;
+}
+
+.dashboard-mid-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.82fr) minmax(420px, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.dashboard-resume-card,
+.dashboard-action-card,
+.dashboard-quote-card {
+  min-height: 154px;
+  padding: 1.15rem;
+}
+
+.dashboard-action-card {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.dashboard-resume-card {
+  display: grid;
+  gap: 1.2rem;
+}
+
+.dashboard-action-card h2,
+.dashboard-resume-card h2,
+.dashboard-college-card h2 {
+  margin: 0;
+  color: #0d1d37;
+  font-size: 1.05rem;
+  letter-spacing: 0;
+}
+
+.dashboard-action-card p {
+  margin: 0.35rem 0 0;
+  color: #536986;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.dashboard-action-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.dashboard-action-tile {
+  min-width: 0;
+  min-height: 90px;
+  padding: 0.8rem;
+  border: 1px solid #dbe5f2;
+  border-radius: 10px;
+  background: #fff;
+  color: #0e203d;
+  text-align: left;
+  display: grid;
+  align-content: start;
+  gap: 0.32rem;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(34, 72, 125, 0.05);
+}
+
+.dashboard-action-tile:hover {
+  transform: translateY(-1px);
+  border-color: #bcd0ee;
+  box-shadow: 0 14px 26px rgba(34, 72, 125, 0.09);
+}
+
+.dashboard-action-icon {
+  width: 34px;
+  height: 34px;
+  padding: 0.55rem;
+  border-radius: 999px;
+  display: block;
+  color: currentColor;
+  background: color-mix(in oklab, var(--accent) 12%, #fff);
+}
+
+.dashboard-action-tile strong {
+  margin-top: 0.15rem;
+  color: #0e203d;
+  font-size: 0.82rem;
+  line-height: 1.18;
+}
+
+.dashboard-action-tile small {
+  color: #657893;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  font-weight: 600;
+}
+
+.dashboard-action-quiz .dashboard-action-icon {
+  color: #1f65e6;
+  background: #eaf1ff;
+}
+
+.dashboard-action-items .dashboard-action-icon {
+  color: #13a968;
+  background: #e4f8ee;
+}
+
+.dashboard-action-flashcards .dashboard-action-icon {
+  color: #7d55f0;
+  background: #efeaff;
+}
+
+.dashboard-resume-card p {
+  margin: 0.35rem 0 0;
+  color: #657893;
+  font-size: 0.86rem;
+}
+
+.dashboard-resume-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.dashboard-resume-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 10px;
+  background: #edf4ff;
+  color: #1d65e8;
+  display: grid;
+  place-items: center;
+}
+
+.dashboard-resume-icon svg {
+  width: 24px;
+  height: 24px;
+}
+
+.dashboard-resume-row strong {
+  display: block;
+  color: #0e203d;
+  font-size: 0.88rem;
+}
+
+.dashboard-resume-row span:not(.dashboard-resume-icon) {
+  display: block;
+  min-width: 0;
+  color: #4f6583;
+  font-size: 0.76rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-continue-btn {
+  height: 38px;
+  padding: 0 1.1rem;
+  border-radius: 7px;
+  border: 1px solid #1f6af0;
+  background: #fff;
+  color: #1f65e6;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.dashboard-continue-btn:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+.dashboard-quote-card {
+  position: relative;
+  overflow: hidden;
+  display: grid;
+  min-height: 154px;
+  align-items: center;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.97) 0%, rgba(255, 255, 255, 0.88) 39%, rgba(255, 255, 255, 0.05) 65%),
+    var(--dashboard-quote-bg) center right / cover no-repeat,
+    #fff;
+}
+
+.dashboard-quote-copy {
+  position: relative;
+  z-index: 2;
+  max-width: 330px;
+}
+
+.dashboard-quote-copy > span {
+  color: #2f75ff;
+  font-size: 2rem;
+  line-height: 1;
+  font-weight: 800;
+}
+
+.dashboard-quote-copy p {
+  margin: 0.2rem 0 0.9rem;
+  max-width: 320px;
+  color: #0e203d;
+  font-size: 1.04rem;
+  line-height: 1.38;
+  font-weight: 800;
+}
+
+.dashboard-quote-copy small {
+  color: #1f65e6;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.dashboard-college-card {
+  overflow: hidden;
+}
+
+.dashboard-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.05rem;
+  border-bottom: 1px solid #e4ebf3;
+}
+
+.dashboard-section-head button {
+  border: 0;
+  background: transparent;
+  color: #1f65e6;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.dashboard-college-list {
+  display: grid;
+}
+
+.dashboard-college-row {
+  width: 100%;
+  display: grid;
+  grid-template-columns: auto minmax(160px, 1fr) minmax(220px, 1.25fr) 56px 18px;
+  align-items: center;
+  gap: 0.9rem;
+  padding: 0.8rem 1.05rem;
+  border: 0;
+  border-bottom: 1px solid #e7edf4;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dashboard-college-row:last-child {
+  border-bottom: 0;
+}
+
+.dashboard-college-row:hover {
+  background: #f7faff;
+}
+
+.dashboard-college-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: var(--dashboard-college-accent);
+  background: color-mix(in oklab, var(--dashboard-college-accent) 13%, white);
+}
+
+.dashboard-college-icon svg {
+  width: 21px;
+  height: 21px;
+}
+
+.dashboard-college-meta {
+  display: grid;
+  min-width: 0;
+}
+
+.dashboard-college-meta strong {
+  color: #0f203f;
+  font-size: 0.88rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dashboard-college-meta small {
+  color: #657893;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.dashboard-college-progress span {
+  background: var(--dashboard-college-accent);
+}
+
+.dashboard-college-percent {
+  justify-self: end;
+  color: #0e203d;
+  font-size: 0.86rem;
+}
+
+.dashboard-college-chevron {
+  color: #6c80a0;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.dashboard-empty-state {
+  margin: 0;
+  padding: 1rem;
+  color: #657893;
+}
+
+:root[data-theme='dark'] .dashboard-title-block h1,
+:root[data-theme='dark'] .dashboard-stat-card strong,
+:root[data-theme='dark'] .dashboard-action-card h2,
+:root[data-theme='dark'] .dashboard-action-tile strong,
+:root[data-theme='dark'] .dashboard-resume-card h2,
+:root[data-theme='dark'] .dashboard-college-card h2,
+:root[data-theme='dark'] .dashboard-quote-copy p,
+:root[data-theme='dark'] .dashboard-resume-row strong,
+:root[data-theme='dark'] .dashboard-college-meta strong,
+:root[data-theme='dark'] .dashboard-college-percent {
+  color: #edf5ff;
+}
+
+:root[data-theme='dark'] .dashboard-title-block p,
+:root[data-theme='dark'] .dashboard-stat-card span,
+:root[data-theme='dark'] .dashboard-stat-card small,
+:root[data-theme='dark'] .dashboard-action-card p,
+:root[data-theme='dark'] .dashboard-action-tile small,
+:root[data-theme='dark'] .dashboard-resume-card p,
+:root[data-theme='dark'] .dashboard-resume-row span:not(.dashboard-resume-icon),
+:root[data-theme='dark'] .dashboard-college-meta small,
+:root[data-theme='dark'] .dashboard-empty-state {
+  color: #9fb0cc;
+}
+
+:root[data-theme='dark'] .dashboard-stat-card,
+:root[data-theme='dark'] .dashboard-habit-card,
+:root[data-theme='dark'] .dashboard-action-card,
+:root[data-theme='dark'] .dashboard-resume-card,
+:root[data-theme='dark'] .dashboard-college-card {
+  border-color: rgba(64, 110, 172, 0.62);
+  background: #071b44;
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.22);
+}
+
+:root[data-theme='dark'] .dashboard-stat-card p,
+:root[data-theme='dark'] .dashboard-habit-card p {
+  color: #eaf2ff;
+}
+
+:root[data-theme='dark'] .dashboard-action-tile {
+  border-color: rgba(64, 110, 172, 0.62);
+  background: #0a214e;
+  box-shadow: none;
+}
+
+:root[data-theme='dark'] .dashboard-action-tile:hover {
+  border-color: rgba(112, 154, 218, 0.74);
+  background: #0e2a5f;
+}
+
+:root[data-theme='dark'] .dashboard-quote-card {
+  border-color: rgba(45, 87, 145, 0.68);
+  background:
+    linear-gradient(90deg, rgba(7, 27, 68, 0.97) 0%, rgba(7, 27, 68, 0.86) 42%, rgba(7, 27, 68, 0.08) 68%),
+    var(--dashboard-quote-bg) center right / cover no-repeat,
+    #071b44;
+  box-shadow: 0 20px 42px rgba(0, 0, 0, 0.24);
+}
+
+:root[data-theme='dark'] .dashboard-section-head,
+:root[data-theme='dark'] .dashboard-college-row {
+  border-color: rgba(64, 110, 172, 0.56);
+}
+
+:root[data-theme='dark'] .dashboard-college-row:hover {
+  background: rgba(44, 91, 172, 0.16);
+}
