@@ -5261,17 +5261,6 @@ function getPasswordStrengthMeta(password: string) {
     }, 460)
   }
 
-  function startQuizMistakeReview() {
-    if (!quizItem || quizSessionMetrics.mistakeCards.length === 0) {
-      setQuizSessionStep('complete')
-      return
-    }
-    updateItemQuizConfig(quizItem.itemNumber, { activeCardId: quizSessionMetrics.mistakeCards[0].id })
-    setQuizSide('front')
-    setQuizFeedback(null)
-    setQuizSessionStep('errors')
-  }
-
   function handleQuizResult(result: QuizResult) {
     if (!quizItem) {
       return
@@ -8907,7 +8896,7 @@ function getPasswordStrengthMeta(password: string) {
                           ? 'Comprenez, mémorisez, et ancrez la connaissance.'
                           : 'Prenez le temps de réfléchir avant de révéler la réponse.'}
                     </p>
-                    <div className="quiz-study-stage">
+                    <div className={`quiz-study-stage quiz-study-stage-${quizSessionStep}`}>
                       <div className="quiz-session-progress">
                         <span
                           style={{
@@ -8933,19 +8922,23 @@ function getPasswordStrengthMeta(password: string) {
                           <Star className="quiz-study-star" aria-hidden="true" />
                         </div>
                         <div className="quiz-study-card-body">
-                          <div
-                            className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizQuestion))} quiz-rich-rendered`}
-                            dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizQuestion) }}
-                          />
-                          {quizSessionStep === 'answer' || quizSessionStep === 'errors' ? (
+                          {quizSessionStep === 'question' ? (
+                            <div
+                              className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizQuestion))} quiz-rich-rendered`}
+                              dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizQuestion) }}
+                            />
+                          ) : (
                             <div className="quiz-study-answer">
-                              <p>Réponse</p>
                               <div
                                 className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizAnswer))} quiz-rich-rendered`}
                                 dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizAnswer) }}
                               />
+                              <button type="button" className="quiz-study-explanation">
+                                Explication détaillée
+                                <span aria-hidden="true">⌄</span>
+                              </button>
                             </div>
-                          ) : null}
+                          )}
                         </div>
                         {(quizSessionStep === 'question' && activeQuizCard?.frontImageDataUrl) ||
                         ((quizSessionStep === 'answer' || quizSessionStep === 'errors') && activeQuizCard?.backImageDataUrl) ? (
@@ -9059,12 +9052,9 @@ function getPasswordStrengthMeta(password: string) {
                         <NavArrowLeft className="inline-btn-icon" aria-hidden="true" />
                         Retour au dashboard
                       </button>
-                      <button type="button" className="quiz-session-primary" onClick={startQuizMistakeReview}>
-                        <Page className="inline-btn-icon" aria-hidden="true" />
-                        Revoir mes erreurs ({quizSessionMetrics.mistakeCards.length})
-                      </button>
-                      <button type="button" className="ghost-btn" onClick={() => setQuizSessionStep('complete')}>
-                        Terminer
+                      <button type="button" className="quiz-session-primary" onClick={() => setQuizSessionStep('complete')}>
+                        <DatabaseStats className="inline-btn-icon" aria-hidden="true" />
+                        Voir mes statistiques détaillées
                       </button>
                     </div>
                   </>
@@ -9073,7 +9063,7 @@ function getPasswordStrengthMeta(password: string) {
                 {quizSessionStep === 'complete' ? (
                   <>
                     <div className="quiz-session-kicker">
-                      <span>8. Fin de session & gamification</span>
+                      <span>7. Fin de session & gamification</span>
                       <button type="button" className="ghost-btn quiz-session-close" onClick={closeQuiz}>
                         Fermer
                       </button>

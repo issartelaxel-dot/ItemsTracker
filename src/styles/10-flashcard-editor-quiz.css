@@ -22,6 +22,14 @@
   animation: quiz-modal-in 0.24s ease both;
 }
 
+.quiz-modal:has(.quiz-session-summary) {
+  width: min(880px, 100%);
+}
+
+.quiz-modal:has(.quiz-session-complete) {
+  width: min(760px, 100%);
+}
+
 .quiz-modal.flashcard-editor-modal {
   width: min(1080px, calc(100vw - 2rem));
   max-height: calc(100dvh - 2rem);
@@ -676,6 +684,10 @@
   color: var(--text);
 }
 
+.quiz-session-shell :where(button) {
+  font-family: inherit;
+}
+
 .quiz-session-kicker {
   display: flex;
   align-items: center;
@@ -878,6 +890,12 @@
   overflow: hidden;
 }
 
+.quiz-study-stage-answer,
+.quiz-study-stage-errors {
+  min-height: 300px;
+  padding-block: 1.55rem 0.75rem;
+}
+
 .quiz-session-progress {
   position: absolute;
   top: 1rem;
@@ -923,6 +941,12 @@
   width: min(470px, 100%);
 }
 
+.quiz-study-stage-answer .quiz-study-card,
+.quiz-study-stage-errors .quiz-study-card {
+  width: min(440px, 100%);
+  min-height: 190px;
+}
+
 .quiz-study-card-meta {
   display: flex;
   align-items: center;
@@ -962,20 +986,22 @@
 
 .quiz-study-answer {
   display: grid;
-  gap: 0.4rem;
-  padding-top: 0.75rem;
-  border-top: 1px solid var(--border);
+  gap: 0.55rem;
   font-size: 0.95rem;
-  font-weight: 600;
+  font-weight: 800;
 }
 
-.quiz-study-answer p {
-  margin: 0;
+.quiz-study-explanation {
+  justify-self: center;
+  border: 0;
+  background: transparent;
   color: #1f6cff;
-  font-size: 0.72rem;
+  font-size: 0.74rem;
   font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.22rem;
+  cursor: pointer;
 }
 
 .quiz-study-media {
@@ -1036,11 +1062,13 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.45rem;
+  margin-top: 0.55rem;
 }
 
 .quiz-session-rates .quiz-rate-btn {
-  min-height: 38px;
-  border-radius: 9px;
+  min-height: 34px;
+  border-radius: 8px;
+  font-size: 0.76rem;
   font-weight: 900;
   border: 1px solid var(--border);
   background: var(--panel-bg);
@@ -1149,8 +1177,8 @@
 }
 
 .quiz-summary-actions {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
   gap: 0.7rem;
 }
 
