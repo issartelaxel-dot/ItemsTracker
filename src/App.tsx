@@ -28,6 +28,7 @@ import {
   EyeClosed,
   Flash,
   FloppyDisk,
+  FireFlame,
   Globe,
   HalfMoon,
   HelpCircle,
@@ -6720,7 +6721,7 @@ function getPasswordStrengthMeta(password: string) {
 
               <article className="dashboard-stat-card">
                 <div className="dashboard-stat-icon dashboard-stat-fire" aria-hidden="true">
-                  <Flash className="ui-icon" aria-hidden="true" />
+                  <FireFlame className="ui-icon" aria-hidden="true" />
                 </div>
                 <p>Série actuelle</p>
                 <strong>{dashboardStudyStats.currentStreak}</strong>
