@@ -8563,17 +8563,25 @@ tbody tr.selected {
     height: auto;
     overflow: visible;
     padding: 0.45rem;
+    width: 100%;
+    max-width: 100vw;
+    min-width: 0;
+    overflow-x: hidden;
   }
 
   .dashboard-shell {
     height: auto;
     min-height: 100dvh;
     overflow: visible;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .dashboard-content {
     overflow: visible;
     padding-right: 0;
+    min-width: 0;
   }
 
   .dashboard-shell.dashboard-view-shell .dashboard-content {
@@ -8589,6 +8597,9 @@ tbody tr.selected {
     position: static;
     height: auto;
     grid-template-rows: auto auto auto auto;
+    width: auto;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .sidebar-nav {
@@ -8652,6 +8663,27 @@ tbody tr.selected {
   .dashboard-mid-grid,
   .dashboard-quote-card {
     grid-template-columns: 1fr;
+  }
+
+  .dashboard-shell.dashboard-view-shell .dashboard-hero-row,
+  .dashboard-shell.dashboard-view-shell .dashboard-stat-grid,
+  .dashboard-shell.dashboard-view-shell .dashboard-mid-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .dashboard-shell.dashboard-view-shell .dashboard-habit-card {
+    grid-column: auto;
+  }
+
+  .topbar,
+  .topbar-actions,
+  .topbar-search {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .topbar-actions {
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .dashboard-habit-card {
