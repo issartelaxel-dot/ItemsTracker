@@ -6,6 +6,7 @@ import {
   useState,
   type ClipboardEvent,
   type CSSProperties,
+  type DragEvent as ReactDragEvent,
   type FormEvent,
   type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
@@ -23,6 +24,7 @@ import {
   Dashboard,
   DatabaseStats,
   DotsGrid3x3,
+  Drag,
   EditPencil,
   Eye,
   EyeClosed,
@@ -2392,6 +2394,7 @@ function App() {
   const [flashCreateQuestion, setFlashCreateQuestion] = useState('')
   const [flashCreateAnswer, setFlashCreateAnswer] = useState('')
   const [flashCreateError, setFlashCreateError] = useState('')
+  const [draggedQuizCardId, setDraggedQuizCardId] = useState<string | null>(null)
   const backupInputRef = useRef<HTMLInputElement | null>(null)
   const [hasLoadedRemoteState, setHasLoadedRemoteState] = useState(false)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
@@ -5725,6 +5728,54 @@ function getPasswordStrengthMeta(password: string) {
     })
   }
 
+  function reorderQuizCard(itemNumber: number, draggedCardId: string, targetCardId: string) {
+    if (!draggedCardId || draggedCardId === targetCardId) {
+      return
+    }
+
+    setTrackingState((current) => {
+      const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      const fromIndex = itemTracking.quiz.cards.findIndex((card) => card.id === draggedCardId)
+      const toIndex = itemTracking.quiz.cards.findIndex((card) => card.id === targetCardId)
+      if (fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+        return current
+      }
+
+      const cards = [...itemTracking.quiz.cards]
+      const [movedCard] = cards.splice(fromIndex, 1)
+      cards.splice(toIndex, 0, movedCard)
+
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: {
+            ...itemTracking,
+            quiz: {
+              ...itemTracking.quiz,
+              cards,
+            },
+          },
+        },
+      }
+    })
+  }
+
+  function handleQuizCardDragStart(event: ReactDragEvent<HTMLElement>, cardId: string) {
+    setDraggedQuizCardId(cardId)
+    event.dataTransfer.effectAllowed = 'move'
+    event.dataTransfer.setData('text/plain', cardId)
+  }
+
+  function handleQuizCardDrop(event: ReactDragEvent<HTMLElement>, itemNumber: number, targetCardId: string) {
+    event.preventDefault()
+    const sourceCardId = event.dataTransfer.getData('text/plain') || draggedQuizCardId
+    if (sourceCardId) {
+      reorderQuizCard(itemNumber, sourceCardId, targetCardId)
+    }
+    setDraggedQuizCardId(null)
+  }
+
   function duplicateQuizCard(itemNumber: number, cardId: string) {
     setTrackingState((current) => {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
@@ -7375,16 +7426,48 @@ function getPasswordStrengthMeta(password: string) {
 
                 <aside className="item-detail-side-column">
                     <div className="quiz-config-grid item-detail-card item-detail-tab-panel item-detail-tab-panel-flashcards">
-                    <label className="block-label">
-                      Cartes quiz
+                    <div className="quiz-card-list-head">
+                      <h3>Cartes quiz</h3>
+                      <button
+                        type="button"
+                        className="quiz-card-add"
+                        onClick={() => addQuizCard(effectiveSelectedItem.itemNumber)}
+                      >
+                        <Plus className="inline-btn-icon" aria-hidden="true" />
+                        Ajouter carte
+                      </button>
+                    </div>
                   <div className="quiz-card-list">
-                    {effectiveSelectedItem.tracking.quiz.cards.map((card, index) => (
-                      <div key={card.id} className="quiz-card-row">
+                    {effectiveSelectedItem.tracking.quiz.cards.map((card, index) => {
+                      const isActiveQuizCard = effectiveSelectedItem.tracking.quiz.activeCardId === card.id
+                      const cardLabel = getQuizCardButtonLabel(card, index)
+                      return (
+                      <div
+                        key={card.id}
+                        className={`quiz-card-row ${isActiveQuizCard ? 'active' : ''} ${
+                          draggedQuizCardId === card.id ? 'is-dragging' : ''
+                        }`}
+                        onDragOver={(event) => {
+                          event.preventDefault()
+                          event.dataTransfer.dropEffect = 'move'
+                        }}
+                        onDrop={(event) => handleQuizCardDrop(event, effectiveSelectedItem.itemNumber, card.id)}
+                      >
+                        <span
+                          className="quiz-card-drag-handle"
+                          draggable
+                          title="Déplacer cette carte"
+                          aria-label={`Déplacer ${cardLabel}`}
+                          role="button"
+                          tabIndex={0}
+                          onDragStart={(event) => handleQuizCardDragStart(event, card.id)}
+                          onDragEnd={() => setDraggedQuizCardId(null)}
+                        >
+                          <Drag className="quiz-card-drag-icon" aria-hidden="true" />
+                        </span>
                         <button
                           type="button"
-                          className={`quiz-card-select ${
-                            effectiveSelectedItem.tracking.quiz.activeCardId === card.id ? 'active' : ''
-                          }`}
+                          className="quiz-card-select"
                             title={getQuizRichTextPlainText(card.question) || `Carte ${index + 1}`}
                             onClick={() => {
                               updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
@@ -7393,7 +7476,7 @@ function getPasswordStrengthMeta(password: string) {
                               openQuiz(effectiveSelectedItem.itemNumber, card.id, { allowDisabled: true })
                             }}
                           >
-                            {getQuizCardButtonLabel(card, index)}
+                            {cardLabel}
                         </button>
                         <span
                           className={`quiz-card-level-pill ${card.lastResult ?? 'none'}`}
@@ -7409,6 +7492,7 @@ function getPasswordStrengthMeta(password: string) {
                           <button
                             type="button"
                             className="quiz-card-edit"
+                            aria-label={`Modifier ${cardLabel}`}
                             onClick={() => {
                               setQuizSide('front')
                               updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
@@ -7418,11 +7502,13 @@ function getPasswordStrengthMeta(password: string) {
                               setQuizEditMode(true)
                             }}
                           >
+                            <EditPencil className="inline-btn-icon" aria-hidden="true" />
                             Modifier
                           </button>
                           <button
                             type="button"
                             className="quiz-card-remove"
+                            aria-label={`Supprimer ${cardLabel}`}
                             onClick={() => {
                               const ok = window.confirm('Supprimer cette flashcard ? Cette action est irréversible.')
                               if (ok) {
@@ -7430,20 +7516,12 @@ function getPasswordStrengthMeta(password: string) {
                               }
                             }}
                           >
-                            Supprimer
+                            <Trash className="inline-btn-icon" aria-hidden="true" />
                           </button>
                       </div>
-                    ))}
-                    <button
-                      type="button"
-                      className="quiz-card-add"
-                      onClick={() => addQuizCard(effectiveSelectedItem.itemNumber)}
-                    >
-                      <Plus className="inline-btn-icon" aria-hidden="true" />
-                      Ajouter carte
-                    </button>
+                      )
+                    })}
                   </div>
-                </label>
               </div>
 
                 <h3 className="item-detail-tab-panel item-detail-tab-panel-assignments">Assignation collèges</h3>
