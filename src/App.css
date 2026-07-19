@@ -6223,6 +6223,7 @@ tbody tr.selected {
 }
 
 .quiz-card-row {
+  position: relative;
   display: grid;
   grid-template-columns: 28px minmax(0, 1fr) minmax(118px, auto) minmax(132px, auto) 48px;
   align-items: center;
@@ -6237,7 +6238,8 @@ tbody tr.selected {
     border-color 0.16s ease,
     background 0.16s ease,
     box-shadow 0.16s ease,
-    opacity 0.16s ease;
+    opacity 0.16s ease,
+    transform 0.16s ease;
 }
 
 .quiz-card-row:hover {
@@ -6251,7 +6253,15 @@ tbody tr.selected {
 }
 
 .quiz-card-row.is-dragging {
-  opacity: 0.48;
+  opacity: 0.55;
+  transform: scale(0.985);
+  box-shadow: 0 10px 22px rgba(15, 43, 91, 0.12);
+}
+
+.quiz-card-row.is-drop-target {
+  border-color: color-mix(in oklab, var(--accent) 62%, var(--border));
+  background: color-mix(in oklab, var(--selected) 86%, var(--panel-bg));
+  box-shadow: 0 8px 20px rgba(36, 104, 232, 0.12);
 }
 
 .quiz-card-drag-handle {
@@ -6263,10 +6273,20 @@ tbody tr.selected {
   color: var(--muted);
   cursor: grab;
   touch-action: none;
+  border-radius: 6px;
+  transition:
+    color 0.16s ease,
+    background 0.16s ease,
+    transform 0.16s ease;
 }
 
 .quiz-card-drag-handle:active {
   cursor: grabbing;
+}
+
+.quiz-card-drag-handle:hover {
+  color: color-mix(in oklab, var(--accent) 72%, var(--text));
+  background: color-mix(in oklab, var(--accent) 8%, transparent);
 }
 
 .quiz-card-drag-icon {

@@ -24,7 +24,6 @@ import {
   Dashboard,
   DatabaseStats,
   DotsGrid3x3,
-  Drag,
   EditPencil,
   Eye,
   EyeClosed,
@@ -2395,6 +2394,7 @@ function App() {
   const [flashCreateAnswer, setFlashCreateAnswer] = useState('')
   const [flashCreateError, setFlashCreateError] = useState('')
   const [draggedQuizCardId, setDraggedQuizCardId] = useState<string | null>(null)
+  const [dragOverQuizCardId, setDragOverQuizCardId] = useState<string | null>(null)
   const backupInputRef = useRef<HTMLInputElement | null>(null)
   const [hasLoadedRemoteState, setHasLoadedRemoteState] = useState(false)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
@@ -5763,17 +5763,25 @@ function getPasswordStrengthMeta(password: string) {
 
   function handleQuizCardDragStart(event: ReactDragEvent<HTMLElement>, cardId: string) {
     setDraggedQuizCardId(cardId)
+    setDragOverQuizCardId(null)
     event.dataTransfer.effectAllowed = 'move'
     event.dataTransfer.setData('text/plain', cardId)
   }
 
-  function handleQuizCardDrop(event: ReactDragEvent<HTMLElement>, itemNumber: number, targetCardId: string) {
+  function handleQuizCardDragEnter(event: ReactDragEvent<HTMLElement>, itemNumber: number, targetCardId: string) {
     event.preventDefault()
     const sourceCardId = event.dataTransfer.getData('text/plain') || draggedQuizCardId
-    if (sourceCardId) {
-      reorderQuizCard(itemNumber, sourceCardId, targetCardId)
+    if (!sourceCardId || sourceCardId === targetCardId) {
+      return
     }
+    setDragOverQuizCardId(targetCardId)
+    reorderQuizCard(itemNumber, sourceCardId, targetCardId)
+  }
+
+  function handleQuizCardDrop(event: ReactDragEvent<HTMLElement>) {
+    event.preventDefault()
     setDraggedQuizCardId(null)
+    setDragOverQuizCardId(null)
   }
 
   function duplicateQuizCard(itemNumber: number, cardId: string) {
@@ -7446,12 +7454,13 @@ function getPasswordStrengthMeta(password: string) {
                         key={card.id}
                         className={`quiz-card-row ${isActiveQuizCard ? 'active' : ''} ${
                           draggedQuizCardId === card.id ? 'is-dragging' : ''
-                        }`}
+                        } ${dragOverQuizCardId === card.id ? 'is-drop-target' : ''}`}
+                        onDragEnter={(event) => handleQuizCardDragEnter(event, effectiveSelectedItem.itemNumber, card.id)}
                         onDragOver={(event) => {
                           event.preventDefault()
                           event.dataTransfer.dropEffect = 'move'
                         }}
-                        onDrop={(event) => handleQuizCardDrop(event, effectiveSelectedItem.itemNumber, card.id)}
+                        onDrop={handleQuizCardDrop}
                       >
                         <span
                           className="quiz-card-drag-handle"
@@ -7461,9 +7470,12 @@ function getPasswordStrengthMeta(password: string) {
                           role="button"
                           tabIndex={0}
                           onDragStart={(event) => handleQuizCardDragStart(event, card.id)}
-                          onDragEnd={() => setDraggedQuizCardId(null)}
+                          onDragEnd={() => {
+                            setDraggedQuizCardId(null)
+                            setDragOverQuizCardId(null)
+                          }}
                         >
-                          <Drag className="quiz-card-drag-icon" aria-hidden="true" />
+                          <DotsGrid3x3 className="quiz-card-drag-icon" aria-hidden="true" />
                         </span>
                         <button
                           type="button"
