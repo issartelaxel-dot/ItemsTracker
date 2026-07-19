@@ -18,6 +18,7 @@ import {
   Calendar,
   Check,
   CheckCircle,
+  ClockRotateRight,
   Copy,
   CreditCards,
   Crown,
@@ -7478,7 +7479,7 @@ function getPasswordStrengthMeta(password: string) {
                     aria-label={`Afficher l'historique de l'item ${effectiveSelectedItem.itemNumber}`}
                     onClick={() => setHistoryItemId(effectiveSelectedItem.itemNumber)}
                   >
-                    <OpenBook className="item-detail-action-icon" aria-hidden="true" />
+                    <ClockRotateRight className="item-detail-action-icon" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
