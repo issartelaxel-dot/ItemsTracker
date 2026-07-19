@@ -6710,7 +6710,6 @@ function getPasswordStrengthMeta(password: string) {
               <article className="dashboard-stat-card dashboard-progress-card">
                 <div className="dashboard-stat-head">
                   <p>Progression globale</p>
-                  <DatabaseStats className="dashboard-trend-icon" aria-hidden="true" />
                 </div>
                 <strong>{Math.round(globalStats.overallProgress)}%</strong>
                 <span className="dashboard-positive">+{Math.max(1, Math.round(globalStats.overallProgress * 0.12))}% depuis la semaine dernière</span>
