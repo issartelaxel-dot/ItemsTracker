@@ -17,7 +17,6 @@ import {
   Calendar,
   Check,
   CheckCircle,
-  ClockRotateRight,
   Copy,
   CreditCards,
   Crown,
@@ -44,6 +43,7 @@ import {
   NavArrowLeft,
   NavArrowRight,
   Notes,
+  OpenBook,
   Page,
   Play,
   Plus,
@@ -1166,7 +1166,7 @@ type ItemDetailStatIconName = 'reviews' | 'lastReview' | 'resources' | 'cards'
 
 function ItemDetailStatIcon({ name }: { name: ItemDetailStatIconName }) {
   if (name === 'reviews') {
-    return <DatabaseStats className="item-detail-stat-svg" aria-hidden="true" />
+    return <OpenBook className="item-detail-stat-svg" aria-hidden="true" />
   }
 
   if (name === 'lastReview') {
@@ -6730,7 +6730,7 @@ function getPasswordStrengthMeta(password: string) {
 
               <article className="dashboard-stat-card">
                 <div className="dashboard-stat-icon" aria-hidden="true">
-                  <ClockRotateRight className="ui-icon" aria-hidden="true" />
+                  <OpenBook className="ui-icon" aria-hidden="true" />
                 </div>
                 <p>Révisions dues</p>
                 <strong>{dashboardDueCount}</strong>
@@ -6955,7 +6955,7 @@ function getPasswordStrengthMeta(password: string) {
                         {item.tracking.quiz.cards.length}
                       </span>
                       <span title="Révisions">
-                        <Refresh className="items-list-metric-icon" aria-hidden="true" />
+                        <OpenBook className="items-list-metric-icon" aria-hidden="true" />
                         {item.totalReviews}
                       </span>
                     </span>
@@ -7134,7 +7134,7 @@ function getPasswordStrengthMeta(password: string) {
                     aria-label={`Afficher l'historique de l'item ${effectiveSelectedItem.itemNumber}`}
                     onClick={() => setHistoryItemId(effectiveSelectedItem.itemNumber)}
                   >
-                    <ClockRotateRight className="item-detail-action-icon" aria-hidden="true" />
+                    <OpenBook className="item-detail-action-icon" aria-hidden="true" />
                   </button>
                   <button
                     type="button"
@@ -9200,7 +9200,7 @@ function getPasswordStrengthMeta(password: string) {
               </article>
               <article>
                 <span className="college-detail-stat-icon">
-                  <Refresh className="ui-icon" aria-hidden="true" />
+                  <OpenBook className="ui-icon" aria-hidden="true" />
                 </span>
                 <p>Révisions</p>
                 <strong>{selectedCollegeDetailData.totalReviews}</strong>
