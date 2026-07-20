@@ -2084,6 +2084,10 @@
   max-height: 190px;
 }
 
+.item-detail-tab-tracking .item-detail-side-column > #item-detail-tracking {
+  max-height: none;
+}
+
 :root[data-theme='dark'] .items-only-view .table-panel,
 :root[data-theme='dark'] .items-only-view .item-detail-panel,
 :root[data-theme='dark'] .items-list-wrap,
