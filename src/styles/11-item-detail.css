@@ -2088,6 +2088,12 @@
   max-height: none;
 }
 
+.item-detail-side-column > #item-detail-tracking {
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
 :root[data-theme='dark'] .items-only-view .table-panel,
 :root[data-theme='dark'] .items-only-view .item-detail-panel,
 :root[data-theme='dark'] .items-list-wrap,
