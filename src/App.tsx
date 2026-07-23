@@ -3142,7 +3142,14 @@ function App() {
       payload = (await response.json().catch(() => ({}))) as Record<string, unknown>
     } else {
       const text = await response.text().catch(() => '')
-      payload = { error: text.slice(0, 180) }
+      const cleanText = text.trim()
+      const canShowText = cleanText && !cleanText.startsWith('<') && !cleanText.toLowerCase().includes('<!doctype')
+      payload = {
+        error:
+          canShowText && response.status < 500
+            ? cleanText.slice(0, 180)
+            : 'Erreur serveur temporaire. Réessaie dans un instant.',
+      }
     }
 
     if (response.ok && !looksJson) {

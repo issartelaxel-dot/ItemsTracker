@@ -1498,7 +1498,12 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
     return
   }
 
-  const validPassword = await argon2.verify(user.passwordHash, parsed.data.password)
+  let validPassword = false
+  try {
+    validPassword = await argon2.verify(user.passwordHash, parsed.data.password)
+  } catch (error) {
+    console.error(`Password verification failed for user ${user.id}:`, error)
+  }
   if (!validPassword) {
     res.status(401).json({ error: 'Email ou mot de passe invalide.' })
     return
@@ -1640,6 +1645,22 @@ app.post('/api/auth/password/confirm', verifyLimiter, async (req, res) => {
 app.post('/api/auth/logout', (_req, res) => {
   clearAuthCookie(res)
   res.json({ ok: true })
+})
+
+app.use((error, _req, res, next) => {
+  if (res.headersSent) {
+    next(error)
+    return
+  }
+
+  const status = Number(error?.status || error?.statusCode)
+  const safeStatus = Number.isInteger(status) && status >= 400 && status < 500 ? status : 500
+  if (safeStatus >= 500) {
+    console.error('Unhandled API error:', error)
+  }
+  res.status(safeStatus).json({
+    error: safeStatus >= 500 ? 'Erreur serveur temporaire. Réessaie dans un instant.' : 'Requête invalide.',
+  })
 })
 
 async function startServer() {
