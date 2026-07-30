@@ -252,10 +252,16 @@
   box-shadow: 0 8px 20px rgba(34, 72, 125, 0.05);
 }
 
-.dashboard-action-tile:hover {
+.dashboard-action-tile:hover:not(:disabled) {
   transform: translateY(-1px);
   border-color: #bcd0ee;
   box-shadow: 0 14px 26px rgba(34, 72, 125, 0.09);
+}
+
+.dashboard-action-tile:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
 }
 
 .dashboard-action-icon {

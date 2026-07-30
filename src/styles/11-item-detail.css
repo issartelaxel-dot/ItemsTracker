@@ -467,6 +467,18 @@
   margin-top: 0.2rem;
 }
 
+.item-detail-tab-flashcards .item-detail-side-column,
+.item-detail-tab-flashcards .quiz-config-grid {
+  min-height: 0;
+}
+
+.item-detail-tab-flashcards .quiz-card-list {
+  min-height: 0;
+  max-height: min(52vh, 420px);
+  overflow-y: auto;
+  padding-right: 0.12rem;
+}
+
 .quiz-card-row {
   position: relative;
   display: grid;
@@ -766,6 +778,9 @@
 .remove-ref-btn {
   width: 30px;
   height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .tracking-grid {
@@ -1396,7 +1411,7 @@
 }
 
 .items-only-view .filters-row {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0.48rem;
   margin-bottom: 0.62rem;
 }
@@ -1411,6 +1426,37 @@
   border: 1px solid var(--border);
   border-radius: 12px;
   background: var(--panel-bg);
+}
+
+.items-filter-reset {
+  min-height: 38px;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+.items-filter-reset:disabled {
+  opacity: 0.52;
+  cursor: not-allowed;
+}
+
+.items-empty-state {
+  min-height: 180px;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 0.3rem;
+  padding: 1.2rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.items-empty-state strong {
+  color: var(--text);
+}
+
+.items-empty-state p {
+  margin: 0;
+  font-size: 0.84rem;
 }
 
 .items-list-row {
@@ -1725,7 +1771,7 @@
 
 .item-detail-tabs {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 0;
   padding: 0;
   border: 0;
@@ -2059,6 +2105,9 @@
 .item-detail-tab-tracking .remove-ref-btn {
   width: 24px;
   height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #ef4444;
 }
 

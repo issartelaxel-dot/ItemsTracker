@@ -4,57 +4,6 @@
   align-content: start;
 }
 
-.flashcards-generator-callout {
-  display: grid;
-  grid-template-columns: minmax(260px, 1.1fr) minmax(520px, 2fr) auto;
-  align-items: center;
-  gap: 1.4rem;
-  min-height: 154px;
-  padding: 1.45rem 1.55rem;
-  border-radius: 12px;
-  border: 1px solid #c8d8fb;
-  background: linear-gradient(135deg, #f8fbff 0%, #fdfefe 50%, #eef5ff 100%);
-  box-shadow:
-    0 18px 44px rgba(38, 87, 185, 0.09),
-    inset 0 1px 0 rgba(255, 255, 255, 0.88);
-}
-
-.flashcards-generator-copy {
-  min-width: 0;
-}
-
-.flashcards-generator-kicker {
-  margin: 0;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.42rem;
-  font-size: 0.78rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: #2e6cf6;
-  font-weight: 800;
-}
-
-.flashcards-generator-copy h2 {
-  margin: 1rem 0 0.5rem;
-  font-size: 1.06rem;
-  color: #102754;
-  letter-spacing: 0;
-}
-
-.flashcards-generator-copy p {
-  margin: 0;
-  color: #7082a7;
-  font-size: 0.9rem;
-  line-height: 1.48;
-}
-
-.flashcards-generator-controls {
-  display: grid;
-  grid-template-columns: minmax(190px, 1.05fr) minmax(160px, 1fr) minmax(180px, 1fr);
-  gap: 0.9rem;
-}
-
 .flashcards-field {
   min-width: 0;
   display: grid;
@@ -109,7 +58,7 @@
 
 .flashcards-toolbar {
   display: grid;
-  grid-template-columns: minmax(280px, 1fr) minmax(180px, 0.34fr) minmax(210px, 0.38fr) minmax(180px, auto) minmax(190px, auto);
+  grid-template-columns: minmax(260px, 1fr) minmax(170px, 0.3fr) minmax(190px, 0.34fr) minmax(170px, auto) minmax(190px, auto) minmax(190px, auto);
   gap: 1.05rem;
   align-items: stretch;
 }
@@ -118,6 +67,7 @@
 .flashcards-toolbar-select,
 .flashcards-random-btn,
 .flashcards-view-switch,
+.flashcards-session-btn,
 .flashcards-create-btn {
   box-sizing: border-box;
   height: 52px;
@@ -182,6 +132,32 @@
   font-weight: 800;
   cursor: pointer;
   white-space: nowrap;
+}
+
+.flashcards-session-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.58rem;
+  padding: 0 1rem;
+  color: #fff;
+  background: #1f6cff;
+  border-color: #1f6cff;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+  box-shadow: 0 14px 28px rgba(31, 108, 255, 0.18);
+}
+
+.flashcards-session-btn:hover:not(:disabled) {
+  background: #1459dd;
+  color: #fff;
+}
+
+.flashcards-session-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+  box-shadow: none;
 }
 
 .flashcards-create-btn {
@@ -391,7 +367,8 @@
 .flashcards-card-launch:hover,
 .flashcards-card-view:hover,
 .flashcards-random-btn:hover,
-.flashcards-view-switch:hover {
+.flashcards-view-switch:hover,
+.flashcards-session-btn:hover:not(:disabled) {
   border-color: #a9c0ef;
   transform: translateY(-1px);
 }
@@ -591,26 +568,12 @@
   font-weight: 700;
 }
 
-:root[data-theme='dark'] .flashcards-generator-callout {
-  border-color: rgba(108, 152, 230, 0.36);
-  background: linear-gradient(135deg, #071a44 0%, #081f53 52%, #0a2a62 100%);
-  box-shadow:
-    0 18px 44px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(160, 194, 255, 0.12);
-}
-
-:root[data-theme='dark'] .flashcards-generator-kicker {
-  color: #9dbdff;
-}
-
-:root[data-theme='dark'] .flashcards-generator-copy h2,
 :root[data-theme='dark'] .flashcards-card-title h3,
 :root[data-theme='dark'] .flashcards-list-head h3,
 :root[data-theme='dark'] .flashcards-list-row h4 {
   color: #eaf2ff;
 }
 
-:root[data-theme='dark'] .flashcards-generator-copy p,
 :root[data-theme='dark'] .flashcards-card-title p,
 :root[data-theme='dark'] .flashcards-card-description,
 :root[data-theme='dark'] .flashcards-card-progress,
@@ -630,6 +593,17 @@
   border-color: rgba(108, 152, 230, 0.32);
   background: rgba(7, 26, 68, 0.92);
   box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
+}
+
+:root[data-theme='dark'] .flashcards-session-btn {
+  border-color: #477ef0;
+  background: #1f6cff;
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(8, 22, 55, 0.32);
+}
+
+:root[data-theme='dark'] .flashcards-session-btn:hover:not(:disabled) {
+  background: #1459dd;
 }
 
 :root[data-theme='dark'] .flashcards-create-btn {

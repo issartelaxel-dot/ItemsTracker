@@ -154,6 +154,51 @@
   min-height: 38px;
 }
 
+.settings-field input:disabled,
+.settings-field select:disabled {
+  color: var(--muted);
+  background: color-mix(in oklab, var(--surface-soft) 78%, var(--border));
+  cursor: not-allowed;
+}
+
+.settings-error {
+  color: #dc2626;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.settings-avatar-upload {
+  min-height: 84px;
+  border: 1px dashed color-mix(in oklab, var(--accent) 46%, var(--border));
+  border-radius: 11px;
+  display: grid;
+  place-items: center;
+  gap: 0.16rem;
+  padding: 0.72rem;
+  background: color-mix(in oklab, var(--accent) 7%, var(--surface-soft));
+  color: var(--text);
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+  text-align: center;
+}
+
+.settings-avatar-upload .ui-icon {
+  color: var(--accent);
+}
+
+.settings-avatar-upload small {
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.settings-avatar-upload.is-drag-over,
+.settings-avatar-upload:hover {
+  border-color: var(--accent);
+  background: color-mix(in oklab, var(--accent) 13%, var(--surface-soft));
+}
+
 .settings-subsection {
   display: grid;
   gap: 0.55rem;
@@ -212,6 +257,32 @@
   opacity: 0.58;
 }
 
+.settings-coming-soon {
+  min-height: 142px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 0.36rem;
+  padding: 0.85rem;
+  background: var(--surface-soft);
+}
+
+.settings-coming-soon .ui-icon {
+  color: var(--muted);
+}
+
+.settings-coming-soon strong {
+  color: var(--text);
+}
+
+.settings-coming-soon p {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 .settings-weekdays {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -262,6 +333,26 @@
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, #2563eb, #18b981);
+}
+
+.settings-storage.is-ok .settings-storage-bar span {
+  background: linear-gradient(90deg, #2563eb, #18b981);
+}
+
+.settings-storage.is-warning .settings-storage-bar span {
+  background: linear-gradient(90deg, #f59e0b, #f97316);
+}
+
+.settings-storage.is-danger .settings-storage-bar span {
+  background: linear-gradient(90deg, #ef4444, #b91c1c);
+}
+
+.settings-storage.is-warning .settings-storage-percent {
+  color: #b45309;
+}
+
+.settings-storage.is-danger .settings-storage-percent {
+  color: #dc2626;
 }
 
 .settings-storage-list {
@@ -326,10 +417,17 @@
 :root[data-theme='dark'] .settings-profile-row,
 :root[data-theme='dark'] .settings-toggle-row,
 :root[data-theme='dark'] .settings-weekdays button,
+:root[data-theme='dark'] .settings-avatar-upload,
+:root[data-theme='dark'] .settings-coming-soon,
 :root[data-theme='dark'] .settings-storage-list span,
 :root[data-theme='dark'] .settings-info-row,
 :root[data-theme='dark'] .settings-link-btn {
   background: #0a214e;
+}
+
+:root[data-theme='dark'] .settings-field input:disabled,
+:root[data-theme='dark'] .settings-field select:disabled {
+  background: #102959;
 }
 
 :root[data-theme='dark'] .dashboard-mini-progress,

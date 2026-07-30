@@ -28,7 +28,6 @@ import {
   EditPencil,
   Eye,
   EyeClosed,
-  Flash,
   FloppyDisk,
   FireFlame,
   Globe,
@@ -106,6 +105,8 @@ import './App.css'
 type Mastery = 'Mauvais' | 'Moyen' | 'Bon' | 'Très bon' | 'Parfait'
 type Theme = 'light' | 'dark'
 type YouTubeDisplayMode = 'embed' | 'external'
+type DateFormatPreference = 'fr-short' | 'fr-long' | 'iso'
+type TimeZonePreference = 'auto' | 'Europe/Paris' | 'Asia/Ho_Chi_Minh'
 type SortKey = 'itemAsc' | 'itemDesc' | 'reviews' | 'progress' | 'lastReviewAsc' | 'lastReviewDesc'
 type SheetColor = 'jaune' | 'rouge' | 'vert' | 'vertfonce'
 type SheetKind = 'lisaSheets' | 'platformSheets'
@@ -113,10 +114,14 @@ type QuizAnimationStyle = 'flip' | 'fade'
 type RewardIntensity = 'low' | 'medium' | 'high'
 type QuizResult = 'again' | 'hard' | 'medium' | 'good' | 'easy'
 type QuizImageSlot = 'front' | 'back'
-type QuizSessionStep = 'setup' | 'question' | 'answer' | 'summary' | 'errors' | 'complete'
-type QuizSessionPreset = 'today' | 'hard' | 'subject' | 'random' | 'custom'
+type QuizSessionStep = 'setup' | 'question' | 'answer' | 'summary' | 'errors'
+type QuizSessionPreset = 'today' | 'difficulty' | 'college' | 'random' | 'items'
 type QuizSessionMode = 'flashcards' | 'quiz'
 type QuizSessionObjective = 'learning' | 'evaluation'
+type QuizSessionScope =
+  | { type: 'global' }
+  | { type: 'college'; college: string }
+  | { type: 'item'; itemNumber: number }
 type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'settings' | 'stats'
 type ItemDetailTab = 'tracking' | 'resources' | 'flashcards' | 'assignments'
 type FlashGeneratorScope = 'items' | 'colleges'
@@ -124,6 +129,7 @@ type FlashDisplayMode = 'colleges' | 'items'
 type FlashFeelingFilter = 'none' | QuizResult
 type FlashCollegeLevelFilter = 'ALL' | FlashFeelingFilter
 type FlashCollegeSort = 'progress' | 'name' | 'items'
+type CollegesPageSort = 'name' | 'progress' | 'recentReviews'
 type CollegeDetailFilter = 'all' | 'review' | 'hard' | 'mastered'
 type SidebarNavBubbleKey = Exclude<NavView, 'settings' | 'stats'>
 type GlobalSearchResultKind = 'item' | 'college' | 'flashcard' | 'youtube' | 'link' | 'lisa' | 'platform'
@@ -241,12 +247,14 @@ type BackupPayload = {
   version: 1
   exportedAt: string
   data: {
-    trackingState: TrackerState
-    theme: Theme
-    focusMode: boolean
-    youtubeDisplayMode?: YouTubeDisplayMode
-    shuffleQuizCards?: boolean
-    profile?: ProfileState
+	    trackingState: TrackerState
+	    theme: Theme
+	    focusMode: boolean
+	    dateFormat?: DateFormatPreference
+	    timeZone?: TimeZonePreference
+	    youtubeDisplayMode?: YouTubeDisplayMode
+	    shuffleQuizCards?: boolean
+	    profile?: ProfileState
   }
 }
 
@@ -273,6 +281,14 @@ type GlobalFlashcard = {
   lastReviewedAt: string | null
 }
 
+type QuizSessionEntry = {
+  sessionKey: string
+  itemNumber: number
+  item: ItemComputed
+  card: QuizCard
+  colleges: string[]
+}
+
 type CollegeViewRow = {
   college: string
   items: Array<{
@@ -285,6 +301,7 @@ type CollegeViewRow = {
   }>
   completion: number
   totalReviews: number
+  lastReviewedAt: string | null
 }
 
 type AuthStatus = 'loading' | 'guest' | 'authed'
@@ -341,6 +358,9 @@ const HABIT_TRACKER_YEAR = 2026
 const REMOTE_STATE_MAX_BYTES = 24_000_000
 const REMOTE_MAX_PROFILE_PHOTO_URL_LENGTH = 1_000_000
 const REMOTE_QUIZ_IMAGE_PLACEHOLDER = '__remote_quiz_image__'
+const SUPPORT_EMAIL = 'hello@setup-hub.com'
+const DEFAULT_DATE_FORMAT: DateFormatPreference = 'fr-short'
+const DEFAULT_TIME_ZONE: TimeZonePreference = 'auto'
 const QUIZ_IMAGE_SLOTS: QuizImageSlot[] = ['front', 'back']
 const REMOTE_PAYLOAD_FALLBACKS = [
   { maxActionLogsPerItem: 220, allowProfilePhoto: true },
@@ -532,6 +552,14 @@ const QUIZ_TEXT_COLOR_OPTIONS = [
   { label: 'Brun', value: '#7a4b2f' },
 ] as const
 const QUIZ_TEXT_HIGHLIGHT_COLOR = '#fff59d'
+type QuizRichTextCommand =
+  | { type: 'bold' | 'italic' | 'highlight' | 'clearHighlight' | 'themeColor' | 'bulletList' }
+  | { type: 'color'; value: string }
+type PendingQuizRichTextFormat = {
+  color?: string
+  themeColor?: boolean
+  highlight?: boolean
+}
 
 function normalizeQuizRichTextColor(value: string) {
   const normalized = value.trim().toLowerCase()
@@ -602,20 +630,30 @@ function sanitizeQuizRichTextHtml(input: string) {
 
     const element = node as HTMLElement
     const tagName = element.tagName.toUpperCase()
+    const hasExtraInlineFormatting =
+      hasQuizThemeTextColor(element) ||
+      hasQuizNormalText(element) ||
+      hasQuizHighlightedText(element) ||
+      hasQuizPlainHighlightText(element) ||
+      isAllowedQuizTextColor(element.style.color || element.getAttribute('color') || '') ||
+      isAllowedQuizHighlightColor(element.style.backgroundColor) ||
+      element.style.fontWeight === 'normal' ||
+      element.style.fontWeight === '400' ||
+      element.style.fontStyle === 'normal'
 
     if (tagName === 'BR') {
       parent.appendChild(target.createElement('br'))
       return
     }
 
-    if (tagName === 'B' || tagName === 'STRONG') {
+    if ((tagName === 'B' || tagName === 'STRONG') && !hasExtraInlineFormatting) {
       const strong = target.createElement('strong')
       Array.from(element.childNodes).forEach((child) => appendSanitizedNode(strong, child))
       parent.appendChild(strong)
       return
     }
 
-    if (tagName === 'I' || tagName === 'EM') {
+    if ((tagName === 'I' || tagName === 'EM') && !hasExtraInlineFormatting) {
       const em = target.createElement('em')
       Array.from(element.childNodes).forEach((child) => appendSanitizedNode(em, child))
       parent.appendChild(em)
@@ -644,15 +682,20 @@ function sanitizeQuizRichTextHtml(input: string) {
     }
 
     const hasBoldStyle =
-      hasQuizBoldText(element) || element.style.fontWeight === 'bold' || Number(element.style.fontWeight) >= 600
+      hasQuizBoldText(element) ||
+      tagName === 'B' ||
+      tagName === 'STRONG' ||
+      element.style.fontWeight === 'bold' ||
+      Number(element.style.fontWeight) >= 600
     const hasNormalWeightStyle =
       hasQuizNormalText(element) || element.style.fontWeight === 'normal' || element.style.fontWeight === '400'
-    const hasItalicStyle = element.style.fontStyle === 'italic'
+    const hasItalicStyle = tagName === 'I' || tagName === 'EM' || element.style.fontStyle === 'italic'
     const hasNormalFontStyle = element.style.fontStyle === 'normal'
     const hasThemeTextColor = hasQuizThemeTextColor(element)
     const hasHighlightedText = hasQuizHighlightedText(element)
     const hasPlainHighlightText = hasQuizPlainHighlightText(element)
-    const color = isAllowedQuizTextColor(element.style.color) ? normalizeQuizRichTextColor(element.style.color) : ''
+    const rawTextColor = element.style.color || element.getAttribute('color') || ''
+    const color = isAllowedQuizTextColor(rawTextColor) ? normalizeQuizRichTextColor(rawTextColor) : ''
     const backgroundColor = hasHighlightedText
       ? QUIZ_TEXT_HIGHLIGHT_COLOR
       : isAllowedQuizHighlightColor(element.style.backgroundColor)
@@ -735,59 +778,6 @@ function hasQuizRichTextContent(value: string) {
   return getQuizRichTextPlainText(value).length > 0
 }
 
-function applyQuizRichTextCommand(
-  editor: HTMLDivElement,
-  command:
-    | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' | 'bulletList' }
-    | { type: 'color'; value: string },
-) {
-  editor.focus({ preventScroll: true })
-  if (command.type === 'bulletList') {
-    document.execCommand('insertUnorderedList')
-    return
-  }
-
-  const range = getEditorRange(editor)
-  if (!range || range.collapsed) {
-    return
-  }
-
-  const selectedText = range.toString()
-  if (!selectedText) {
-    return
-  }
-  const isSelectionBold = selectionHasBoldFormatting(editor, range)
-  const isSelectionItalic = selectionHasItalicFormatting(editor, range)
-  const isSelectionHighlighted = selectionHasHighlightFormatting(editor, range)
-
-  const wrapper = document.createElement('span')
-  wrapper.textContent = selectedText
-
-  if (command.type === 'bold') {
-    wrapper.classList.add(isSelectionBold ? 'quiz-rich-normal-text' : 'quiz-rich-bold-text')
-  }
-  if (command.type === 'italic') {
-    if (isSelectionItalic) {
-      wrapper.style.fontStyle = 'normal'
-    } else {
-      wrapper.style.fontStyle = 'italic'
-    }
-  }
-  if (command.type === 'highlight') {
-    wrapper.classList.add(isSelectionHighlighted ? 'quiz-rich-plain-highlight-text' : 'quiz-rich-highlight-text')
-  }
-  if (command.type === 'color') {
-    wrapper.style.color = command.value
-  }
-  if (command.type === 'themeColor') {
-    wrapper.classList.add('quiz-rich-theme-text')
-  }
-
-  range.deleteContents()
-  range.insertNode(wrapper)
-  placeCaretAfterNode(wrapper)
-}
-
 function getEditorSelection(editor: HTMLDivElement) {
   const selection = window.getSelection()
   if (!selection || selection.rangeCount === 0 || !selection.anchorNode || !selection.focusNode) {
@@ -822,56 +812,278 @@ function getClosestElementMatching(
   return null
 }
 
-function elementHasBoldFormatting(element: HTMLElement) {
-  return (
-    hasQuizBoldText(element) ||
-    element.tagName === 'STRONG' ||
-    element.tagName === 'B' ||
-    element.style.fontWeight === 'bold' ||
-    Number(element.style.fontWeight) >= 600
-  )
+function getClosestEditorElementByTag(node: Node | null, editor: HTMLDivElement, tagName: string) {
+  return getClosestElementMatching(node, editor, (element) => element.tagName === tagName.toUpperCase())
 }
 
-function elementHasItalicFormatting(element: HTMLElement) {
-  return element.tagName === 'EM' || element.tagName === 'I' || element.style.fontStyle === 'italic'
-}
-
-function elementHasHighlightFormatting(element: HTMLElement) {
-  return hasQuizHighlightedText(element) || isAllowedQuizHighlightColor(element.style.backgroundColor)
-}
-
-function selectionHasFormatting(
-  editor: HTMLDivElement,
-  range: Range,
-  predicate: (element: HTMLElement) => boolean,
-) {
-  const fragment = range.cloneContents()
-  const fragmentRoot = document.createElement('div')
-  fragmentRoot.appendChild(fragment)
-  if (Array.from(fragmentRoot.querySelectorAll('*')).some((element) => predicate(element as HTMLElement))) {
-    return true
+function wrapEditorSelection(editor: HTMLDivElement, configureWrapper: (wrapper: HTMLSpanElement) => void) {
+  const range = getEditorRange(editor)
+  if (!range || range.collapsed || !range.toString()) {
+    return false
   }
-  return Boolean(
-    getClosestElementMatching(range.startContainer, editor, predicate) ||
-      getClosestElementMatching(range.endContainer, editor, predicate),
-  )
+  const wrapper = document.createElement('span')
+  wrapper.appendChild(range.extractContents())
+  configureWrapper(wrapper)
+  range.insertNode(wrapper)
+  placeCaretAfterNode(wrapper)
+  return true
 }
 
-function selectionHasBoldFormatting(editor: HTMLDivElement, range: Range) {
-  return selectionHasFormatting(editor, range, elementHasBoldFormatting)
+function cleanQuizRichTextFormatting(
+  root: ParentNode,
+  options: { color?: boolean; highlight?: boolean },
+) {
+  const elements = Array.from(root.querySelectorAll<HTMLElement>('*'))
+  elements.forEach((element) => {
+    if (options.color) {
+      element.style.removeProperty('color')
+      element.removeAttribute('color')
+      element.classList.remove('quiz-rich-theme-text')
+    }
+    if (options.highlight) {
+      element.style.removeProperty('background-color')
+      element.classList.remove('quiz-rich-highlight-text', 'quiz-rich-plain-highlight-text')
+    }
+  })
 }
 
-function selectionHasItalicFormatting(editor: HTMLDivElement, range: Range) {
-  return selectionHasFormatting(editor, range, elementHasItalicFormatting)
+function formatEditorSelection(
+  editor: HTMLDivElement,
+  cleanOptions: { color?: boolean; highlight?: boolean },
+  configureWrapper?: (wrapper: HTMLSpanElement) => void,
+) {
+  return wrapEditorSelection(editor, (wrapper) => {
+    const fragment = document.createDocumentFragment()
+    moveChildren(wrapper, fragment)
+    cleanQuizRichTextFormatting(fragment, cleanOptions)
+    moveChildren(fragment, wrapper)
+    configureWrapper?.(wrapper)
+  })
 }
 
-function selectionHasHighlightFormatting(editor: HTMLDivElement, range: Range) {
-  return selectionHasFormatting(editor, range, elementHasHighlightFormatting)
+function moveChildren(source: Node, target: Node) {
+  while (source.firstChild) {
+    target.appendChild(source.firstChild)
+  }
 }
 
-function hasSelectedEditorText(editor: HTMLDivElement) {
-  const selection = getEditorSelection(editor)
-  return Boolean(selection && !selection.isCollapsed && selection.toString().length > 0)
+function nodeHasVisibleContent(node: Node) {
+  return (node.textContent ?? '').length > 0 || Array.from(node.childNodes).some((child) => child.nodeName === 'BR')
+}
+
+function unwrapEditorList(list: HTMLElement) {
+  const replacement = document.createDocumentFragment()
+  let caretTarget: Node | null = null
+  Array.from(list.children).forEach((child) => {
+    const line = document.createElement('div')
+    moveChildren(child, line)
+    if (!nodeHasVisibleContent(line)) {
+      line.appendChild(document.createElement('br'))
+    }
+    caretTarget = line
+    replacement.appendChild(line)
+  })
+  list.replaceWith(replacement)
+  if (caretTarget) {
+    placeCaretAfterNode(caretTarget)
+  }
+}
+
+function unwrapEditorListItem(list: HTMLElement, listItem: HTMLElement) {
+  const beforeList = document.createElement('ul')
+  const afterList = document.createElement('ul')
+  const line = document.createElement('div')
+
+  while (list.firstChild && list.firstChild !== listItem) {
+    beforeList.appendChild(list.firstChild)
+  }
+  moveChildren(listItem, line)
+  if (!nodeHasVisibleContent(line)) {
+    line.appendChild(document.createElement('br'))
+  }
+  if (list.contains(listItem)) {
+    list.removeChild(listItem)
+  }
+  while (list.firstChild) {
+    afterList.appendChild(list.firstChild)
+  }
+
+  const replacement = document.createDocumentFragment()
+  if (beforeList.children.length > 0) {
+    replacement.appendChild(beforeList)
+  }
+  replacement.appendChild(line)
+  if (afterList.children.length > 0) {
+    replacement.appendChild(afterList)
+  }
+  list.replaceWith(replacement)
+  placeCaretAtEndOfNode(line)
+}
+
+function appendListItem(list: HTMLUListElement, item: HTMLLIElement) {
+  if (!nodeHasVisibleContent(item)) {
+    item.appendChild(document.createElement('br'))
+  }
+  list.appendChild(item)
+}
+
+function convertSelectionToEditorList(editor: HTMLDivElement) {
+  const range = getEditorRange(editor)
+  if (!range) {
+    return
+  }
+
+  const closestList = getClosestEditorElementByTag(range.startContainer, editor, 'UL')
+  if (closestList) {
+    const closestListItem = getClosestEditorElementByTag(range.startContainer, editor, 'LI')
+    if (range.collapsed && closestListItem && closestList.contains(closestListItem)) {
+      unwrapEditorListItem(closestList, closestListItem)
+    } else {
+      unwrapEditorList(closestList)
+    }
+    return
+  }
+
+  const list = document.createElement('ul')
+  if (range.collapsed) {
+    const item = document.createElement('li')
+    item.appendChild(document.createElement('br'))
+    list.appendChild(item)
+    range.insertNode(list)
+    const caretRange = document.createRange()
+    caretRange.setStart(item, 0)
+    caretRange.collapse(true)
+    const selection = window.getSelection()
+    selection?.removeAllRanges()
+    selection?.addRange(caretRange)
+    return
+  }
+
+  const fragment = range.extractContents()
+  const source = document.createElement('div')
+  source.appendChild(fragment)
+  let currentItem = document.createElement('li')
+
+  Array.from(source.childNodes).forEach((node) => {
+    if (node.nodeType === Node.ELEMENT_NODE && ['DIV', 'P', 'LI'].includes((node as HTMLElement).tagName)) {
+      if (nodeHasVisibleContent(currentItem)) {
+        appendListItem(list, currentItem)
+        currentItem = document.createElement('li')
+      }
+      moveChildren(node, currentItem)
+      appendListItem(list, currentItem)
+      currentItem = document.createElement('li')
+      return
+    }
+    if (node.nodeName === 'BR') {
+      appendListItem(list, currentItem)
+      currentItem = document.createElement('li')
+      return
+    }
+    currentItem.appendChild(node)
+  })
+
+  if (nodeHasVisibleContent(currentItem) || list.children.length === 0) {
+    appendListItem(list, currentItem)
+  }
+  const lastItem = list.lastElementChild
+  range.insertNode(list)
+  if (lastItem) {
+    placeCaretAtEndOfNode(lastItem)
+  } else {
+    placeCaretAfterNode(list)
+  }
+}
+
+function applyPendingQuizRichTextFormat(wrapper: HTMLSpanElement, format: PendingQuizRichTextFormat) {
+  if (format.themeColor) {
+    wrapper.classList.add('quiz-rich-theme-text')
+  } else if (format.color) {
+    wrapper.style.color = format.color
+  }
+  if (format.highlight) {
+    wrapper.classList.add('quiz-rich-highlight-text')
+  } else if (format.highlight === false) {
+    wrapper.classList.add('quiz-rich-plain-highlight-text')
+  }
+}
+
+function insertFormattedTextAtEditorSelection(
+  editor: HTMLDivElement,
+  text: string,
+  format: PendingQuizRichTextFormat = {},
+) {
+  const range = getEditorRange(editor)
+  const targetRange = range ?? document.createRange()
+  if (!range) {
+    targetRange.selectNodeContents(editor)
+    targetRange.collapse(false)
+  }
+  targetRange.deleteContents()
+
+  const fragment = document.createDocumentFragment()
+  const lines = text.replace(/\r\n?/g, '\n').split('\n')
+  lines.forEach((line, index) => {
+    if (index > 0) {
+      fragment.appendChild(document.createElement('br'))
+    }
+    if (!line) {
+      return
+    }
+    const hasFormat = Boolean(format.themeColor || format.color || format.highlight !== undefined)
+    if (hasFormat) {
+      const wrapper = document.createElement('span')
+      applyPendingQuizRichTextFormat(wrapper, format)
+      wrapper.textContent = line
+      fragment.appendChild(wrapper)
+    } else {
+      fragment.appendChild(document.createTextNode(line))
+    }
+  })
+
+  const caretAnchor = document.createTextNode('')
+  fragment.appendChild(caretAnchor)
+  targetRange.insertNode(fragment)
+  placeCaretAfterNode(caretAnchor)
+  caretAnchor.remove()
+}
+
+function applyQuizRichTextCommand(editor: HTMLDivElement, command: QuizRichTextCommand) {
+  editor.focus({ preventScroll: true })
+  if (command.type === 'bulletList') {
+    convertSelectionToEditorList(editor)
+    return
+  }
+  const range = getEditorRange(editor)
+  if (command.type === 'bold' || command.type === 'italic') {
+    document.execCommand(command.type, false)
+    return
+  }
+
+  if (!range || range.collapsed || !range.toString()) {
+    return
+  }
+
+  if (command.type === 'highlight') {
+    formatEditorSelection(editor, { highlight: true }, (wrapper) => {
+      wrapper.classList.add('quiz-rich-highlight-text')
+    })
+  }
+  if (command.type === 'clearHighlight') {
+    formatEditorSelection(editor, { highlight: true }, (wrapper) => {
+      wrapper.classList.add('quiz-rich-plain-highlight-text')
+    })
+  }
+  if (command.type === 'color') {
+    formatEditorSelection(editor, { color: true }, (wrapper) => {
+      wrapper.style.color = command.value
+    })
+  }
+  if (command.type === 'themeColor') {
+    formatEditorSelection(editor, { color: true }, (wrapper) => {
+      wrapper.classList.add('quiz-rich-theme-text')
+    })
+  }
 }
 
 function placeCaretAfterNode(node: Node) {
@@ -886,16 +1098,16 @@ function placeCaretAfterNode(node: Node) {
   selection.addRange(range)
 }
 
-function insertPlainTextAtEditorSelection(editor: HTMLDivElement, text: string) {
-  const range = getEditorRange(editor)
-  if (!range) {
-    editor.appendChild(document.createTextNode(text))
+function placeCaretAtEndOfNode(node: Node) {
+  const selection = window.getSelection()
+  if (!selection) {
     return
   }
-  range.deleteContents()
-  const textNode = document.createTextNode(text)
-  range.insertNode(textNode)
-  placeCaretAfterNode(textNode)
+  const range = document.createRange()
+  range.selectNodeContents(node)
+  range.collapse(false)
+  selection.removeAllRanges()
+  selection.addRange(range)
 }
 
 type QuizRichTextEditorProps = {
@@ -910,6 +1122,7 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
   const lastSelectionRangeRef = useRef<Range | null>(null)
   const lastEmittedValueRef = useRef('')
   const lastAppliedValueRef = useRef('')
+  const pendingFormatRef = useRef<PendingQuizRichTextFormat>({})
   const normalizedValue = sanitizeQuizRichTextHtml(value)
 
   useEffect(() => {
@@ -974,38 +1187,50 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
     selection.addRange(range)
   }
 
-  const runCommand = (
-    command:
-      | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' | 'bulletList' }
-      | { type: 'color'; value: string },
-  ) => {
+  const runCommand = (command: QuizRichTextCommand) => {
     const editor = editorRef.current
     if (!editor) {
       return
     }
     restoreSelectionRange()
-    if (command.type === 'bulletList') {
-      applyQuizRichTextCommand(editor, command)
-      syncValue({ commitDom: true })
-      saveSelectionRange()
-      return
-    }
-    if (!hasSelectedEditorText(editor)) {
+    const range = getEditorRange(editor)
+    const hasSelectionText = Boolean(range && !range.collapsed && range.toString())
+    if (!hasSelectionText && (command.type === 'color' || command.type === 'themeColor' || command.type === 'highlight' || command.type === 'clearHighlight')) {
+      if (command.type === 'color') {
+        pendingFormatRef.current = {
+          ...pendingFormatRef.current,
+          color: command.value,
+          themeColor: false,
+        }
+      } else if (command.type === 'themeColor') {
+        pendingFormatRef.current = {
+          ...pendingFormatRef.current,
+          color: undefined,
+          themeColor: true,
+          highlight: false,
+        }
+      } else if (command.type === 'highlight') {
+        pendingFormatRef.current = {
+          ...pendingFormatRef.current,
+          highlight: true,
+        }
+      } else {
+        pendingFormatRef.current = {
+          ...pendingFormatRef.current,
+          highlight: false,
+        }
+      }
       editor.focus({ preventScroll: true })
       return
     }
+
     applyQuizRichTextCommand(editor, command)
-    syncValue()
-    lastSelectionRangeRef.current = null
-    window.getSelection()?.removeAllRanges()
+    pendingFormatRef.current = {}
+    syncValue({ commitDom: command.type !== 'bold' && command.type !== 'italic' })
+    saveSelectionRange()
   }
 
-  const runToolbarCommand = (
-    event: ReactMouseEvent<HTMLButtonElement>,
-    command:
-      | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' | 'bulletList' }
-      | { type: 'color'; value: string },
-  ) => {
+  const runToolbarCommand = (event: ReactMouseEvent<HTMLButtonElement>, command: QuizRichTextCommand) => {
     event.preventDefault()
     runCommand(command)
   }
@@ -1020,14 +1245,30 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
     if (!editor) {
       return
     }
-    insertPlainTextAtEditorSelection(editor, pastedText)
+    insertFormattedTextAtEditorSelection(editor, pastedText, pendingFormatRef.current)
+    pendingFormatRef.current = {}
     syncValue()
+    saveSelectionRange()
   }
 
   const handleBeforeInput = (event: FormEvent<HTMLDivElement>) => {
-    const inputType = (event.nativeEvent as InputEvent).inputType ?? ''
+    const nativeEvent = event.nativeEvent as InputEvent
+    const inputType = nativeEvent.inputType ?? ''
     if (inputType.startsWith('format')) {
       event.preventDefault()
+      return
+    }
+    const pendingFormat = pendingFormatRef.current
+    const hasPendingFormat = Boolean(pendingFormat.themeColor || pendingFormat.color || pendingFormat.highlight !== undefined)
+    if (inputType === 'insertText' && nativeEvent.data && hasPendingFormat) {
+      const editor = editorRef.current
+      if (!editor) {
+        return
+      }
+      event.preventDefault()
+      insertFormattedTextAtEditorSelection(editor, nativeEvent.data, pendingFormat)
+      syncValue()
+      saveSelectionRange()
     }
   }
 
@@ -1046,6 +1287,9 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
     if (key === 'i') {
       runCommand({ type: 'italic' })
     }
+    if (key === 'u') {
+      runCommand({ type: 'highlight' })
+    }
   }
 
   return (
@@ -1059,6 +1303,9 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
         </button>
         <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'highlight' })}>
           Surligner
+        </button>
+        <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'clearHighlight' })}>
+          Retirer surlignage
         </button>
         <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'bulletList' })}>
           Puces
@@ -1105,6 +1352,7 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
         }}
         onBlur={() => {
           isFocusedRef.current = false
+          pendingFormatRef.current = {}
           syncValue({ commitDom: true })
         }}
         onPaste={handlePaste}
@@ -1155,7 +1403,10 @@ const FLASH_FEELING_LABELS: Record<FlashFeelingFilter, string> = {
   good: 'Facile',
   easy: 'Très facile',
 }
+const QUIZ_SESSION_DIFFICULTY_OPTIONS: FlashFeelingFilter[] = ['none', 'again', 'hard', 'medium', 'good', 'easy']
+const DEFAULT_QUIZ_SESSION_DIFFICULTIES: FlashFeelingFilter[] = ['again', 'hard']
 const UNRATED_FEELING_LABEL = 'Non évalué'
+const COLLEGE_DETAIL_PAGE_SIZE = 12
 
 function QuizResultIcon({ result, className = 'inline-btn-icon' }: { result: QuizResult; className?: string }) {
   if (result === 'again') {
@@ -1221,23 +1472,6 @@ function ItemDetailFeelingIcon({ mastery }: { mastery: Mastery | 'Non évalué' 
   }
 
   return <HelpCircle className="item-detail-stat-svg" aria-hidden="true" />
-}
-
-function shuffleQuizCardIds(cards: QuizCard[], preferredCardId?: string) {
-  const ids = cards.map((card) => card.id)
-
-  for (let index = ids.length - 1; index > 0; index -= 1) {
-    const swapIndex = Math.floor(Math.random() * (index + 1))
-    const currentId = ids[index]
-    ids[index] = ids[swapIndex]
-    ids[swapIndex] = currentId
-  }
-
-  if (!preferredCardId || !ids.includes(preferredCardId)) {
-    return ids
-  }
-
-  return [preferredCardId, ...ids.filter((id) => id !== preferredCardId)]
 }
 
 const COLLEGES = [
@@ -1802,20 +2036,6 @@ function getLatestSheetReviewDate(sheets: ReferenceSheet[]) {
   return sheets.reduce<string | null>((latest, sheet) => getLatestIsoDate(latest, sheet.tracking.lastReviewedAt), null)
 }
 
-function formatDate(dateString: string | null) {
-  if (!dateString) {
-    return 'Jamais'
-  }
-  return new Intl.DateTimeFormat('fr-FR', { dateStyle: 'medium' }).format(new Date(dateString))
-}
-
-function formatDateTime(dateString: string) {
-  return new Intl.DateTimeFormat('fr-FR', {
-    dateStyle: 'short',
-    timeStyle: 'medium',
-  }).format(new Date(dateString))
-}
-
 function getAutoQuizQuestion(item: ItemBase): string {
   const short = item.shortDescription.trim()
   if (!short) {
@@ -1960,6 +2180,8 @@ type PersistStatePayload = {
   trackingState: TrackerState
   theme: Theme
   focusMode: boolean
+  dateFormat: DateFormatPreference
+  timeZone: TimeZonePreference
   youtubeDisplayMode: YouTubeDisplayMode
   shuffleQuizCards: boolean
   profile: ProfileState
@@ -1988,6 +2210,75 @@ function formatByteSize(bytes: number) {
   }
 
   return `${size.toFixed(size >= 10 ? 1 : 2)} ${units[unitIndex]}`
+}
+
+function normalizeDateFormatPreference(value: unknown): DateFormatPreference {
+  return value === 'fr-long' || value === 'iso' || value === 'fr-short' ? value : DEFAULT_DATE_FORMAT
+}
+
+function normalizeTimeZonePreference(value: unknown): TimeZonePreference {
+  return value === 'Europe/Paris' || value === 'Asia/Ho_Chi_Minh' || value === 'auto' ? value : DEFAULT_TIME_ZONE
+}
+
+function getIntlTimeZone(timeZone: TimeZonePreference) {
+  return timeZone === 'auto' ? undefined : timeZone
+}
+
+function formatIsoDateWithTimeZone(date: Date, timeZone: TimeZonePreference) {
+  const parts = new Intl.DateTimeFormat('fr-FR', {
+    timeZone: getIntlTimeZone(timeZone),
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(date)
+  const byType = Object.fromEntries(parts.map((part) => [part.type, part.value]))
+  return `${byType.year}-${byType.month}-${byType.day}`
+}
+
+function formatDateWithPreferences(
+  dateString: string | null,
+  dateFormat: DateFormatPreference,
+  timeZone: TimeZonePreference,
+) {
+  if (!dateString) {
+    return 'Jamais'
+  }
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) {
+    return 'Jamais'
+  }
+  if (dateFormat === 'iso') {
+    return formatIsoDateWithTimeZone(date, timeZone)
+  }
+  return new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: dateFormat === 'fr-long' ? 'long' : 'medium',
+    timeZone: getIntlTimeZone(timeZone),
+  }).format(date)
+}
+
+function formatDateTimeWithPreferences(
+  dateString: string,
+  dateFormat: DateFormatPreference,
+  timeZone: TimeZonePreference,
+) {
+  const date = new Date(dateString)
+  if (Number.isNaN(date.getTime())) {
+    return 'Date indisponible'
+  }
+  if (dateFormat === 'iso') {
+    const time = new Intl.DateTimeFormat('fr-FR', {
+      timeZone: getIntlTimeZone(timeZone),
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+    }).format(date)
+    return `${formatIsoDateWithTimeZone(date, timeZone)} ${time}`
+  }
+  return new Intl.DateTimeFormat('fr-FR', {
+    dateStyle: dateFormat === 'fr-long' ? 'long' : 'short',
+    timeStyle: 'medium',
+    timeZone: getIntlTimeZone(timeZone),
+  }).format(date)
 }
 
 function logOutgoingSavePayload(
@@ -2059,11 +2350,13 @@ function buildRemotePersistPayload(payload: PersistStatePayload): { body: string
       trackingState: trimTrackingStateForRemote(payload.trackingState, {
         maxActionLogsPerItem: strategy.maxActionLogsPerItem,
       }),
-      theme: payload.theme,
-      focusMode: payload.focusMode,
-      youtubeDisplayMode: payload.youtubeDisplayMode,
-      shuffleQuizCards: payload.shuffleQuizCards,
-      profile: sanitizeProfileForRemote(payload.profile, strategy.allowProfilePhoto),
+	      theme: payload.theme,
+	      focusMode: payload.focusMode,
+	      dateFormat: payload.dateFormat,
+	      timeZone: payload.timeZone,
+	      youtubeDisplayMode: payload.youtubeDisplayMode,
+	      shuffleQuizCards: payload.shuffleQuizCards,
+	      profile: sanitizeProfileForRemote(payload.profile, strategy.allowProfilePhoto),
     }
 
     const body = JSON.stringify(candidatePayload)
@@ -2086,12 +2379,14 @@ function parsePersistStatePayloadBody(body: string, authUser: AuthUser | null): 
       return null
     }
     return {
-      trackingState: parsed.trackingState as TrackerState,
-      theme: parsed.theme === 'dark' ? 'dark' : 'light',
-      focusMode: Boolean(parsed.focusMode),
-      youtubeDisplayMode: parsed.youtubeDisplayMode === 'external' ? 'external' : 'embed',
-      shuffleQuizCards: Boolean(parsed.shuffleQuizCards),
-      profile: normalizeProfileInput(parsed.profile, authUser),
+	      trackingState: parsed.trackingState as TrackerState,
+	      theme: parsed.theme === 'dark' ? 'dark' : 'light',
+	      focusMode: false,
+	      dateFormat: normalizeDateFormatPreference(parsed.dateFormat),
+	      timeZone: normalizeTimeZonePreference(parsed.timeZone),
+	      youtubeDisplayMode: parsed.youtubeDisplayMode === 'external' ? 'external' : 'embed',
+	      shuffleQuizCards: Boolean(parsed.shuffleQuizCards),
+	      profile: normalizeProfileInput(parsed.profile, authUser),
     }
   } catch {
     return null
@@ -2369,6 +2664,8 @@ function App() {
   const [youtubeDisplayMode, setYoutubeDisplayMode] = useState<YouTubeDisplayMode>('embed')
   const [shuffleQuizCards, setShuffleQuizCards] = useState<boolean>(false)
   const [focusMode, setFocusMode] = useState<boolean>(false)
+  const [dateFormat, setDateFormat] = useState<DateFormatPreference>(DEFAULT_DATE_FORMAT)
+  const [timeZone, setTimeZone] = useState<TimeZonePreference>(DEFAULT_TIME_ZONE)
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [search, setSearch] = useState('')
   const [globalSearch, setGlobalSearch] = useState('')
@@ -2379,6 +2676,8 @@ function App() {
   const [activeView, setActiveView] = useState<NavView>('dashboard')
   const [selectedCollegeDetail, setSelectedCollegeDetail] = useState<string | null>(null)
   const [collegeDetailFilter, setCollegeDetailFilter] = useState<CollegeDetailFilter>('all')
+  const [collegeDetailPage, setCollegeDetailPage] = useState(1)
+  const [collegesPageSort, setCollegesPageSort] = useState<CollegesPageSort>('name')
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [flashGeneratorScope, setFlashGeneratorScope] = useState<FlashGeneratorScope>('items')
   const [flashCollegeFilter, setFlashCollegeFilter] = useState<string>('ALL')
@@ -2415,7 +2714,8 @@ function App() {
   const [flashCreateError, setFlashCreateError] = useState('')
   const [draggedQuizCardId, setDraggedQuizCardId] = useState<string | null>(null)
   const [dragOverQuizCardId, setDragOverQuizCardId] = useState<string | null>(null)
-  const backupInputRef = useRef<HTMLInputElement | null>(null)
+  const avatarInputRef = useRef<HTMLInputElement | null>(null)
+  const [avatarUploadError, setAvatarUploadError] = useState('')
   const [hasLoadedRemoteState, setHasLoadedRemoteState] = useState(false)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
   const [authView, setAuthView] = useState<AuthView>('login')
@@ -2448,11 +2748,18 @@ function App() {
   const [quizSide, setQuizSide] = useState<'front' | 'back'>('front')
   const [quizFeedback, setQuizFeedback] = useState<QuizResult | null>(null)
   const [quizEditMode, setQuizEditMode] = useState(false)
+  const [quizSessionScope, setQuizSessionScope] = useState<QuizSessionScope>({ type: 'global' })
+  const [quizActiveCardKey, setQuizActiveCardKey] = useState<string | null>(null)
   const [quizSessionCardIds, setQuizSessionCardIds] = useState<string[]>([])
+  const [quizSessionSelectedColleges, setQuizSessionSelectedColleges] = useState<string[]>([])
+  const [quizSessionSelectedItems, setQuizSessionSelectedItems] = useState<number[]>([])
+  const [quizSessionSelectedDifficulties, setQuizSessionSelectedDifficulties] = useState<FlashFeelingFilter[]>([
+    ...DEFAULT_QUIZ_SESSION_DIFFICULTIES,
+  ])
   const [quizSessionStep, setQuizSessionStep] = useState<QuizSessionStep>('setup')
   const [quizSessionPreset, setQuizSessionPreset] = useState<QuizSessionPreset>('today')
   const [quizSessionMode, setQuizSessionMode] = useState<QuizSessionMode>('flashcards')
-  const [quizSessionDuration, setQuizSessionDuration] = useState(20)
+  const [quizSessionCardLimit, setQuizSessionCardLimit] = useState(20)
   const [quizSessionObjective, setQuizSessionObjective] = useState<QuizSessionObjective>('learning')
   const [quizSessionStartedAt, setQuizSessionStartedAt] = useState<number | null>(null)
   const [quizSessionResults, setQuizSessionResults] = useState<Record<string, QuizResult>>({})
@@ -2533,15 +2840,17 @@ function App() {
   const remotePayload = useMemo(
     () =>
       buildRemotePersistPayload({
-        trackingState,
-        theme,
-        focusMode,
-        youtubeDisplayMode,
-        shuffleQuizCards,
-        profile,
-      }),
-    [trackingState, theme, focusMode, youtubeDisplayMode, shuffleQuizCards, profile],
-  )
+	        trackingState,
+	        theme,
+	        focusMode,
+	        dateFormat,
+	        timeZone,
+	        youtubeDisplayMode,
+	        shuffleQuizCards,
+	        profile,
+	      }),
+	    [trackingState, theme, focusMode, dateFormat, timeZone, youtubeDisplayMode, shuffleQuizCards, profile],
+	  )
   const remotePayloadRef = useRef(remotePayload)
 
   useEffect(() => {
@@ -2711,22 +3020,26 @@ function App() {
 
         const remoteState = payload.state as
           | {
-              trackingState?: unknown
-              theme?: unknown
-              focusMode?: unknown
-              youtubeDisplayMode?: unknown
-              shuffleQuizCards?: unknown
-              profile?: unknown
+	              trackingState?: unknown
+	              theme?: unknown
+	              focusMode?: unknown
+	              dateFormat?: unknown
+	              timeZone?: unknown
+	              youtubeDisplayMode?: unknown
+	              shuffleQuizCards?: unknown
+	              profile?: unknown
               updatedAt?: unknown
             }
           | null
           | undefined
 
         let nextTrackingState = getInitialTrackingState()
-        let nextTheme: Theme = 'light'
-        let nextFocusMode = false
-        let nextYoutubeDisplayMode: YouTubeDisplayMode = 'embed'
-        let nextShuffleQuizCards = false
+	        let nextTheme: Theme = 'light'
+	        let nextFocusMode = false
+	        let nextDateFormat = DEFAULT_DATE_FORMAT
+	        let nextTimeZone = DEFAULT_TIME_ZONE
+	        let nextYoutubeDisplayMode: YouTubeDisplayMode = 'embed'
+	        let nextShuffleQuizCards = false
         let nextProfile = getProfileFromAuthUser(authUser)
         let remoteUpdatedAtMs = 0
         let nextLastSavedAt: string | null = null
@@ -2734,10 +3047,11 @@ function App() {
         if (remoteState && typeof remoteState === 'object') {
           if (remoteState.trackingState && typeof remoteState.trackingState === 'object') {
             nextTrackingState = remoteState.trackingState as TrackerState
-          }
-          nextTheme = remoteState.theme === 'dark' ? 'dark' : 'light'
-          nextFocusMode = Boolean(remoteState.focusMode)
-          nextYoutubeDisplayMode = remoteState.youtubeDisplayMode === 'external' ? 'external' : 'embed'
+	          }
+	          nextTheme = remoteState.theme === 'dark' ? 'dark' : 'light'
+	          nextDateFormat = normalizeDateFormatPreference(remoteState.dateFormat)
+	          nextTimeZone = normalizeTimeZonePreference(remoteState.timeZone)
+	          nextYoutubeDisplayMode = remoteState.youtubeDisplayMode === 'external' ? 'external' : 'embed'
           nextShuffleQuizCards = Boolean(remoteState.shuffleQuizCards)
           nextProfile = normalizeProfileInput(remoteState.profile, authUser)
           const updatedAtRaw = typeof remoteState.updatedAt === 'string' ? remoteState.updatedAt : null
@@ -2772,10 +3086,12 @@ function App() {
           }
         }
 
-        setTrackingState(nextTrackingState)
-        setTheme(nextTheme)
-        setFocusMode(nextFocusMode)
-        setYoutubeDisplayMode(nextYoutubeDisplayMode)
+	        setTrackingState(nextTrackingState)
+	        setTheme(nextTheme)
+	        setFocusMode(nextFocusMode)
+	        setDateFormat(nextDateFormat)
+	        setTimeZone(nextTimeZone)
+	        setYoutubeDisplayMode(nextYoutubeDisplayMode)
         setShuffleQuizCards(nextShuffleQuizCards)
         setProfile(nextProfile)
         setLastSavedAt(nextLastSavedAt)
@@ -2876,12 +3192,14 @@ function App() {
     authStatus,
     authUser?.id,
     hasLoadedRemoteState,
-    trackingState,
-    theme,
-    focusMode,
-    youtubeDisplayMode,
-    shuffleQuizCards,
-    profile,
+	    trackingState,
+	    theme,
+	    focusMode,
+	    dateFormat,
+	    timeZone,
+	    youtubeDisplayMode,
+	    shuffleQuizCards,
+	    profile,
   ])
 
   useEffect(() => {
@@ -4052,56 +4370,12 @@ function getPasswordStrengthMeta(password: string) {
     })
   }, [items, search, collegeFilter, masteryFilter, sortKey])
 
-  const suggestions = useMemo(() => {
-    const lowMastery = items
-      .filter((item) =>
-        item.tracking.assignedColleges.some((college) => {
-          const entry = item.tracking.byCollege[college]
-          return entry && MASTERY_SCORE[entry.mastery] <= MASTERY_SCORE.Moyen
-        }),
-      )
-      .sort((a, b) => a.progress - b.progress || a.itemNumber - b.itemNumber)
-      .slice(0, 8)
-
-    const stale = items
-      .filter((item) => item.tracking.assignedColleges.length > 0)
-      .filter((item) => {
-        if (!item.lastReviewDate) {
-          return true
-        }
-        const days = (Date.now() - new Date(item.lastReviewDate).getTime()) / (1000 * 60 * 60 * 24)
-        return days > 14
-      })
-      .sort((a, b) => {
-        if (!a.lastReviewDate) {
-          return -1
-        }
-        if (!b.lastReviewDate) {
-          return 1
-        }
-        return new Date(a.lastReviewDate).getTime() - new Date(b.lastReviewDate).getTime()
-      })
-      .slice(0, 8)
-
-    return { lowMastery, stale }
-  }, [items])
-
-  const focusCandidates = useMemo(() => {
-    const fromLow = suggestions.lowMastery.map((item) => item.itemNumber)
-    const fromStale = suggestions.stale.map((item) => item.itemNumber)
-    const merged = Array.from(new Set([...fromLow, ...fromStale]))
-    return merged.length > 0 ? merged : filteredAndSortedItems.map((item) => item.itemNumber)
-  }, [suggestions, filteredAndSortedItems])
-
   const selectedItem = useMemo(() => {
     if (selectedItemId === null) {
       return null
     }
-    if (focusMode && focusCandidates.length > 0 && !focusCandidates.includes(selectedItemId)) {
-      return items.find((item) => item.itemNumber === focusCandidates[0])
-    }
     return items.find((item) => item.itemNumber === selectedItemId)
-  }, [items, selectedItemId, focusMode, focusCandidates])
+  }, [items, selectedItemId])
 
   const effectiveSelectedItem = selectedItem ?? null
 
@@ -4138,18 +4412,7 @@ function getPasswordStrengthMeta(password: string) {
     [effectiveSelectedItem],
   )
 
-  const itemTableList = useMemo(() => {
-    if (!focusMode) {
-      return filteredAndSortedItems
-    }
-    if (effectiveSelectedItem) {
-      return filteredAndSortedItems.filter((item) => item.itemNumber === effectiveSelectedItem.itemNumber)
-    }
-    if (focusCandidates.length === 0) {
-      return filteredAndSortedItems
-    }
-    return filteredAndSortedItems.filter((item) => item.itemNumber === focusCandidates[0])
-  }, [focusMode, filteredAndSortedItems, effectiveSelectedItem, focusCandidates])
+  const itemTableList = filteredAndSortedItems
 
   const historyItem = useMemo(() => {
     if (historyItemId === null) {
@@ -4165,53 +4428,102 @@ function getPasswordStrengthMeta(password: string) {
     return items.find((item) => item.itemNumber === quizItemId) ?? null
   }, [quizItemId, items])
 
-  const quizSessionCards = useMemo(() => {
-    if (!quizItem) {
-      return []
-    }
-
-    const cardsById = new Map(quizItem.tracking.quiz.cards.map((card) => [card.id, card]))
-    const orderedCards = quizSessionCardIds
-      .map((cardId) => cardsById.get(cardId))
-      .filter((card): card is QuizCard => Boolean(card))
-    const orderedCardIds = new Set(orderedCards.map((card) => card.id))
-    const missingCards = quizItem.tracking.quiz.cards.filter((card) => !orderedCardIds.has(card.id))
-
-    return [...orderedCards, ...missingCards]
-  }, [quizItem, quizSessionCardIds])
-
-  const activeQuizCard = useMemo(() => {
-    if (!quizItem) {
-      return null
-    }
-    return (
-      quizSessionCards.find((card) => card.id === quizItem.tracking.quiz.activeCardId) ??
-      quizSessionCards[0] ??
-      null
+  const quizSessionAllEntries = useMemo<QuizSessionEntry[]>(() => {
+    return items.flatMap((item) =>
+      item.tracking.quiz.cards.map((card) => ({
+        sessionKey: `${item.itemNumber}:${card.id}`,
+        itemNumber: item.itemNumber,
+        item,
+        card,
+        colleges: item.tracking.assignedColleges,
+      })),
     )
-  }, [quizItem, quizSessionCards])
+  }, [items])
+
+  const quizSessionBaseEntries = useMemo(() => {
+    const entries = quizSessionAllEntries.filter((entry) => {
+      if (quizSessionScope.type === 'item') {
+        return entry.itemNumber === quizSessionScope.itemNumber
+      }
+      if (quizSessionScope.type === 'college') {
+        return entry.colleges.includes(quizSessionScope.college)
+      }
+      return true
+    })
+
+    if (quizSessionPreset === 'college' && quizSessionScope.type !== 'item' && quizSessionSelectedColleges.length > 0) {
+      return entries.filter((entry) => entry.colleges.some((college) => quizSessionSelectedColleges.includes(college)))
+    }
+
+    if (quizSessionPreset === 'difficulty' && quizSessionSelectedDifficulties.length > 0) {
+      return entries.filter((entry) => quizSessionSelectedDifficulties.includes(entry.card.lastResult ?? 'none'))
+    }
+
+    if (quizSessionPreset === 'items' && quizSessionScope.type !== 'item' && quizSessionSelectedItems.length > 0) {
+      return entries.filter((entry) => quizSessionSelectedItems.includes(entry.itemNumber))
+    }
+
+    return entries
+  }, [
+    quizSessionAllEntries,
+    quizSessionPreset,
+    quizSessionScope,
+    quizSessionSelectedColleges,
+    quizSessionSelectedDifficulties,
+    quizSessionSelectedItems,
+  ])
+
+  const quizSessionScopeEntries = useMemo(() => {
+    return quizSessionAllEntries.filter((entry) => {
+      if (quizSessionScope.type === 'item') {
+        return entry.itemNumber === quizSessionScope.itemNumber
+      }
+      if (quizSessionScope.type === 'college') {
+        return entry.colleges.includes(quizSessionScope.college)
+      }
+      return true
+    })
+  }, [quizSessionAllEntries, quizSessionScope])
+
+  const quizSessionCards = useMemo(() => {
+    const entriesByKey = new Map(quizSessionBaseEntries.map((entry) => [entry.sessionKey, entry]))
+    const orderedEntries = quizSessionCardIds
+      .map((cardKey) => entriesByKey.get(cardKey))
+      .filter((entry): entry is QuizSessionEntry => Boolean(entry))
+    const orderedKeys = new Set(orderedEntries.map((entry) => entry.sessionKey))
+    const missingEntries = quizSessionBaseEntries.filter((entry) => !orderedKeys.has(entry.sessionKey))
+
+    return [...orderedEntries, ...missingEntries]
+  }, [quizSessionBaseEntries, quizSessionCardIds])
+
+  const activeQuizSessionEntry = useMemo(() => {
+    return quizSessionCards.find((entry) => entry.sessionKey === quizActiveCardKey) ?? quizSessionCards[0] ?? null
+  }, [quizActiveCardKey, quizSessionCards])
+
+  const activeQuizCard = activeQuizSessionEntry?.card ?? null
+  const activeQuizItem = activeQuizSessionEntry?.item ?? quizItem
 
   const quizQuestion = useMemo(() => {
-    if (!quizItem) {
+    if (!activeQuizItem) {
       return ''
     }
     const custom = activeQuizCard?.question ?? ''
     if (hasQuizRichTextContent(custom)) {
       return sanitizeQuizRichTextHtml(custom)
     }
-    return getAutoQuizQuestion(quizItem)
-  }, [quizItem, activeQuizCard])
+    return getAutoQuizQuestion(activeQuizItem)
+  }, [activeQuizItem, activeQuizCard])
 
   const quizAnswer = useMemo(() => {
-    if (!quizItem) {
+    if (!activeQuizItem) {
       return ''
     }
     const custom = activeQuizCard?.answer ?? ''
     if (hasQuizRichTextContent(custom)) {
       return sanitizeQuizRichTextHtml(custom)
     }
-    return quizItem.shortDescription
-  }, [quizItem, activeQuizCard])
+    return activeQuizItem.shortDescription
+  }, [activeQuizItem, activeQuizCard])
 
   const quizCurrentCardFeeling = useMemo(() => {
     if (!activeQuizCard?.lastResult) {
@@ -4224,30 +4536,142 @@ function getPasswordStrengthMeta(password: string) {
   }, [activeQuizCard])
 
   const quizSessionMetrics = useMemo(() => {
-    const cards = quizSessionCards.length > 0 ? quizSessionCards : quizItem?.tracking.quiz.cards ?? []
+    const cards = quizSessionCards
     const answeredEntries = cards
-      .map((card) => quizSessionResults[card.id])
+      .map((entry) => quizSessionResults[entry.sessionKey])
       .filter((result): result is QuizResult => Boolean(result))
     const correctCount = answeredEntries.filter((result) => result === 'good' || result === 'easy').length
-    const mistakeCards = cards.filter((card) => {
-      const result = quizSessionResults[card.id]
+    const mediumCount = answeredEntries.filter((result) => result === 'medium').length
+    const errorCount = answeredEntries.filter((result) => result === 'again' || result === 'hard').length
+    const mistakeCards = cards.filter((entry) => {
+      const result = quizSessionResults[entry.sessionKey]
       return result === 'again' || result === 'hard'
     })
-    const activeIndex = activeQuizCard ? Math.max(0, cards.findIndex((card) => card.id === activeQuizCard.id)) : 0
+    const activeIndex = activeQuizSessionEntry ? Math.max(0, cards.findIndex((entry) => entry.sessionKey === activeQuizSessionEntry.sessionKey)) : 0
     const elapsedSeconds = quizSessionStartedAt ? Math.max(0, Math.round((Date.now() - quizSessionStartedAt) / 1000)) : 0
     const elapsedMinutes = Math.floor(elapsedSeconds / 60)
     const elapsedRemainder = String(elapsedSeconds % 60).padStart(2, '0')
+    const answeredCount = answeredEntries.length
 
     return {
       cards,
       activeIndex,
-      answeredCount: answeredEntries.length,
+      answeredCount,
       correctCount,
+      mediumCount,
+      errorCount,
       mistakeCards,
-      score: cards.length === 0 ? 0 : Math.round((correctCount / cards.length) * 100),
+      completionRate: cards.length === 0 ? 0 : Math.round((answeredCount / cards.length) * 100),
+      errorRate: answeredCount === 0 ? 0 : Math.round((errorCount / answeredCount) * 100),
+      score: answeredCount === 0 ? 0 : Math.round((correctCount / answeredCount) * 100),
+      elapsedSeconds,
       elapsedLabel: `${elapsedMinutes}:${elapsedRemainder}`,
     }
-  }, [activeQuizCard, quizItem, quizSessionCards, quizSessionResults, quizSessionStartedAt])
+  }, [activeQuizSessionEntry, quizSessionCards, quizSessionResults, quizSessionStartedAt])
+
+  const quizSessionScopeLabel = useMemo(() => {
+    if (quizSessionScope.type === 'item') {
+      return `Révision item #${quizSessionScope.itemNumber}`
+    }
+    if (quizSessionScope.type === 'college') {
+      return `Révision collège ${getFlashCollegeDisplayName(quizSessionScope.college)}`
+    }
+    return 'Révision globale'
+  }, [quizSessionScope])
+
+  const quizSessionActiveCards = useMemo(() => {
+    if (quizSessionStep === 'errors') {
+      return quizSessionMetrics.mistakeCards.length > 0
+        ? quizSessionMetrics.mistakeCards
+        : activeQuizSessionEntry
+          ? [activeQuizSessionEntry]
+          : []
+    }
+    return quizSessionMetrics.cards
+  }, [activeQuizSessionEntry, quizSessionMetrics.cards, quizSessionMetrics.mistakeCards, quizSessionStep])
+
+  const quizSessionActiveIndex = useMemo(() => {
+    if (!activeQuizSessionEntry) {
+      return 0
+    }
+    return Math.max(0, quizSessionActiveCards.findIndex((entry) => entry.sessionKey === activeQuizSessionEntry.sessionKey))
+  }, [activeQuizSessionEntry, quizSessionActiveCards])
+
+  const activeQuizCollegeLabel = useMemo(() => {
+    const colleges = activeQuizItem?.tracking.assignedColleges ?? []
+    if (colleges.length === 0) {
+      return quizSessionScopeLabel
+    }
+    const displayNames = colleges.slice(0, 2).map(getFlashCollegeDisplayName)
+    return colleges.length > 2 ? `${displayNames.join(', ')} +${colleges.length - 2}` : displayNames.join(', ')
+  }, [activeQuizItem, quizSessionScopeLabel])
+
+  const quizSessionDifficultyCounts = useMemo(() => {
+    return QUIZ_SESSION_DIFFICULTY_OPTIONS.reduce<Record<FlashFeelingFilter, number>>((acc, difficulty) => {
+      acc[difficulty] = quizSessionScopeEntries.filter((entry) => (entry.card.lastResult ?? 'none') === difficulty).length
+      return acc
+    }, {} as Record<FlashFeelingFilter, number>)
+  }, [quizSessionScopeEntries])
+
+  const quizSessionDifficultyDetail = useMemo(() => {
+    if (quizSessionSelectedDifficulties.length === 0) {
+      return 'Tous les niveaux'
+    }
+    const cardsCount = quizSessionSelectedDifficulties.reduce((total, difficulty) => total + quizSessionDifficultyCounts[difficulty], 0)
+    return `${cardsCount} carte${cardsCount > 1 ? 's' : ''}`
+  }, [quizSessionDifficultyCounts, quizSessionSelectedDifficulties])
+
+  const quizSessionCollegeDetail = useMemo(() => {
+    if (quizSessionScope.type === 'item') {
+      const college = activeQuizItem?.tracking.assignedColleges[0]
+      return college ? getFlashCollegeDisplayName(college) : 'Aucun collège'
+    }
+    if (quizSessionScope.type === 'college') {
+      return getFlashCollegeDisplayName(quizSessionScope.college)
+    }
+    return quizSessionSelectedColleges.length > 0
+      ? `${quizSessionSelectedColleges.length} collège${quizSessionSelectedColleges.length > 1 ? 's' : ''}`
+      : 'Tous les collèges'
+  }, [activeQuizItem, quizSessionScope, quizSessionSelectedColleges])
+
+  const quizSessionItemDetail = useMemo(() => {
+    if (quizSessionScope.type === 'item') {
+      return `Item #${quizSessionScope.itemNumber}`
+    }
+    return quizSessionSelectedItems.length > 0
+      ? `${quizSessionSelectedItems.length} item${quizSessionSelectedItems.length > 1 ? 's' : ''}`
+      : 'Tous les items'
+  }, [quizSessionScope, quizSessionSelectedItems])
+
+  const quizSessionCollegeOptions = useMemo(() => {
+    const scopedColleges = new Set<string>()
+    quizSessionScopeEntries.forEach((entry) => entry.colleges.forEach((college) => scopedColleges.add(college)))
+    const orderedColleges = quizSessionScope.type === 'college' ? [quizSessionScope.college] : [...COLLEGES]
+    scopedColleges.forEach((college) => {
+      if (!orderedColleges.includes(college as CollegeName)) {
+        orderedColleges.push(college as CollegeName)
+      }
+    })
+    return orderedColleges.sort((a, b) => getFlashCollegeDisplayName(a).localeCompare(getFlashCollegeDisplayName(b), 'fr'))
+  }, [quizSessionScope, quizSessionScopeEntries])
+
+  const quizSessionItemOptions = useMemo(() => {
+    const itemNumbers = new Set(quizSessionScopeEntries.map((entry) => entry.itemNumber))
+    return items
+      .filter((item) => itemNumbers.has(item.itemNumber))
+      .sort((a, b) => a.itemNumber - b.itemNumber)
+  }, [items, quizSessionScopeEntries])
+
+  const quizSessionReviewColleges = useMemo(() => {
+    const counts = new Map<string, number>()
+    quizSessionMetrics.mistakeCards.forEach((entry) => {
+      entry.colleges.forEach((college) => counts.set(college, (counts.get(college) ?? 0) + 1))
+    })
+    return Array.from(counts.entries())
+      .map(([college, count]) => ({ college, count }))
+      .sort((a, b) => b.count - a.count || getFlashCollegeDisplayName(a.college).localeCompare(getFlashCollegeDisplayName(b.college), 'fr'))
+      .slice(0, 3)
+  }, [quizSessionMetrics.mistakeCards])
 
   const allFlashcards = useMemo<GlobalFlashcard[]>(() => {
     return items.flatMap((item) =>
@@ -4469,12 +4893,12 @@ function getPasswordStrengthMeta(password: string) {
   }, [generatedFlashcards, flashGeneratedSessionResults])
 
   useEffect(() => {
-    if (!quizItem || !activeQuizCard) {
+    if (!activeQuizSessionEntry || !activeQuizCard) {
       return
     }
-    void loadQuizCardImagesOnDemand(quizItem.itemNumber, activeQuizCard)
+    void loadQuizCardImagesOnDemand(activeQuizSessionEntry.itemNumber, activeQuizCard)
   }, [
-    quizItem?.itemNumber,
+    activeQuizSessionEntry?.itemNumber,
     activeQuizCard?.id,
     activeQuizCard?.frontImageDataUrl,
     activeQuizCard?.hasFrontImageDataUrl,
@@ -4583,17 +5007,37 @@ function getPasswordStrengthMeta(password: string) {
       const completed = collegeItems.filter(
         (entry) => entry.reviews > 0 && MASTERY_SCORE[entry.mastery] >= MASTERY_SCORE.Bon,
       ).length
-      const completion = collegeItems.length === 0 ? 0 : Math.round((completed / collegeItems.length) * 100)
-      const totalReviews = collegeItems.reduce((sum, entry) => sum + entry.reviews, 0)
+	      const completion = collegeItems.length === 0 ? 0 : Math.round((completed / collegeItems.length) * 100)
+	      const totalReviews = collegeItems.reduce((sum, entry) => sum + entry.reviews, 0)
+	      const lastReviewedAt =
+	        collegeItems
+	          .map((entry) => entry.lastReviewedAt)
+	          .filter((date): date is string => Boolean(date))
+	          .sort((a, b) => new Date(b).getTime() - new Date(a).getTime())[0] ?? null
 
-      return {
-        college,
-        items: collegeItems,
-        completion,
-        totalReviews,
+	      return {
+	        college,
+	        items: collegeItems,
+	        completion,
+	        totalReviews,
+	        lastReviewedAt,
       }
     })
   }, [items])
+
+  const sortedCollegesViewRows = useMemo(() => {
+    return [...collegesViewRows].sort((a, b) => {
+      if (collegesPageSort === 'progress') {
+        return b.completion - a.completion || getFlashCollegeDisplayName(a.college).localeCompare(getFlashCollegeDisplayName(b.college), 'fr')
+      }
+      if (collegesPageSort === 'recentReviews') {
+        const aTime = a.lastReviewedAt ? new Date(a.lastReviewedAt).getTime() : 0
+        const bTime = b.lastReviewedAt ? new Date(b.lastReviewedAt).getTime() : 0
+        return bTime - aTime || getFlashCollegeDisplayName(a.college).localeCompare(getFlashCollegeDisplayName(b.college), 'fr')
+      }
+      return getFlashCollegeDisplayName(a.college).localeCompare(getFlashCollegeDisplayName(b.college), 'fr')
+    })
+  }, [collegesPageSort, collegesViewRows])
 
   const selectedCollegeDetailData = useMemo(() => {
     if (!selectedCollegeDetail) {
@@ -4622,18 +5066,18 @@ function getPasswordStrengthMeta(password: string) {
             const value: Record<QuizResult, number> = { again: 1, hard: 2, medium: 3, good: 4, easy: 5 }
             return sum + value[feeling]
           }, 0) / scoredCards.length
-    const globalFeeling =
+    const globalFeelingMeta =
       averageResult === null
-        ? FLASH_FEELING_LABELS.none
+        ? { label: FLASH_FEELING_LABELS.none, tone: 'none' }
         : averageResult >= 4.5
-          ? 'Très facile'
+          ? { label: 'Très facile', tone: 'very-easy' }
           : averageResult >= 3.2
-            ? 'Facile'
+            ? { label: 'Facile', tone: 'easy' }
             : averageResult >= 2.4
-              ? 'Moyen'
+              ? { label: 'Moyen', tone: 'medium' }
               : averageResult >= 1.6
-                ? 'Difficile'
-                : 'À revoir'
+                ? { label: 'Difficile', tone: 'hard' }
+                : { label: 'À revoir', tone: 'again' }
 
     const upcomingReviews = [...row.items]
       .sort((a, b) => {
@@ -4654,7 +5098,8 @@ function getPasswordStrengthMeta(password: string) {
       flashcardCount: collegeFlashcards.length,
       averageProgress: row.items.length === 0 ? 0 : Math.round(row.items.reduce((sum, item) => sum + item.progress, 0) / row.items.length),
       resultCounts,
-      globalFeeling,
+      globalFeeling: globalFeelingMeta.label,
+      globalFeelingTone: globalFeelingMeta.tone,
       upcomingReviews,
     }
   }, [allFlashcards, collegesViewRows, selectedCollegeDetail])
@@ -4674,6 +5119,23 @@ function getPasswordStrengthMeta(password: string) {
     }
     return selectedCollegeDetailData.items
   }, [collegeDetailFilter, selectedCollegeDetailData])
+
+  const collegeDetailPageCount = Math.max(1, Math.ceil(selectedCollegeDetailItems.length / COLLEGE_DETAIL_PAGE_SIZE))
+  const safeCollegeDetailPage = Math.min(collegeDetailPage, collegeDetailPageCount)
+  const paginatedCollegeDetailItems = useMemo(() => {
+    const start = (safeCollegeDetailPage - 1) * COLLEGE_DETAIL_PAGE_SIZE
+    return selectedCollegeDetailItems.slice(start, start + COLLEGE_DETAIL_PAGE_SIZE)
+  }, [safeCollegeDetailPage, selectedCollegeDetailItems])
+
+  useEffect(() => {
+    setCollegeDetailPage(1)
+  }, [collegeDetailFilter, selectedCollegeDetail])
+
+  useEffect(() => {
+    if (collegeDetailPage > collegeDetailPageCount) {
+      setCollegeDetailPage(collegeDetailPageCount)
+    }
+  }, [collegeDetailPage, collegeDetailPageCount])
 
   const weeklyReviewSeries = useMemo(() => {
     const yearStart = new Date(HABIT_TRACKER_YEAR, 0, 1)
@@ -4964,6 +5426,8 @@ function getPasswordStrengthMeta(password: string) {
       })
   }, [allFlashcards, flashCollegeFilter, flashCollegeLevelFilter, flashCollegeSearch, flashCollegeSort, items])
 
+  const defaultFlashSessionItemNumber = flashItemCards[0]?.itemNumber ?? null
+
   const flashCardsListCollegeMeta = useMemo(() => {
     if (!flashCardsListCollege) {
       return null
@@ -5109,33 +5573,53 @@ function getPasswordStrengthMeta(password: string) {
     }, 360)
   }
 
-  function openQuiz(itemNumber: number, cardId?: string, options: { allowDisabled?: boolean } = {}) {
-    const item = items.find((entry) => entry.itemNumber === itemNumber)
-    if (!item || (item.tracking.quiz.cards.length === 0 && !options.allowDisabled)) {
+  function openQuizCardEditor(itemNumber: number, cardId: string) {
+    updateItemQuizConfig(itemNumber, { activeCardId: cardId })
+    setQuizItemId(itemNumber)
+    setQuizSessionScope({ type: 'item', itemNumber })
+    setQuizActiveCardKey(`${itemNumber}:${cardId}`)
+    setQuizSide('front')
+    setQuizFeedback(null)
+    setQuizEditMode(true)
+    setQuizSessionCardIds([`${itemNumber}:${cardId}`])
+    setQuizSessionSelectedColleges([])
+    setQuizSessionSelectedItems([])
+    setQuizSessionSelectedDifficulties([...DEFAULT_QUIZ_SESSION_DIFFICULTIES])
+    setQuizSessionStep('setup')
+    setQuizSessionResults({})
+    setQuizSessionStartedAt(null)
+  }
+
+  function openQuizSessionSetup(scope: QuizSessionScope) {
+    const entries = quizSessionAllEntries.filter((entry) => {
+      if (scope.type === 'item') {
+        return entry.itemNumber === scope.itemNumber
+      }
+      if (scope.type === 'college') {
+        return entry.colleges.includes(scope.college)
+      }
+      return true
+    })
+    const firstEntry = entries[0]
+    if (!firstEntry) {
       return
     }
-
-    const cards = item.tracking.quiz.cards
-    const orderedCardIds = shuffleQuizCards ? shuffleQuizCardIds(cards, cardId) : cards.map((card) => card.id)
-    const activeCardId =
-      cardId && orderedCardIds.includes(cardId)
-        ? cardId
-        : shuffleQuizCards
-          ? orderedCardIds[0]
-          : orderedCardIds.includes(item.tracking.quiz.activeCardId ?? '')
-            ? item.tracking.quiz.activeCardId
-            : orderedCardIds[0]
-
-    setQuizSessionCardIds(orderedCardIds)
-    if (activeCardId && item.tracking.quiz.activeCardId !== activeCardId) {
-      updateItemQuizConfig(itemNumber, { activeCardId })
-    }
-    triggerQuizButtonPulse(itemNumber)
-    setQuizItemId(itemNumber)
+    updateItemQuizConfig(firstEntry.itemNumber, { activeCardId: firstEntry.card.id })
+    setQuizItemId(firstEntry.itemNumber)
+    setQuizSessionScope(scope)
+    setQuizActiveCardKey(firstEntry.sessionKey)
     setQuizSide('front')
     setQuizFeedback(null)
     setQuizEditMode(false)
+    setQuizSessionCardIds(entries.map((entry) => entry.sessionKey))
+    setQuizSessionSelectedColleges(scope.type === 'college' ? [scope.college] : [])
+    setQuizSessionSelectedItems([])
+    setQuizSessionSelectedDifficulties([...DEFAULT_QUIZ_SESSION_DIFFICULTIES])
     setQuizSessionStep('setup')
+    setQuizSessionPreset('today')
+    setQuizSessionMode('flashcards')
+    setQuizSessionCardLimit(20)
+    setQuizSessionObjective('learning')
     setQuizSessionResults({})
     setQuizSessionStartedAt(null)
   }
@@ -5150,7 +5634,9 @@ function getPasswordStrengthMeta(password: string) {
 
   function closeQuiz() {
     setQuizItemId(null)
+    setQuizActiveCardKey(null)
     setQuizSessionCardIds([])
+    setQuizSessionSelectedColleges([])
     setQuizSide('front')
     setQuizFeedback(null)
     setQuizEditMode(false)
@@ -5173,41 +5659,46 @@ function getPasswordStrengthMeta(password: string) {
     if (!quizItem) {
       return
     }
-    const cards = quizSessionCards.length > 0 ? quizSessionCards : quizItem.tracking.quiz.cards
-    if (cards.length <= 1) {
+    const entries = quizSessionCards.filter((entry) => entry.itemNumber === quizItem.itemNumber)
+    if (entries.length <= 1) {
       return
     }
-    const currentIndex = cards.findIndex((card) => card.id === quizItem.tracking.quiz.activeCardId)
+    const currentIndex = activeQuizSessionEntry
+      ? entries.findIndex((entry) => entry.sessionKey === activeQuizSessionEntry.sessionKey)
+      : entries.findIndex((entry) => entry.card.id === quizItem.tracking.quiz.activeCardId)
     const safeIndex = currentIndex === -1 ? 0 : currentIndex
     const nextIndex =
-      direction === 'next' ? (safeIndex + 1) % cards.length : (safeIndex - 1 + cards.length) % cards.length
-    updateItemQuizConfig(quizItem.itemNumber, { activeCardId: cards[nextIndex].id })
+      direction === 'next' ? (safeIndex + 1) % entries.length : (safeIndex - 1 + entries.length) % entries.length
+    const nextEntry = entries[nextIndex]
+    updateItemQuizConfig(nextEntry.itemNumber, { activeCardId: nextEntry.card.id })
+    setQuizActiveCardKey(nextEntry.sessionKey)
     setQuizSide('front')
     setQuizFeedback(null)
   }
 
   function startQuizSession() {
-    if (!quizItem || quizSessionMetrics.cards.length === 0) {
+    if (quizSessionMetrics.cards.length === 0) {
       return
     }
-    const difficultCards = quizSessionMetrics.cards.filter((card) => card.lastResult === 'again' || card.lastResult === 'hard')
     const scopedCards =
-      quizSessionPreset === 'hard' && difficultCards.length > 0
-        ? difficultCards
-        : quizSessionPreset === 'random' || shuffleQuizCards
-          ? shuffleQuizCardIds(quizSessionMetrics.cards)
-              .map((cardId) => quizSessionMetrics.cards.find((card) => card.id === cardId))
-              .filter((card): card is QuizCard => Boolean(card))
-          : quizSessionMetrics.cards
-    const firstCard = scopedCards[0]
+      quizSessionPreset === 'random' || shuffleQuizCards
+        ? [...quizSessionMetrics.cards]
+            .map((entry) => ({ entry, rank: Math.random() }))
+            .sort((a, b) => a.rank - b.rank)
+            .map(({ entry }) => entry)
+        : quizSessionMetrics.cards
+    const limitedCards = quizSessionCardLimit === 0 ? scopedCards : scopedCards.slice(0, quizSessionCardLimit)
+    const firstCard = limitedCards[0]
     setQuizSessionStartedAt(Date.now())
     setQuizSessionResults({})
-    setQuizSessionCardIds(scopedCards.map((card) => card.id))
+    setQuizSessionCardIds(limitedCards.map((entry) => entry.sessionKey))
     setQuizFeedback(null)
     setQuizSide('front')
     setQuizSessionStep('question')
-    if (firstCard && quizItem.tracking.quiz.activeCardId !== firstCard.id) {
-      updateItemQuizConfig(quizItem.itemNumber, { activeCardId: firstCard.id })
+    if (firstCard) {
+      setQuizItemId(firstCard.itemNumber)
+      setQuizActiveCardKey(firstCard.sessionKey)
+      updateItemQuizConfig(firstCard.itemNumber, { activeCardId: firstCard.card.id })
     }
   }
 
@@ -5217,54 +5708,32 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSessionStep('answer')
   }
 
-  function navigateQuizSessionCard(direction: 'prev' | 'next') {
-    if (!quizItem) {
-      return
-    }
-    const scopedCards =
-      quizSessionStep === 'errors' && quizSessionMetrics.mistakeCards.length > 0
-        ? quizSessionMetrics.mistakeCards
-        : quizSessionMetrics.cards
-    if (scopedCards.length <= 1) {
-      return
-    }
-    const currentIndex = activeQuizCard ? scopedCards.findIndex((card) => card.id === activeQuizCard.id) : 0
-    const safeIndex = currentIndex === -1 ? 0 : currentIndex
-    const nextIndex =
-      direction === 'next' ? (safeIndex + 1) % scopedCards.length : (safeIndex - 1 + scopedCards.length) % scopedCards.length
-    updateItemQuizConfig(quizItem.itemNumber, { activeCardId: scopedCards[nextIndex].id })
-    setQuizSide('front')
-    setQuizFeedback(null)
-    setQuizSessionStep(quizSessionStep === 'errors' ? 'errors' : 'question')
-  }
-
   function handleQuizSessionResult(result: QuizResult) {
-    if (!quizItem || !activeQuizCard) {
+    if (!activeQuizSessionEntry || !activeQuizCard) {
       return
     }
 
     const cardId = activeQuizCard.id
-    const scopedCards =
-      quizSessionStep === 'errors' && quizSessionMetrics.mistakeCards.length > 0
-        ? quizSessionMetrics.mistakeCards
-        : quizSessionMetrics.cards
-    const currentIndex = scopedCards.findIndex((card) => card.id === cardId)
-    const nextCard = currentIndex >= 0 ? scopedCards[currentIndex + 1] : null
+    const cardKey = activeQuizSessionEntry.sessionKey
+    const currentIndex = quizSessionActiveCards.findIndex((entry) => entry.sessionKey === cardKey)
+    const nextCard = currentIndex >= 0 ? quizSessionActiveCards[currentIndex + 1] : null
 
     setQuizFeedback(result)
-    setQuizSessionResults((current) => ({ ...current, [cardId]: result }))
-    applyQuizResultToCard(quizItem.itemNumber, cardId, result)
+    setQuizSessionResults((current) => ({ ...current, [cardKey]: result }))
+    applyQuizResultToCard(activeQuizSessionEntry.itemNumber, cardId, result)
 
     window.setTimeout(() => {
       setQuizFeedback((current) => (current === result ? null : current))
       if (nextCard) {
-        updateItemQuizConfig(quizItem.itemNumber, { activeCardId: nextCard.id })
+        setQuizItemId(nextCard.itemNumber)
+        setQuizActiveCardKey(nextCard.sessionKey)
+        updateItemQuizConfig(nextCard.itemNumber, { activeCardId: nextCard.card.id })
         setQuizSide('front')
         setQuizSessionStep(quizSessionStep === 'errors' ? 'errors' : 'question')
         return
       }
       setQuizSide('front')
-      setQuizSessionStep(quizSessionStep === 'errors' ? 'complete' : 'summary')
+      setQuizSessionStep('summary')
     }, 460)
   }
 
@@ -5507,54 +5976,10 @@ function getPasswordStrengthMeta(password: string) {
     startGeneratedFlashSession(keys)
   }
 
-  function startCollegeGeneratedQuiz(college: string, options?: { randomize?: boolean }) {
-    const selectedFeelings: FlashFeelingFilter[] =
-      flashCollegeLevelFilter === 'ALL' ? ['none', 'again', 'hard', 'medium', 'good', 'easy'] : [flashCollegeLevelFilter]
-    const keys = buildQuizGeneratorCardKeys({
-      scope: 'colleges',
-      selectedItems: [],
-      selectedColleges: [college],
-      selectedFeelings,
-      prioritizeWeak: !options?.randomize,
-      questionCount: flashQuestionCount,
-      randomize: options?.randomize,
-    })
-
-    setFlashGeneratorScope('colleges')
-    setFlashSelectedColleges([college])
-    setFlashSelectedFeelings(selectedFeelings)
-    setFlashPrioritizeWeak(!options?.randomize)
-    startGeneratedFlashSession(keys)
-    setFlashGeneratorModalOpen(true)
-    setFlashGeneratorStep(3)
-  }
-
-  function startItemGeneratedQuiz(itemNumber: number, options?: { randomize?: boolean }) {
-    const selectedFeelings: FlashFeelingFilter[] =
-      flashCollegeLevelFilter === 'ALL' ? ['none', 'again', 'hard', 'medium', 'good', 'easy'] : [flashCollegeLevelFilter]
-    const keys = buildQuizGeneratorCardKeys({
-      scope: 'items',
-      selectedItems: [itemNumber],
-      selectedColleges: [],
-      selectedFeelings,
-      prioritizeWeak: !options?.randomize,
-      questionCount: flashQuestionCount,
-      randomize: options?.randomize,
-    })
-
-    setFlashGeneratorScope('items')
-    setFlashSelectedItems([itemNumber])
-    setFlashSelectedFeelings(selectedFeelings)
-    setFlashPrioritizeWeak(!options?.randomize)
-    startGeneratedFlashSession(keys)
-    setFlashGeneratorModalOpen(true)
-    setFlashGeneratorStep(3)
-  }
-
-  function startSelectedCollegeGeneratedQuiz() {
-    const fallbackCollege = flashCollegeCards[0]?.college ?? COLLEGES[0]
-    const college = flashCollegeFilter === 'ALL' ? fallbackCollege : flashCollegeFilter
-    startCollegeGeneratedQuiz(college)
+  function openItemQuizGenerator(itemNumber: number) {
+    triggerQuizButtonPulse(itemNumber)
+    setActiveView('flashcards')
+    openQuizSessionSetup({ type: 'item', itemNumber })
   }
 
   function openCollegeFlashcardsList(college: string) {
@@ -6404,6 +6829,38 @@ function getPasswordStrengthMeta(password: string) {
     }
   }
 
+  async function handleAvatarUploadFile(file: File | null) {
+    setAvatarUploadError('')
+    if (!file) {
+      return
+    }
+    if (!file.type.startsWith('image/')) {
+      setAvatarUploadError('Fichier invalide: choisis une image.')
+      return
+    }
+    if (file.size > QUIZ_CARD_IMAGE_MAX_BYTES) {
+      setAvatarUploadError('Image trop lourde: maximum 1 Mo.')
+      return
+    }
+    try {
+      const imageDataUrl = await fileToDataUrl(file)
+      if (imageDataUrl.length > REMOTE_MAX_PROFILE_PHOTO_URL_LENGTH) {
+        setAvatarUploadError('Image trop lourde après conversion.')
+        return
+      }
+      setProfile((current) => ({ ...current, photoUrl: imageDataUrl }))
+      setAvatarUploadError('')
+    } catch {
+      setAvatarUploadError("Impossible d'importer l'avatar.")
+    }
+  }
+
+  function handleAvatarDrop(event: ReactDragEvent<HTMLButtonElement>) {
+    event.preventDefault()
+    event.currentTarget.classList.remove('is-drag-over')
+    void handleAvatarUploadFile(event.dataTransfer.files?.[0] ?? null)
+  }
+
   function openQuizCardImagePicker(itemNumber: number, cardId: string, slot: QuizImageSlot) {
     setQuizImageFeedback(slot, { error: '' })
     const picker = document.createElement('input')
@@ -6550,27 +7007,20 @@ function getPasswordStrengthMeta(password: string) {
     setUsefulLinkInputError('')
   }
 
-  function nextFocusItem() {
-    if (focusCandidates.length === 0) {
-      return
-    }
-    const currentIndex = focusCandidates.indexOf(effectiveSelectedItem?.itemNumber ?? focusCandidates[0])
-    const nextIndex = currentIndex === -1 ? 0 : (currentIndex + 1) % focusCandidates.length
-    setSelectedItemId(focusCandidates[nextIndex])
-  }
-
   function exportBackup() {
     const payload: BackupPayload = {
       app: 'med-learning-tracker',
       version: 1,
       exportedAt: new Date().toISOString(),
       data: {
-        trackingState,
-        theme,
-        focusMode,
-        youtubeDisplayMode,
-        shuffleQuizCards,
-        profile,
+	        trackingState,
+	        theme,
+	        focusMode,
+	        dateFormat,
+	        timeZone,
+	        youtubeDisplayMode,
+	        shuffleQuizCards,
+	        profile,
       },
     }
 
@@ -6584,41 +7034,6 @@ function getPasswordStrengthMeta(password: string) {
     anchor.click()
     document.body.removeChild(anchor)
     URL.revokeObjectURL(url)
-  }
-
-  async function importBackup(file: File) {
-    try {
-      const content = await file.text()
-      const parsed = JSON.parse(content) as BackupPayload
-      if (
-        parsed?.app !== 'med-learning-tracker' ||
-        parsed?.version !== 1 ||
-        !parsed?.data?.trackingState ||
-        typeof parsed?.data?.trackingState !== 'object'
-      ) {
-        window.alert('Fichier de sauvegarde invalide.')
-        return
-      }
-
-      setTrackingState(parsed.data.trackingState)
-      setTheme(parsed.data.theme === 'dark' ? 'dark' : 'light')
-      setFocusMode(Boolean(parsed.data.focusMode))
-      setYoutubeDisplayMode(parsed.data.youtubeDisplayMode === 'external' ? 'external' : 'embed')
-      setShuffleQuizCards(Boolean(parsed.data.shuffleQuizCards))
-      if (parsed.data.profile) {
-        setProfile({
-          firstName: parsed.data.profile.firstName ?? '',
-          lastName: parsed.data.profile.lastName ?? '',
-          email: parsed.data.profile.email ?? '',
-          photoUrl: parsed.data.profile.photoUrl ?? '',
-          password: parsed.data.profile.password ?? '',
-          avatarGradient: parsed.data.profile.avatarGradient ?? AVATAR_GRADIENTS[0],
-        })
-      }
-      window.alert('Sauvegarde chargée avec succès.')
-    } catch {
-      window.alert('Impossible de lire ce fichier de sauvegarde.')
-    }
   }
 
   const isAuthBootstrapping = authStatus === 'authed' && !hasLoadedRemoteState
@@ -6880,8 +7295,14 @@ function getPasswordStrengthMeta(password: string) {
     }
     return megabytes >= 10 ? `${Math.round(megabytes)} Mo` : `${megabytes.toFixed(1)} Mo`
   }
-  const storageUsagePercent = Math.min(100, Math.round((storageTotalBytes / storageLimitBytes) * 1000) / 10)
-  const storageBreakdownItems = storageUsage
+	  const storageUsagePercent = Math.min(100, Math.round((storageTotalBytes / storageLimitBytes) * 1000) / 10)
+	  const storageUsageTone = storageUsagePercent >= 90 ? 'danger' : storageUsagePercent >= 75 ? 'warning' : 'ok'
+	  const storageMeasuredAtLabel = storageUsage?.measuredAt
+	    ? formatDateTimeWithPreferences(storageUsage.measuredAt, dateFormat, timeZone)
+	    : storageUsageStatus === 'ready'
+	      ? 'Mesure serveur sans date'
+	      : 'Non mesuré'
+	  const storageBreakdownItems = storageUsage
     ? [
         { label: 'Données actives', value: storageUsage.breakdown.currentStateBytes },
         { label: 'Images', value: storageUsage.breakdown.imagesBytes },
@@ -6894,8 +7315,10 @@ function getPasswordStrengthMeta(password: string) {
         { label: 'Quiz', value: fallbackStorageQuizBytes },
         { label: 'Sauvegardes', value: fallbackStorageBackupBytes },
       ]
-  const settingsEmail = profile.email || authUser?.email || ''
-  const settingsDisplayName = [profile.firstName, profile.lastName].filter(Boolean).join(' ') || authUser?.displayName || 'Setup'
+	  const settingsEmail = profile.email || authUser?.email || ''
+	  const settingsDisplayName = [profile.firstName, profile.lastName].filter(Boolean).join(' ') || authUser?.displayName || 'Setup'
+	  const formatPreferredDate = (dateString: string | null) => formatDateWithPreferences(dateString, dateFormat, timeZone)
+	  const formatPreferredDateTime = (dateString: string) => formatDateTimeWithPreferences(dateString, dateFormat, timeZone)
 
   return (
     <div
@@ -7281,18 +7704,23 @@ function getPasswordStrengthMeta(password: string) {
                   <p>Choisissez une action pour rester régulier.</p>
                 </div>
                 <div className="dashboard-action-grid">
-                  <button
-                    type="button"
-                    className="dashboard-action-tile dashboard-action-quiz"
-                    onClick={() => {
-                      setActiveView('flashcards')
-                      jumpToQuizGeneratorSetup()
-                    }}
-                  >
-                    <Play className="dashboard-action-icon" aria-hidden="true" />
-                    <strong>Lancer un quiz</strong>
-                    <small>Testez vos connaissances</small>
-                  </button>
+	                  <button
+	                    type="button"
+	                    className="dashboard-action-tile dashboard-action-quiz"
+	                    onClick={() => {
+	                      openQuizSessionSetup({ type: 'global' })
+	                    }}
+	                    disabled={defaultFlashSessionItemNumber === null}
+	                    title={
+	                      defaultFlashSessionItemNumber === null
+	                        ? 'Ajoute une flashcard pour lancer une révision'
+	                        : 'Lancer une révision globale'
+	                    }
+	                  >
+	                    <Play className="dashboard-action-icon" aria-hidden="true" />
+	                    <strong>Lancer une révision</strong>
+	                    <small>Flashcards et quiz guidés</small>
+	                  </button>
                   <button type="button" className="dashboard-action-tile dashboard-action-items" onClick={() => setActiveView('items')}>
                     <List className="dashboard-action-icon" aria-hidden="true" />
                     <strong>Réviser mes items</strong>
@@ -7399,18 +7827,37 @@ function getPasswordStrengthMeta(password: string) {
                 </option>
               ))}
             </select>
-            <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}>
-              <option value="itemAsc">Trier : Item croissant</option>
-              <option value="itemDesc">Trier : Item décroissant</option>
-              <option value="reviews">Trier : Révisions</option>
-              <option value="progress">Trier : Progression</option>
-              <option value="lastReviewAsc">Trier : Dernière révision croissante</option>
-              <option value="lastReviewDesc">Trier : Dernière révision décroissante</option>
-            </select>
-          </div>
+	            <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}>
+	              <option value="itemAsc">Trier : Item croissant</option>
+	              <option value="itemDesc">Trier : Item décroissant</option>
+	              <option value="reviews">Trier : Révisions</option>
+	              <option value="progress">Trier : Progression</option>
+	              <option value="lastReviewAsc">Trier : Dernière révision croissante</option>
+	              <option value="lastReviewDesc">Trier : Dernière révision décroissante</option>
+	            </select>
+	            <button
+	              type="button"
+	              className="ghost-btn items-filter-reset"
+	              onClick={() => {
+	                setSearch('')
+	                setCollegeFilter('ALL')
+	                setMasteryFilter('ALL')
+	                setSortKey('reviews')
+	              }}
+	              disabled={search === '' && collegeFilter === 'ALL' && masteryFilter === 'ALL' && sortKey === 'reviews'}
+	            >
+	              Réinitialiser
+	            </button>
+	          </div>
 
-          <div className="items-list-wrap" role="list" aria-label="Liste des items">
-            {itemTableList.map((item) => {
+	          <div className="items-list-wrap" role="list" aria-label="Liste des items">
+	            {itemTableList.length === 0 ? (
+	              <div className="items-empty-state" role="status">
+	                <strong>Aucun item trouvé</strong>
+	                <p>Aucun item ne correspond aux filtres actuels.</p>
+	              </div>
+	            ) : null}
+	            {itemTableList.map((item) => {
               const hasVisualMarker = Boolean(item.tracking.itemIcon || item.tracking.itemColor || item.tracking.itemLabel)
               const progressPercent = Math.round(item.progress * 100)
               const progressTier =
@@ -7623,16 +8070,16 @@ function getPasswordStrengthMeta(password: string) {
                   <button
                     type="button"
                     className={`quiz-trigger-btn ${quizPulseByItem[effectiveSelectedItem.itemNumber] ? 'pulse' : ''}`}
-                    onClick={() => openQuiz(effectiveSelectedItem.itemNumber)}
+                    onClick={() => openItemQuizGenerator(effectiveSelectedItem.itemNumber)}
                     disabled={effectiveSelectedItem.tracking.quiz.cards.length === 0}
-                    title={
-                      effectiveSelectedItem.tracking.quiz.cards.length > 0
-                        ? "Lancer le quiz de l'item"
-                        : 'Ajoute une flashcard pour lancer le quiz'
-                    }
-                  >
-                    Lancer le quiz
-                  </button>
+	                    title={
+	                      effectiveSelectedItem.tracking.quiz.cards.length > 0
+	                        ? "Lancer une révision avec les flashcards de cet item"
+	                        : 'Ajoute une flashcard pour lancer une révision'
+	                    }
+	                  >
+	                    Lancer une révision
+	                  </button>
                   <button
                     type="button"
                     className="ghost-btn item-detail-icon-btn"
@@ -7651,12 +8098,7 @@ function getPasswordStrengthMeta(password: string) {
                   >
                     <Xmark className="item-detail-action-icon" aria-hidden="true" />
                   </button>
-                  {focusMode ? (
-                    <button className="ghost-btn" onClick={nextFocusItem}>
-                      Item focus suivant
-                    </button>
-                  ) : null}
-                </div>
+	                </div>
               </div>
 
               <div className="meta-grid item-detail-stat-grid">
@@ -7681,7 +8123,7 @@ function getPasswordStrengthMeta(password: string) {
                   <span className="item-detail-stat-icon" aria-hidden="true">
                     <ItemDetailStatIcon name="lastReview" />
                   </span>
-                  <p className="item-detail-stat-value">{formatDate(effectiveSelectedItem.lastReviewDate)}</p>
+                  <p className="item-detail-stat-value">{formatPreferredDate(effectiveSelectedItem.lastReviewDate)}</p>
                   <p className="meta-label">Dernière révision</p>
                 </div>
                 <div
@@ -7737,7 +8179,7 @@ function getPasswordStrengthMeta(password: string) {
                 <div className="item-detail-tabs" aria-label="Navigation détail item">
                   <button type="button" className={itemDetailTab === 'tracking' ? 'active' : ''} onClick={() => setItemDetailTab('tracking')}>Suivi des révisions</button>
                   <button type="button" className={itemDetailTab === 'resources' ? 'active' : ''} onClick={() => setItemDetailTab('resources')}>Ressources</button>
-                  <button type="button" className={itemDetailTab === 'flashcards' ? 'active' : ''} onClick={() => setItemDetailTab('flashcards')}>Flashcards & Quiz</button>
+	                  <button type="button" className={itemDetailTab === 'flashcards' ? 'active' : ''} onClick={() => setItemDetailTab('flashcards')}>Flashcards</button>
                   <button type="button" className={itemDetailTab === 'assignments' ? 'active' : ''} onClick={() => setItemDetailTab('assignments')}>Assignations</button>
                 </div>
 
@@ -7928,12 +8370,7 @@ function getPasswordStrengthMeta(password: string) {
                           type="button"
                           className="quiz-card-select"
                             title={getQuizRichTextPlainText(card.question) || `Carte ${index + 1}`}
-                            onClick={() => {
-                              updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
-                                activeCardId: card.id,
-                              })
-                              openQuiz(effectiveSelectedItem.itemNumber, card.id, { allowDisabled: true })
-                            }}
+                            onClick={() => openQuizCardEditor(effectiveSelectedItem.itemNumber, card.id)}
                           >
                             {cardLabel}
                         </button>
@@ -7952,14 +8389,7 @@ function getPasswordStrengthMeta(password: string) {
                             type="button"
                             className="quiz-card-edit"
                             aria-label={`Modifier ${cardLabel}`}
-                            onClick={() => {
-                              setQuizSide('front')
-                              updateItemQuizConfig(effectiveSelectedItem.itemNumber, {
-                                activeCardId: card.id,
-                              })
-                              setQuizItemId(effectiveSelectedItem.itemNumber)
-                              setQuizEditMode(true)
-                            }}
+                            onClick={() => openQuizCardEditor(effectiveSelectedItem.itemNumber, card.id)}
                           >
                             <EditPencil className="inline-btn-icon" aria-hidden="true" />
                             Modifier
@@ -8165,17 +8595,21 @@ function getPasswordStrengthMeta(password: string) {
                           )
                         }
                       />
-                      <button
-                        type="button"
-                        className="remove-ref-btn"
-                        onClick={() =>
-                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
-                            currentSheets.filter((currentSheet) => currentSheet.id !== sheet.id),
-                          )
-                        }
-                      >
-                        -
-                      </button>
+	                      <button
+	                        type="button"
+	                        className="remove-ref-btn"
+	                        title="Supprimer cette fiche LISA"
+	                        aria-label="Supprimer cette fiche LISA"
+	                        onClick={() => {
+	                          const ok = window.confirm('Supprimer cette fiche LISA ? Cette action est irréversible.')
+	                          if (!ok) return
+	                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
+	                            currentSheets.filter((currentSheet) => currentSheet.id !== sheet.id),
+	                          )
+	                        }}
+	                      >
+	                        <Trash className="inline-btn-icon" aria-hidden="true" />
+	                      </button>
                     </div>
 
                     <div className="control-row">
@@ -8367,17 +8801,21 @@ function getPasswordStrengthMeta(password: string) {
                           )
                         }
                       />
-                      <button
-                        type="button"
-                        className="remove-ref-btn"
-                        onClick={() =>
-                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
-                            currentSheets.filter((currentSheet) => currentSheet.id !== sheet.id),
-                          )
-                        }
-                      >
-                        -
-                      </button>
+	                      <button
+	                        type="button"
+	                        className="remove-ref-btn"
+	                        title="Supprimer cette fiche plateforme"
+	                        aria-label="Supprimer cette fiche plateforme"
+	                        onClick={() => {
+	                          const ok = window.confirm('Supprimer cette fiche plateforme ? Cette action est irréversible.')
+	                          if (!ok) return
+	                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
+	                            currentSheets.filter((currentSheet) => currentSheet.id !== sheet.id),
+	                          )
+	                        }}
+	                      >
+	                        <Trash className="inline-btn-icon" aria-hidden="true" />
+	                      </button>
                     </div>
 
                     <div className="control-row">
@@ -8535,7 +8973,7 @@ function getPasswordStrengthMeta(password: string) {
                   .reverse()
                   .map((log, idx) => (
                     <div key={`${log.at}-${idx}`} className="history-log-row">
-                      <p className="history-log-date">{formatDateTime(log.at)}</p>
+                      <p className="history-log-date">{formatPreferredDateTime(log.at)}</p>
                       <p className="history-log-action">{log.action}</p>
                     </div>
                   ))
@@ -8769,31 +9207,37 @@ function getPasswordStrengthMeta(password: string) {
             ) : (
               <section className={`quiz-session-shell quiz-session-${quizSessionStep}`}>
                 {quizSessionStep === 'setup' ? (
-                  <>
-                    <div className="quiz-session-kicker">
-                      <span>1. Choisissez votre session</span>
-                      <button type="button" className="ghost-btn quiz-session-close" onClick={closeQuiz}>
-                        Quitter
-                      </button>
-                    </div>
-                    <p className="quiz-session-subtitle">Adaptez votre session à vos objectifs et au temps dont vous disposez.</p>
-                    <div className="quiz-session-setup-panel">
-                      <div className="quiz-session-presets" aria-label="Nouvelle session">
-                        {[
-                          { id: 'today', icon: Learning, title: 'À réviser aujourd’hui', detail: `${quizSessionMetrics.cards.length} cartes`, badge: 'Recommandé' },
-                          { id: 'hard', icon: WarningTriangle, title: 'Cartes difficiles', detail: `${quizSessionMetrics.mistakeCards.length} cartes` },
-                          { id: 'subject', icon: Page, title: 'Par matière', detail: quizItem.tracking.assignedColleges[0] ?? 'Choisir une matière' },
-                          { id: 'random', icon: Refresh, title: 'Cartes aléatoires', detail: 'Toutes les matières' },
-                          { id: 'custom', icon: Plus, title: 'Nouveau quiz', detail: 'Créer un quiz personnalisé' },
-                        ].map((preset) => {
+	                  <>
+	                    <div className="quiz-session-kicker">
+		                      <span>1. Choisissez votre révision</span>
+	                      <button type="button" className="ghost-btn quiz-session-close" onClick={closeQuiz}>
+	                        Quitter
+	                      </button>
+	                    </div>
+	                    <p className="quiz-session-scope-label">{quizSessionScopeLabel}</p>
+		                    <p className="quiz-session-subtitle">Adaptez votre révision à vos objectifs et au temps dont vous disposez.</p>
+	                    <div className="quiz-session-setup-panel">
+		                      <div className="quiz-session-presets" aria-label="Nouvelle révision">
+			                        {[
+			                          { id: 'today', icon: Learning, title: 'À réviser aujourd’hui', detail: `${quizSessionMetrics.cards.length} cartes`, badge: 'Recommandé' },
+			                          { id: 'difficulty', icon: WarningTriangle, title: 'Par difficulté', detail: quizSessionDifficultyDetail },
+			                          { id: 'college', icon: Page, title: 'Par collège', detail: quizSessionCollegeDetail },
+			                          { id: 'random', icon: Refresh, title: 'Cartes aléatoires', detail: quizSessionScope.type === 'global' ? 'Toutes les flashcards' : quizSessionScopeLabel },
+			                          { id: 'items', icon: List, title: 'Par items', detail: quizSessionItemDetail },
+		                        ].map((preset) => {
                           const PresetIcon = preset.icon
                           return (
                             <button
-                              key={preset.id}
-                              type="button"
-                              className={`quiz-session-preset ${quizSessionPreset === preset.id ? 'active' : ''}`}
-                              onClick={() => setQuizSessionPreset(preset.id as QuizSessionPreset)}
-                            >
+	                              key={preset.id}
+	                              type="button"
+	                              className={`quiz-session-preset ${quizSessionPreset === preset.id ? 'active' : ''}`}
+	                              onClick={() => {
+	                                if (preset.id === 'difficulty' && quizSessionSelectedDifficulties.length === 0) {
+	                                  setQuizSessionSelectedDifficulties([...DEFAULT_QUIZ_SESSION_DIFFICULTIES])
+	                                }
+	                                setQuizSessionPreset(preset.id as QuizSessionPreset)
+	                              }}
+	                            >
                               <span className="quiz-session-preset-icon">
                                 <PresetIcon className="ui-icon" aria-hidden="true" />
                               </span>
@@ -8803,10 +9247,79 @@ function getPasswordStrengthMeta(password: string) {
                               </span>
                               {preset.badge ? <em>{preset.badge}</em> : null}
                               {quizSessionPreset === preset.id ? <CheckCircle className="quiz-session-check" aria-hidden="true" /> : null}
-                            </button>
-                          )
-                        })}
-                      </div>
+	                            </button>
+		                          )
+		                        })}
+			                        {quizSessionPreset === 'difficulty' ? (
+			                          <div className="quiz-session-subject-picker">
+			                            <span>Difficultés incluses</span>
+			                            <div className="quiz-session-subject-list">
+			                              {QUIZ_SESSION_DIFFICULTY_OPTIONS.map((difficulty) => (
+			                                <label key={`quiz-session-difficulty-${difficulty}`}>
+			                                  <input
+			                                    type="checkbox"
+			                                    checked={quizSessionSelectedDifficulties.includes(difficulty)}
+			                                    onChange={() =>
+			                                      setQuizSessionSelectedDifficulties((current) =>
+			                                        current.includes(difficulty)
+			                                          ? current.filter((entry) => entry !== difficulty)
+			                                          : [...current, difficulty],
+			                                      )
+			                                    }
+			                                  />
+			                                  <span>{`${FLASH_FEELING_LABELS[difficulty]} (${quizSessionDifficultyCounts[difficulty]})`}</span>
+			                                </label>
+			                              ))}
+			                            </div>
+			                          </div>
+			                        ) : null}
+			                        {quizSessionPreset === 'college' && quizSessionScope.type === 'global' ? (
+		                          <div className="quiz-session-subject-picker">
+		                            <span>Collèges inclus</span>
+		                            <div className="quiz-session-subject-list">
+		                              {quizSessionCollegeOptions.map((college) => (
+		                                <label key={`quiz-session-subject-${college}`}>
+		                                  <input
+		                                    type="checkbox"
+	                                    checked={quizSessionSelectedColleges.includes(college)}
+	                                    onChange={() =>
+	                                      setQuizSessionSelectedColleges((current) =>
+	                                        current.includes(college)
+	                                          ? current.filter((entry) => entry !== college)
+	                                          : [...current, college],
+	                                      )
+	                                    }
+	                                  />
+	                                  <span>{getFlashCollegeDisplayName(college)}</span>
+		                                </label>
+		                              ))}
+		                            </div>
+		                          </div>
+		                        ) : null}
+		                        {quizSessionPreset === 'items' && quizSessionScope.type !== 'item' ? (
+		                          <div className="quiz-session-subject-picker">
+		                            <span>Items inclus</span>
+		                            <div className="quiz-session-subject-list quiz-session-item-list">
+		                              {quizSessionItemOptions.map((item) => (
+		                                <label key={`quiz-session-item-${item.itemNumber}`} title={`Item #${item.itemNumber} - ${item.shortDescription}`}>
+		                                  <input
+		                                    type="checkbox"
+		                                    checked={quizSessionSelectedItems.includes(item.itemNumber)}
+		                                    onChange={() =>
+		                                      setQuizSessionSelectedItems((current) =>
+		                                        current.includes(item.itemNumber)
+		                                          ? current.filter((entry) => entry !== item.itemNumber)
+		                                          : [...current, item.itemNumber],
+		                                      )
+		                                    }
+		                                  />
+		                                  <span>{`#${item.itemNumber} ${item.shortDescription}`}</span>
+		                                </label>
+		                              ))}
+		                            </div>
+		                          </div>
+		                        ) : null}
+	                      </div>
                       <div className="quiz-session-options">
                         <label>
                           Mode
@@ -8821,34 +9334,36 @@ function getPasswordStrengthMeta(password: string) {
                             <button
                               type="button"
                               className={quizSessionMode === 'quiz' ? 'active' : ''}
-                              onClick={() => setQuizSessionMode('quiz')}
+                              disabled
+                              title="Le mode quiz arrive bientôt"
+                              onClick={() => setQuizSessionMode('flashcards')}
                             >
                               Quiz
                             </button>
                           </span>
                         </label>
-                        <label>
-                          Durée
-                          <span className="quiz-session-chips">
-                            {[15, 20, 30].map((duration) => (
-                              <button
-                                key={duration}
-                                type="button"
-                                className={quizSessionDuration === duration ? 'active' : ''}
-                                onClick={() => setQuizSessionDuration(duration)}
-                              >
-                                {duration} min
-                              </button>
-                            ))}
-                            <button
-                              type="button"
-                              className={quizSessionDuration === 0 ? 'active' : ''}
-                              onClick={() => setQuizSessionDuration(0)}
-                            >
-                              Perso.
-                            </button>
-                          </span>
-                        </label>
+	                        <label>
+	                          Nombre de cartes
+	                          <span className="quiz-session-chips">
+	                            <button
+	                              type="button"
+	                              className={quizSessionCardLimit === 0 ? 'active' : ''}
+	                              onClick={() => setQuizSessionCardLimit(0)}
+	                            >
+	                              Toutes
+	                            </button>
+	                            {[10, 20, 30].map((cardCount) => (
+	                              <button
+	                                key={cardCount}
+	                                type="button"
+	                                className={quizSessionCardLimit === cardCount ? 'active' : ''}
+	                                onClick={() => setQuizSessionCardLimit(cardCount)}
+	                              >
+	                                {cardCount}
+	                              </button>
+	                            ))}
+	                          </span>
+	                        </label>
                         <label>
                           Objectif
                           <span className="quiz-session-segment">
@@ -8859,13 +9374,15 @@ function getPasswordStrengthMeta(password: string) {
                             >
                               Apprentissage
                             </button>
-                            <button
-                              type="button"
-                              className={quizSessionObjective === 'evaluation' ? 'active' : ''}
-                              onClick={() => setQuizSessionObjective('evaluation')}
-                            >
-                              Évaluation
-                            </button>
+	                            <button
+	                              type="button"
+	                              className={quizSessionObjective === 'evaluation' ? 'active' : ''}
+	                              disabled
+	                              title="Le mode évaluation arrive bientôt"
+	                              onClick={() => setQuizSessionObjective('learning')}
+	                            >
+	                              Évaluation
+	                            </button>
                           </span>
                         </label>
                         <button
@@ -8884,69 +9401,62 @@ function getPasswordStrengthMeta(password: string) {
 
                 {quizSessionStep === 'question' || quizSessionStep === 'answer' || quizSessionStep === 'errors' ? (
                   <>
-                    <div className="quiz-session-kicker">
-                      <span>
-                        {quizSessionStep === 'errors'
-                          ? '7. Revue des erreurs'
-                          : quizSessionStep === 'answer'
-                            ? '3. Révélez & apprenez'
-                            : '2. Découvrez la carte'}
-                      </span>
-                      <button type="button" className="ghost-btn quiz-session-close" onClick={closeQuiz}>
-                        Quitter
+	                    <div className="quiz-session-kicker">
+	                      <span>
+	                        {quizSessionStep === 'errors'
+	                          ? 'Revue des erreurs'
+	                          : quizSessionStep === 'answer'
+	                            ? 'Réponse'
+	                            : 'Question'}
+	                      </span>
+	                      <button type="button" className="ghost-btn quiz-session-close" onClick={closeQuiz}>
+	                        Quitter
                       </button>
                     </div>
-                    <p className="quiz-session-subtitle">
-                      {quizSessionStep === 'errors'
-                        ? 'Repassez vos erreurs pour transformer vos faiblesses en forces.'
-                        : quizSessionStep === 'answer'
-                          ? 'Comprenez, mémorisez, et ancrez la connaissance.'
-                          : 'Prenez le temps de réfléchir avant de révéler la réponse.'}
-                    </p>
-                    <div className={`quiz-study-stage quiz-study-stage-${quizSessionStep}`}>
-                      <div className="quiz-session-progress">
+	                    <p className="quiz-session-subtitle">
+	                      {quizSessionStep === 'errors'
+	                        ? 'Repassez uniquement les cartes manquées pendant cette révision.'
+	                        : quizSessionStep === 'answer'
+	                          ? 'Notez honnêtement votre réponse pour obtenir un bilan utile.'
+	                          : 'Prenez le temps de réfléchir avant de révéler la réponse.'}
+	                    </p>
+	                    <div className={`quiz-study-stage quiz-study-stage-${quizSessionStep}`}>
+	                      <div className="quiz-session-progress">
                         <span
                           style={{
-                            width: `${Math.max(
-                              4,
-                              Math.round(
-                                ((quizSessionMetrics.activeIndex + 1) / Math.max(1, quizSessionMetrics.cards.length)) * 100,
-                              ),
-                            )}%`,
-                          }}
-                        />
-                        <small>
-                          {quizSessionMetrics.activeIndex + 1} / {Math.max(1, quizSessionMetrics.cards.length)}
-                        </small>
-                      </div>
-                      <button type="button" className="quiz-session-nav prev" onClick={() => navigateQuizSessionCard('prev')}>
-                        <NavArrowLeft className="ui-icon" aria-hidden="true" />
-                      </button>
-                      <article className={`quiz-study-card ${quizSessionStep === 'answer' ? 'is-answer' : ''}`}>
-                        <div className="quiz-study-card-meta">
-                          <span>{quizItem.tracking.assignedColleges[0] ?? 'Item'}</span>
-                          {quizCurrentCardFeeling ? <small>{quizCurrentCardFeeling.label}</small> : <small>Carte active</small>}
-                          <Star className="quiz-study-star" aria-hidden="true" />
-                        </div>
+	                            width: `${Math.max(
+	                              4,
+	                              Math.round(
+	                                ((quizSessionActiveIndex + 1) / Math.max(1, quizSessionActiveCards.length)) * 100,
+	                              ),
+	                            )}%`,
+	                          }}
+	                        />
+	                        <small>
+	                          {quizSessionActiveIndex + 1} / {Math.max(1, quizSessionActiveCards.length)}
+	                        </small>
+	                      </div>
+		                      <article className={`quiz-study-card ${quizSessionStep === 'answer' ? 'is-answer' : ''}`}>
+		                        <div className="quiz-study-card-meta">
+		                          <span>{activeQuizCollegeLabel}</span>
+		                          {quizCurrentCardFeeling ? <small>{quizCurrentCardFeeling.label}</small> : <small>Carte active</small>}
+		                          <Star className="quiz-study-star" aria-hidden="true" />
+		                        </div>
                         <div className="quiz-study-card-body">
                           {quizSessionStep === 'question' ? (
                             <div
                               className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizQuestion))} quiz-rich-rendered`}
                               dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizQuestion) }}
                             />
-                          ) : (
-                            <div className="quiz-study-answer">
-                              <div
-                                className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizAnswer))} quiz-rich-rendered`}
-                                dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizAnswer) }}
-                              />
-                              <button type="button" className="quiz-study-explanation">
-                                Explication détaillée
-                                <span aria-hidden="true">⌄</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
+	                          ) : (
+	                            <div className="quiz-study-answer">
+	                              <div
+	                                className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizAnswer))} quiz-rich-rendered`}
+	                                dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizAnswer) }}
+	                              />
+	                            </div>
+	                          )}
+	                        </div>
                         {(quizSessionStep === 'question' && activeQuizCard?.frontImageDataUrl) ||
                         ((quizSessionStep === 'answer' || quizSessionStep === 'errors') && activeQuizCard?.backImageDataUrl) ? (
                           <img
@@ -8965,15 +9475,12 @@ function getPasswordStrengthMeta(password: string) {
                                 quizSessionStep === 'question' ? 'Illustration du recto' : 'Illustration du verso',
                               )
                             }
-                          />
-                        ) : null}
-                      </article>
-                      <button type="button" className="quiz-session-nav next" onClick={() => navigateQuizSessionCard('next')}>
-                        <NavArrowRight className="ui-icon" aria-hidden="true" />
-                      </button>
-                      {quizSessionStep === 'question' ? (
-                        <button type="button" className="quiz-session-reveal" onClick={revealQuizAnswer}>
-                          <Eye className="inline-btn-icon" aria-hidden="true" />
+	                          />
+	                        ) : null}
+	                      </article>
+	                      {quizSessionStep === 'question' ? (
+	                        <button type="button" className="quiz-session-reveal" onClick={revealQuizAnswer}>
+	                          <Eye className="inline-btn-icon" aria-hidden="true" />
                           Afficher la réponse
                         </button>
                       ) : (
@@ -8987,67 +9494,87 @@ function getPasswordStrengthMeta(password: string) {
                           <button type="button" className="quiz-rate-btn medium" onClick={() => handleQuizSessionResult('medium')}>
                             Moyen
                           </button>
-                          <button type="button" className="quiz-rate-btn good" onClick={() => handleQuizSessionResult('good')}>
-                            Facile
-                          </button>
-                        </div>
-                      )}
-                    </div>
+	                          <button type="button" className="quiz-rate-btn good" onClick={() => handleQuizSessionResult('good')}>
+	                            Facile
+	                          </button>
+	                          <button type="button" className="quiz-rate-btn easy" onClick={() => handleQuizSessionResult('easy')}>
+	                            Très facile
+	                          </button>
+	                        </div>
+	                      )}
+	                    </div>
                   </>
                 ) : null}
 
                 {quizSessionStep === 'summary' ? (
                   <>
                     <div className="quiz-session-kicker">
-                      <span>6. Résumé de session</span>
-                      <button type="button" className="ghost-btn quiz-session-close" onClick={closeQuiz}>
-                        Quitter
-                      </button>
-                    </div>
-                    <p className="quiz-session-subtitle">Analysez vos performances et vos points d’amélioration.</p>
-                    <div className="quiz-summary-grid">
-                      <section className="quiz-score-card">
-                        <div className="quiz-score-ring" style={{ '--quiz-score': `${quizSessionMetrics.score}%` } as CSSProperties}>
-                          <span>{quizSessionMetrics.score}%</span>
-                        </div>
-                        <strong>{quizSessionMetrics.score >= 70 ? 'Excellent travail !' : 'Session terminée'}</strong>
-                        <small>Vous avez bien progressé.</small>
-                      </section>
-                      <section className="quiz-summary-stats">
-                        <p>
-                          <span>Cartes vues</span>
-                          <strong>{quizSessionMetrics.cards.length}</strong>
-                        </p>
-                        <p>
-                          <span>Réponses correctes</span>
-                          <strong>{quizSessionMetrics.correctCount}</strong>
-                        </p>
-                        <p>
-                          <span>Erreurs</span>
-                          <strong>{quizSessionMetrics.mistakeCards.length}</strong>
-                        </p>
-                        <p>
-                          <span>Temps total</span>
-                          <strong>{quizSessionMetrics.elapsedLabel}</strong>
-                        </p>
-                      </section>
-                      <section className="quiz-review-card">
-                        <h4>Matières à revoir</h4>
-                        {(quizItem.tracking.assignedColleges.length > 0 ? quizItem.tracking.assignedColleges : ['Item']).slice(0, 3).map(
-                          (collegeName, index) => (
-                            <p key={collegeName}>
-                              <span>
-                                <Learning className="inline-btn-icon" aria-hidden="true" />
-                                {collegeName}
-                                <small>{Math.max(1, quizSessionMetrics.mistakeCards.length + index)} cartes à revoir</small>
-                              </span>
-                              <strong>{Math.max(0, quizSessionMetrics.score - index * 7)}%</strong>
-                            </p>
-                          ),
-                        )}
-                      </section>
-                    </div>
-                    <div className="quiz-summary-actions">
+	                      <span>Résumé de révision</span>
+	                      <button type="button" className="ghost-btn quiz-session-close" onClick={closeQuiz}>
+	                        Quitter
+	                      </button>
+	                    </div>
+	                    <p className="quiz-session-subtitle">Analysez vos réponses, vos erreurs et votre rythme.</p>
+	                    <div className="quiz-summary-grid">
+	                      <section className="quiz-score-card">
+	                        <div className="quiz-score-ring" style={{ '--quiz-score': `${quizSessionMetrics.score}%` } as CSSProperties}>
+	                          <span>{quizSessionMetrics.score}%</span>
+	                        </div>
+	                        <strong>{quizSessionMetrics.score >= 70 ? 'Bonne révision' : 'À consolider'}</strong>
+	                        <small>{quizSessionMetrics.errorRate}% d’erreur</small>
+	                      </section>
+	                      <section className="quiz-summary-stats">
+	                        <p>
+	                          <span>Cartes répondues</span>
+	                          <strong>{quizSessionMetrics.answeredCount}/{quizSessionMetrics.cards.length}</strong>
+	                        </p>
+	                        <p>
+	                          <span>Réponses correctes</span>
+	                          <strong>{quizSessionMetrics.correctCount}</strong>
+	                        </p>
+	                        <p>
+	                          <span>Réponses moyennes</span>
+	                          <strong>{quizSessionMetrics.mediumCount}</strong>
+	                        </p>
+	                        <p>
+	                          <span>Erreurs</span>
+	                          <strong>{quizSessionMetrics.errorCount}</strong>
+	                        </p>
+	                        <p>
+	                          <span>Temps passé</span>
+	                          <strong>{quizSessionMetrics.elapsedLabel}</strong>
+	                        </p>
+	                        <p>
+	                          <span>Série actuelle</span>
+	                          <strong>{dashboardStudyStats.currentStreak} j</strong>
+	                        </p>
+	                      </section>
+		                      <section className="quiz-review-card">
+		                        <h4>Collèges à revoir</h4>
+		                        {quizSessionReviewColleges.length > 0 ? (
+		                          quizSessionReviewColleges.map((entry) => (
+		                            <p key={entry.college}>
+	                              <span>
+	                                <Learning className="inline-btn-icon" aria-hidden="true" />
+	                                {getFlashCollegeDisplayName(entry.college)}
+	                                <small>{entry.count} carte{entry.count > 1 ? 's' : ''} à revoir</small>
+	                              </span>
+	                              <strong>{entry.count}</strong>
+	                            </p>
+	                          ))
+		                        ) : (
+		                          <p>
+		                            <span>
+		                              <Learning className="inline-btn-icon" aria-hidden="true" />
+		                              Aucune erreur
+		                              <small>Toutes les cartes répondues sont validées.</small>
+		                            </span>
+		                            <strong>0</strong>
+		                          </p>
+		                        )}
+	                      </section>
+	                    </div>
+	                    <div className="quiz-summary-actions">
                       <button
                         type="button"
                         className="ghost-btn"
@@ -9055,65 +9582,48 @@ function getPasswordStrengthMeta(password: string) {
                           closeQuiz()
                           setActiveView('dashboard')
                         }}
-                      >
-                        <NavArrowLeft className="inline-btn-icon" aria-hidden="true" />
-                        Retour au dashboard
-                      </button>
-                      <button type="button" className="quiz-session-primary" onClick={() => setQuizSessionStep('complete')}>
-                        <DatabaseStats className="inline-btn-icon" aria-hidden="true" />
-                        Voir mes statistiques détaillées
-                      </button>
-                    </div>
-                  </>
-                ) : null}
-
-                {quizSessionStep === 'complete' ? (
-                  <>
-                    <div className="quiz-session-kicker">
-                      <span>7. Fin de session & gamification</span>
-                      <button type="button" className="ghost-btn quiz-session-close" onClick={closeQuiz}>
-                        Fermer
-                      </button>
-                    </div>
-                    <p className="quiz-session-subtitle">Célébrez vos efforts et gardez la motivation.</p>
-                    <section className="quiz-complete-card">
-                      <div className="quiz-complete-star">
-                        <Star className="ui-icon" aria-hidden="true" />
-                      </div>
-                      <h3>Session terminée !</h3>
-                      <p>
-                        Vous faites partie des <strong>24%</strong> d’étudiants les plus réguliers cette semaine.
-                      </p>
-                      <div className="quiz-complete-rewards">
-                        <span>
-                          <strong>+82</strong>
-                          XP
-                        </span>
-                        <span>
-                          <strong>{dashboardStudyStats.currentStreak}</strong>
-                          Série
-                        </span>
-                        <span>
-                          <strong>+1</strong>
-                          Badge
-                        </span>
-                      </div>
-                      <button
-                        type="button"
-                        className="quiz-session-primary"
-                        onClick={() => {
-                          closeQuiz()
-                          setActiveView('stats')
-                        }}
-                      >
-                        Voir mes statistiques
-                      </button>
-                    </section>
-                  </>
-                ) : null}
+	                      >
+	                        <NavArrowLeft className="inline-btn-icon" aria-hidden="true" />
+	                        Retour au dashboard
+	                      </button>
+	                      {quizSessionMetrics.mistakeCards.length > 0 ? (
+	                        <button
+	                          type="button"
+	                          className="ghost-btn"
+	                          onClick={() => {
+	                            const firstMistake = quizSessionMetrics.mistakeCards[0]
+	                            if (!firstMistake) {
+	                              return
+	                            }
+	                            setQuizItemId(firstMistake.itemNumber)
+	                            setQuizActiveCardKey(firstMistake.sessionKey)
+	                            updateItemQuizConfig(firstMistake.itemNumber, { activeCardId: firstMistake.card.id })
+	                            setQuizSide('front')
+	                            setQuizFeedback(null)
+	                            setQuizSessionStep('errors')
+	                          }}
+	                        >
+	                          <Refresh className="inline-btn-icon" aria-hidden="true" />
+	                          Revoir les erreurs
+	                        </button>
+	                      ) : null}
+	                      <button
+	                        type="button"
+	                        className="quiz-session-primary"
+	                        onClick={() => {
+	                          closeQuiz()
+	                          setActiveView('stats')
+	                        }}
+	                      >
+	                        <DatabaseStats className="inline-btn-icon" aria-hidden="true" />
+	                        Voir mes statistiques
+	                      </button>
+	                    </div>
+	                  </>
+	                ) : null}
 
                 {quizFeedback ? (
-                  <div className={`quiz-feedback ${quizFeedback} reward-${quizItem.tracking.quiz.rewardIntensity}`}>
+	                  <div className={`quiz-feedback ${quizFeedback} reward-${activeQuizItem?.tracking.quiz.rewardIntensity ?? 'medium'}`}>
                     <span className="quiz-feedback-main">
                       <QuizResultIcon result={quizFeedback} className="quiz-feedback-icon" />
                       {QUIZ_RESULT_META[quizFeedback].label}
@@ -9128,58 +9638,6 @@ function getPasswordStrengthMeta(password: string) {
 
       {activeView === 'flashcards' ? (
         <section id="flashcards-section" className="flashcards-page">
-          <div className="flashcards-generator-callout" aria-label="Générateur de quiz">
-            <div className="flashcards-generator-copy">
-              <p className="flashcards-generator-kicker">
-                <Flash className="inline-btn-icon" aria-hidden="true" />
-                Générateur de quiz
-              </p>
-              <h2>Créez un quiz personnalisé</h2>
-              <p>Choisissez un collège, le nombre de questions et le niveau pour générer un quiz adapté.</p>
-            </div>
-            <div className="flashcards-generator-controls">
-              <label className="flashcards-field">
-                <span>Collège</span>
-                <select value={flashCollegeFilter} onChange={(event) => setFlashCollegeFilter(event.target.value)}>
-                  <option value="ALL">Sélectionner un collège</option>
-                  {COLLEGES.map((college) => (
-                    <option key={college} value={college}>
-                      {getFlashCollegeDisplayName(college)}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flashcards-field">
-                <span>Nombre de questions</span>
-                <select value={String(flashQuestionCount)} onChange={(event) => setFlashQuestionCount(Number(event.target.value))}>
-                  {[10, 20, 30, 40, 50].map((count) => (
-                    <option key={count} value={String(count)}>
-                      {count} questions
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="flashcards-field">
-                <span>Niveau</span>
-                <select
-                  value={flashCollegeLevelFilter}
-                  onChange={(event) => setFlashCollegeLevelFilter(event.target.value as FlashCollegeLevelFilter)}
-                >
-                  <option value="ALL">Tous les niveaux</option>
-                  <option value="none">{FLASH_FEELING_LABELS.none}</option>
-                  <option value="again">{FLASH_FEELING_LABELS.again}</option>
-                  <option value="hard">{FLASH_FEELING_LABELS.hard}</option>
-                  <option value="medium">{FLASH_FEELING_LABELS.medium}</option>
-                  <option value="good">{FLASH_FEELING_LABELS.good}</option>
-                  <option value="easy">{FLASH_FEELING_LABELS.easy}</option>
-                </select>
-              </label>
-            </div>
-            <button type="button" className="flashcards-generator-btn" onClick={startSelectedCollegeGeneratedQuiz}>
-              <Flash className="inline-btn-icon" aria-hidden="true" />
-              Générer le quiz
-            </button>
-          </div>
           <div className="flashcards-toolbar">
             <label className="flashcards-search">
               <span className="flashcards-search-icon" aria-hidden="true">
@@ -9225,6 +9683,24 @@ function getPasswordStrengthMeta(password: string) {
                 <Learning className="inline-btn-icon" aria-hidden="true" />
               )}
               {flashDisplayMode === 'colleges' ? 'Afficher par items' : 'Afficher par collèges'}
+            </button>
+            <button
+              type="button"
+              className="flashcards-session-btn"
+              onClick={() => {
+                if (defaultFlashSessionItemNumber !== null) {
+                  openQuizSessionSetup({ type: 'global' })
+                }
+              }}
+              disabled={defaultFlashSessionItemNumber === null}
+              title={
+	                defaultFlashSessionItemNumber === null
+	                  ? 'Ajoute une flashcard pour lancer une révision'
+	                  : 'Lancer une révision globale'
+              }
+            >
+              <Play className="inline-btn-icon" aria-hidden="true" />
+	              Lancer une révision
             </button>
             <button type="button" className="flashcards-create-btn" onClick={() => openFlashcardCreator()}>
               <Plus className="inline-btn-icon" aria-hidden="true" />
@@ -9715,7 +10191,7 @@ function getPasswordStrengthMeta(password: string) {
                     <span> maîtrisés</span>
                   </p>
                   <div className="flashcards-card-actions">
-                    <button type="button" className="flashcards-card-launch" onClick={() => startCollegeGeneratedQuiz(row.college)}>
+                    <button type="button" className="flashcards-card-launch" onClick={() => openQuizSessionSetup({ type: 'college', college: row.college })}>
                       <Play className="inline-btn-icon" aria-hidden="true" />
                       Lancer le quiz
                     </button>
@@ -9773,7 +10249,7 @@ function getPasswordStrengthMeta(password: string) {
                     <span> maîtrisés</span>
                   </p>
                   <div className="flashcards-card-actions">
-                    <button type="button" className="flashcards-card-launch" onClick={() => startItemGeneratedQuiz(row.itemNumber)}>
+                    <button type="button" className="flashcards-card-launch" onClick={() => openQuizSessionSetup({ type: 'item', itemNumber: row.itemNumber })}>
                       <Play className="inline-btn-icon" aria-hidden="true" />
                       Lancer le quiz
                     </button>
@@ -9893,22 +10369,22 @@ function getPasswordStrengthMeta(password: string) {
               <div className="college-detail-title">
                 <CollegeHealthIcon college={selectedCollegeDetailData.college} className="college-detail-main-icon" />
                 <div>
-                  <h2>{selectedCollegeDetailData.displayName}</h2>
-                  <p>Vue détaillée du collège</p>
-                </div>
-              </div>
-              <button
-                type="button"
-                className="college-detail-primary"
-                onClick={() => {
-                  setCollegeFilter(selectedCollegeDetailData.college)
-                  setActiveView('items')
-                  setSelectedCollegeDetail(null)
-                }}
-              >
-                <Plus className="inline-btn-icon" aria-hidden="true" />
-                Ajouter un item
-              </button>
+	                  <h2>{selectedCollegeDetailData.displayName}</h2>
+	                  <p>Vue détaillée du collège</p>
+	                </div>
+	              </div>
+	              <button
+	                type="button"
+	                className="college-detail-secondary"
+	                onClick={() => {
+	                  setCollegeFilter(selectedCollegeDetailData.college)
+	                  setActiveView('items')
+	                  setSelectedCollegeDetail(null)
+	                }}
+	              >
+	                <List className="inline-btn-icon" aria-hidden="true" />
+	                Voir les items du collège
+	              </button>
             </header>
 
             <div className="college-detail-stats">
@@ -9947,27 +10423,30 @@ function getPasswordStrengthMeta(password: string) {
                   <CheckCircle className="ui-icon" aria-hidden="true" />
                 </span>
                 <p>Ressenti global</p>
-                <strong className="college-detail-feeling">{selectedCollegeDetailData.globalFeeling}</strong>
-                <small>{selectedCollegeDetailData.flashcardCount} cartes</small>
-              </article>
+	                <strong className={`college-detail-feeling ${selectedCollegeDetailData.globalFeelingTone}`}>
+	                  {selectedCollegeDetailData.globalFeeling}
+	                </strong>
+	                <small>{selectedCollegeDetailData.flashcardCount} cartes</small>
+	              </article>
             </div>
 
             <div className="college-detail-layout">
-              <article className="college-detail-items-panel">
-                <div className="college-detail-tabs">
-                  <button type="button" className="active" onClick={() => setCollegeDetailFilter('all')}>
-                    Items du collège
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCollegeFilter(selectedCollegeDetailData.college)
-                      setActiveView('items')
-                      setSelectedCollegeDetail(null)
-                    }}
-                  >
-                    Vue par item
-                  </button>
+	              <article className="college-detail-items-panel">
+	                <div className="college-detail-tabs">
+	                  <span className="college-detail-tab-label">
+	                    Items du collège
+	                  </span>
+	                  <button
+	                    type="button"
+	                    className="college-detail-view-button"
+	                    onClick={() => {
+	                      setCollegeFilter(selectedCollegeDetailData.college)
+	                      setActiveView('items')
+	                      setSelectedCollegeDetail(null)
+	                    }}
+	                  >
+	                    Voir dans Items
+	                  </button>
                 </div>
                 <div className="college-detail-filters">
                   <button type="button" className={collegeDetailFilter === 'all' ? 'active' : ''} onClick={() => setCollegeDetailFilter('all')}>
@@ -9995,8 +10474,8 @@ function getPasswordStrengthMeta(password: string) {
                       </tr>
                     </thead>
                     <tbody>
-                      {selectedCollegeDetailItems.slice(0, 12).map((item, index) => (
-                        <tr
+	                      {paginatedCollegeDetailItems.map((item, index) => (
+	                        <tr
                           key={`college-detail-item-${item.itemNumber}`}
                           onClick={() => {
                             setCollegeFilter(selectedCollegeDetailData.college)
@@ -10005,7 +10484,7 @@ function getPasswordStrengthMeta(password: string) {
                             setSelectedCollegeDetail(null)
                           }}
                         >
-                          <td>{index + 1}</td>
+	                          <td>{(safeCollegeDetailPage - 1) * COLLEGE_DETAIL_PAGE_SIZE + index + 1}</td>
                           <td>
                             <strong>{item.shortDescription}</strong>
                             <span>Item #{item.itemNumber}</span>
@@ -10028,30 +10507,54 @@ function getPasswordStrengthMeta(password: string) {
                       ))}
                     </tbody>
                   </table>
-                </div>
-                <div className="college-detail-pagination">
-                  <span>1-{Math.min(12, selectedCollegeDetailItems.length)} sur {selectedCollegeDetailItems.length} items</span>
-                  <span>‹ 1 2 3 … ›</span>
-                </div>
+	                </div>
+	                <div className="college-detail-pagination">
+	                  <span>
+	                    {selectedCollegeDetailItems.length === 0
+	                      ? '0 item'
+	                      : `${(safeCollegeDetailPage - 1) * COLLEGE_DETAIL_PAGE_SIZE + 1}-${Math.min(
+	                          safeCollegeDetailPage * COLLEGE_DETAIL_PAGE_SIZE,
+	                          selectedCollegeDetailItems.length,
+	                        )} sur ${selectedCollegeDetailItems.length} items`}
+	                  </span>
+	                  <span className="college-detail-page-controls">
+	                    <button
+	                      type="button"
+	                      onClick={() => setCollegeDetailPage((page) => Math.max(1, page - 1))}
+	                      disabled={safeCollegeDetailPage <= 1}
+	                    >
+	                      ‹
+	                    </button>
+	                    <strong>{safeCollegeDetailPage} / {collegeDetailPageCount}</strong>
+	                    <button
+	                      type="button"
+	                      onClick={() => setCollegeDetailPage((page) => Math.min(collegeDetailPageCount, page + 1))}
+	                      disabled={safeCollegeDetailPage >= collegeDetailPageCount}
+	                    >
+	                      ›
+	                    </button>
+	                  </span>
+	                </div>
               </article>
 
               <aside className="college-detail-side">
                 <article className="college-detail-side-card">
                   <h3>Ressenti global</h3>
                   <div className="college-detail-feelings">
-                    {[
-                      ['easy', 'Très facile', selectedCollegeDetailData.resultCounts.easy, 'very-easy'],
-                      ['good', 'Facile', selectedCollegeDetailData.resultCounts.good, 'easy'],
-                      ['medium', 'Moyen', selectedCollegeDetailData.resultCounts.medium, 'medium'],
-                      ['hard', 'Difficile', selectedCollegeDetailData.resultCounts.hard, 'hard'],
-                      ['again', 'À revoir', selectedCollegeDetailData.resultCounts.again, 'again'],
-                    ].map(([result, label, count, tone]) => (
-                      <div key={label}>
-                        <span className={`college-detail-feeling-dot ${tone}`}>
-                          <QuizResultIcon result={result as QuizResult} className="ui-icon" />
-                        </span>
-                        <small>{label}</small>
-                        <strong>{count}</strong>
+	                    {[
+	                      [null, 'Non évalué', selectedCollegeDetailData.resultCounts.none, 'none'],
+	                      ['easy', 'Très facile', selectedCollegeDetailData.resultCounts.easy, 'very-easy'],
+	                      ['good', 'Facile', selectedCollegeDetailData.resultCounts.good, 'easy'],
+	                      ['medium', 'Moyen', selectedCollegeDetailData.resultCounts.medium, 'medium'],
+	                      ['hard', 'Difficile', selectedCollegeDetailData.resultCounts.hard, 'hard'],
+	                      ['again', 'À revoir', selectedCollegeDetailData.resultCounts.again, 'again'],
+	                    ].map(([result, label, count, tone]) => (
+	                      <div key={label}>
+	                        <span className={`college-detail-feeling-dot ${tone}`}>
+	                          {result ? <QuizResultIcon result={result as QuizResult} className="ui-icon" /> : '•'}
+	                        </span>
+	                        <small>{label}</small>
+	                        <strong>{count}</strong>
                       </div>
                     ))}
                   </div>
@@ -10076,20 +10579,18 @@ function getPasswordStrengthMeta(password: string) {
                   </div>
                 </article>
                 <article className="college-detail-side-card college-detail-action-card">
-                  <h3>Quiz du collège</h3>
-                  <p>Testez vos connaissances sur ce collège.</p>
-                  <button
-                    type="button"
-                    className="college-detail-primary"
-                    onClick={() => {
-                      setActiveView('flashcards')
-                      setFlashDisplayMode('colleges')
-                      startCollegeGeneratedQuiz(selectedCollegeDetailData.college)
-                    }}
-                  >
-                    <Play className="inline-btn-icon" aria-hidden="true" />
-                    Lancer un quiz
-                  </button>
+	                  <h3>Révision du collège</h3>
+	                  <p>Révisez les flashcards de ce collège.</p>
+	                  <button
+	                    type="button"
+	                    className="college-detail-primary"
+		                    onClick={() => {
+		                      openQuizSessionSetup({ type: 'college', college: selectedCollegeDetailData.college })
+		                    }}
+	                  >
+	                    <Play className="inline-btn-icon" aria-hidden="true" />
+	                    Lancer une révision
+	                  </button>
                 </article>
                 <article className="college-detail-side-card college-detail-action-card">
                   <h3>Voir les flashcards</h3>
@@ -10111,14 +10612,24 @@ function getPasswordStrengthMeta(password: string) {
             </div>
           </section>
         ) : (
-          <section className="panel colleges-page">
-            <div className="panel-head">
-              <h2>Collèges</h2>
-            </div>
-            <article className="colleges-heatmap">
-              <h3>Progression par collège</h3>
-              <div className="colleges-heatmap-grid">
-                {collegesViewRows.map((row) => {
+	          <section className="panel colleges-page">
+	            <div className="panel-head">
+	              <h2>Collèges</h2>
+	            </div>
+	            <article className="colleges-heatmap">
+	              <div className="colleges-heatmap-head">
+	                <h3>Progression par collège</h3>
+	                <label>
+	                  Trier
+	                  <select value={collegesPageSort} onChange={(event) => setCollegesPageSort(event.target.value as CollegesPageSort)}>
+	                    <option value="name">Nom</option>
+	                    <option value="progress">Progression</option>
+	                    <option value="recentReviews">Révisions récentes</option>
+	                  </select>
+	                </label>
+	              </div>
+	              <div className="colleges-heatmap-grid">
+	                {sortedCollegesViewRows.map((row) => {
                   const tone =
                     row.completion >= 75
                       ? 'high'
@@ -10148,13 +10659,14 @@ function getPasswordStrengthMeta(password: string) {
                     </button>
                   )
                 })}
-              </div>
-              <div className="colleges-heat-legend">
-                <span>0%</span>
-                <span>25%</span>
-                <span>50%</span>
-                <span>75%+</span>
-              </div>
+	              </div>
+	              <div className="colleges-heat-legend">
+	                <span className="zero">0%</span>
+	                <span className="low">1-24%</span>
+	                <span className="mid">25-49%</span>
+	                <span className="mid-high">50-74%</span>
+	                <span className="high">75%+</span>
+	              </div>
             </article>
           </section>
         )
@@ -10212,24 +10724,46 @@ function getPasswordStrengthMeta(password: string) {
                     />
                   </div>
                 </label>
-                <label className="settings-field">
-                  E-mail
-                  <input
-                    type="email"
-                    value={profile.email}
-                    placeholder={authUser?.email ?? 'email@example.com'}
-                    onChange={(event) => setProfile((current) => ({ ...current, email: event.target.value }))}
-                  />
-                </label>
-                <label className="settings-field">
-                  Avatar
-                  <input
-                    type="url"
-                    value={profile.photoUrl}
-                    placeholder="URL de l'avatar"
-                    onChange={(event) => setProfile((current) => ({ ...current, photoUrl: event.target.value }))}
-                  />
-                </label>
+	                <label className="settings-field">
+	                  E-mail de connexion
+	                  <input
+	                    type="email"
+	                    value={settingsEmail}
+	                    placeholder={authUser?.email ?? 'email@example.com'}
+	                    disabled
+	                    readOnly
+	                  />
+	                  <small className="settings-muted">Modification du compte prévue plus tard.</small>
+	                </label>
+	                <div className="settings-field">
+	                  Avatar
+	                  <button
+	                    type="button"
+	                    className="settings-avatar-upload"
+	                    onClick={() => avatarInputRef.current?.click()}
+	                    onDragOver={(event) => {
+	                      event.preventDefault()
+	                      event.currentTarget.classList.add('is-drag-over')
+	                    }}
+	                    onDragLeave={(event) => event.currentTarget.classList.remove('is-drag-over')}
+	                    onDrop={handleAvatarDrop}
+	                  >
+	                    <Plus className="ui-icon" aria-hidden="true" />
+	                    <span>Glisser une image ou cliquer</span>
+	                    <small>PNG, JPG, WebP - 1 Mo max</small>
+	                  </button>
+	                  <input
+	                    ref={avatarInputRef}
+	                    type="file"
+	                    accept="image/*"
+	                    className="hidden-file-input"
+	                    onChange={(event) => {
+	                      void handleAvatarUploadFile(event.target.files?.[0] ?? null)
+	                      event.target.value = ''
+	                    }}
+	                  />
+	                  {avatarUploadError ? <small className="settings-error">{avatarUploadError}</small> : null}
+	                </div>
                 <div className="settings-field">
                   Couleur d'avatar
                   <div className="avatar-gradient-grid">
@@ -10262,28 +10796,12 @@ function getPasswordStrengthMeta(password: string) {
               </div>
               <div className="settings-subsection">
                 <h3>Données</h3>
-                <div className="settings-action-row">
-                  <button type="button" className="ghost-btn" onClick={exportBackup}>
-                    Exporter toutes mes données
-                  </button>
-                  <button type="button" className="ghost-btn" onClick={() => backupInputRef.current?.click()}>
-                    Importer une sauvegarde
-                  </button>
-                  <input
-                    ref={backupInputRef}
-                    type="file"
-                    accept="application/json,.json"
-                    className="hidden-file-input"
-                    onChange={(event) => {
-                      const file = event.target.files?.[0]
-                      if (file) {
-                        void importBackup(file)
-                      }
-                      event.target.value = ''
-                    }}
-                  />
-                </div>
-              </div>
+	                <div className="settings-action-row">
+	                  <button type="button" className="ghost-btn" onClick={exportBackup}>
+	                    Exporter toutes mes données
+	                  </button>
+	                </div>
+	              </div>
             </article>
 
             <article className="settings-card">
@@ -10302,28 +10820,27 @@ function getPasswordStrengthMeta(password: string) {
                   <option value="fr">Français</option>
                 </select>
               </label>
-              <label className="settings-field">
-                Format de date
-                <select defaultValue="fr-short">
-                  <option value="fr-short">17 juil. 2026</option>
-                  <option value="fr-long">17 juillet 2026</option>
-                  <option value="iso">2026-07-17</option>
+	              <label className="settings-field">
+	                Format de date
+	                <select
+	                  value={dateFormat}
+	                  onChange={(event) => setDateFormat(normalizeDateFormatPreference(event.target.value))}
+	                >
+	                  <option value="fr-short">17 juil. 2026</option>
+	                  <option value="fr-long">17 juillet 2026</option>
+	                  <option value="iso">2026-07-17</option>
                 </select>
               </label>
-              <label className="settings-field">
-                Fuseau horaire
-                <select defaultValue="auto">
-                  <option value="auto">Automatique</option>
-                  <option value="Europe/Paris">Europe/Paris</option>
-                  <option value="Asia/Ho_Chi_Minh">Asia/Ho Chi Minh</option>
-                </select>
-              </label>
-              <label className="settings-toggle-row">
-                <span>Mode focus</span>
-                <input type="checkbox" checked={focusMode} onChange={(event) => setFocusMode(event.target.checked)} />
-              </label>
-              <label className="settings-toggle-row">
-                <span>Thème sombre</span>
+	              <label className="settings-field">
+	                Fuseau horaire
+	                <select value={timeZone} onChange={(event) => setTimeZone(normalizeTimeZonePreference(event.target.value))}>
+	                  <option value="auto">Automatique</option>
+	                  <option value="Europe/Paris">Europe/Paris</option>
+	                  <option value="Asia/Ho_Chi_Minh">Asia/Ho Chi Minh</option>
+	                </select>
+	              </label>
+	              <label className="settings-toggle-row">
+	                <span>Thème sombre</span>
                 <input
                   type="checkbox"
                   checked={theme === 'dark'}
@@ -10341,23 +10858,12 @@ function getPasswordStrengthMeta(password: string) {
                   <h2>Notifications</h2>
                   <p>Rappels de révision.</p>
                 </div>
-              </div>
-              <label className="settings-toggle-row is-disabled">
-                <span>Activer les rappels quotidiens</span>
-                <input type="checkbox" disabled />
-              </label>
-              <label className="settings-field">
-                Heure du rappel
-                <input type="time" defaultValue="19:00" disabled />
-              </label>
-              <div className="settings-weekdays" aria-label="Jours de la semaine">
-                {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((day, index) => (
-                  <button key={`${day}-${index}`} type="button" disabled>
-                    {day}
-                  </button>
-                ))}
-              </div>
-              <p className="settings-muted">Les notifications ne sont pas encore configurées.</p>
+	              </div>
+	              <div className="settings-coming-soon">
+	                <Bell className="ui-icon" aria-hidden="true" />
+	                <strong>Notifications bientôt disponibles</strong>
+	                <p>Les rappels de révision seront configurables ici quand la fonction sera prête.</p>
+	              </div>
             </article>
 
             <article className="settings-card">
@@ -10408,14 +10914,14 @@ function getPasswordStrengthMeta(password: string) {
                   <input type="text" placeholder="Bientôt disponible" disabled />
                 </label>
               </div>
-              <div className="settings-storage">
-                <div className="settings-storage-head">
+	              <div className={`settings-storage is-${storageUsageTone}`}>
+	                <div className="settings-storage-head">
                   <div>
                     <h3>Stockage</h3>
                     <p>
                       {formatStorage(storageTotalBytes)} / {formatStorage(storageLimitBytes)}
                     </p>
-                    <p className="settings-muted">
+	                    <p className="settings-muted">
                       {storageUsageStatus === 'loading'
                         ? 'Mesure serveur en cours...'
                         : storageUsageStatus === 'error'
@@ -10423,10 +10929,11 @@ function getPasswordStrengthMeta(password: string) {
                           : storageUsage
                             ? 'Mesure réelle côté serveur.'
                             : 'Estimation locale en attendant la mesure serveur.'}
-                    </p>
-                  </div>
-                  <strong>{storageUsagePercent}%</strong>
-                </div>
+	                    </p>
+	                    <p className="settings-muted">Dernière mesure : {storageMeasuredAtLabel}</p>
+	                  </div>
+	                  <strong className="settings-storage-percent">{storageUsagePercent}%</strong>
+	                </div>
                 <div className="settings-storage-bar" aria-hidden="true">
                   <span style={{ width: `${storageUsagePercent}%` }} />
                 </div>
@@ -10464,9 +10971,9 @@ function getPasswordStrengthMeta(password: string) {
                 <button type="button" className="settings-link-btn" disabled>
                   Politique de confidentialité
                 </button>
-                <a className="settings-link-btn" href={`mailto:${authUser?.email ?? 'hello@setup-hub.com'}?subject=Support ItemsTracker`}>
-                  Support / Contacter l'équipe
-                </a>
+	                <a className="settings-link-btn" href={`mailto:${SUPPORT_EMAIL}?subject=Support ItemsTracker`}>
+	                  Support / Contacter l'équipe
+	                </a>
               </div>
             </article>
           </div>
