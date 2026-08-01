@@ -495,33 +495,33 @@
 }
 
 .flashcards-list-result.again {
-  color: #a5313f;
-  background: #fff2f3;
-  border-color: #e4a3a8;
+  color: #ef4444;
+  background: #fee2e2;
+  border-color: #ef4444;
 }
 
 .flashcards-list-result.hard {
-  color: #8f5600;
-  background: #fff4e6;
-  border-color: #efbe80;
+  color: #ef4444;
+  background: #fee2e2;
+  border-color: #ef4444;
 }
 
 .flashcards-list-result.medium {
-  color: #996b00;
-  background: #fff9df;
-  border-color: #ead27a;
+  color: #d98d11;
+  background: #fff1d1;
+  border-color: #d98d11;
 }
 
 .flashcards-list-result.good {
-  color: #1e7a42;
-  background: #ebfaf0;
-  border-color: #87cea0;
+  color: #22c55e;
+  background: #dcfce7;
+  border-color: #22c55e;
 }
 
 .flashcards-list-result.easy {
-  color: #3b4ed2;
-  background: #edf1ff;
-  border-color: #92a5ff;
+  color: #3b82f6;
+  background: #dbeafe;
+  border-color: #3b82f6;
 }
 
 .flashcards-list-row h4 {
@@ -711,6 +711,31 @@
   border-color: rgba(108, 152, 230, 0.3);
   color: #b7c9ef;
   background: #081f53;
+}
+
+:root[data-theme='dark'] .flashcards-list-result.again,
+:root[data-theme='dark'] .flashcards-list-result.hard {
+  border-color: #ef4444;
+  color: #ffccd2;
+  background: #3b1f24;
+}
+
+:root[data-theme='dark'] .flashcards-list-result.medium {
+  border-color: #d98d11;
+  color: #ffe7a3;
+  background: #3f3517;
+}
+
+:root[data-theme='dark'] .flashcards-list-result.good {
+  border-color: #22c55e;
+  color: #c8f4d5;
+  background: #173926;
+}
+
+:root[data-theme='dark'] .flashcards-list-result.easy {
+  border-color: #3b82f6;
+  color: #dce6ff;
+  background: #1a2450;
 }
 
 :root[data-theme='dark'] .flashcards-card-description {

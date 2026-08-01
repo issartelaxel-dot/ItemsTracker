@@ -169,33 +169,33 @@
 }
 
 .manual-item-mastery-select.mastery-mauvais {
-  background: #ffe7e7;
-  border-color: #cf3f3f;
-  color: #a82b2b;
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #ef4444;
 }
 
 .manual-item-mastery-select.mastery-moyen {
-  background: #fff1d1;
-  border-color: #d98d11;
-  color: #8f5b00;
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #ef4444;
 }
 
 .manual-item-mastery-select.mastery-bon {
-  background: #e4f6e1;
-  border-color: #4ca85d;
-  color: #2f7238;
+  background: #fff1d1;
+  border-color: #d98d11;
+  color: #d98d11;
 }
 
 .manual-item-mastery-select.mastery-tres-bon {
-  background: #d8f2d2;
-  border-color: #2f9552;
-  color: #1e6938;
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #22c55e;
 }
 
 .manual-item-mastery-select.mastery-parfait {
-  background: #c8ebbf;
-  border-color: #19753f;
-  color: #155e34;
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #3b82f6;
 }
 
 :root[data-theme='dark'] .manual-item-mastery-select.none {
@@ -204,33 +204,33 @@
 }
 
 :root[data-theme='dark'] .manual-item-mastery-select.mastery-mauvais {
-  background: #4b2026;
-  border-color: #a44b56;
-  color: #ffcbd0;
+  background: #3b1f24;
+  border-color: #ef4444;
+  color: #ffccd2;
 }
 
 :root[data-theme='dark'] .manual-item-mastery-select.mastery-moyen {
-  background: #4a3916;
-  border-color: #9f7a2f;
-  color: #ffe3a3;
+  background: #3b1f24;
+  border-color: #ef4444;
+  color: #ffccd2;
 }
 
 :root[data-theme='dark'] .manual-item-mastery-select.mastery-bon {
-  background: #1f4728;
-  border-color: #3f8d52;
-  color: #c9efcf;
+  background: #3f3517;
+  border-color: #d98d11;
+  color: #ffe7a3;
 }
 
 :root[data-theme='dark'] .manual-item-mastery-select.mastery-tres-bon {
   background: #1b5331;
-  border-color: #39a05e;
+  border-color: #22c55e;
   color: #cbf8d9;
 }
 
 :root[data-theme='dark'] .manual-item-mastery-select.mastery-parfait {
-  background: #17673a;
-  border-color: #28af63;
-  color: #dcffe8;
+  background: #1a2450;
+  border-color: #3b82f6;
+  color: #dce6ff;
 }
 
 .college-picker {
@@ -572,33 +572,33 @@
 }
 
 .quiz-card-level-pill.again {
-  color: #a5313f;
-  border-color: #e4a3a8;
-  background: #fff2f3;
+  color: #ef4444;
+  border-color: #ef4444;
+  background: #fee2e2;
 }
 
 .quiz-card-level-pill.hard {
-  color: #8f5600;
-  border-color: #efbe80;
-  background: #fff4e6;
+  color: #ef4444;
+  border-color: #ef4444;
+  background: #fee2e2;
 }
 
 .quiz-card-level-pill.medium {
-  color: #996b00;
-  border-color: #ead27a;
-  background: #fff9df;
+  color: #d98d11;
+  border-color: #d98d11;
+  background: #fff1d1;
 }
 
 .quiz-card-level-pill.good {
-  color: #1e7a42;
-  border-color: #87cea0;
-  background: #ebfaf0;
+  color: #22c55e;
+  border-color: #22c55e;
+  background: #dcfce7;
 }
 
 .quiz-card-level-pill.easy {
-  color: #3b4ed2;
-  border-color: #92a5ff;
-  background: #edf1ff;
+  color: #3b82f6;
+  border-color: #3b82f6;
+  background: #dbeafe;
 }
 
 :root[data-theme='dark'] .quiz-card-level-pill.none {
@@ -607,31 +607,31 @@
 
 :root[data-theme='dark'] .quiz-card-level-pill.again {
   color: #ffccd2;
-  border-color: #8e3f48;
+  border-color: #ef4444;
   background: #3b1f24;
 }
 
 :root[data-theme='dark'] .quiz-card-level-pill.hard {
-  color: #ffdcae;
-  border-color: #9a6a2f;
-  background: #3d2b15;
+  color: #ffccd2;
+  border-color: #ef4444;
+  background: #3b1f24;
 }
 
 :root[data-theme='dark'] .quiz-card-level-pill.medium {
   color: #ffe7a3;
-  border-color: #a48a36;
+  border-color: #d98d11;
   background: #3f3517;
 }
 
 :root[data-theme='dark'] .quiz-card-level-pill.good {
   color: #c8f4d5;
-  border-color: #2f8d52;
+  border-color: #22c55e;
   background: #173926;
 }
 
 :root[data-theme='dark'] .quiz-card-level-pill.easy {
   color: #dce6ff;
-  border-color: #4a63d8;
+  border-color: #3b82f6;
   background: #1a2450;
 }
 
@@ -952,23 +952,33 @@
 }
 
 .mastery-mauvais {
-  border-color: #cf3f3f;
-  color: #cf3f3f;
-  background: color-mix(in oklab, #cf3f3f 7%, var(--input-bg));
+  border-color: #ef4444;
+  color: #ef4444;
+  background: color-mix(in oklab, #ef4444 9%, var(--input-bg));
 }
 
 .mastery-moyen {
+  border-color: #ef4444;
+  color: #ef4444;
+  background: color-mix(in oklab, #ef4444 9%, var(--input-bg));
+}
+
+.mastery-bon {
   border-color: #d98d11;
   color: #d98d11;
   background: color-mix(in oklab, #d98d11 9%, var(--input-bg));
 }
 
-.mastery-bon,
-.mastery-tres-bon,
+.mastery-tres-bon {
+  border-color: #22c55e;
+  color: #22c55e;
+  background: color-mix(in oklab, #22c55e 9%, var(--input-bg));
+}
+
 .mastery-parfait {
-  border-color: #00895a;
-  color: #00895a;
-  background: color-mix(in oklab, #00895a 8%, var(--input-bg));
+  border-color: #3b82f6;
+  color: #3b82f6;
+  background: color-mix(in oklab, #3b82f6 9%, var(--input-bg));
 }
 
 .mastery-pulse {
@@ -1679,27 +1689,27 @@
 }
 
 .item-detail-feeling-stat.mastery-mauvais .item-detail-stat-icon {
-  color: #dc2626;
+  color: #ef4444;
   background: #fee2e2;
 }
 
 .item-detail-feeling-stat.mastery-moyen .item-detail-stat-icon {
-  color: #f97316;
-  background: #ffedd5;
+  color: #ef4444;
+  background: #fee2e2;
 }
 
 .item-detail-feeling-stat.mastery-bon .item-detail-stat-icon {
-  color: #d97706;
+  color: #d98d11;
   background: #fef3c7;
 }
 
 .item-detail-feeling-stat.mastery-tres-bon .item-detail-stat-icon {
-  color: #16a34a;
+  color: #22c55e;
   background: #dcfce7;
 }
 
 .item-detail-feeling-stat.mastery-parfait .item-detail-stat-icon {
-  color: #2563eb;
+  color: #3b82f6;
   background: #dbeafe;
 }
 
@@ -1741,23 +1751,23 @@
 }
 
 .item-detail-stat-select.manual-item-mastery-select.mastery-mauvais {
-  color: #dc2626;
+  color: #ef4444;
 }
 
 .item-detail-stat-select.manual-item-mastery-select.mastery-moyen {
-  color: #f97316;
+  color: #ef4444;
 }
 
 .item-detail-stat-select.manual-item-mastery-select.mastery-bon {
-  color: #d97706;
+  color: #d98d11;
 }
 
 .item-detail-stat-select.manual-item-mastery-select.mastery-tres-bon {
-  color: #16a34a;
+  color: #22c55e;
 }
 
 .item-detail-stat-select.manual-item-mastery-select.mastery-parfait {
-  color: #2563eb;
+  color: #3b82f6;
 }
 
 .item-detail-stat-select:focus {

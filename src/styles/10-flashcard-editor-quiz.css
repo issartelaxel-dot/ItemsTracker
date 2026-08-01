@@ -508,62 +508,62 @@
 }
 
 .quiz-face-feeling.again {
-  background: #ffe4e6;
-  border-color: #eb6f79;
-  color: #b0333e;
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #ef4444;
 }
 
 .quiz-face-feeling.hard {
-  background: #fff1d8;
-  border-color: #f0a93c;
-  color: #9b5f00;
+  background: #fee2e2;
+  border-color: #ef4444;
+  color: #ef4444;
 }
 
 .quiz-face-feeling.medium {
-  background: #fff9df;
-  border-color: #ead27a;
-  color: #996b00;
+  background: #fff1d1;
+  border-color: #d98d11;
+  color: #d98d11;
 }
 
 .quiz-face-feeling.good {
-  background: #e8f9ef;
-  border-color: #69c080;
-  color: #1e8746;
+  background: #dcfce7;
+  border-color: #22c55e;
+  color: #22c55e;
 }
 
 .quiz-face-feeling.easy {
-  background: #e8f0ff;
-  border-color: #7c8fff;
-  color: #3f57d4;
+  background: #dbeafe;
+  border-color: #3b82f6;
+  color: #3b82f6;
 }
 
 :root[data-theme='dark'] .quiz-face-feeling.again {
-  background: #4d1f27;
-  border-color: #aa4f5d;
-  color: #ffc6ce;
+  background: #3b1f24;
+  border-color: #ef4444;
+  color: #ffccd2;
 }
 
 :root[data-theme='dark'] .quiz-face-feeling.hard {
-  background: #4a3818;
-  border-color: #a28040;
-  color: #ffe2aa;
+  background: #3b1f24;
+  border-color: #ef4444;
+  color: #ffccd2;
 }
 
 :root[data-theme='dark'] .quiz-face-feeling.medium {
   background: #3f3517;
-  border-color: #a48a36;
+  border-color: #d98d11;
   color: #ffe7a3;
 }
 
 :root[data-theme='dark'] .quiz-face-feeling.good {
   background: #1d4b2b;
-  border-color: #4d8f63;
+  border-color: #22c55e;
   color: #cef9db;
 }
 
 :root[data-theme='dark'] .quiz-face-feeling.easy {
   background: #232f56;
-  border-color: #6f82f0;
+  border-color: #3b82f6;
   color: #d3deff;
 }
 
@@ -1490,29 +1490,29 @@
 }
 
 .quiz-rate-btn.again {
-  border-color: #e4a3a8;
-  background: #fff2f3;
-  color: #a5313f;
+  border-color: #ef4444;
+  background: #fee2e2;
+  color: #ef4444;
 }
 
 .quiz-rate-btn.again:hover {
-  box-shadow: 0 0 0 3px rgba(229, 94, 113, 0.14);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16);
 }
 
 .quiz-rate-btn.hard {
-  border-color: #efbe80;
-  background: #fff4e6;
-  color: #a96208;
+  border-color: #ef4444;
+  background: #fee2e2;
+  color: #ef4444;
 }
 
 .quiz-rate-btn.hard:hover {
-  box-shadow: 0 0 0 3px rgba(243, 153, 45, 0.14);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.16);
 }
 
 .quiz-rate-btn.medium {
-  border-color: #ead27a;
-  background: #fff9df;
-  color: #996b00;
+  border-color: #d98d11;
+  background: #fff1d1;
+  color: #d98d11;
 }
 
 .quiz-rate-btn.medium:disabled {
@@ -1522,9 +1522,9 @@
 }
 
 .quiz-rate-btn.good {
-  border-color: #87cea0;
-  background: #ebfaf0;
-  color: #1e7a42;
+  border-color: #22c55e;
+  background: #dcfce7;
+  color: #22c55e;
 }
 
 .quiz-rate-btn.good:hover {
@@ -1532,9 +1532,9 @@
 }
 
 .quiz-rate-btn.easy {
-  border-color: #92a5ff;
-  background: #edf1ff;
-  color: #3b4ed2;
+  border-color: #3b82f6;
+  background: #dbeafe;
+  color: #3b82f6;
 }
 
 .quiz-rate-btn.easy:hover {
@@ -1542,31 +1542,31 @@
 }
 
 :root[data-theme='dark'] .quiz-rate-btn.again {
-  border-color: #8e3f48;
+  border-color: #ef4444;
   background: #3b1f24;
   color: #ffccd2;
 }
 
 :root[data-theme='dark'] .quiz-rate-btn.hard {
-  border-color: #9a6a2f;
-  background: #3d2b15;
-  color: #ffdcae;
+  border-color: #ef4444;
+  background: #3b1f24;
+  color: #ffccd2;
 }
 
 :root[data-theme='dark'] .quiz-rate-btn.medium {
-  border-color: #a48a36;
+  border-color: #d98d11;
   background: #3f3517;
   color: #ffe7a3;
 }
 
 :root[data-theme='dark'] .quiz-rate-btn.good {
-  border-color: #2f8d52;
+  border-color: #22c55e;
   background: #173926;
   color: #c8f4d5;
 }
 
 :root[data-theme='dark'] .quiz-rate-btn.easy {
-  border-color: #4a63d8;
+  border-color: #3b82f6;
   background: #1a2450;
   color: #dce6ff;
 }
@@ -1598,23 +1598,28 @@
 }
 
 .quiz-feedback.again {
-  color: #9a3040;
-  background: #fff0f2;
+  color: #ef4444;
+  background: #fee2e2;
 }
 
 .quiz-feedback.hard {
-  color: #8f5600;
-  background: #fff0dd;
+  color: #ef4444;
+  background: #fee2e2;
+}
+
+.quiz-feedback.medium {
+  color: #d98d11;
+  background: #fff1d1;
 }
 
 .quiz-feedback.good {
-  color: #1f7d43;
-  background: #e7f7ee;
+  color: #22c55e;
+  background: #dcfce7;
 }
 
 .quiz-feedback.easy {
-  color: #324cb9;
-  background: #ecf1ff;
+  color: #3b82f6;
+  background: #dbeafe;
 }
 
 .quiz-feedback-plus-one {

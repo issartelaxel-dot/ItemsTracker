@@ -434,17 +434,20 @@
   font-size: 1rem !important;
 }
 
-.college-detail-feeling.very-easy,
 .college-detail-feeling.easy {
-  color: #16a34a !important;
+  color: #22c55e !important;
+}
+
+.college-detail-feeling.very-easy {
+  color: #3b82f6 !important;
 }
 
 .college-detail-feeling.medium {
-  color: #f5a400 !important;
+  color: #d98d11 !important;
 }
 
 .college-detail-feeling.hard {
-  color: #f97316 !important;
+  color: #ef4444 !important;
 }
 
 .college-detail-feeling.again {
@@ -666,17 +669,20 @@
   color: var(--muted);
 }
 
-.college-detail-feeling-dot.very-easy,
 .college-detail-feeling-dot.easy {
-  color: #16a34a;
+  color: #22c55e;
+}
+
+.college-detail-feeling-dot.very-easy {
+  color: #3b82f6;
 }
 
 .college-detail-feeling-dot.medium {
-  color: #f5a400;
+  color: #d98d11;
 }
 
 .college-detail-feeling-dot.hard {
-  color: #f97316;
+  color: #ef4444;
 }
 
 .college-detail-feeling-dot.again {
