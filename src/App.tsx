@@ -553,7 +553,7 @@ const QUIZ_TEXT_COLOR_OPTIONS = [
 ] as const
 const QUIZ_TEXT_HIGHLIGHT_COLOR = '#fff59d'
 type QuizRichTextCommand =
-  | { type: 'bold' | 'italic' | 'highlight' | 'clearHighlight' | 'themeColor' | 'bulletList' }
+  | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' | 'bulletList' }
   | { type: 'color'; value: string }
 type PendingQuizRichTextFormat = {
   color?: string
@@ -602,6 +602,10 @@ function hasQuizHighlightedText(element: HTMLElement) {
 
 function hasQuizPlainHighlightText(element: HTMLElement) {
   return element.classList.contains('quiz-rich-plain-highlight-text')
+}
+
+function isQuizHighlightElement(element: HTMLElement) {
+  return hasQuizHighlightedText(element) || isAllowedQuizHighlightColor(element.style.backgroundColor)
 }
 
 function sanitizeQuizRichTextHtml(input: string) {
@@ -814,6 +818,19 @@ function getClosestElementMatching(
 
 function getClosestEditorElementByTag(node: Node | null, editor: HTMLDivElement, tagName: string) {
   return getClosestElementMatching(node, editor, (element) => element.tagName === tagName.toUpperCase())
+}
+
+function rangeHasQuizHighlight(editor: HTMLDivElement, range: Range) {
+  if (
+    getClosestElementMatching(range.startContainer, editor, isQuizHighlightElement) ||
+    getClosestElementMatching(range.endContainer, editor, isQuizHighlightElement)
+  ) {
+    return true
+  }
+
+  const source = document.createElement('div')
+  source.appendChild(range.cloneContents())
+  return Array.from(source.querySelectorAll<HTMLElement>('*')).some(isQuizHighlightElement)
 }
 
 function wrapEditorSelection(editor: HTMLDivElement, configureWrapper: (wrapper: HTMLSpanElement) => void) {
@@ -1065,13 +1082,9 @@ function applyQuizRichTextCommand(editor: HTMLDivElement, command: QuizRichTextC
   }
 
   if (command.type === 'highlight') {
+    const shouldClearHighlight = rangeHasQuizHighlight(editor, range)
     formatEditorSelection(editor, { highlight: true }, (wrapper) => {
-      wrapper.classList.add('quiz-rich-highlight-text')
-    })
-  }
-  if (command.type === 'clearHighlight') {
-    formatEditorSelection(editor, { highlight: true }, (wrapper) => {
-      wrapper.classList.add('quiz-rich-plain-highlight-text')
+      wrapper.classList.add(shouldClearHighlight ? 'quiz-rich-plain-highlight-text' : 'quiz-rich-highlight-text')
     })
   }
   if (command.type === 'color') {
@@ -1195,7 +1208,7 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
     restoreSelectionRange()
     const range = getEditorRange(editor)
     const hasSelectionText = Boolean(range && !range.collapsed && range.toString())
-    if (!hasSelectionText && (command.type === 'color' || command.type === 'themeColor' || command.type === 'highlight' || command.type === 'clearHighlight')) {
+    if (!hasSelectionText && (command.type === 'color' || command.type === 'themeColor' || command.type === 'highlight')) {
       if (command.type === 'color') {
         pendingFormatRef.current = {
           ...pendingFormatRef.current,
@@ -1210,14 +1223,20 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
           highlight: false,
         }
       } else if (command.type === 'highlight') {
-        pendingFormatRef.current = {
-          ...pendingFormatRef.current,
-          highlight: true,
+        const hasActiveHighlight =
+          pendingFormatRef.current.highlight === true || Boolean(range && rangeHasQuizHighlight(editor, range))
+        const nextPendingFormat = { ...pendingFormatRef.current }
+        if (hasActiveHighlight) {
+          if (range && rangeHasQuizHighlight(editor, range)) {
+            nextPendingFormat.highlight = false
+          } else {
+            delete nextPendingFormat.highlight
+          }
+        } else {
+          nextPendingFormat.highlight = true
         }
-      } else {
         pendingFormatRef.current = {
-          ...pendingFormatRef.current,
-          highlight: false,
+          ...nextPendingFormat,
         }
       }
       editor.focus({ preventScroll: true })
@@ -1303,9 +1322,6 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
         </button>
         <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'highlight' })}>
           Surligner
-        </button>
-        <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'clearHighlight' })}>
-          Retirer surlignage
         </button>
         <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'bulletList' })}>
           Puces
