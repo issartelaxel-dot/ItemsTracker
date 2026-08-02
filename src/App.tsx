@@ -919,28 +919,6 @@ function applyEditorRangeHighlight(editor: HTMLDivElement, range: Range) {
   })
 }
 
-function clearEditorRangeHighlight(editor: HTMLDivElement, range: Range) {
-  const textNodes = getSelectedTextNodesInEditorRange(editor, range)
-  const highlightedElements = new Set<HTMLElement>()
-  textNodes.forEach(({ node: textNode }) => {
-    const highlightElement = getClosestElementMatching(textNode, editor, isQuizHighlightElement)
-    if (highlightElement) {
-      highlightedElements.add(highlightElement)
-    }
-  })
-  if (highlightedElements.size === 0) {
-    return false
-  }
-  highlightedElements.forEach((element) => {
-    cleanQuizRichTextFormatting(element, { highlight: true })
-  })
-  const lastElement = Array.from(highlightedElements).at(-1)
-  if (lastElement) {
-    placeCaretAfterNode(lastElement)
-  }
-  return true
-}
-
 function getNodeInnerHtml(node: Node) {
   const container = document.createElement('div')
   Array.from(node.childNodes).forEach((child) => {
@@ -1016,8 +994,16 @@ function formatEditorSelection(
 
 function clearEditorSelectionHighlight(editor: HTMLDivElement) {
   const range = getEditorRange(editor)
-  if (range && clearEditorRangeHighlight(editor, range)) {
-    return true
+  if (range && !range.collapsed && range.toString()) {
+    return formatEditorSelection(editor, { highlight: true })
+  }
+  if (range) {
+    const activeHighlightElement = getClosestElementMatching(range.startContainer, editor, isQuizHighlightElement)
+    if (activeHighlightElement) {
+      cleanQuizRichTextFormatting(activeHighlightElement, { highlight: true })
+      placeCaretAfterNode(activeHighlightElement)
+      return true
+    }
   }
   return formatEditorSelection(editor, { highlight: true })
 }
