@@ -1257,6 +1257,21 @@
   line-height: 1.1;
 }
 
+.quiz-rich-editable-wrap {
+  position: relative;
+  min-width: 0;
+}
+
+.quiz-rich-placeholder {
+  position: absolute;
+  top: 0.7rem;
+  left: 0.85rem;
+  max-width: calc(100% - 1.7rem);
+  color: var(--muted);
+  pointer-events: none;
+  overflow-wrap: anywhere;
+}
+
 .quiz-rich-color-btn {
   min-width: 2.2rem;
 }

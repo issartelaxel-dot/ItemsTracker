@@ -1,14 +1,34 @@
 import {
+  $createParagraphNode,
+  $getRoot,
+  $getSelection,
+  $insertNodes,
+  $isRangeSelection,
+  COMMAND_PRIORITY_LOW,
+  FORMAT_TEXT_COMMAND,
+  KEY_MODIFIER_COMMAND,
+  type EditorState,
+  type LexicalEditor,
+} from 'lexical'
+import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html'
+import { INSERT_UNORDERED_LIST_COMMAND, ListItemNode, ListNode } from '@lexical/list'
+import { $getSelectionStyleValueForProperty, $patchStyleText } from '@lexical/selection'
+import { LexicalComposer } from '@lexical/react/LexicalComposer'
+import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
+import { ContentEditable } from '@lexical/react/LexicalContentEditable'
+import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
+import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
+import { ListPlugin } from '@lexical/react/LexicalListPlugin'
+import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
+import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
+import {
   useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
   useState,
-  type ClipboardEvent,
   type CSSProperties,
   type DragEvent as ReactDragEvent,
-  type FormEvent,
-  type KeyboardEvent as ReactKeyboardEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent,
 } from 'react'
@@ -553,14 +573,6 @@ const QUIZ_TEXT_COLOR_OPTIONS = [
 const QUIZ_TEXT_HIGHLIGHT_COLOR = '#fff59d'
 const QUIZ_RICH_TEXT_MAX_CHARS = 500
 const QUIZ_RICH_TEXT_SYNC_DELAY_MS = 320
-type QuizRichTextCommand =
-  | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' | 'bulletList' }
-  | { type: 'color'; value: string }
-type PendingQuizRichTextFormat = {
-  color?: string
-  themeColor?: boolean
-  highlight?: boolean
-}
 
 function normalizeQuizRichTextColor(value: string) {
   const normalized = value.trim().toLowerCase()
@@ -603,10 +615,6 @@ function hasQuizHighlightedText(element: HTMLElement) {
 
 function hasQuizPlainHighlightText(element: HTMLElement) {
   return element.classList.contains('quiz-rich-plain-highlight-text')
-}
-
-function isQuizHighlightElement(element: HTMLElement) {
-  return hasQuizHighlightedText(element) || isAllowedQuizHighlightColor(element.style.backgroundColor)
 }
 
 function sanitizeQuizRichTextHtml(input: string) {
@@ -783,352 +791,86 @@ function hasQuizRichTextContent(value: string) {
   return getQuizRichTextPlainText(value).length > 0
 }
 
-function getEditorSelection(editor: HTMLDivElement) {
-  const selection = window.getSelection()
-  if (!selection || selection.rangeCount === 0 || !selection.anchorNode || !selection.focusNode) {
-    return null
-  }
-  if (!editor.contains(selection.anchorNode) || !editor.contains(selection.focusNode)) {
-    return null
-  }
-  return selection
+const QUIZ_LEXICAL_THEME = {
+  paragraph: 'quiz-rich-paragraph',
+  text: {
+    bold: 'quiz-rich-bold-text',
+    italic: 'quiz-rich-italic-text',
+  },
+  list: {
+    ul: 'quiz-rich-list',
+    listitem: 'quiz-rich-list-item',
+  },
 }
 
-function getEditorRange(editor: HTMLDivElement) {
-  const selection = getEditorSelection(editor)
-  if (!selection || selection.rangeCount === 0) {
-    return null
+function prepareQuizRichTextHtmlForLexical(value: string) {
+  const sanitized = sanitizeQuizRichTextHtml(value)
+  if (!sanitized || typeof document === 'undefined') {
+    return sanitized
   }
-  return selection.getRangeAt(0)
+
+  const root = document.createElement('div')
+  root.innerHTML = sanitized
+  root.querySelectorAll<HTMLElement>('.quiz-rich-highlight-text').forEach((element) => {
+    element.style.backgroundColor = QUIZ_TEXT_HIGHLIGHT_COLOR
+  })
+  root.querySelectorAll<HTMLElement>('.quiz-rich-plain-highlight-text').forEach((element) => {
+    element.style.removeProperty('background-color')
+  })
+  root.querySelectorAll<HTMLElement>('.quiz-rich-theme-text').forEach((element) => {
+    element.style.removeProperty('color')
+  })
+  return root.innerHTML
 }
 
-function getClosestElementMatching(
-  node: Node | null,
-  editor: HTMLDivElement,
-  predicate: (element: HTMLElement) => boolean,
-) {
-  let current: Node | null = node
-  while (current && current !== editor) {
-    if (current.nodeType === Node.ELEMENT_NODE && predicate(current as HTMLElement)) {
-      return current as HTMLElement
-    }
-    current = current.parentNode
+function initializeQuizLexicalEditor(editor: LexicalEditor, value: string) {
+  const root = $getRoot()
+  root.clear()
+
+  const html = prepareQuizRichTextHtmlForLexical(value)
+  if (!html || typeof DOMParser === 'undefined') {
+    root.append($createParagraphNode())
+    return
   }
-  return null
+
+  const parser = new DOMParser()
+  const dom = parser.parseFromString(html, 'text/html')
+  const nodes = $generateNodesFromDOM(editor, dom)
+  if (nodes.length === 0) {
+    root.append($createParagraphNode())
+    return
+  }
+
+  root.select()
+  $insertNodes(nodes)
 }
 
-function getTextNodesInEditorRange(editor: HTMLDivElement, range: Range) {
-  const textNodes: Text[] = []
-  const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT)
-  let node = walker.nextNode()
-  while (node) {
-    if ((node.textContent ?? '').length > 0 && range.intersectsNode(node)) {
-      textNodes.push(node as Text)
-    }
-    node = walker.nextNode()
+function getQuizLexicalSelectionTextLength() {
+  const selection = $getSelection()
+  if (!$isRangeSelection(selection)) {
+    return 0
   }
-  return textNodes
+  return selection.getTextContent().replace(/\s+/g, ' ').trim().length
 }
 
-function getSelectedTextNodeOffsets(node: Text, range: Range) {
-  const textLength = node.data.length
-  let start = 0
-  let end = textLength
-  if (node === range.startContainer) {
-    start = range.startOffset
-  }
-  if (node === range.endContainer) {
-    end = range.endOffset
-  }
-  return {
-    start: Math.max(0, Math.min(start, textLength)),
-    end: Math.max(0, Math.min(end, textLength)),
-  }
+function getQuizLexicalTextLength() {
+  return $getRoot().getTextContent().replace(/\s+/g, ' ').trim().length
 }
 
-function getSelectedTextNodesInEditorRange(editor: HTMLDivElement, range: Range) {
-  return getTextNodesInEditorRange(editor, range)
-    .map((node) => ({ node, offsets: getSelectedTextNodeOffsets(node, range) }))
-    .filter(({ node, offsets }) => offsets.start < offsets.end && node.data.slice(offsets.start, offsets.end).length > 0)
-}
-
-function rangeHasActiveQuizHighlight(editor: HTMLDivElement, range: Range) {
-  return Boolean(
-    getClosestElementMatching(range.startContainer, editor, isQuizHighlightElement) ||
-      getClosestElementMatching(range.endContainer, editor, isQuizHighlightElement),
-  )
-}
-
-function rangeIsFullyQuizHighlighted(editor: HTMLDivElement, range: Range) {
-  const textNodes = getSelectedTextNodesInEditorRange(editor, range)
-  if (textNodes.length === 0) {
-    return rangeHasActiveQuizHighlight(editor, range)
-  }
-  return textNodes.every(({ node }) => Boolean(getClosestElementMatching(node, editor, isQuizHighlightElement)))
-}
-
-function wrapSelectedEditorTextNodes(
-  editor: HTMLDivElement,
-  range: Range,
-  configureWrapper: (wrapper: HTMLSpanElement) => void,
-) {
-  const textNodes = getSelectedTextNodesInEditorRange(editor, range)
-  if (textNodes.length === 0) {
+function isQuizLexicalSelectionHighlighted() {
+  const selection = $getSelection()
+  if (!$isRangeSelection(selection)) {
     return false
   }
-
-  let caretTarget: HTMLElement | null = null
-  ;[...textNodes].reverse().forEach(({ node: textNode, offsets }) => {
-    const { start, end } = offsets
-    if (start >= end) {
-      return
-    }
-
-    let selectedText = textNode
-    if (end < selectedText.data.length) {
-      selectedText.splitText(end)
-    }
-    if (start > 0) {
-      selectedText = selectedText.splitText(start)
-    }
-    if (!selectedText.data) {
-      return
-    }
-
-    const parent = selectedText.parentNode
-    if (!parent) {
-      return
-    }
-    const wrapper = document.createElement('span')
-    configureWrapper(wrapper)
-    parent.insertBefore(wrapper, selectedText)
-    wrapper.appendChild(selectedText)
-    caretTarget ??= wrapper
-  })
-
-  if (caretTarget) {
-    placeCaretAfterNode(caretTarget)
-    return true
-  }
-  return false
+  return isAllowedQuizHighlightColor($getSelectionStyleValueForProperty(selection, 'background-color', ''))
 }
 
-function applyEditorRangeHighlight(editor: HTMLDivElement, range: Range) {
-  return wrapSelectedEditorTextNodes(editor, range, (wrapper) => {
-    wrapper.classList.add('quiz-rich-highlight-text')
-  })
-}
-
-function getNodeInnerHtml(node: Node) {
-  const container = document.createElement('div')
-  Array.from(node.childNodes).forEach((child) => {
-    container.appendChild(child.cloneNode(true))
-  })
-  return container.innerHTML
-}
-
-function replaceEditorSelectionWithHtml(editor: HTMLDivElement, html: string) {
-  const sanitized = sanitizeQuizRichTextHtml(html)
-  if (!sanitized) {
-    return false
-  }
-  editor.focus({ preventScroll: true })
-  return document.execCommand('insertHTML', false, sanitized)
-}
-
-function wrapEditorSelection(editor: HTMLDivElement, configureWrapper: (wrapper: HTMLSpanElement) => void) {
-  const range = getEditorRange(editor)
-  if (!range || range.collapsed || !range.toString()) {
-    return false
-  }
-  const wrapper = document.createElement('span')
-  wrapper.appendChild(range.cloneContents())
-  configureWrapper(wrapper)
-  return replaceEditorSelectionWithHtml(editor, wrapper.outerHTML)
-}
-
-function cleanQuizRichTextFormatting(
-  root: ParentNode,
-  options: { color?: boolean; highlight?: boolean },
-) {
-  const elements = [
-    ...(root instanceof HTMLElement ? [root] : []),
-    ...Array.from(root.querySelectorAll<HTMLElement>('*')),
-  ]
-  elements.forEach((element) => {
-    if (options.color) {
-      element.style.removeProperty('color')
-      element.removeAttribute('color')
-      element.classList.remove('quiz-rich-theme-text')
-    }
-    if (options.highlight) {
-      element.style.removeProperty('background-color')
-      element.classList.remove('quiz-rich-highlight-text', 'quiz-rich-plain-highlight-text')
-    }
-  })
-}
-
-function formatEditorSelection(
-  editor: HTMLDivElement,
-  cleanOptions: { color?: boolean; highlight?: boolean },
-  configureWrapper?: (wrapper: HTMLSpanElement) => void,
-) {
-  const range = getEditorRange(editor)
-  if (configureWrapper && range && !range.collapsed && range.toString()) {
-    const wrapped = wrapSelectedEditorTextNodes(editor, range, (wrapper) => {
-      configureWrapper?.(wrapper)
-    })
-    if (wrapped) {
-      return true
-    }
-  }
-
-  return wrapEditorSelection(editor, (wrapper) => {
-    const fragment = document.createDocumentFragment()
-    moveChildren(wrapper, fragment)
-    cleanQuizRichTextFormatting(fragment, cleanOptions)
-    moveChildren(fragment, wrapper)
-    configureWrapper?.(wrapper)
-  })
-}
-
-function clearEditorSelectionHighlight(editor: HTMLDivElement) {
-  const range = getEditorRange(editor)
-  if (range && !range.collapsed && range.toString()) {
-    return formatEditorSelection(editor, { highlight: true })
-  }
-  if (range) {
-    const activeHighlightElement = getClosestElementMatching(range.startContainer, editor, isQuizHighlightElement)
-    if (activeHighlightElement) {
-      cleanQuizRichTextFormatting(activeHighlightElement, { highlight: true })
-      placeCaretAfterNode(activeHighlightElement)
-      return true
-    }
-  }
-  return formatEditorSelection(editor, { highlight: true })
-}
-
-function moveChildren(source: Node, target: Node) {
-  while (source.firstChild) {
-    target.appendChild(source.firstChild)
-  }
-}
-
-function convertSelectionToEditorList(editor: HTMLDivElement) {
-  editor.focus({ preventScroll: true })
-  document.execCommand('insertUnorderedList', false)
-}
-
-function placeCaretAfterNode(node: Node) {
-  const selection = window.getSelection()
-  if (!selection) {
+function patchQuizLexicalSelectionStyle(styles: Record<string, string | null>) {
+  const selection = $getSelection()
+  if (!$isRangeSelection(selection)) {
     return
   }
-  const range = document.createRange()
-  range.setStartAfter(node)
-  range.collapse(true)
-  selection.removeAllRanges()
-  selection.addRange(range)
-}
-
-function applyPendingQuizRichTextFormat(wrapper: HTMLSpanElement, format: PendingQuizRichTextFormat) {
-  if (format.themeColor) {
-    wrapper.classList.add('quiz-rich-theme-text')
-  } else if (format.color) {
-    wrapper.style.color = format.color
-  }
-  if (format.highlight) {
-    wrapper.classList.add('quiz-rich-highlight-text')
-  }
-}
-
-function insertFormattedTextAtEditorSelection(
-  editor: HTMLDivElement,
-  text: string,
-  format: PendingQuizRichTextFormat = {},
-) {
-  const range = getEditorRange(editor)
-  const targetRange = range ?? document.createRange()
-  if (!range) {
-    targetRange.selectNodeContents(editor)
-    targetRange.collapse(false)
-    const selection = window.getSelection()
-    selection?.removeAllRanges()
-    selection?.addRange(targetRange)
-  }
-  const fragment = document.createDocumentFragment()
-  const lines = text.replace(/\r\n?/g, '\n').split('\n')
-  lines.forEach((line, index) => {
-    if (index > 0) {
-      fragment.appendChild(document.createElement('br'))
-    }
-    if (!line) {
-      return
-    }
-    const hasFormat = Boolean(format.themeColor || format.color || format.highlight)
-    if (hasFormat) {
-      const wrapper = document.createElement('span')
-      applyPendingQuizRichTextFormat(wrapper, format)
-      wrapper.textContent = line
-      fragment.appendChild(wrapper)
-    } else {
-      fragment.appendChild(document.createTextNode(line))
-    }
-  })
-
-  replaceEditorSelectionWithHtml(editor, getNodeInnerHtml(fragment))
-}
-
-function getEditorPlainTextLength(editor: HTMLDivElement) {
-  return getQuizRichTextPlainText(editor.innerHTML).length
-}
-
-function getAllowedEditorInsertionText(editor: HTMLDivElement, text: string, maxLength?: number) {
-  if (!maxLength || maxLength <= 0) {
-    return text
-  }
-  const range = getEditorRange(editor)
-  const selectedLength = range && !range.collapsed ? getQuizRichTextPlainText(range.cloneContents().textContent ?? '').length : 0
-  const currentLength = getEditorPlainTextLength(editor)
-  const availableLength = Math.max(0, maxLength - Math.max(0, currentLength - selectedLength))
-  return text.slice(0, availableLength)
-}
-
-function applyQuizRichTextCommand(editor: HTMLDivElement, command: QuizRichTextCommand) {
-  editor.focus({ preventScroll: true })
-  if (command.type === 'bulletList') {
-    convertSelectionToEditorList(editor)
-    return
-  }
-  const range = getEditorRange(editor)
-  if (command.type === 'bold' || command.type === 'italic') {
-    document.execCommand(command.type, false)
-    return
-  }
-
-  if (!range || range.collapsed || !range.toString()) {
-    return
-  }
-
-  if (command.type === 'highlight') {
-    if (rangeIsFullyQuizHighlighted(editor, range)) {
-      clearEditorSelectionHighlight(editor)
-    } else if (!applyEditorRangeHighlight(editor, range)) {
-      formatEditorSelection(editor, { highlight: true }, (wrapper) => {
-        wrapper.classList.add('quiz-rich-highlight-text')
-      })
-    }
-  }
-  if (command.type === 'color') {
-    formatEditorSelection(editor, { color: true }, (wrapper) => {
-      wrapper.style.color = command.value
-    })
-  }
-  if (command.type === 'themeColor') {
-    formatEditorSelection(editor, { color: true }, (wrapper) => {
-      wrapper.classList.add('quiz-rich-theme-text')
-    })
-  }
+  $patchStyleText(selection, styles)
 }
 
 type QuizRichTextEditorProps = {
@@ -1138,40 +880,44 @@ type QuizRichTextEditorProps = {
   maxLength?: number
 }
 
-function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRichTextEditorProps) {
-  const editorRef = useRef<HTMLDivElement | null>(null)
-  const isFocusedRef = useRef(false)
-  const lastSelectionRangeRef = useRef<Range | null>(null)
-  const lastEmittedValueRef = useRef('')
-  const lastAppliedValueRef = useRef('')
-  const pendingSyncedValueRef = useRef('')
-  const syncTimeoutRef = useRef<number | null>(null)
-  const pendingFormatRef = useRef<PendingQuizRichTextFormat>({})
-  const normalizedValue = sanitizeQuizRichTextHtml(value)
+function QuizLexicalInitialValuePlugin({ value }: { value: string }) {
+  const [editor] = useLexicalComposerContext()
+  const initializedRef = useRef(false)
 
-  const clearPendingSync = () => {
-    if (syncTimeoutRef.current !== null) {
-      window.clearTimeout(syncTimeoutRef.current)
-      syncTimeoutRef.current = null
-    }
-  }
-
-  const emitValue = (nextValue: string, options: { flush?: boolean } = {}) => {
-    pendingSyncedValueRef.current = nextValue
-
-    if (options.flush) {
-      clearPendingSync()
-      if (lastEmittedValueRef.current !== nextValue) {
-        lastEmittedValueRef.current = nextValue
-        onChange(nextValue)
-      }
+  useLayoutEffect(() => {
+    if (initializedRef.current) {
       return
     }
+    initializedRef.current = true
+    editor.update(() => {
+      initializeQuizLexicalEditor(editor, value)
+    })
+  }, [editor, value])
 
-    clearPendingSync()
+  return null
+}
+
+function QuizLexicalOnChangePlugin({ onChange }: { onChange: (value: string) => void }) {
+  const lastEmittedValueRef = useRef('')
+  const pendingValueRef = useRef('')
+  const syncTimeoutRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    return () => {
+      if (syncTimeoutRef.current !== null) {
+        window.clearTimeout(syncTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  const emitValue = (nextValue: string) => {
+    pendingValueRef.current = nextValue
+    if (syncTimeoutRef.current !== null) {
+      window.clearTimeout(syncTimeoutRef.current)
+    }
     syncTimeoutRef.current = window.setTimeout(() => {
       syncTimeoutRef.current = null
-      const valueToEmit = pendingSyncedValueRef.current
+      const valueToEmit = pendingValueRef.current
       if (lastEmittedValueRef.current !== valueToEmit) {
         lastEmittedValueRef.current = valueToEmit
         onChange(valueToEmit)
@@ -1179,302 +925,240 @@ function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRic
     }, QUIZ_RICH_TEXT_SYNC_DELAY_MS)
   }
 
-  useEffect(() => {
-    const editor = editorRef.current
-    if (!editor) {
-      return
-    }
-    if (isFocusedRef.current) {
-      return
-    }
-    if (lastAppliedValueRef.current === normalizedValue && sanitizeQuizRichTextHtml(editor.innerHTML) === normalizedValue) {
-      return
-    }
-    editor.innerHTML = normalizedValue
-    lastAppliedValueRef.current = normalizedValue
-    lastEmittedValueRef.current = normalizedValue
-    pendingSyncedValueRef.current = normalizedValue
-  }, [normalizedValue])
+  return (
+    <OnChangePlugin
+      ignoreSelectionChange
+      onChange={(_editorState: EditorState, activeEditor) => {
+        activeEditor.getEditorState().read(() => {
+          emitValue(sanitizeQuizRichTextHtml($generateHtmlFromNodes(activeEditor, null)))
+        })
+      }}
+    />
+  )
+}
+
+function QuizLexicalShortcutsPlugin() {
+  const [editor] = useLexicalComposerContext()
 
   useEffect(() => {
-    return () => {
-      clearPendingSync()
-    }
-  }, [])
+    return editor.registerCommand(
+      KEY_MODIFIER_COMMAND,
+      (event) => {
+        if (!(event.metaKey || event.ctrlKey)) {
+          return false
+        }
+        const key = event.key.toLowerCase()
+        if (key !== 'u') {
+          return false
+        }
+        event.preventDefault()
+        editor.update(() => {
+          patchQuizLexicalSelectionStyle({
+            'background-color': isQuizLexicalSelectionHighlighted() ? null : QUIZ_TEXT_HIGHLIGHT_COLOR,
+          })
+        })
+        return true
+      },
+      COMMAND_PRIORITY_LOW,
+    )
+  }, [editor])
 
-  const syncValue = (options: { commitDom?: boolean; flush?: boolean } = {}) => {
-    const editor = editorRef.current
-    if (!editor) {
-      return
+  return null
+}
+
+function QuizLexicalMaxLengthPlugin({ maxLength }: { maxLength?: number }) {
+  const [editor] = useLexicalComposerContext()
+
+  useEffect(() => {
+    if (!maxLength || maxLength <= 0) {
+      return undefined
     }
-    const nextValue = sanitizeQuizRichTextHtml(editor.innerHTML)
-    if (options.commitDom) {
-      const nextDomValue = nextValue || ''
-      if (editor.innerHTML !== nextDomValue) {
-        editor.innerHTML = nextDomValue
+
+    const getNextLength = (insertedText: string) => {
+      return editor.getEditorState().read(() => {
+        const currentLength = getQuizLexicalTextLength()
+        const selectedLength = getQuizLexicalSelectionTextLength()
+        return Math.max(0, currentLength - selectedLength) + insertedText.length
+      })
+    }
+
+    const handleBeforeInput = (event: InputEvent) => {
+      const inputType = event.inputType ?? ''
+      if (inputType.startsWith('format')) {
+        event.preventDefault()
+        return
       }
-      lastAppliedValueRef.current = nextValue
+      if (!inputType.startsWith('insert')) {
+        return
+      }
+      const insertedText = inputType === 'insertParagraph' ? '\n' : event.data ?? ''
+      if (!insertedText) {
+        return
+      }
+      if (getNextLength(insertedText) > maxLength) {
+        event.preventDefault()
+      }
     }
-    if (pendingSyncedValueRef.current !== nextValue || lastEmittedValueRef.current !== nextValue) {
-      emitValue(nextValue, { flush: options.flush })
-    }
-  }
 
-  const saveSelectionRange = () => {
-    const editor = editorRef.current
-    if (!editor) {
-      return
-    }
-    const range = getEditorRange(editor)
-    if (!range) {
-      return
-    }
-    lastSelectionRangeRef.current = range.cloneRange()
-  }
-
-  const restoreSelectionRange = () => {
-    const editor = editorRef.current
-    const range = lastSelectionRangeRef.current
-    const selection = window.getSelection()
-    if (!editor || !range || !selection) {
-      return
-    }
-    if (!editor.contains(range.startContainer) || !editor.contains(range.endContainer)) {
-      lastSelectionRangeRef.current = null
-      return
-    }
-    selection.removeAllRanges()
-    selection.addRange(range)
-  }
-
-  const runCommand = (command: QuizRichTextCommand) => {
-    const editor = editorRef.current
-    if (!editor) {
-      return
-    }
-    restoreSelectionRange()
-    const range = getEditorRange(editor)
-    const hasSelectionText = Boolean(range && !range.collapsed && range.toString())
-    if (!hasSelectionText && (command.type === 'color' || command.type === 'themeColor' || command.type === 'highlight')) {
-      if (command.type === 'color') {
-        pendingFormatRef.current = {
-          ...pendingFormatRef.current,
-          color: command.value,
-          themeColor: false,
-        }
-      } else if (command.type === 'themeColor') {
-        pendingFormatRef.current = {
-          ...pendingFormatRef.current,
-          color: undefined,
-          themeColor: true,
-        }
-      } else if (command.type === 'highlight') {
-        const hasActiveHighlight =
-          pendingFormatRef.current.highlight === true || Boolean(range && rangeHasActiveQuizHighlight(editor, range))
-        const nextPendingFormat = { ...pendingFormatRef.current }
-        if (hasActiveHighlight) {
-          if (range && rangeHasActiveQuizHighlight(editor, range)) {
-            const activeHighlightElement = getClosestElementMatching(range.startContainer, editor, isQuizHighlightElement)
-            if (activeHighlightElement) {
-              cleanQuizRichTextFormatting(activeHighlightElement, { highlight: true })
-              placeCaretAfterNode(activeHighlightElement)
-              delete nextPendingFormat.highlight
-              pendingFormatRef.current = nextPendingFormat
-              syncValue({ commitDom: true, flush: true })
-              saveSelectionRange()
-              editor.focus({ preventScroll: true })
-              return
+    const handlePaste = (event: ClipboardEvent) => {
+      const pastedText = event.clipboardData?.getData('text/plain') ?? ''
+      if (!pastedText) {
+        return
+      }
+      if (getNextLength(pastedText) > maxLength) {
+        event.preventDefault()
+        const allowedText = editor.getEditorState().read(() => {
+          const currentLength = getQuizLexicalTextLength()
+          const selectedLength = getQuizLexicalSelectionTextLength()
+          const availableLength = Math.max(0, maxLength - Math.max(0, currentLength - selectedLength))
+          return pastedText.slice(0, availableLength)
+        })
+        if (allowedText) {
+          editor.update(() => {
+            const selection = $getSelection()
+            if ($isRangeSelection(selection)) {
+              selection.insertText(allowedText)
             }
-            nextPendingFormat.highlight = false
-          } else {
-            delete nextPendingFormat.highlight
-          }
-        } else {
-          nextPendingFormat.highlight = true
-        }
-        pendingFormatRef.current = {
-          ...nextPendingFormat,
+          })
         }
       }
-      editor.focus({ preventScroll: true })
-      return
     }
 
-    applyQuizRichTextCommand(editor, command)
-    pendingFormatRef.current = {}
-    syncValue({ commitDom: command.type !== 'bold' && command.type !== 'italic', flush: true })
-    saveSelectionRange()
-  }
+    return editor.registerRootListener((rootElement, previousRootElement) => {
+      previousRootElement?.removeEventListener('beforeinput', handleBeforeInput)
+      previousRootElement?.removeEventListener('paste', handlePaste)
+      rootElement?.addEventListener('beforeinput', handleBeforeInput)
+      rootElement?.addEventListener('paste', handlePaste)
+    })
+  }, [editor, maxLength])
 
-  const runToolbarCommand = (event: ReactMouseEvent<HTMLButtonElement>, command: QuizRichTextCommand) => {
+  return null
+}
+
+function QuizRichTextToolbar() {
+  const [editor] = useLexicalComposerContext()
+
+  const runToolbarAction = (event: ReactMouseEvent<HTMLButtonElement>, action: () => void) => {
     event.preventDefault()
-    runCommand(command)
+    editor.focus()
+    action()
   }
 
-  const handlePaste = (event: ClipboardEvent<HTMLDivElement>) => {
-    event.preventDefault()
-    const pastedText = event.clipboardData.getData('text/plain')
-    if (!pastedText) {
-      return
-    }
-    const editor = editorRef.current
-    if (!editor) {
-      return
-    }
-    const allowedText = getAllowedEditorInsertionText(editor, pastedText, maxLength)
-    if (!allowedText) {
-      editor.focus({ preventScroll: true })
-      return
-    }
-    insertFormattedTextAtEditorSelection(editor, allowedText, pendingFormatRef.current)
-    pendingFormatRef.current = {}
-    syncValue({ flush: true })
-    saveSelectionRange()
+  const patchSelectionColor = (color: string | null) => {
+    editor.update(() => {
+      patchQuizLexicalSelectionStyle({ color })
+    })
   }
 
-  const handleBeforeInput = (event: FormEvent<HTMLDivElement>) => {
-    const nativeEvent = event.nativeEvent as InputEvent
-    const inputType = nativeEvent.inputType ?? ''
-    if (inputType.startsWith('format')) {
-      event.preventDefault()
-      return
-    }
-    const pendingFormat = pendingFormatRef.current
-    const hasPendingFormat = Boolean(pendingFormat.themeColor || pendingFormat.color || pendingFormat.highlight === true)
-    if (inputType === 'insertParagraph' && maxLength) {
-      const editor = editorRef.current
-      if (!editor) {
-        return
-      }
-      const allowedText = getAllowedEditorInsertionText(editor, '\n', maxLength)
-      if (!allowedText) {
-        event.preventDefault()
-        return
-      }
-      if (hasPendingFormat) {
-        event.preventDefault()
-        insertFormattedTextAtEditorSelection(editor, allowedText, pendingFormat)
-        syncValue()
-        saveSelectionRange()
-      }
-      return
-    }
-    if (inputType === 'insertText' && nativeEvent.data && (hasPendingFormat || maxLength)) {
-      const editor = editorRef.current
-      if (!editor) {
-        return
-      }
-      const allowedText = getAllowedEditorInsertionText(editor, nativeEvent.data, maxLength)
-      if (!allowedText) {
-        event.preventDefault()
-        return
-      }
-      if (!hasPendingFormat && allowedText === nativeEvent.data) {
-        return
-      }
-      event.preventDefault()
-      insertFormattedTextAtEditorSelection(editor, allowedText, pendingFormat)
-      syncValue()
-      saveSelectionRange()
-    }
-  }
-
-  const handleKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
-    if (!(event.metaKey || event.ctrlKey)) {
-      return
-    }
-    const key = event.key.toLowerCase()
-    if (key !== 'b' && key !== 'i' && key !== 'u') {
-      return
-    }
-    event.preventDefault()
-    if (key === 'b') {
-      runCommand({ type: 'bold' })
-    }
-    if (key === 'i') {
-      runCommand({ type: 'italic' })
-    }
-    if (key === 'u') {
-      runCommand({ type: 'highlight' })
-    }
+  const toggleHighlight = () => {
+    editor.update(() => {
+      patchQuizLexicalSelectionStyle({
+        'background-color': isQuizLexicalSelectionHighlighted() ? null : QUIZ_TEXT_HIGHLIGHT_COLOR,
+      })
+    })
   }
 
   return (
-    <div className="quiz-rich-editor">
-      <div className="quiz-rich-toolbar">
-        <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'bold' })}>
-          Gras
-        </button>
-        <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'italic' })}>
-          Italique
-        </button>
-        <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'highlight' })}>
-          Surligner
-        </button>
-        <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarCommand(event, { type: 'bulletList' })}>
-          Puces
-        </button>
+    <div className="quiz-rich-toolbar">
+      <button
+        type="button"
+        className="ghost-btn"
+        onMouseDown={(event) => runToolbarAction(event, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold'))}
+      >
+        Gras
+      </button>
+      <button
+        type="button"
+        className="ghost-btn"
+        onMouseDown={(event) => runToolbarAction(event, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic'))}
+      >
+        Italique
+      </button>
+      <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarAction(event, toggleHighlight)}>
+        Surligner
+      </button>
+      <button
+        type="button"
+        className="ghost-btn"
+        onMouseDown={(event) => runToolbarAction(event, () => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined))}
+      >
+        Puces
+      </button>
+      <button
+        type="button"
+        className="ghost-btn quiz-rich-color-btn"
+        title="Couleur normale"
+        aria-label="Couleur normale"
+        onMouseDown={(event) => runToolbarAction(event, () => patchSelectionColor(null))}
+      >
+        <span className="quiz-rich-color-swatch quiz-rich-theme-color-swatch" aria-hidden="true" />
+      </button>
+      {QUIZ_TEXT_COLOR_OPTIONS.map((option) => (
         <button
+          key={option.value}
           type="button"
           className="ghost-btn quiz-rich-color-btn"
-          title="Couleur normale"
-          aria-label="Couleur normale"
-          onMouseDown={(event) => runToolbarCommand(event, { type: 'themeColor' })}
+          title={option.label}
+          aria-label={option.label}
+          onMouseDown={(event) => runToolbarAction(event, () => patchSelectionColor(option.value))}
         >
-          <span className="quiz-rich-color-swatch quiz-rich-theme-color-swatch" aria-hidden="true" />
+          <span className="quiz-rich-color-swatch" style={{ backgroundColor: option.value }} aria-hidden="true" />
         </button>
-        {QUIZ_TEXT_COLOR_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            className="ghost-btn quiz-rich-color-btn"
-            title={option.label}
-            aria-label={option.label}
-            onMouseDown={(event) => runToolbarCommand(event, { type: 'color', value: option.value })}
-          >
-            <span className="quiz-rich-color-swatch" style={{ backgroundColor: option.value }} aria-hidden="true" />
-          </button>
-        ))}
-                </div>
-      <div
-        ref={editorRef}
-        className="quiz-rich-editable"
-        contentEditable
-        suppressContentEditableWarning
-        role="textbox"
-        tabIndex={0}
-        spellCheck={false}
-        autoCorrect="off"
-        autoCapitalize="off"
-        data-placeholder={placeholder}
-        onInput={() => {
-          syncValue()
-          saveSelectionRange()
-        }}
-        onFocus={() => {
-          isFocusedRef.current = true
-        }}
-        onBlur={() => {
-          isFocusedRef.current = false
-          pendingFormatRef.current = {}
-          syncValue({ commitDom: true, flush: true })
-        }}
-        onPaste={handlePaste}
-        onBeforeInput={handleBeforeInput}
-        onKeyDown={handleKeyDown}
-        onKeyUp={saveSelectionRange}
-        onMouseDown={(event) => {
-          event.stopPropagation()
-        }}
-        onClick={(event) => {
-          event.stopPropagation()
-        }}
-        onMouseUp={saveSelectionRange}
-        onDoubleClick={(event) => {
-          event.stopPropagation()
-          window.requestAnimationFrame(saveSelectionRange)
-        }}
-      />
+      ))}
+    </div>
+  )
+}
+
+function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRichTextEditorProps) {
+  const initialConfig = useMemo(
+    () => ({
+      namespace: 'QuizRichTextEditor',
+      theme: QUIZ_LEXICAL_THEME,
+      nodes: [ListNode, ListItemNode],
+      onError(error: Error) {
+        throw error
+      },
+    }),
+    [],
+  )
+
+  return (
+    <div className="quiz-rich-editor">
+      <LexicalComposer initialConfig={initialConfig}>
+        <QuizLexicalInitialValuePlugin value={value} />
+        <QuizRichTextToolbar />
+        <RichTextPlugin
+          contentEditable={
+            <div className="quiz-rich-editable-wrap">
+              <ContentEditable
+                className="quiz-rich-editable"
+                aria-placeholder={placeholder}
+                placeholder={<span className="quiz-rich-placeholder">{placeholder}</span>}
+                spellCheck={false}
+                autoCorrect="off"
+                autoCapitalize="off"
+                data-placeholder={placeholder}
+                onMouseDown={(event) => {
+                  event.stopPropagation()
+                }}
+                onClick={(event) => {
+                  event.stopPropagation()
+                }}
+                onDoubleClick={(event) => {
+                  event.stopPropagation()
+                }}
+              />
+            </div>
+          }
+          placeholder={null}
+          ErrorBoundary={LexicalErrorBoundary}
+        />
+        <HistoryPlugin />
+        <ListPlugin />
+        <QuizLexicalShortcutsPlugin />
+        <QuizLexicalMaxLengthPlugin maxLength={maxLength} />
+        <QuizLexicalOnChangePlugin onChange={onChange} />
+      </LexicalComposer>
     </div>
   )
 }
