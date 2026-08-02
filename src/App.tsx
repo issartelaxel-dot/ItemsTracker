@@ -4495,6 +4495,10 @@ function getPasswordStrengthMeta(password: string) {
     return entry.item.shortDescription
   }
 
+  function hasQuizEntryCustomAnswer(entry: QuizSessionEntry | null) {
+    return Boolean(entry && hasQuizRichTextContent(entry.card.answer ?? ''))
+  }
+
   const quizQuestion = useMemo(() => getQuizEntryQuestionHtml(activeQuizSessionEntry), [activeQuizSessionEntry])
 
   const quizAnswer = useMemo(() => getQuizEntryAnswerHtml(activeQuizSessionEntry), [activeQuizSessionEntry])
@@ -4575,6 +4579,12 @@ function getPasswordStrengthMeta(password: string) {
       elapsedLabel: `${elapsedMinutes}:${elapsedRemainder}`,
     }
   }, [activeQuizSessionEntry, quizSessionCards, quizSessionResults, quizSessionStartedAt])
+
+  const quizSessionRunnableCards = useMemo(() => {
+    return quizSessionMode === 'quiz'
+      ? quizSessionMetrics.cards.filter((entry) => hasQuizEntryCustomAnswer(entry))
+      : quizSessionMetrics.cards
+  }, [quizSessionMetrics.cards, quizSessionMode])
 
   const quizSessionScopeLabel = useMemo(() => {
     if (quizSessionScope.type === 'item') {
@@ -5890,13 +5900,17 @@ function getPasswordStrengthMeta(password: string) {
     if (quizSessionMetrics.cards.length === 0) {
       return
     }
+    if (quizSessionRunnableCards.length === 0) {
+      setQuizMcqErrorsByKey({})
+      return
+    }
     const scopedCards =
       quizSessionPreset === 'random' || shuffleQuizCards
-        ? [...quizSessionMetrics.cards]
+        ? [...quizSessionRunnableCards]
             .map((entry) => ({ entry, rank: Math.random() }))
             .sort((a, b) => a.rank - b.rank)
             .map(({ entry }) => entry)
-        : quizSessionMetrics.cards
+        : quizSessionRunnableCards
     const limitedCards = quizSessionCardLimit === 0 ? scopedCards : scopedCards.slice(0, quizSessionCardLimit)
     const firstCard = limitedCards[0]
     setQuizSessionStartedAt(Date.now())
@@ -9451,7 +9465,7 @@ function getPasswordStrengthMeta(password: string) {
 	                    <div className="quiz-session-setup-panel">
 		                      <div className="quiz-session-presets" aria-label="Nouvelle révision">
 			                        {[
-			                          { id: 'today', icon: Learning, title: 'À réviser aujourd’hui', detail: `${quizSessionMetrics.cards.length} cartes`, badge: 'Recommandé' },
+			                          { id: 'today', icon: Learning, title: 'À réviser aujourd’hui', detail: `${quizSessionRunnableCards.length} cartes`, badge: 'Recommandé' },
 			                          { id: 'difficulty', icon: WarningTriangle, title: 'Par difficulté', detail: quizSessionDifficultyDetail },
 			                          { id: 'college', icon: Page, title: 'Par collège', detail: quizSessionCollegeDetail },
 			                          { id: 'random', icon: Refresh, title: 'Cartes aléatoires', detail: quizSessionScope.type === 'global' ? 'Toutes les flashcards' : quizSessionScopeLabel },
@@ -9620,7 +9634,7 @@ function getPasswordStrengthMeta(password: string) {
                           type="button"
                           className="quiz-session-primary"
                           onClick={startQuizSession}
-                          disabled={quizSessionMetrics.cards.length === 0}
+                          disabled={quizSessionRunnableCards.length === 0}
                         >
                           <Play className="inline-btn-icon" aria-hidden="true" />
                           Commencer
