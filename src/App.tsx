@@ -9143,7 +9143,12 @@ function getPasswordStrengthMeta(password: string) {
           className={`quiz-modal-backdrop ${quizEditMode && activeQuizCard ? 'flashcard-editor-backdrop' : ''}`}
           onClick={closeQuiz}
         >
-          <div className={`quiz-modal ${quizEditMode && activeQuizCard ? 'flashcard-editor-modal' : ''}`} onClick={(event) => event.stopPropagation()}>
+          <div
+            className={`quiz-modal ${quizEditMode && activeQuizCard ? 'flashcard-editor-modal' : ''} ${
+              !quizEditMode && quizSessionMode === 'quiz' ? 'quiz-modal-mcq' : ''
+            }`}
+            onClick={(event) => event.stopPropagation()}
+          >
             {quizEditMode && activeQuizCard ? (
               <>
                 <div className="flashcard-editor-head">

@@ -26,6 +26,17 @@
   width: min(880px, 100%);
 }
 
+.quiz-modal-mcq {
+  width: min(820px, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow: hidden;
+}
+
+.quiz-modal-mcq .quiz-session-shell {
+  min-height: 0;
+  max-height: calc(100dvh - 3.8rem);
+}
+
 .quiz-modal.flashcard-editor-modal {
   width: min(1080px, calc(100vw - 2rem));
   max-height: calc(100dvh - 2rem);
@@ -930,6 +941,14 @@
   overflow: auto;
 }
 
+.quiz-modal-mcq .quiz-study-stage {
+  min-height: 0;
+  height: min(680px, calc(100dvh - 10rem));
+  align-items: stretch;
+  place-items: stretch center;
+  overflow: hidden;
+}
+
 .quiz-study-stage-answer,
 .quiz-study-stage-errors {
   min-height: 300px;
@@ -984,6 +1003,9 @@
 .quiz-mcq-card {
   width: min(620px, 100%);
   min-height: 0;
+  max-height: 100%;
+  overflow: auto;
+  padding-bottom: 0;
 }
 
 .quiz-mcq-question {
@@ -1085,8 +1107,16 @@
 }
 
 .quiz-mcq-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
   display: flex;
   justify-content: flex-end;
+  margin: 0 -1rem;
+  padding: 0.75rem 1rem 1rem;
+  border-top: 1px solid var(--border);
+  background: color-mix(in oklab, var(--panel-bg) 94%, transparent);
+  backdrop-filter: blur(8px);
 }
 
 .quiz-mcq-actions .quiz-session-primary {
@@ -1326,6 +1356,11 @@
     overflow: auto;
   }
 
+  .quiz-modal-mcq:not(.flashcard-editor-modal) {
+    max-height: calc(100dvh - 1rem);
+    overflow: hidden;
+  }
+
   .quiz-session-setup-panel,
   .quiz-summary-grid {
     grid-template-columns: 1fr;
@@ -1334,6 +1369,12 @@
   .quiz-study-stage {
     min-height: 420px;
     padding-inline: 1rem;
+  }
+
+  .quiz-modal-mcq .quiz-study-stage {
+    height: calc(100dvh - 9.5rem);
+    min-height: 0;
+    padding-inline: 0.8rem;
   }
 
   .quiz-session-rates,
