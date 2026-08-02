@@ -830,21 +830,6 @@ function getTextNodesInEditorRange(editor: HTMLDivElement, range: Range) {
   return textNodes
 }
 
-function rangeHasActiveQuizHighlight(editor: HTMLDivElement, range: Range) {
-  return Boolean(
-    getClosestElementMatching(range.startContainer, editor, isQuizHighlightElement) ||
-      getClosestElementMatching(range.endContainer, editor, isQuizHighlightElement),
-  )
-}
-
-function rangeIsFullyQuizHighlighted(editor: HTMLDivElement, range: Range) {
-  const textNodes = getTextNodesInEditorRange(editor, range)
-  if (textNodes.length === 0) {
-    return rangeHasActiveQuizHighlight(editor, range)
-  }
-  return textNodes.every((node) => Boolean(getClosestElementMatching(node, editor, isQuizHighlightElement)))
-}
-
 function getSelectedTextNodeOffsets(node: Text, range: Range) {
   const textLength = node.data.length
   let start = 0
@@ -861,15 +846,40 @@ function getSelectedTextNodeOffsets(node: Text, range: Range) {
   }
 }
 
-function applyEditorRangeHighlight(editor: HTMLDivElement, range: Range) {
-  const textNodes = getTextNodesInEditorRange(editor, range)
+function getSelectedTextNodesInEditorRange(editor: HTMLDivElement, range: Range) {
+  return getTextNodesInEditorRange(editor, range)
+    .map((node) => ({ node, offsets: getSelectedTextNodeOffsets(node, range) }))
+    .filter(({ node, offsets }) => offsets.start < offsets.end && node.data.slice(offsets.start, offsets.end).length > 0)
+}
+
+function rangeHasActiveQuizHighlight(editor: HTMLDivElement, range: Range) {
+  return Boolean(
+    getClosestElementMatching(range.startContainer, editor, isQuizHighlightElement) ||
+      getClosestElementMatching(range.endContainer, editor, isQuizHighlightElement),
+  )
+}
+
+function rangeIsFullyQuizHighlighted(editor: HTMLDivElement, range: Range) {
+  const textNodes = getSelectedTextNodesInEditorRange(editor, range)
+  if (textNodes.length === 0) {
+    return rangeHasActiveQuizHighlight(editor, range)
+  }
+  return textNodes.every(({ node }) => Boolean(getClosestElementMatching(node, editor, isQuizHighlightElement)))
+}
+
+function wrapSelectedEditorTextNodes(
+  editor: HTMLDivElement,
+  range: Range,
+  configureWrapper: (wrapper: HTMLSpanElement) => void,
+) {
+  const textNodes = getSelectedTextNodesInEditorRange(editor, range)
   if (textNodes.length === 0) {
     return false
   }
 
   let caretTarget: HTMLElement | null = null
-  ;[...textNodes].reverse().forEach((textNode) => {
-    const { start, end } = getSelectedTextNodeOffsets(textNode, range)
+  ;[...textNodes].reverse().forEach(({ node: textNode, offsets }) => {
+    const { start, end } = offsets
     if (start >= end) {
       return
     }
@@ -890,7 +900,7 @@ function applyEditorRangeHighlight(editor: HTMLDivElement, range: Range) {
       return
     }
     const wrapper = document.createElement('span')
-    wrapper.classList.add('quiz-rich-highlight-text')
+    configureWrapper(wrapper)
     parent.insertBefore(wrapper, selectedText)
     wrapper.appendChild(selectedText)
     caretTarget ??= wrapper
@@ -903,10 +913,16 @@ function applyEditorRangeHighlight(editor: HTMLDivElement, range: Range) {
   return false
 }
 
+function applyEditorRangeHighlight(editor: HTMLDivElement, range: Range) {
+  return wrapSelectedEditorTextNodes(editor, range, (wrapper) => {
+    wrapper.classList.add('quiz-rich-highlight-text')
+  })
+}
+
 function clearEditorRangeHighlight(editor: HTMLDivElement, range: Range) {
-  const textNodes = getTextNodesInEditorRange(editor, range)
+  const textNodes = getSelectedTextNodesInEditorRange(editor, range)
   const highlightedElements = new Set<HTMLElement>()
-  textNodes.forEach((textNode) => {
+  textNodes.forEach(({ node: textNode }) => {
     const highlightElement = getClosestElementMatching(textNode, editor, isQuizHighlightElement)
     if (highlightElement) {
       highlightedElements.add(highlightElement)
@@ -979,6 +995,16 @@ function formatEditorSelection(
   cleanOptions: { color?: boolean; highlight?: boolean },
   configureWrapper?: (wrapper: HTMLSpanElement) => void,
 ) {
+  const range = getEditorRange(editor)
+  if (configureWrapper && range && !range.collapsed && range.toString()) {
+    const wrapped = wrapSelectedEditorTextNodes(editor, range, (wrapper) => {
+      configureWrapper?.(wrapper)
+    })
+    if (wrapped) {
+      return true
+    }
+  }
+
   return wrapEditorSelection(editor, (wrapper) => {
     const fragment = document.createDocumentFragment()
     moveChildren(wrapper, fragment)
@@ -1264,9 +1290,11 @@ function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRic
           if (range && rangeHasActiveQuizHighlight(editor, range)) {
             const activeHighlightElement = getClosestElementMatching(range.startContainer, editor, isQuizHighlightElement)
             if (activeHighlightElement) {
+              cleanQuizRichTextFormatting(activeHighlightElement, { highlight: true })
               placeCaretAfterNode(activeHighlightElement)
               delete nextPendingFormat.highlight
               pendingFormatRef.current = nextPendingFormat
+              syncValue({ commitDom: true, flush: true })
               saveSelectionRange()
               editor.focus({ preventScroll: true })
               return
