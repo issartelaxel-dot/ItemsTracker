@@ -5714,6 +5714,50 @@ function getPasswordStrengthMeta(password: string) {
     return currentIndex >= 0 ? quizSessionActiveCards[currentIndex + 1] ?? null : null
   }
 
+  function getFreshQuizSessionEntry(entry: QuizSessionEntry): QuizSessionEntry | null {
+    const itemBase = rawItems.find((item) => item.itemNumber === entry.itemNumber)
+    if (!itemBase) {
+      return null
+    }
+    const tracking = normalizeItemTracking(trackingStateRef.current.items[entry.itemNumber] ?? getDefaultItemTracking())
+    const card = tracking.quiz.cards.find((candidate) => candidate.id === entry.card.id)
+    if (!card) {
+      return null
+    }
+    const selectedCollegeTrackers = tracking.assignedColleges.map(
+      (college) => tracking.byCollege[college] ?? getDefaultCollegeTracking(),
+    )
+    const totalReviews = selectedCollegeTrackers.reduce((sum, collegeTracking) => sum + collegeTracking.reviews, 0)
+    const collegeLastReviewDate = selectedCollegeTrackers.reduce<string | null>((latest, collegeTracking) => {
+      if (!collegeTracking.lastReviewedAt) {
+        return latest
+      }
+      if (!latest || new Date(collegeTracking.lastReviewedAt) > new Date(latest)) {
+        return collegeTracking.lastReviewedAt
+      }
+      return latest
+    }, null)
+    const item: ItemComputed = {
+      ...itemBase,
+      tracking,
+      totalReviews,
+      progress: computeItemProgress(tracking),
+      lastReviewDate: getLatestIsoDate(
+        tracking.lastReviewDate,
+        collegeLastReviewDate,
+        getLatestSheetReviewDate(tracking.lisaSheets),
+        getLatestSheetReviewDate(tracking.platformSheets),
+      ),
+    }
+    return {
+      sessionKey: `${entry.itemNumber}:${card.id}`,
+      itemNumber: entry.itemNumber,
+      item,
+      card,
+      colleges: tracking.assignedColleges,
+    }
+  }
+
   function moveToQuizSessionEntry(entry: QuizSessionEntry | null) {
     resetQuizMcqAnswerState()
     setQuizFeedback(null)
@@ -5730,29 +5774,38 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   async function generateQuizMcqForEntry(entry: QuizSessionEntry) {
-    const questionHtml = getQuizEntryQuestionHtml(entry)
-    const answerHtml = getQuizEntryAnswerHtml(entry)
-    const sourceHash = makeQuizMcqSourceHash(questionHtml, answerHtml)
-    if (entry.card.mcq?.sourceHash === sourceHash) {
+    const freshEntry = getFreshQuizSessionEntry(entry)
+    if (!freshEntry) {
+      setQuizMcqErrorsByKey((current) => ({
+        ...current,
+        [entry.sessionKey]: 'Carte introuvable: impossible de générer un QCM.',
+      }))
       return
     }
-    if (mcqGenerationInFlightRef.current.has(entry.sessionKey)) {
+
+    const questionHtml = getQuizEntryQuestionHtml(freshEntry)
+    const answerHtml = getQuizEntryAnswerHtml(freshEntry)
+    const sourceHash = makeQuizMcqSourceHash(questionHtml, answerHtml)
+    if (freshEntry.card.mcq?.sourceHash === sourceHash) {
+      return
+    }
+    if (mcqGenerationInFlightRef.current.has(freshEntry.sessionKey)) {
       return
     }
 
     const question = getQuizRichTextPlainText(questionHtml)
     const correctAnswer = getQuizRichTextPlainText(answerHtml)
-    if (!question || !correctAnswer) {
+    if (question.length < 4 || correctAnswer.length < 2) {
       setQuizMcqErrorsByKey((current) => ({
         ...current,
-        [entry.sessionKey]: 'Question ou réponse vide: impossible de générer un QCM.',
+        [freshEntry.sessionKey]: 'Question ou réponse incomplète: impossible de générer un QCM fiable.',
       }))
       return
     }
 
-    mcqGenerationInFlightRef.current.add(entry.sessionKey)
-    setQuizMcqLoadingByKey((current) => ({ ...current, [entry.sessionKey]: true }))
-    setQuizMcqErrorsByKey((current) => ({ ...current, [entry.sessionKey]: '' }))
+    mcqGenerationInFlightRef.current.add(freshEntry.sessionKey)
+    setQuizMcqLoadingByKey((current) => ({ ...current, [freshEntry.sessionKey]: true }))
+    setQuizMcqErrorsByKey((current) => ({ ...current, [freshEntry.sessionKey]: '' }))
 
     try {
       const payload = await apiRequest('/api/quiz/generate-mcq', {
@@ -5760,9 +5813,9 @@ function getPasswordStrengthMeta(password: string) {
         body: JSON.stringify({
           question,
           correctAnswer,
-          itemNumber: entry.itemNumber,
-          cardId: entry.card.id,
-          college: entry.colleges[0] ? getFlashCollegeDisplayName(entry.colleges[0]) : '',
+          itemNumber: freshEntry.itemNumber,
+          cardId: freshEntry.card.id,
+          college: freshEntry.colleges[0] ? getFlashCollegeDisplayName(freshEntry.colleges[0]) : '',
         }),
       })
       const distractors = Array.isArray(payload.distractors)
@@ -5785,7 +5838,7 @@ function getPasswordStrengthMeta(password: string) {
           whyWrong: typeof choice.whyWrong === 'string' ? choice.whyWrong.trim() : '',
         })),
       ])
-      updateQuizCard(entry.itemNumber, entry.card.id, {
+      updateQuizCard(freshEntry.itemNumber, freshEntry.card.id, {
         mcq: {
           sourceHash,
           generatedAt: typeof payload.generatedAt === 'string' ? payload.generatedAt : new Date().toISOString(),
@@ -5796,11 +5849,11 @@ function getPasswordStrengthMeta(password: string) {
     } catch (error) {
       setQuizMcqErrorsByKey((current) => ({
         ...current,
-        [entry.sessionKey]: error instanceof Error ? error.message : 'Generation QCM impossible.',
+        [freshEntry.sessionKey]: error instanceof Error ? error.message : 'Generation QCM impossible.',
       }))
     } finally {
-      mcqGenerationInFlightRef.current.delete(entry.sessionKey)
-      setQuizMcqLoadingByKey((current) => ({ ...current, [entry.sessionKey]: false }))
+      mcqGenerationInFlightRef.current.delete(freshEntry.sessionKey)
+      setQuizMcqLoadingByKey((current) => ({ ...current, [freshEntry.sessionKey]: false }))
     }
   }
 
