@@ -9850,84 +9850,108 @@ function getPasswordStrengthMeta(password: string) {
                 ) : null}
 
                 {quizSessionStep === 'summary' ? (
-                  <>
-                    <div className="quiz-session-kicker">
-	                      <span>Résumé de révision</span>
-	                      <button type="button" className="ghost-btn quiz-session-close" onClick={closeQuiz}>
-	                        Quitter
-	                      </button>
-	                    </div>
-	                    <p className="quiz-session-subtitle">Analysez vos réponses, vos erreurs et votre rythme.</p>
-	                    <div className="quiz-summary-grid">
-	                      <section className="quiz-score-card">
-	                        <div className="quiz-score-ring" style={{ '--quiz-score': `${quizSessionMetrics.score}%` } as CSSProperties}>
-	                          <span>{quizSessionMetrics.score}%</span>
-	                        </div>
-	                        <strong>{quizSessionMetrics.score >= 70 ? 'Bonne révision' : 'À consolider'}</strong>
-	                        <small>{quizSessionMetrics.errorRate}% d’erreur</small>
-	                      </section>
-	                      <section className="quiz-summary-stats">
-	                        <p>
-	                          <span>Cartes répondues</span>
-	                          <strong>{quizSessionMetrics.answeredCount}/{quizSessionMetrics.cards.length}</strong>
-	                        </p>
-	                        <p>
-	                          <span>Réponses correctes</span>
-	                          <strong>{quizSessionMetrics.correctCount}</strong>
-	                        </p>
-	                        <p>
-	                          <span>Réponses moyennes</span>
-	                          <strong>{quizSessionMetrics.mediumCount}</strong>
-	                        </p>
-	                        <p>
-	                          <span>Erreurs</span>
-	                          <strong>{quizSessionMetrics.errorCount}</strong>
-	                        </p>
-	                        <p>
-	                          <span>Temps passé</span>
-	                          <strong>{quizSessionMetrics.elapsedLabel}</strong>
-	                        </p>
-	                        <p>
-	                          <span>Série actuelle</span>
-	                          <strong>{dashboardStudyStats.currentStreak} j</strong>
-	                        </p>
-	                      </section>
-		                      <section className="quiz-review-card">
-		                        <h4>Collèges à revoir</h4>
-		                        {quizSessionReviewColleges.length > 0 ? (
-		                          quizSessionReviewColleges.map((entry) => (
-		                            <p key={entry.college}>
-	                              <span>
-	                                <Learning className="inline-btn-icon" aria-hidden="true" />
-	                                {getFlashCollegeDisplayName(entry.college)}
-	                                <small>{entry.count} carte{entry.count > 1 ? 's' : ''} à revoir</small>
-	                              </span>
-	                              <strong>{entry.count}</strong>
-	                            </p>
-	                          ))
-		                        ) : (
-		                          <p>
-		                            <span>
-		                              <Learning className="inline-btn-icon" aria-hidden="true" />
-		                              Aucune erreur
-		                              <small>Toutes les cartes répondues sont validées.</small>
-		                            </span>
-		                            <strong>0</strong>
-		                          </p>
-		                        )}
-	                      </section>
-	                    </div>
-	                    <div className="quiz-summary-actions">
+                  <div className="quiz-summary-celebration">
+                    <button type="button" className="ghost-btn quiz-summary-close" onClick={closeQuiz} aria-label="Fermer le résumé">
+                      <Xmark className="ui-icon" aria-hidden="true" />
+                    </button>
+                    <div className="quiz-summary-confetti" aria-hidden="true">
+                      <span />
+                      <span />
+                      <span />
+                      <span />
+                      <span />
+                      <span />
+                    </div>
+                    <div className="quiz-summary-trophy" aria-hidden="true">
+                      <Star className="quiz-summary-trophy-star" aria-hidden="true" />
+                    </div>
+                    <div className="quiz-summary-title">
+                      <h3>
+                        {quizSessionMetrics.score >= 90
+                          ? 'Excellent travail !'
+                          : quizSessionMetrics.score >= 70
+                            ? 'Bonne révision !'
+                            : 'À consolider'}
+                      </h3>
+                      <p>
+                        {quizSessionMetrics.score >= 90
+                          ? 'Tu maîtrises très bien cette série.'
+                          : quizSessionMetrics.score >= 70
+                            ? 'Tu progresses, garde ce rythme.'
+                            : 'Reprends les erreurs pour solidifier les bases.'}
+                      </p>
+                    </div>
+                    <section className="quiz-summary-hero-score">
+                      <div className="quiz-score-ring quiz-score-ring-large" style={{ '--quiz-score': `${quizSessionMetrics.score}%` } as CSSProperties}>
+                        <span>{quizSessionMetrics.score}%</span>
+                      </div>
+                      <small>{quizSessionMetrics.errorRate}% d’erreur</small>
+                    </section>
+                    <section className="quiz-summary-streak-pill">
+                      <FireFlame className="inline-btn-icon" aria-hidden="true" />
+                      <span>
+                        <strong>Série actuelle : {dashboardStudyStats.currentStreak} jour{dashboardStudyStats.currentStreak > 1 ? 's' : ''}</strong>
+                        <small>Continue comme ça !</small>
+                      </span>
+                    </section>
+                    <section className="quiz-summary-metric-grid">
+                      <article>
+                        <HelpCircle className="quiz-summary-metric-icon" aria-hidden="true" />
+                        <span>Accuracy</span>
+                        <strong>{quizSessionMetrics.score}%</strong>
+                        <small>Réponses correctes</small>
+                      </article>
+                      <article>
+                        <ClockRotateRight className="quiz-summary-metric-icon" aria-hidden="true" />
+                        <span>Temps</span>
+                        <strong>{quizSessionMetrics.elapsedLabel}</strong>
+                        <small>Temps passé</small>
+                      </article>
+                      <article>
+                        <CheckCircle className="quiz-summary-metric-icon" aria-hidden="true" />
+                        <span>Erreurs</span>
+                        <strong>{quizSessionMetrics.errorCount}</strong>
+                        <small>{quizSessionMetrics.errorCount === 0 ? 'Aucune erreur' : 'À revoir'}</small>
+                      </article>
+                      <article>
+                        <CreditCards className="quiz-summary-metric-icon" aria-hidden="true" />
+                        <span>Cartes</span>
+                        <strong>{quizSessionMetrics.answeredCount}/{quizSessionMetrics.cards.length}</strong>
+                        <small>Cartes répondues</small>
+                      </article>
+                    </section>
+                    <section className={`quiz-summary-review-banner ${quizSessionMetrics.mistakeCards.length === 0 ? 'is-clear' : 'has-errors'}`}>
+                      <div className="quiz-summary-review-illustration" aria-hidden="true">
+                        {quizSessionMetrics.mistakeCards.length === 0 ? (
+                          <CheckCircle className="ui-icon" aria-hidden="true" />
+                        ) : (
+                          <WarningTriangle className="ui-icon" aria-hidden="true" />
+                        )}
+                      </div>
+                      <div>
+                        <h4>{quizSessionMetrics.mistakeCards.length === 0 ? 'Aucune notion à revoir !' : 'Notions à revoir'}</h4>
+                        {quizSessionReviewColleges.length > 0 ? (
+                          <p>
+                            {quizSessionReviewColleges
+                              .map((entry) => `${getFlashCollegeDisplayName(entry.college)} (${entry.count})`)
+                              .join(', ')}
+                          </p>
+                        ) : (
+                          <p>Toutes les cartes répondues sont maîtrisées.</p>
+                        )}
+                      </div>
+                    </section>
+                    <div className="quiz-summary-actions quiz-summary-actions-celebration">
                       <button
                         type="button"
-                        className="ghost-btn"
+                        className="quiz-session-primary quiz-summary-continue"
                         onClick={() => {
                           closeQuiz()
                           setActiveView('dashboard')
                         }}
 	                      >
-	                        <NavArrowLeft className="inline-btn-icon" aria-hidden="true" />
-	                        Retour au dashboard
+	                        Continuer
+	                        <NavArrowRight className="inline-btn-icon" aria-hidden="true" />
 	                      </button>
 	                      {quizSessionMetrics.mistakeCards.length > 0 ? (
 	                        <button
@@ -9952,7 +9976,7 @@ function getPasswordStrengthMeta(password: string) {
 	                      ) : null}
 	                      <button
 	                        type="button"
-	                        className="quiz-session-primary"
+	                        className="ghost-btn"
 	                        onClick={() => {
 	                          closeQuiz()
 	                          setActiveView('stats')
@@ -9962,7 +9986,7 @@ function getPasswordStrengthMeta(password: string) {
 	                        Voir mes statistiques
 	                      </button>
 	                    </div>
-	                  </>
+	                  </div>
 	                ) : null}
 
                 {quizFeedback ? (
