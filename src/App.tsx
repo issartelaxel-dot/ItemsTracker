@@ -848,6 +848,17 @@ function rangeIsFullyQuizHighlighted(editor: HTMLDivElement, range: Range) {
   return textNodes.every((node) => Boolean(getClosestElementMatching(node, editor, isQuizHighlightElement)))
 }
 
+function rangeContainsQuizHighlight(range: Range) {
+  const source = document.createElement('div')
+  source.appendChild(range.cloneContents())
+  if (Array.from(source.querySelectorAll<HTMLElement>('*')).some(isQuizHighlightElement)) {
+    return true
+  }
+  const cleaned = source.cloneNode(true) as HTMLDivElement
+  cleanQuizRichTextFormatting(cleaned, { highlight: true })
+  return source.innerHTML !== cleaned.innerHTML
+}
+
 function wrapEditorSelection(editor: HTMLDivElement, configureWrapper: (wrapper: HTMLSpanElement) => void) {
   const range = getEditorRange(editor)
   if (!range || range.collapsed || !range.toString()) {
@@ -894,18 +905,9 @@ function formatEditorSelection(
 }
 
 function clearEditorSelectionHighlight(editor: HTMLDivElement) {
-  const range = getEditorRange(editor)
-  if (!range || range.collapsed || !range.toString()) {
-    return false
-  }
-  const fragment = range.extractContents()
-  cleanQuizRichTextFormatting(fragment, { highlight: true })
-  const caretAnchor = document.createTextNode('')
-  fragment.appendChild(caretAnchor)
-  range.insertNode(fragment)
-  placeCaretAfterNode(caretAnchor)
-  caretAnchor.remove()
-  return true
+  return formatEditorSelection(editor, { highlight: true }, (wrapper) => {
+    wrapper.classList.add('quiz-rich-plain-highlight-text')
+  })
 }
 
 function moveChildren(source: Node, target: Node) {
@@ -1127,7 +1129,7 @@ function applyQuizRichTextCommand(editor: HTMLDivElement, command: QuizRichTextC
   }
 
   if (command.type === 'highlight') {
-    if (rangeIsFullyQuizHighlighted(editor, range)) {
+    if (rangeIsFullyQuizHighlighted(editor, range) || rangeContainsQuizHighlight(range)) {
       clearEditorSelectionHighlight(editor)
     } else {
       formatEditorSelection(editor, { highlight: true }, (wrapper) => {
@@ -8587,7 +8589,10 @@ function getPasswordStrengthMeta(password: string) {
                           <span>{college}</span>
                         </p>
                         <button
+                          type="button"
                           className={`star-btn ${data.favorite ? 'active' : ''}${starFx[collegeFxKey] ? ' pop' : ''}`}
+                          title={data.favorite ? 'Retirer des favoris' : 'Mettre en favori'}
+                          aria-label={data.favorite ? 'Retirer ce collège des favoris' : 'Mettre ce collège en favori'}
                           onClick={() => {
                             triggerPulseFx(setStarFx, collegeFxKey)
                             updateCollegeTracking(effectiveSelectedItem.itemNumber, college, (current) => ({
@@ -8774,7 +8779,10 @@ function getPasswordStrengthMeta(password: string) {
                           +
                         </button>
                         <button
+                          type="button"
                           className={`star-btn ${sheet.tracking.favorite ? 'active' : ''}${starFx[getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id)] ? ' pop' : ''}`}
+                          title={sheet.tracking.favorite ? 'Retirer des favoris' : 'Mettre en favori'}
+                          aria-label={sheet.tracking.favorite ? 'Retirer cette fiche LISA des favoris' : 'Mettre cette fiche LISA en favori'}
                           onClick={() => {
                             triggerPulseFx(setStarFx, getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id))
                             updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
@@ -8982,9 +8990,12 @@ function getPasswordStrengthMeta(password: string) {
                           +
                         </button>
                         <button
+                          type="button"
                           className={`star-btn ${sheet.tracking.favorite ? 'active' : ''}${
                             starFx[getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id)] ? ' pop' : ''
                           }`}
+                          title={sheet.tracking.favorite ? 'Retirer des favoris' : 'Mettre en favori'}
+                          aria-label={sheet.tracking.favorite ? 'Retirer cette fiche plateforme des favoris' : 'Mettre cette fiche plateforme en favori'}
                           onClick={() => {
                             triggerPulseFx(setStarFx, getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id))
                             updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
