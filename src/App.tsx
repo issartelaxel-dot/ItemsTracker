@@ -1099,9 +1099,9 @@ function QuizLexicalMaxLengthPlugin({ maxLength }: { maxLength?: number }) {
 
     return editor.registerRootListener((rootElement, previousRootElement) => {
       previousRootElement?.removeEventListener('beforeinput', handleBeforeInput)
-      previousRootElement?.removeEventListener('paste', handlePaste)
+      previousRootElement?.removeEventListener('paste', handlePaste, true)
       rootElement?.addEventListener('beforeinput', handleBeforeInput)
-      rootElement?.addEventListener('paste', handlePaste)
+      rootElement?.addEventListener('paste', handlePaste, true)
     })
   }, [editor, maxLength])
 
