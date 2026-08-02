@@ -8709,18 +8709,44 @@ function getPasswordStrengthMeta(password: string) {
                       >
                         {SHEET_COLORS.find((sheetColor) => sheetColor.value === sheet.color)?.emoji ?? '🟡'}
                       </button>
-                      <input
-                        type="text"
-                        placeholder="Nom de la fiche"
-                        value={sheet.name}
-                        onChange={(event) =>
-                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
-                            currentSheets.map((currentSheet) =>
-                              currentSheet.id === sheet.id ? { ...currentSheet, name: event.target.value } : currentSheet,
-                            ),
-                          )
-                        }
-                      />
+                      <div className="reference-name-cell">
+                        <button
+                          type="button"
+                          className={`star-btn ${sheet.tracking.favorite ? 'active' : ''}${starFx[getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id)] ? ' pop' : ''}`}
+                          title={sheet.tracking.favorite ? 'Retirer des favoris' : 'Mettre en favori'}
+                          aria-label={sheet.tracking.favorite ? 'Retirer cette fiche LISA des favoris' : 'Mettre cette fiche LISA en favori'}
+                          onClick={() => {
+                            triggerPulseFx(setStarFx, getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id))
+                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
+                              currentSheets.map((currentSheet) =>
+                                currentSheet.id === sheet.id
+                                  ? {
+                                      ...currentSheet,
+                                      tracking: {
+                                        ...currentSheet.tracking,
+                                        favorite: !currentSheet.tracking.favorite,
+                                      },
+                                    }
+                                  : currentSheet,
+                              ),
+                            )
+                          }}
+                        >
+                          ★
+                        </button>
+                        <input
+                          type="text"
+                          placeholder="Nom de la fiche"
+                          value={sheet.name}
+                          onChange={(event) =>
+                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
+                              currentSheets.map((currentSheet) =>
+                                currentSheet.id === sheet.id ? { ...currentSheet, name: event.target.value } : currentSheet,
+                              ),
+                            )
+                          }
+                        />
+                      </div>
                       <input
                         type="url"
                         placeholder="https://..."
@@ -8777,30 +8803,6 @@ function getPasswordStrengthMeta(password: string) {
                         ) : null}
                         <button onClick={() => handleSheetReviewDelta(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id, 1)}>
                           +
-                        </button>
-                        <button
-                          type="button"
-                          className={`star-btn ${sheet.tracking.favorite ? 'active' : ''}${starFx[getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id)] ? ' pop' : ''}`}
-                          title={sheet.tracking.favorite ? 'Retirer des favoris' : 'Mettre en favori'}
-                          aria-label={sheet.tracking.favorite ? 'Retirer cette fiche LISA des favoris' : 'Mettre cette fiche LISA en favori'}
-                          onClick={() => {
-                            triggerPulseFx(setStarFx, getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id))
-                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
-                              currentSheets.map((currentSheet) =>
-                                currentSheet.id === sheet.id
-                                  ? {
-                                      ...currentSheet,
-                                      tracking: {
-                                        ...currentSheet.tracking,
-                                        favorite: !currentSheet.tracking.favorite,
-                                      },
-                                    }
-                                  : currentSheet,
-                              ),
-                            )
-                          }}
-                        >
-                          ★
                         </button>
                       </div>
                     </div>
@@ -8918,18 +8920,46 @@ function getPasswordStrengthMeta(password: string) {
                       >
                         {SHEET_COLORS.find((sheetColor) => sheetColor.value === sheet.color)?.emoji ?? '🟡'}
                       </button>
-                      <input
-                        type="text"
-                        placeholder="Nom de la fiche"
-                        value={sheet.name}
-                        onChange={(event) =>
-                          updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
-                            currentSheets.map((currentSheet) =>
-                              currentSheet.id === sheet.id ? { ...currentSheet, name: event.target.value } : currentSheet,
-                            ),
-                          )
-                        }
-                      />
+                      <div className="reference-name-cell">
+                        <button
+                          type="button"
+                          className={`star-btn ${sheet.tracking.favorite ? 'active' : ''}${
+                            starFx[getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id)] ? ' pop' : ''
+                          }`}
+                          title={sheet.tracking.favorite ? 'Retirer des favoris' : 'Mettre en favori'}
+                          aria-label={sheet.tracking.favorite ? 'Retirer cette fiche plateforme des favoris' : 'Mettre cette fiche plateforme en favori'}
+                          onClick={() => {
+                            triggerPulseFx(setStarFx, getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id))
+                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
+                              currentSheets.map((currentSheet) =>
+                                currentSheet.id === sheet.id
+                                  ? {
+                                      ...currentSheet,
+                                      tracking: {
+                                        ...currentSheet.tracking,
+                                        favorite: !currentSheet.tracking.favorite,
+                                      },
+                                    }
+                                  : currentSheet,
+                              ),
+                            )
+                          }}
+                        >
+                          ★
+                        </button>
+                        <input
+                          type="text"
+                          placeholder="Nom de la fiche"
+                          value={sheet.name}
+                          onChange={(event) =>
+                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
+                              currentSheets.map((currentSheet) =>
+                                currentSheet.id === sheet.id ? { ...currentSheet, name: event.target.value } : currentSheet,
+                              ),
+                            )
+                          }
+                        />
+                      </div>
                       <input
                         type="url"
                         placeholder="https://..."
@@ -8988,32 +9018,6 @@ function getPasswordStrengthMeta(password: string) {
                         ) : null}
                         <button onClick={() => handleSheetReviewDelta(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id, 1)}>
                           +
-                        </button>
-                        <button
-                          type="button"
-                          className={`star-btn ${sheet.tracking.favorite ? 'active' : ''}${
-                            starFx[getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id)] ? ' pop' : ''
-                          }`}
-                          title={sheet.tracking.favorite ? 'Retirer des favoris' : 'Mettre en favori'}
-                          aria-label={sheet.tracking.favorite ? 'Retirer cette fiche plateforme des favoris' : 'Mettre cette fiche plateforme en favori'}
-                          onClick={() => {
-                            triggerPulseFx(setStarFx, getSheetKey(effectiveSelectedItem.itemNumber, 'platformSheets', sheet.id))
-                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
-                              currentSheets.map((currentSheet) =>
-                                currentSheet.id === sheet.id
-                                  ? {
-                                      ...currentSheet,
-                                      tracking: {
-                                        ...currentSheet.tracking,
-                                        favorite: !currentSheet.tracking.favorite,
-                                      },
-                                    }
-                                  : currentSheet,
-                              ),
-                            )
-                          }}
-                        >
-                          ★
                         </button>
                       </div>
                     </div>
