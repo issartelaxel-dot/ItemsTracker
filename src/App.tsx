@@ -2718,6 +2718,7 @@ function App() {
   const [quizSessionObjective, setQuizSessionObjective] = useState<QuizSessionObjective>('learning')
   const [quizSessionStartedAt, setQuizSessionStartedAt] = useState<number | null>(null)
   const [quizSessionResults, setQuizSessionResults] = useState<Record<string, QuizResult>>({})
+  const [quizSessionErrorReviewIds, setQuizSessionErrorReviewIds] = useState<string[]>([])
   const [quizMcqSelectedChoiceId, setQuizMcqSelectedChoiceId] = useState<string | null>(null)
   const [quizMcqAnsweredChoiceId, setQuizMcqAnsweredChoiceId] = useState<string | null>(null)
   const [quizMcqLoadingByKey, setQuizMcqLoadingByKey] = useState<Record<string, boolean>>({})
@@ -4598,14 +4599,19 @@ function getPasswordStrengthMeta(password: string) {
 
   const quizSessionActiveCards = useMemo(() => {
     if (quizSessionStep === 'errors') {
-      return quizSessionMetrics.mistakeCards.length > 0
-        ? quizSessionMetrics.mistakeCards
-        : activeQuizSessionEntry
-          ? [activeQuizSessionEntry]
-          : []
+      const frozenErrorCards = quizSessionErrorReviewIds
+        .map((sessionKey) => quizSessionMetrics.cards.find((entry) => entry.sessionKey === sessionKey))
+        .filter((entry): entry is QuizSessionEntry => Boolean(entry))
+      if (frozenErrorCards.length > 0) {
+        return frozenErrorCards
+      }
+      if (quizSessionMetrics.mistakeCards.length > 0) {
+        return quizSessionMetrics.mistakeCards
+      }
+      return activeQuizSessionEntry ? [activeQuizSessionEntry] : []
     }
     return quizSessionMetrics.cards
-  }, [activeQuizSessionEntry, quizSessionMetrics.cards, quizSessionMetrics.mistakeCards, quizSessionStep])
+  }, [activeQuizSessionEntry, quizSessionErrorReviewIds, quizSessionMetrics.cards, quizSessionMetrics.mistakeCards, quizSessionStep])
 
   const quizSessionActiveIndex = useMemo(() => {
     if (!activeQuizSessionEntry) {
@@ -5616,6 +5622,7 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSessionPreset('today')
     setQuizSessionStep('setup')
     setQuizSessionResults({})
+    setQuizSessionErrorReviewIds([])
     setQuizSessionStartedAt(null)
     resetQuizMcqAnswerState()
   }
@@ -5651,6 +5658,7 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSessionCardLimit(20)
     setQuizSessionObjective('learning')
     setQuizSessionResults({})
+    setQuizSessionErrorReviewIds([])
     setQuizSessionStartedAt(null)
     resetQuizMcqAnswerState()
   }
@@ -5673,6 +5681,7 @@ function getPasswordStrengthMeta(password: string) {
     setQuizEditMode(false)
     setQuizSessionStep('setup')
     setQuizSessionResults({})
+    setQuizSessionErrorReviewIds([])
     setQuizSessionStartedAt(null)
     resetQuizMcqAnswerState()
   }
@@ -5791,6 +5800,22 @@ function getPasswordStrengthMeta(password: string) {
     }
     setQuizSide('front')
     setQuizSessionStep('summary')
+  }
+
+  function startQuizErrorReview() {
+    const errorCards = quizSessionMetrics.mistakeCards
+    const firstMistake = errorCards[0]
+    if (!firstMistake) {
+      return
+    }
+    setQuizSessionErrorReviewIds(errorCards.map((entry) => entry.sessionKey))
+    setQuizItemId(firstMistake.itemNumber)
+    setQuizActiveCardKey(firstMistake.sessionKey)
+    updateItemQuizConfig(firstMistake.itemNumber, { activeCardId: firstMistake.card.id })
+    setQuizSide('front')
+    setQuizFeedback(null)
+    resetQuizMcqAnswerState()
+    setQuizSessionStep('errors')
   }
 
   async function generateQuizMcqForEntry(entry: QuizSessionEntry) {
@@ -5915,6 +5940,7 @@ function getPasswordStrengthMeta(password: string) {
     const firstCard = limitedCards[0]
     setQuizSessionStartedAt(Date.now())
     setQuizSessionResults({})
+    setQuizSessionErrorReviewIds([])
     setQuizSessionCardIds(limitedCards.map((entry) => entry.sessionKey))
     setQuizFeedback(null)
     resetQuizMcqAnswerState()
@@ -9922,6 +9948,7 @@ function getPasswordStrengthMeta(password: string) {
                         onClick={() => {
                           setQuizSessionStep('setup')
                           setQuizSessionResults({})
+                          setQuizSessionErrorReviewIds([])
                           setQuizSessionStartedAt(null)
                           setQuizFeedback(null)
                           setQuizSide('front')
@@ -9937,18 +9964,7 @@ function getPasswordStrengthMeta(password: string) {
 	                        <button
 	                          type="button"
 	                          className="ghost-btn quiz-summary-action-card quiz-summary-action-errors"
-	                          onClick={() => {
-	                            const firstMistake = quizSessionMetrics.mistakeCards[0]
-	                            if (!firstMistake) {
-	                              return
-	                            }
-	                            setQuizItemId(firstMistake.itemNumber)
-	                            setQuizActiveCardKey(firstMistake.sessionKey)
-	                            updateItemQuizConfig(firstMistake.itemNumber, { activeCardId: firstMistake.card.id })
-	                            setQuizSide('front')
-	                            setQuizFeedback(null)
-	                            setQuizSessionStep('errors')
-	                          }}
+	                          onClick={startQuizErrorReview}
 	                        >
 	                          <span className="quiz-summary-action-icon" aria-hidden="true">
 	                            <Refresh className="inline-btn-icon" aria-hidden="true" />
