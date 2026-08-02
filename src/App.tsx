@@ -8710,6 +8710,18 @@ function getPasswordStrengthMeta(password: string) {
                         {SHEET_COLORS.find((sheetColor) => sheetColor.value === sheet.color)?.emoji ?? '🟡'}
                       </button>
                       <div className="reference-name-cell">
+                        <input
+                          type="text"
+                          placeholder="Nom de la fiche"
+                          value={sheet.name}
+                          onChange={(event) =>
+                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
+                              currentSheets.map((currentSheet) =>
+                                currentSheet.id === sheet.id ? { ...currentSheet, name: event.target.value } : currentSheet,
+                              ),
+                            )
+                          }
+                        />
                         <button
                           type="button"
                           className={`star-btn ${sheet.tracking.favorite ? 'active' : ''}${starFx[getSheetKey(effectiveSelectedItem.itemNumber, 'lisaSheets', sheet.id)] ? ' pop' : ''}`}
@@ -8734,18 +8746,6 @@ function getPasswordStrengthMeta(password: string) {
                         >
                           ★
                         </button>
-                        <input
-                          type="text"
-                          placeholder="Nom de la fiche"
-                          value={sheet.name}
-                          onChange={(event) =>
-                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', (currentSheets) =>
-                              currentSheets.map((currentSheet) =>
-                                currentSheet.id === sheet.id ? { ...currentSheet, name: event.target.value } : currentSheet,
-                              ),
-                            )
-                          }
-                        />
                       </div>
                       <input
                         type="url"
@@ -8921,6 +8921,18 @@ function getPasswordStrengthMeta(password: string) {
                         {SHEET_COLORS.find((sheetColor) => sheetColor.value === sheet.color)?.emoji ?? '🟡'}
                       </button>
                       <div className="reference-name-cell">
+                        <input
+                          type="text"
+                          placeholder="Nom de la fiche"
+                          value={sheet.name}
+                          onChange={(event) =>
+                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
+                              currentSheets.map((currentSheet) =>
+                                currentSheet.id === sheet.id ? { ...currentSheet, name: event.target.value } : currentSheet,
+                              ),
+                            )
+                          }
+                        />
                         <button
                           type="button"
                           className={`star-btn ${sheet.tracking.favorite ? 'active' : ''}${
@@ -8947,18 +8959,6 @@ function getPasswordStrengthMeta(password: string) {
                         >
                           ★
                         </button>
-                        <input
-                          type="text"
-                          placeholder="Nom de la fiche"
-                          value={sheet.name}
-                          onChange={(event) =>
-                            updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', (currentSheets) =>
-                              currentSheets.map((currentSheet) =>
-                                currentSheet.id === sheet.id ? { ...currentSheet, name: event.target.value } : currentSheet,
-                              ),
-                            )
-                          }
-                        />
                       </div>
                       <input
                         type="url"

@@ -758,6 +758,10 @@
   flex: 1;
 }
 
+.reference-name-cell .star-btn {
+  flex: none;
+}
+
 .sheet-emoji-btn {
   border: 1px solid var(--border);
   background: var(--input-bg);
@@ -2052,6 +2056,18 @@
 }
 
 .item-detail-tab-tracking .college-card-head .star-btn {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 7px;
+  font-size: 0.74rem;
+  line-height: 1;
+}
+
+.item-detail-tab-tracking .reference-name-cell .star-btn {
   display: inline-flex;
   flex: none;
   align-items: center;
