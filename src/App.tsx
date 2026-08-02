@@ -552,6 +552,7 @@ const QUIZ_TEXT_COLOR_OPTIONS = [
 ] as const
 const QUIZ_TEXT_HIGHLIGHT_COLOR = '#fff59d'
 const QUIZ_RICH_TEXT_MAX_CHARS = 500
+const QUIZ_RICH_TEXT_SYNC_DELAY_MS = 320
 type QuizRichTextCommand =
   | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' | 'bulletList' }
   | { type: 'color'; value: string }
@@ -816,10 +817,6 @@ function getClosestElementMatching(
   return null
 }
 
-function getClosestEditorElementByTag(node: Node | null, editor: HTMLDivElement, tagName: string) {
-  return getClosestElementMatching(node, editor, (element) => element.tagName === tagName.toUpperCase())
-}
-
 function getTextNodesInEditorRange(editor: HTMLDivElement, range: Range) {
   const textNodes: Text[] = []
   const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT)
@@ -848,15 +845,21 @@ function rangeIsFullyQuizHighlighted(editor: HTMLDivElement, range: Range) {
   return textNodes.every((node) => Boolean(getClosestElementMatching(node, editor, isQuizHighlightElement)))
 }
 
-function rangeContainsQuizHighlight(range: Range) {
-  const source = document.createElement('div')
-  source.appendChild(range.cloneContents())
-  if (Array.from(source.querySelectorAll<HTMLElement>('*')).some(isQuizHighlightElement)) {
-    return true
+function getNodeInnerHtml(node: Node) {
+  const container = document.createElement('div')
+  Array.from(node.childNodes).forEach((child) => {
+    container.appendChild(child.cloneNode(true))
+  })
+  return container.innerHTML
+}
+
+function replaceEditorSelectionWithHtml(editor: HTMLDivElement, html: string) {
+  const sanitized = sanitizeQuizRichTextHtml(html)
+  if (!sanitized) {
+    return false
   }
-  const cleaned = source.cloneNode(true) as HTMLDivElement
-  cleanQuizRichTextFormatting(cleaned, { highlight: true })
-  return source.innerHTML !== cleaned.innerHTML
+  editor.focus({ preventScroll: true })
+  return document.execCommand('insertHTML', false, sanitized)
 }
 
 function wrapEditorSelection(editor: HTMLDivElement, configureWrapper: (wrapper: HTMLSpanElement) => void) {
@@ -865,18 +868,19 @@ function wrapEditorSelection(editor: HTMLDivElement, configureWrapper: (wrapper:
     return false
   }
   const wrapper = document.createElement('span')
-  wrapper.appendChild(range.extractContents())
+  wrapper.appendChild(range.cloneContents())
   configureWrapper(wrapper)
-  range.insertNode(wrapper)
-  placeCaretAfterNode(wrapper)
-  return true
+  return replaceEditorSelectionWithHtml(editor, wrapper.outerHTML)
 }
 
 function cleanQuizRichTextFormatting(
   root: ParentNode,
   options: { color?: boolean; highlight?: boolean },
 ) {
-  const elements = Array.from(root.querySelectorAll<HTMLElement>('*'))
+  const elements = [
+    ...(root instanceof HTMLElement ? [root] : []),
+    ...Array.from(root.querySelectorAll<HTMLElement>('*')),
+  ]
   elements.forEach((element) => {
     if (options.color) {
       element.style.removeProperty('color')
@@ -905,9 +909,7 @@ function formatEditorSelection(
 }
 
 function clearEditorSelectionHighlight(editor: HTMLDivElement) {
-  return formatEditorSelection(editor, { highlight: true }, (wrapper) => {
-    wrapper.classList.add('quiz-rich-plain-highlight-text')
-  })
+  return formatEditorSelection(editor, { highlight: true })
 }
 
 function moveChildren(source: Node, target: Node) {
@@ -916,132 +918,21 @@ function moveChildren(source: Node, target: Node) {
   }
 }
 
-function nodeHasVisibleContent(node: Node) {
-  return (node.textContent ?? '').length > 0 || Array.from(node.childNodes).some((child) => child.nodeName === 'BR')
-}
-
-function unwrapEditorList(list: HTMLElement) {
-  const replacement = document.createDocumentFragment()
-  let caretTarget: Node | null = null
-  Array.from(list.children).forEach((child) => {
-    const line = document.createElement('div')
-    moveChildren(child, line)
-    if (!nodeHasVisibleContent(line)) {
-      line.appendChild(document.createElement('br'))
-    }
-    caretTarget = line
-    replacement.appendChild(line)
-  })
-  list.replaceWith(replacement)
-  if (caretTarget) {
-    placeCaretAfterNode(caretTarget)
-  }
-}
-
-function unwrapEditorListItem(list: HTMLElement, listItem: HTMLElement) {
-  const beforeList = document.createElement('ul')
-  const afterList = document.createElement('ul')
-  const line = document.createElement('div')
-
-  while (list.firstChild && list.firstChild !== listItem) {
-    beforeList.appendChild(list.firstChild)
-  }
-  moveChildren(listItem, line)
-  if (!nodeHasVisibleContent(line)) {
-    line.appendChild(document.createElement('br'))
-  }
-  if (list.contains(listItem)) {
-    list.removeChild(listItem)
-  }
-  while (list.firstChild) {
-    afterList.appendChild(list.firstChild)
-  }
-
-  const replacement = document.createDocumentFragment()
-  if (beforeList.children.length > 0) {
-    replacement.appendChild(beforeList)
-  }
-  replacement.appendChild(line)
-  if (afterList.children.length > 0) {
-    replacement.appendChild(afterList)
-  }
-  list.replaceWith(replacement)
-  placeCaretAtEndOfNode(line)
-}
-
-function appendListItem(list: HTMLUListElement, item: HTMLLIElement) {
-  if (!nodeHasVisibleContent(item)) {
-    item.appendChild(document.createElement('br'))
-  }
-  list.appendChild(item)
-}
-
 function convertSelectionToEditorList(editor: HTMLDivElement) {
-  const range = getEditorRange(editor)
-  if (!range) {
+  editor.focus({ preventScroll: true })
+  document.execCommand('insertUnorderedList', false)
+}
+
+function placeCaretAfterNode(node: Node) {
+  const selection = window.getSelection()
+  if (!selection) {
     return
   }
-
-  const closestList = getClosestEditorElementByTag(range.startContainer, editor, 'UL')
-  if (closestList) {
-    const closestListItem = getClosestEditorElementByTag(range.startContainer, editor, 'LI')
-    if (range.collapsed && closestListItem && closestList.contains(closestListItem)) {
-      unwrapEditorListItem(closestList, closestListItem)
-    } else {
-      unwrapEditorList(closestList)
-    }
-    return
-  }
-
-  const list = document.createElement('ul')
-  if (range.collapsed) {
-    const item = document.createElement('li')
-    item.appendChild(document.createElement('br'))
-    list.appendChild(item)
-    range.insertNode(list)
-    const caretRange = document.createRange()
-    caretRange.setStart(item, 0)
-    caretRange.collapse(true)
-    const selection = window.getSelection()
-    selection?.removeAllRanges()
-    selection?.addRange(caretRange)
-    return
-  }
-
-  const fragment = range.extractContents()
-  const source = document.createElement('div')
-  source.appendChild(fragment)
-  let currentItem = document.createElement('li')
-
-  Array.from(source.childNodes).forEach((node) => {
-    if (node.nodeType === Node.ELEMENT_NODE && ['DIV', 'P', 'LI'].includes((node as HTMLElement).tagName)) {
-      if (nodeHasVisibleContent(currentItem)) {
-        appendListItem(list, currentItem)
-        currentItem = document.createElement('li')
-      }
-      moveChildren(node, currentItem)
-      appendListItem(list, currentItem)
-      currentItem = document.createElement('li')
-      return
-    }
-    if (node.nodeName === 'BR') {
-      appendListItem(list, currentItem)
-      currentItem = document.createElement('li')
-      return
-    }
-    currentItem.appendChild(node)
-  })
-
-  if (nodeHasVisibleContent(currentItem) || list.children.length === 0) {
-    appendListItem(list, currentItem)
-  }
-  const lastItem = list.lastElementChild
-  range.insertNode(list)
-  if (lastItem) {
-    placeCaretAtEndOfNode(lastItem)
-  } else {
-    placeCaretAfterNode(list)
-  }
+  const range = document.createRange()
+  range.setStartAfter(node)
+  range.collapse(true)
+  selection.removeAllRanges()
+  selection.addRange(range)
 }
 
 function applyPendingQuizRichTextFormat(wrapper: HTMLSpanElement, format: PendingQuizRichTextFormat) {
@@ -1052,8 +943,6 @@ function applyPendingQuizRichTextFormat(wrapper: HTMLSpanElement, format: Pendin
   }
   if (format.highlight) {
     wrapper.classList.add('quiz-rich-highlight-text')
-  } else if (format.highlight === false) {
-    wrapper.classList.add('quiz-rich-plain-highlight-text')
   }
 }
 
@@ -1067,9 +956,10 @@ function insertFormattedTextAtEditorSelection(
   if (!range) {
     targetRange.selectNodeContents(editor)
     targetRange.collapse(false)
+    const selection = window.getSelection()
+    selection?.removeAllRanges()
+    selection?.addRange(targetRange)
   }
-  targetRange.deleteContents()
-
   const fragment = document.createDocumentFragment()
   const lines = text.replace(/\r\n?/g, '\n').split('\n')
   lines.forEach((line, index) => {
@@ -1079,7 +969,7 @@ function insertFormattedTextAtEditorSelection(
     if (!line) {
       return
     }
-    const hasFormat = Boolean(format.themeColor || format.color || format.highlight !== undefined)
+    const hasFormat = Boolean(format.themeColor || format.color || format.highlight)
     if (hasFormat) {
       const wrapper = document.createElement('span')
       applyPendingQuizRichTextFormat(wrapper, format)
@@ -1090,11 +980,7 @@ function insertFormattedTextAtEditorSelection(
     }
   })
 
-  const caretAnchor = document.createTextNode('')
-  fragment.appendChild(caretAnchor)
-  targetRange.insertNode(fragment)
-  placeCaretAfterNode(caretAnchor)
-  caretAnchor.remove()
+  replaceEditorSelectionWithHtml(editor, getNodeInnerHtml(fragment))
 }
 
 function getEditorPlainTextLength(editor: HTMLDivElement) {
@@ -1129,7 +1015,7 @@ function applyQuizRichTextCommand(editor: HTMLDivElement, command: QuizRichTextC
   }
 
   if (command.type === 'highlight') {
-    if (rangeIsFullyQuizHighlighted(editor, range) || rangeContainsQuizHighlight(range)) {
+    if (rangeIsFullyQuizHighlighted(editor, range)) {
       clearEditorSelectionHighlight(editor)
     } else {
       formatEditorSelection(editor, { highlight: true }, (wrapper) => {
@@ -1149,30 +1035,6 @@ function applyQuizRichTextCommand(editor: HTMLDivElement, command: QuizRichTextC
   }
 }
 
-function placeCaretAfterNode(node: Node) {
-  const selection = window.getSelection()
-  if (!selection) {
-    return
-  }
-  const range = document.createRange()
-  range.setStartAfter(node)
-  range.collapse(true)
-  selection.removeAllRanges()
-  selection.addRange(range)
-}
-
-function placeCaretAtEndOfNode(node: Node) {
-  const selection = window.getSelection()
-  if (!selection) {
-    return
-  }
-  const range = document.createRange()
-  range.selectNodeContents(node)
-  range.collapse(false)
-  selection.removeAllRanges()
-  selection.addRange(range)
-}
-
 type QuizRichTextEditorProps = {
   value: string
   placeholder: string
@@ -1186,8 +1048,40 @@ function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRic
   const lastSelectionRangeRef = useRef<Range | null>(null)
   const lastEmittedValueRef = useRef('')
   const lastAppliedValueRef = useRef('')
+  const pendingSyncedValueRef = useRef('')
+  const syncTimeoutRef = useRef<number | null>(null)
   const pendingFormatRef = useRef<PendingQuizRichTextFormat>({})
   const normalizedValue = sanitizeQuizRichTextHtml(value)
+
+  const clearPendingSync = () => {
+    if (syncTimeoutRef.current !== null) {
+      window.clearTimeout(syncTimeoutRef.current)
+      syncTimeoutRef.current = null
+    }
+  }
+
+  const emitValue = (nextValue: string, options: { flush?: boolean } = {}) => {
+    pendingSyncedValueRef.current = nextValue
+
+    if (options.flush) {
+      clearPendingSync()
+      if (lastEmittedValueRef.current !== nextValue) {
+        lastEmittedValueRef.current = nextValue
+        onChange(nextValue)
+      }
+      return
+    }
+
+    clearPendingSync()
+    syncTimeoutRef.current = window.setTimeout(() => {
+      syncTimeoutRef.current = null
+      const valueToEmit = pendingSyncedValueRef.current
+      if (lastEmittedValueRef.current !== valueToEmit) {
+        lastEmittedValueRef.current = valueToEmit
+        onChange(valueToEmit)
+      }
+    }, QUIZ_RICH_TEXT_SYNC_DELAY_MS)
+  }
 
   useEffect(() => {
     const editor = editorRef.current
@@ -1203,9 +1097,16 @@ function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRic
     editor.innerHTML = normalizedValue
     lastAppliedValueRef.current = normalizedValue
     lastEmittedValueRef.current = normalizedValue
+    pendingSyncedValueRef.current = normalizedValue
   }, [normalizedValue])
 
-  const syncValue = (options: { commitDom?: boolean } = {}) => {
+  useEffect(() => {
+    return () => {
+      clearPendingSync()
+    }
+  }, [])
+
+  const syncValue = (options: { commitDom?: boolean; flush?: boolean } = {}) => {
     const editor = editorRef.current
     if (!editor) {
       return
@@ -1218,9 +1119,8 @@ function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRic
       }
       lastAppliedValueRef.current = nextValue
     }
-    if (lastEmittedValueRef.current !== nextValue) {
-      lastEmittedValueRef.current = nextValue
-      onChange(nextValue)
+    if (pendingSyncedValueRef.current !== nextValue || lastEmittedValueRef.current !== nextValue) {
+      emitValue(nextValue, { flush: options.flush })
     }
   }
 
@@ -1278,6 +1178,15 @@ function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRic
         const nextPendingFormat = { ...pendingFormatRef.current }
         if (hasActiveHighlight) {
           if (range && rangeHasActiveQuizHighlight(editor, range)) {
+            const activeHighlightElement = getClosestElementMatching(range.startContainer, editor, isQuizHighlightElement)
+            if (activeHighlightElement) {
+              placeCaretAfterNode(activeHighlightElement)
+              delete nextPendingFormat.highlight
+              pendingFormatRef.current = nextPendingFormat
+              saveSelectionRange()
+              editor.focus({ preventScroll: true })
+              return
+            }
             nextPendingFormat.highlight = false
           } else {
             delete nextPendingFormat.highlight
@@ -1295,7 +1204,7 @@ function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRic
 
     applyQuizRichTextCommand(editor, command)
     pendingFormatRef.current = {}
-    syncValue({ commitDom: command.type !== 'bold' && command.type !== 'italic' })
+    syncValue({ commitDom: command.type !== 'bold' && command.type !== 'italic', flush: true })
     saveSelectionRange()
   }
 
@@ -1321,7 +1230,7 @@ function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRic
     }
     insertFormattedTextAtEditorSelection(editor, allowedText, pendingFormatRef.current)
     pendingFormatRef.current = {}
-    syncValue()
+    syncValue({ flush: true })
     saveSelectionRange()
   }
 
@@ -1333,7 +1242,7 @@ function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRic
       return
     }
     const pendingFormat = pendingFormatRef.current
-    const hasPendingFormat = Boolean(pendingFormat.themeColor || pendingFormat.color || pendingFormat.highlight !== undefined)
+    const hasPendingFormat = Boolean(pendingFormat.themeColor || pendingFormat.color || pendingFormat.highlight === true)
     if (inputType === 'insertParagraph' && maxLength) {
       const editor = editorRef.current
       if (!editor) {
@@ -1450,7 +1359,7 @@ function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRic
         onBlur={() => {
           isFocusedRef.current = false
           pendingFormatRef.current = {}
-          syncValue({ commitDom: true })
+          syncValue({ commitDom: true, flush: true })
         }}
         onPaste={handlePaste}
         onBeforeInput={handleBeforeInput}
@@ -9235,6 +9144,7 @@ function getPasswordStrengthMeta(password: string) {
                   <div className="flashcard-editor-main">
                     <p className="flashcard-editor-section-label">Contenu du {quizSide === 'front' ? 'recto' : 'verso'}</p>
                     <QuizRichTextEditor
+                      key={`${activeQuizCard.id}-${quizSide}`}
                       placeholder={quizSide === 'front' ? 'Question de la flashcard...' : 'Réponse de la flashcard...'}
                       value={quizSide === 'front' ? activeQuizCard.question : activeQuizCard.answer}
                       onChange={(value) =>
@@ -9923,6 +9833,7 @@ function getPasswordStrengthMeta(password: string) {
                     <QuizRichTextEditor
                       value={flashCreateQuestion}
                       placeholder="Écrivez la question de la flashcard..."
+                      maxLength={QUIZ_RICH_TEXT_MAX_CHARS}
                       onChange={(value) => {
                         setFlashCreateQuestion(value)
                         setFlashCreateError('')
@@ -9934,6 +9845,7 @@ function getPasswordStrengthMeta(password: string) {
                     <QuizRichTextEditor
                       value={flashCreateAnswer}
                       placeholder="Écrivez la réponse attendue..."
+                      maxLength={QUIZ_RICH_TEXT_MAX_CHARS}
                       onChange={(value) => {
                         setFlashCreateAnswer(value)
                         setFlashCreateError('')
