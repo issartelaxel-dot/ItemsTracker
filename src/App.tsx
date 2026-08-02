@@ -845,6 +845,86 @@ function rangeIsFullyQuizHighlighted(editor: HTMLDivElement, range: Range) {
   return textNodes.every((node) => Boolean(getClosestElementMatching(node, editor, isQuizHighlightElement)))
 }
 
+function getSelectedTextNodeOffsets(node: Text, range: Range) {
+  const textLength = node.data.length
+  let start = 0
+  let end = textLength
+  if (node === range.startContainer) {
+    start = range.startOffset
+  }
+  if (node === range.endContainer) {
+    end = range.endOffset
+  }
+  return {
+    start: Math.max(0, Math.min(start, textLength)),
+    end: Math.max(0, Math.min(end, textLength)),
+  }
+}
+
+function applyEditorRangeHighlight(editor: HTMLDivElement, range: Range) {
+  const textNodes = getTextNodesInEditorRange(editor, range)
+  if (textNodes.length === 0) {
+    return false
+  }
+
+  let caretTarget: HTMLElement | null = null
+  ;[...textNodes].reverse().forEach((textNode) => {
+    const { start, end } = getSelectedTextNodeOffsets(textNode, range)
+    if (start >= end) {
+      return
+    }
+
+    let selectedText = textNode
+    if (end < selectedText.data.length) {
+      selectedText.splitText(end)
+    }
+    if (start > 0) {
+      selectedText = selectedText.splitText(start)
+    }
+    if (!selectedText.data) {
+      return
+    }
+
+    const parent = selectedText.parentNode
+    if (!parent) {
+      return
+    }
+    const wrapper = document.createElement('span')
+    wrapper.classList.add('quiz-rich-highlight-text')
+    parent.insertBefore(wrapper, selectedText)
+    wrapper.appendChild(selectedText)
+    caretTarget ??= wrapper
+  })
+
+  if (caretTarget) {
+    placeCaretAfterNode(caretTarget)
+    return true
+  }
+  return false
+}
+
+function clearEditorRangeHighlight(editor: HTMLDivElement, range: Range) {
+  const textNodes = getTextNodesInEditorRange(editor, range)
+  const highlightedElements = new Set<HTMLElement>()
+  textNodes.forEach((textNode) => {
+    const highlightElement = getClosestElementMatching(textNode, editor, isQuizHighlightElement)
+    if (highlightElement) {
+      highlightedElements.add(highlightElement)
+    }
+  })
+  if (highlightedElements.size === 0) {
+    return false
+  }
+  highlightedElements.forEach((element) => {
+    cleanQuizRichTextFormatting(element, { highlight: true })
+  })
+  const lastElement = Array.from(highlightedElements).at(-1)
+  if (lastElement) {
+    placeCaretAfterNode(lastElement)
+  }
+  return true
+}
+
 function getNodeInnerHtml(node: Node) {
   const container = document.createElement('div')
   Array.from(node.childNodes).forEach((child) => {
@@ -909,6 +989,10 @@ function formatEditorSelection(
 }
 
 function clearEditorSelectionHighlight(editor: HTMLDivElement) {
+  const range = getEditorRange(editor)
+  if (range && clearEditorRangeHighlight(editor, range)) {
+    return true
+  }
   return formatEditorSelection(editor, { highlight: true })
 }
 
@@ -1017,7 +1101,7 @@ function applyQuizRichTextCommand(editor: HTMLDivElement, command: QuizRichTextC
   if (command.type === 'highlight') {
     if (rangeIsFullyQuizHighlighted(editor, range)) {
       clearEditorSelectionHighlight(editor)
-    } else {
+    } else if (!applyEditorRangeHighlight(editor, range)) {
       formatEditorSelection(editor, { highlight: true }, (wrapper) => {
         wrapper.classList.add('quiz-rich-highlight-text')
       })
