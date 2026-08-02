@@ -9851,8 +9851,8 @@ function getPasswordStrengthMeta(password: string) {
 
                 {quizSessionStep === 'summary' ? (
                   <div className="quiz-summary-celebration">
-                    <button type="button" className="ghost-btn quiz-summary-close" onClick={closeQuiz} aria-label="Fermer le résumé">
-                      <Xmark className="ui-icon" aria-hidden="true" />
+                    <button type="button" className="ghost-btn quiz-summary-close" onClick={closeQuiz}>
+                      Quitter
                     </button>
                     <div className="quiz-summary-confetti" aria-hidden="true">
                       <span />
@@ -9862,74 +9862,61 @@ function getPasswordStrengthMeta(password: string) {
                       <span />
                       <span />
                     </div>
-                    <div className="quiz-summary-trophy" aria-hidden="true">
-                      <Star className="quiz-summary-trophy-star" aria-hidden="true" />
+                    <div className="quiz-summary-top">
+                      <section className="quiz-summary-score-panel">
+                        <div className="quiz-summary-score-value">{quizSessionMetrics.score}%</div>
+                        <h3>
+                          {quizSessionMetrics.score >= 90
+                            ? 'Excellent !'
+                            : quizSessionMetrics.score >= 70
+                              ? 'Bonne révision !'
+                              : 'À consolider'}
+                        </h3>
+                        <p>
+                          {quizSessionMetrics.score >= 90
+                            ? 'Tu maîtrises parfaitement ce quiz.'
+                            : quizSessionMetrics.score >= 70
+                              ? 'Tu progresses, garde ce rythme.'
+                              : 'Reprends les erreurs pour solidifier les bases.'}
+                        </p>
+                      </section>
+                      <section className="quiz-summary-metric-grid">
+                        <article>
+                          <HelpCircle className="quiz-summary-metric-icon accuracy" aria-hidden="true" />
+                          <span>Accuracy</span>
+                          <strong>{quizSessionMetrics.score}%</strong>
+                          <small aria-hidden="true" />
+                        </article>
+                        <article>
+                          <ClockRotateRight className="quiz-summary-metric-icon time" aria-hidden="true" />
+                          <span>Temps</span>
+                          <strong>{quizSessionMetrics.elapsedLabel}</strong>
+                          <small aria-hidden="true" />
+                        </article>
+                        <article>
+                          <CreditCards className="quiz-summary-metric-icon cards" aria-hidden="true" />
+                          <span>Cartes</span>
+                          <strong>{quizSessionMetrics.answeredCount} / {quizSessionMetrics.cards.length}</strong>
+                          <small aria-hidden="true" />
+                        </article>
+                        <article>
+                          <FireFlame className="quiz-summary-metric-icon streak" aria-hidden="true" />
+                          <span>Série actuelle</span>
+                          <strong>x{dashboardStudyStats.currentStreak} jour{dashboardStudyStats.currentStreak > 1 ? 's' : ''}</strong>
+                          <small aria-hidden="true" />
+                        </article>
+                      </section>
                     </div>
-                    <div className="quiz-summary-title">
-                      <h3>
-                        {quizSessionMetrics.score >= 90
-                          ? 'Excellent travail !'
-                          : quizSessionMetrics.score >= 70
-                            ? 'Bonne révision !'
-                            : 'À consolider'}
-                      </h3>
-                      <p>
-                        {quizSessionMetrics.score >= 90
-                          ? 'Tu maîtrises très bien cette série.'
-                          : quizSessionMetrics.score >= 70
-                            ? 'Tu progresses, garde ce rythme.'
-                            : 'Reprends les erreurs pour solidifier les bases.'}
-                      </p>
-                    </div>
-                    <section className="quiz-summary-hero-score">
-                      <div className="quiz-score-ring quiz-score-ring-large" style={{ '--quiz-score': `${quizSessionMetrics.score}%` } as CSSProperties}>
-                        <span>{quizSessionMetrics.score}%</span>
-                      </div>
-                      <small>{quizSessionMetrics.errorRate}% d’erreur</small>
-                    </section>
-                    <section className="quiz-summary-streak-pill">
-                      <FireFlame className="inline-btn-icon" aria-hidden="true" />
-                      <span>
-                        <strong>Série actuelle : {dashboardStudyStats.currentStreak} jour{dashboardStudyStats.currentStreak > 1 ? 's' : ''}</strong>
-                        <small>Continue comme ça !</small>
-                      </span>
-                    </section>
-                    <section className="quiz-summary-metric-grid">
-                      <article>
-                        <HelpCircle className="quiz-summary-metric-icon" aria-hidden="true" />
-                        <span>Accuracy</span>
-                        <strong>{quizSessionMetrics.score}%</strong>
-                        <small>Réponses correctes</small>
-                      </article>
-                      <article>
-                        <ClockRotateRight className="quiz-summary-metric-icon" aria-hidden="true" />
-                        <span>Temps</span>
-                        <strong>{quizSessionMetrics.elapsedLabel}</strong>
-                        <small>Temps passé</small>
-                      </article>
-                      <article>
-                        <CheckCircle className="quiz-summary-metric-icon" aria-hidden="true" />
-                        <span>Erreurs</span>
-                        <strong>{quizSessionMetrics.errorCount}</strong>
-                        <small>{quizSessionMetrics.errorCount === 0 ? 'Aucune erreur' : 'À revoir'}</small>
-                      </article>
-                      <article>
-                        <CreditCards className="quiz-summary-metric-icon" aria-hidden="true" />
-                        <span>Cartes</span>
-                        <strong>{quizSessionMetrics.answeredCount}/{quizSessionMetrics.cards.length}</strong>
-                        <small>Cartes répondues</small>
-                      </article>
-                    </section>
                     <section className={`quiz-summary-review-banner ${quizSessionMetrics.mistakeCards.length === 0 ? 'is-clear' : 'has-errors'}`}>
                       <div className="quiz-summary-review-illustration" aria-hidden="true">
                         {quizSessionMetrics.mistakeCards.length === 0 ? (
-                          <CheckCircle className="ui-icon" aria-hidden="true" />
+                          <Learning className="ui-icon" aria-hidden="true" />
                         ) : (
                           <WarningTriangle className="ui-icon" aria-hidden="true" />
                         )}
                       </div>
                       <div>
-                        <h4>{quizSessionMetrics.mistakeCards.length === 0 ? 'Aucune notion à revoir !' : 'Notions à revoir'}</h4>
+                        <h4>{quizSessionMetrics.mistakeCards.length === 0 ? 'Aucune notion à revoir 🎉' : 'Notions à revoir'}</h4>
                         {quizSessionReviewColleges.length > 0 ? (
                           <p>
                             {quizSessionReviewColleges
@@ -9937,9 +9924,14 @@ function getPasswordStrengthMeta(password: string) {
                               .join(', ')}
                           </p>
                         ) : (
-                          <p>Toutes les cartes répondues sont maîtrisées.</p>
+                          <p>Toutes les cartes répondues sont validées.</p>
                         )}
                       </div>
+                      {quizSessionMetrics.mistakeCards.length === 0 ? (
+                        <CheckCircle className="quiz-summary-review-status" aria-hidden="true" />
+                      ) : (
+                        <WarningTriangle className="quiz-summary-review-status" aria-hidden="true" />
+                      )}
                     </section>
                     <div className="quiz-summary-actions quiz-summary-actions-celebration">
                       <button
@@ -9950,7 +9942,8 @@ function getPasswordStrengthMeta(password: string) {
                           setActiveView('dashboard')
                         }}
 	                      >
-	                        Continuer
+	                        <Play className="inline-btn-icon" aria-hidden="true" />
+	                        Continuer la révision
 	                        <NavArrowRight className="inline-btn-icon" aria-hidden="true" />
 	                      </button>
 	                      {quizSessionMetrics.mistakeCards.length > 0 ? (
@@ -9979,12 +9972,23 @@ function getPasswordStrengthMeta(password: string) {
 	                        className="ghost-btn"
 	                        onClick={() => {
 	                          closeQuiz()
-	                          setActiveView('stats')
+	                          setActiveView('dashboard')
 	                        }}
 	                      >
-	                        <DatabaseStats className="inline-btn-icon" aria-hidden="true" />
-	                        Voir mes statistiques
+	                        <Dashboard className="inline-btn-icon" aria-hidden="true" />
+	                        Retour au dashboard
 	                      </button>
+                      <button
+                        type="button"
+                        className="ghost-btn"
+                        onClick={() => {
+                          closeQuiz()
+                          setActiveView('stats')
+                        }}
+                      >
+                        <DatabaseStats className="inline-btn-icon" aria-hidden="true" />
+                        Voir mes statistiques
+                      </button>
 	                    </div>
 	                  </div>
 	                ) : null}
