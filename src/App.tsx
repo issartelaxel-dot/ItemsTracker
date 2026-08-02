@@ -9886,12 +9886,6 @@ function getPasswordStrengthMeta(password: string) {
                           <small aria-hidden="true" />
                         </article>
                         <article>
-                          <CreditCards className="quiz-summary-metric-icon cards" aria-hidden="true" />
-                          <span>Cartes</span>
-                          <strong>{quizSessionMetrics.answeredCount} / {quizSessionMetrics.cards.length}</strong>
-                          <small aria-hidden="true" />
-                        </article>
-                        <article>
                           <FireFlame className="quiz-summary-metric-icon streak" aria-hidden="true" />
                           <span>Série actuelle</span>
                           <strong>x{dashboardStudyStats.currentStreak} jour{dashboardStudyStats.currentStreak > 1 ? 's' : ''}</strong>
@@ -9970,17 +9964,6 @@ function getPasswordStrengthMeta(password: string) {
 	                        <Dashboard className="inline-btn-icon" aria-hidden="true" />
 	                        Retour au dashboard
 	                      </button>
-                      <button
-                        type="button"
-                        className="ghost-btn"
-                        onClick={() => {
-                          closeQuiz()
-                          setActiveView('stats')
-                        }}
-                      >
-                        <DatabaseStats className="inline-btn-icon" aria-hidden="true" />
-                        Voir mes statistiques
-                      </button>
 	                    </div>
 	                  </div>
 	                ) : null}
