@@ -4,9 +4,16 @@ import {
   $getSelection,
   $insertNodes,
   $isRangeSelection,
+  CAN_REDO_COMMAND,
+  CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_LOW,
   FORMAT_TEXT_COMMAND,
+  INDENT_CONTENT_COMMAND,
+  KEY_TAB_COMMAND,
   KEY_MODIFIER_COMMAND,
+  OUTDENT_CONTENT_COMMAND,
+  REDO_COMMAND,
+  UNDO_COMMAND,
   type EditorState,
   type LexicalEditor,
 } from 'lexical'
@@ -17,7 +24,7 @@ import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
-import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
+import { createEmptyHistoryState, HistoryPlugin, type HistoryState } from '@lexical/react/LexicalHistoryPlugin'
 import { ListPlugin } from '@lexical/react/LexicalListPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
@@ -74,6 +81,8 @@ import {
   Star,
   SunLight,
   Trash,
+  RedoAction,
+  UndoAction,
   WarningTriangle,
   Xmark,
 } from 'iconoir-react'
@@ -941,26 +950,58 @@ function QuizLexicalShortcutsPlugin() {
   const [editor] = useLexicalComposerContext()
 
   useEffect(() => {
-    return editor.registerCommand(
+    const unregisterModifierCommand = editor.registerCommand(
       KEY_MODIFIER_COMMAND,
       (event) => {
         if (!(event.metaKey || event.ctrlKey)) {
           return false
         }
         const key = event.key.toLowerCase()
-        if (key !== 'u') {
+        if (key === 'b' || key === 'i') {
+          event.preventDefault()
+          editor.dispatchCommand(FORMAT_TEXT_COMMAND, key === 'b' ? 'bold' : 'italic')
+          return true
+        }
+        if (key === 'u') {
+          event.preventDefault()
+          editor.update(() => {
+            patchQuizLexicalSelectionStyle({
+              'background-color': isQuizLexicalSelectionHighlighted() ? null : QUIZ_TEXT_HIGHLIGHT_COLOR,
+            })
+          })
+          return true
+        }
+        if (key === 'z') {
+          event.preventDefault()
+          editor.dispatchCommand(event.shiftKey ? REDO_COMMAND : UNDO_COMMAND, undefined)
+          return true
+        }
+        if (key === 'y') {
+          event.preventDefault()
+          editor.dispatchCommand(REDO_COMMAND, undefined)
+          return true
+        }
+        return false
+      },
+      COMMAND_PRIORITY_LOW,
+    )
+    const unregisterTabCommand = editor.registerCommand(
+      KEY_TAB_COMMAND,
+      (event) => {
+        if (event.metaKey || event.ctrlKey || event.altKey) {
           return false
         }
         event.preventDefault()
-        editor.update(() => {
-          patchQuizLexicalSelectionStyle({
-            'background-color': isQuizLexicalSelectionHighlighted() ? null : QUIZ_TEXT_HIGHLIGHT_COLOR,
-          })
-        })
+        editor.dispatchCommand(event.shiftKey ? OUTDENT_CONTENT_COMMAND : INDENT_CONTENT_COMMAND, undefined)
         return true
       },
       COMMAND_PRIORITY_LOW,
     )
+
+    return () => {
+      unregisterModifierCommand()
+      unregisterTabCommand()
+    }
   }, [editor])
 
   return null
@@ -970,10 +1011,6 @@ function QuizLexicalMaxLengthPlugin({ maxLength }: { maxLength?: number }) {
   const [editor] = useLexicalComposerContext()
 
   useEffect(() => {
-    if (!maxLength || maxLength <= 0) {
-      return undefined
-    }
-
     const getNextLength = (insertedText: string) => {
       return editor.getEditorState().read(() => {
         const currentLength = getQuizLexicalTextLength()
@@ -982,10 +1019,38 @@ function QuizLexicalMaxLengthPlugin({ maxLength }: { maxLength?: number }) {
       })
     }
 
+    const getAllowedInsertionText = (insertedText: string) => {
+      if (!maxLength || maxLength <= 0) {
+        return insertedText
+      }
+      return editor.getEditorState().read(() => {
+        const currentLength = getQuizLexicalTextLength()
+        const selectedLength = getQuizLexicalSelectionTextLength()
+        const availableLength = Math.max(0, maxLength - Math.max(0, currentLength - selectedLength))
+        return insertedText.slice(0, availableLength)
+      })
+    }
+
+    const insertPlainText = (text: string) => {
+      const normalizedText = text.replace(/\r\n?/g, '\n')
+      if (!normalizedText) {
+        return
+      }
+      editor.update(() => {
+        const selection = $getSelection()
+        if ($isRangeSelection(selection)) {
+          selection.insertRawText(normalizedText)
+        }
+      })
+    }
+
     const handleBeforeInput = (event: InputEvent) => {
       const inputType = event.inputType ?? ''
       if (inputType.startsWith('format')) {
         event.preventDefault()
+        return
+      }
+      if (!maxLength || maxLength <= 0) {
         return
       }
       if (!inputType.startsWith('insert')) {
@@ -1005,23 +1070,8 @@ function QuizLexicalMaxLengthPlugin({ maxLength }: { maxLength?: number }) {
       if (!pastedText) {
         return
       }
-      if (getNextLength(pastedText) > maxLength) {
-        event.preventDefault()
-        const allowedText = editor.getEditorState().read(() => {
-          const currentLength = getQuizLexicalTextLength()
-          const selectedLength = getQuizLexicalSelectionTextLength()
-          const availableLength = Math.max(0, maxLength - Math.max(0, currentLength - selectedLength))
-          return pastedText.slice(0, availableLength)
-        })
-        if (allowedText) {
-          editor.update(() => {
-            const selection = $getSelection()
-            if ($isRangeSelection(selection)) {
-              selection.insertText(allowedText)
-            }
-          })
-        }
-      }
+      event.preventDefault()
+      insertPlainText(getAllowedInsertionText(pastedText))
     }
 
     return editor.registerRootListener((rootElement, previousRootElement) => {
@@ -1037,6 +1087,32 @@ function QuizLexicalMaxLengthPlugin({ maxLength }: { maxLength?: number }) {
 
 function QuizRichTextToolbar() {
   const [editor] = useLexicalComposerContext()
+  const [canUndo, setCanUndo] = useState(false)
+  const [canRedo, setCanRedo] = useState(false)
+
+  useEffect(() => {
+    const unregisterCanUndoCommand = editor.registerCommand(
+      CAN_UNDO_COMMAND,
+      (nextCanUndo) => {
+        setCanUndo(nextCanUndo)
+        return false
+      },
+      COMMAND_PRIORITY_LOW,
+    )
+    const unregisterCanRedoCommand = editor.registerCommand(
+      CAN_REDO_COMMAND,
+      (nextCanRedo) => {
+        setCanRedo(nextCanRedo)
+        return false
+      },
+      COMMAND_PRIORITY_LOW,
+    )
+
+    return () => {
+      unregisterCanUndoCommand()
+      unregisterCanRedoCommand()
+    }
+  }, [editor])
 
   const runToolbarAction = (event: ReactMouseEvent<HTMLButtonElement>, action: () => void) => {
     event.preventDefault()
@@ -1060,6 +1136,26 @@ function QuizRichTextToolbar() {
 
   return (
     <div className="quiz-rich-toolbar">
+      <button
+        type="button"
+        className="ghost-btn quiz-rich-history-btn"
+        title="Annuler"
+        aria-label="Annuler"
+        disabled={!canUndo}
+        onMouseDown={(event) => runToolbarAction(event, () => editor.dispatchCommand(UNDO_COMMAND, undefined))}
+      >
+        <UndoAction className="inline-btn-icon" aria-hidden="true" />
+      </button>
+      <button
+        type="button"
+        className="ghost-btn quiz-rich-history-btn"
+        title="Rétablir"
+        aria-label="Rétablir"
+        disabled={!canRedo}
+        onMouseDown={(event) => runToolbarAction(event, () => editor.dispatchCommand(REDO_COMMAND, undefined))}
+      >
+        <RedoAction className="inline-btn-icon" aria-hidden="true" />
+      </button>
       <button
         type="button"
         className="ghost-btn"
@@ -1110,6 +1206,7 @@ function QuizRichTextToolbar() {
 }
 
 function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRichTextEditorProps) {
+  const historyState = useMemo<HistoryState>(() => createEmptyHistoryState(), [])
   const initialConfig = useMemo(
     () => ({
       namespace: 'QuizRichTextEditor',
@@ -1153,7 +1250,7 @@ function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRic
           placeholder={null}
           ErrorBoundary={LexicalErrorBoundary}
         />
-        <HistoryPlugin />
+        <HistoryPlugin externalHistoryState={historyState} />
         <ListPlugin />
         <QuizLexicalShortcutsPlugin />
         <QuizLexicalMaxLengthPlugin maxLength={maxLength} />
