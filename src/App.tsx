@@ -208,6 +208,20 @@ type ReferenceSheet = {
   tracking: CollegeTracking
 }
 
+type QuizMcqChoice = {
+  id: string
+  text: string
+  isCorrect: boolean
+  whyWrong?: string
+}
+
+type QuizMcqCache = {
+  sourceHash: string
+  generatedAt: string
+  choices: QuizMcqChoice[]
+  explanation: string
+}
+
 type QuizCard = {
   id: string
   question: string
@@ -220,6 +234,7 @@ type QuizCard = {
   lastResult: QuizResult | null
   quizCount: number
   lastReviewedAt: string | null
+  mcq: QuizMcqCache | null
 }
 
 type QuizConfig = {
@@ -1673,6 +1688,7 @@ function makeQuizCard(partial?: Partial<QuizCard>): QuizCard {
     lastResult: normalizeQuizResultInput(partial?.lastResult),
     quizCount: Number.isFinite(rawCount) ? Math.max(0, Math.floor(rawCount)) : 0,
     lastReviewedAt: typeof partial?.lastReviewedAt === 'string' ? partial.lastReviewedAt : null,
+    mcq: normalizeQuizMcqCache(partial?.mcq),
   }
 }
 
@@ -1738,6 +1754,41 @@ function normalizeQuizResultInput(value: unknown): QuizResult | null {
     return 'hard'
   }
   return isQuizResult(value) ? value : null
+}
+
+function makeQuizMcqSourceHash(question: string, answer: string) {
+  const source = `${getQuizRichTextPlainText(question)}\n---\n${getQuizRichTextPlainText(answer)}`
+  let hash = 5381
+  for (let index = 0; index < source.length; index += 1) {
+    hash = ((hash << 5) + hash + source.charCodeAt(index)) >>> 0
+  }
+  return hash.toString(36)
+}
+
+function normalizeQuizMcqCache(value: unknown): QuizMcqCache | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+  const raw = value as Partial<QuizMcqCache>
+  const sourceHash = typeof raw.sourceHash === 'string' ? raw.sourceHash.trim() : ''
+  const generatedAt = typeof raw.generatedAt === 'string' ? raw.generatedAt : ''
+  const explanation = typeof raw.explanation === 'string' ? raw.explanation.trim() : ''
+  const choices = Array.isArray(raw.choices)
+    ? raw.choices
+        .filter((choice): choice is QuizMcqChoice => Boolean(choice && typeof choice === 'object'))
+        .map((choice, index) => ({
+          id: typeof choice.id === 'string' && choice.id.trim() ? choice.id.trim() : `choice-${index + 1}`,
+          text: typeof choice.text === 'string' ? choice.text.trim() : '',
+          isCorrect: Boolean(choice.isCorrect),
+          whyWrong: typeof choice.whyWrong === 'string' ? choice.whyWrong.trim() : '',
+        }))
+        .filter((choice) => choice.text.length > 0)
+    : []
+  const correctCount = choices.filter((choice) => choice.isCorrect).length
+  if (!sourceHash || choices.length !== 4 || correctCount !== 1) {
+    return null
+  }
+  return { sourceHash, generatedAt, choices, explanation }
 }
 
 function normalizeMasteryInput(value: unknown): Mastery {
@@ -2667,6 +2718,10 @@ function App() {
   const [quizSessionObjective, setQuizSessionObjective] = useState<QuizSessionObjective>('learning')
   const [quizSessionStartedAt, setQuizSessionStartedAt] = useState<number | null>(null)
   const [quizSessionResults, setQuizSessionResults] = useState<Record<string, QuizResult>>({})
+  const [quizMcqSelectedChoiceId, setQuizMcqSelectedChoiceId] = useState<string | null>(null)
+  const [quizMcqAnsweredChoiceId, setQuizMcqAnsweredChoiceId] = useState<string | null>(null)
+  const [quizMcqLoadingByKey, setQuizMcqLoadingByKey] = useState<Record<string, boolean>>({})
+  const [quizMcqErrorsByKey, setQuizMcqErrorsByKey] = useState<Record<string, string>>({})
   const [quizImageErrors, setQuizImageErrors] = useState<Record<QuizImageSlot, string>>({ front: '', back: '' })
   const [quizImageFileNames, setQuizImageFileNames] = useState<Record<QuizImageSlot, string>>({ front: '', back: '' })
   const [imageLightboxSrc, setImageLightboxSrc] = useState<string | null>(null)
@@ -2690,6 +2745,7 @@ function App() {
   const imageSyncInFlightRef = useRef<Promise<{ updatedAt: string | null } | false> | null>(null)
   const trackingStateRef = useRef(trackingState)
   const lazyImageLoadInFlightRef = useRef(new Set<string>())
+  const mcqGenerationInFlightRef = useRef(new Set<string>())
   const lastPayloadTooLargeWarningRef = useRef(0)
   const shouldForceFirstSyncRef = useRef(false)
   const hasPendingChangesRef = useRef(false)
@@ -4407,27 +4463,64 @@ function getPasswordStrengthMeta(password: string) {
   const activeQuizCard = activeQuizSessionEntry?.card ?? null
   const activeQuizItem = activeQuizSessionEntry?.item ?? quizItem
 
-  const quizQuestion = useMemo(() => {
-    if (!activeQuizItem) {
+  function getQuizEntryQuestionHtml(entry: QuizSessionEntry | null) {
+    if (!entry?.item) {
       return ''
     }
-    const custom = activeQuizCard?.question ?? ''
+    const custom = entry.card.question ?? ''
     if (hasQuizRichTextContent(custom)) {
       return sanitizeQuizRichTextHtml(custom)
     }
-    return getAutoQuizQuestion(activeQuizItem)
-  }, [activeQuizItem, activeQuizCard])
+    return getAutoQuizQuestion(entry.item)
+  }
 
-  const quizAnswer = useMemo(() => {
-    if (!activeQuizItem) {
+  function getQuizEntryAnswerHtml(entry: QuizSessionEntry | null) {
+    if (!entry?.item) {
       return ''
     }
-    const custom = activeQuizCard?.answer ?? ''
+    const custom = entry.card.answer ?? ''
     if (hasQuizRichTextContent(custom)) {
       return sanitizeQuizRichTextHtml(custom)
     }
-    return activeQuizItem.shortDescription
-  }, [activeQuizItem, activeQuizCard])
+    return entry.item.shortDescription
+  }
+
+  const quizQuestion = useMemo(() => getQuizEntryQuestionHtml(activeQuizSessionEntry), [activeQuizSessionEntry])
+
+  const quizAnswer = useMemo(() => getQuizEntryAnswerHtml(activeQuizSessionEntry), [activeQuizSessionEntry])
+
+  const activeQuizMcqSourceHash = useMemo(() => {
+    return activeQuizCard ? makeQuizMcqSourceHash(quizQuestion, quizAnswer) : ''
+  }, [activeQuizCard, quizAnswer, quizQuestion])
+
+  const activeQuizMcq = useMemo(() => {
+    if (!activeQuizCard?.mcq || activeQuizCard.mcq.sourceHash !== activeQuizMcqSourceHash) {
+      return null
+    }
+    return activeQuizCard.mcq
+  }, [activeQuizCard, activeQuizMcqSourceHash])
+
+  const activeQuizMcqLoading = activeQuizSessionEntry ? Boolean(quizMcqLoadingByKey[activeQuizSessionEntry.sessionKey]) : false
+  const activeQuizMcqError = activeQuizSessionEntry ? (quizMcqErrorsByKey[activeQuizSessionEntry.sessionKey] ?? '') : ''
+  const activeQuizMcqSelectedChoice = activeQuizMcq?.choices.find((choice) => choice.id === quizMcqSelectedChoiceId) ?? null
+  const activeQuizMcqAnsweredChoice = activeQuizMcq?.choices.find((choice) => choice.id === quizMcqAnsweredChoiceId) ?? null
+  const activeQuizMcqCorrectChoice = activeQuizMcq?.choices.find((choice) => choice.isCorrect) ?? null
+
+  useEffect(() => {
+    resetQuizMcqAnswerState()
+  }, [quizActiveCardKey, quizSessionMode, quizSessionStep])
+
+  useEffect(() => {
+    if (
+      quizSessionMode !== 'quiz' ||
+      !activeQuizSessionEntry ||
+      (quizSessionStep !== 'question' && quizSessionStep !== 'errors') ||
+      activeQuizMcq
+    ) {
+      return
+    }
+    void generateQuizMcqForEntry(activeQuizSessionEntry)
+  }, [activeQuizMcq, activeQuizSessionEntry, quizSessionMode, quizSessionStep])
 
   const quizCurrentCardFeeling = useMemo(() => {
     if (!activeQuizCard?.lastResult) {
@@ -5489,6 +5582,7 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSessionStep('setup')
     setQuizSessionResults({})
     setQuizSessionStartedAt(null)
+    resetQuizMcqAnswerState()
   }
 
   function openQuizSessionSetup(scope: QuizSessionScope) {
@@ -5523,6 +5617,7 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSessionObjective('learning')
     setQuizSessionResults({})
     setQuizSessionStartedAt(null)
+    resetQuizMcqAnswerState()
   }
 
   function getQuizCardButtonLabel(card: QuizCard, index: number) {
@@ -5544,6 +5639,7 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSessionStep('setup')
     setQuizSessionResults({})
     setQuizSessionStartedAt(null)
+    resetQuizMcqAnswerState()
   }
 
   function openImageLightbox(src: string, alt: string) {
@@ -5577,6 +5673,137 @@ function getPasswordStrengthMeta(password: string) {
     setQuizFeedback(null)
   }
 
+  function shuffleQuizMcqChoices(choices: QuizMcqChoice[]) {
+    return choices
+      .map((choice) => ({ choice, rank: Math.random() }))
+      .sort((a, b) => a.rank - b.rank)
+      .map(({ choice }) => choice)
+  }
+
+  function resetQuizMcqAnswerState() {
+    setQuizMcqSelectedChoiceId(null)
+    setQuizMcqAnsweredChoiceId(null)
+  }
+
+  function getNextQuizSessionEntry() {
+    if (!activeQuizSessionEntry) {
+      return null
+    }
+    const currentIndex = quizSessionActiveCards.findIndex(
+      (entry) => entry.sessionKey === activeQuizSessionEntry.sessionKey,
+    )
+    return currentIndex >= 0 ? quizSessionActiveCards[currentIndex + 1] ?? null : null
+  }
+
+  function moveToQuizSessionEntry(entry: QuizSessionEntry | null) {
+    resetQuizMcqAnswerState()
+    setQuizFeedback(null)
+    if (entry) {
+      setQuizItemId(entry.itemNumber)
+      setQuizActiveCardKey(entry.sessionKey)
+      updateItemQuizConfig(entry.itemNumber, { activeCardId: entry.card.id })
+      setQuizSide('front')
+      setQuizSessionStep(quizSessionStep === 'errors' ? 'errors' : 'question')
+      return
+    }
+    setQuizSide('front')
+    setQuizSessionStep('summary')
+  }
+
+  async function generateQuizMcqForEntry(entry: QuizSessionEntry) {
+    const questionHtml = getQuizEntryQuestionHtml(entry)
+    const answerHtml = getQuizEntryAnswerHtml(entry)
+    const sourceHash = makeQuizMcqSourceHash(questionHtml, answerHtml)
+    if (entry.card.mcq?.sourceHash === sourceHash) {
+      return
+    }
+    if (mcqGenerationInFlightRef.current.has(entry.sessionKey)) {
+      return
+    }
+
+    const question = getQuizRichTextPlainText(questionHtml)
+    const correctAnswer = getQuizRichTextPlainText(answerHtml)
+    if (!question || !correctAnswer) {
+      setQuizMcqErrorsByKey((current) => ({
+        ...current,
+        [entry.sessionKey]: 'Question ou réponse vide: impossible de générer un QCM.',
+      }))
+      return
+    }
+
+    mcqGenerationInFlightRef.current.add(entry.sessionKey)
+    setQuizMcqLoadingByKey((current) => ({ ...current, [entry.sessionKey]: true }))
+    setQuizMcqErrorsByKey((current) => ({ ...current, [entry.sessionKey]: '' }))
+
+    try {
+      const payload = await apiRequest('/api/quiz/generate-mcq', {
+        method: 'POST',
+        body: JSON.stringify({
+          question,
+          correctAnswer,
+          itemNumber: entry.itemNumber,
+          cardId: entry.card.id,
+          college: entry.colleges[0] ? getFlashCollegeDisplayName(entry.colleges[0]) : '',
+        }),
+      })
+      const distractors = Array.isArray(payload.distractors)
+        ? payload.distractors
+            .filter((choice): choice is { id?: unknown; text: string; whyWrong?: unknown } =>
+              Boolean(choice && typeof choice === 'object' && typeof choice.text === 'string' && choice.text.trim()),
+            )
+            .slice(0, 3)
+        : []
+      if (distractors.length !== 3) {
+        throw new Error('La génération QCM n’a pas renvoyé 3 propositions.')
+      }
+
+      const choices = shuffleQuizMcqChoices([
+        { id: 'correct', text: correctAnswer, isCorrect: true },
+        ...distractors.map((choice, index) => ({
+          id: typeof choice.id === 'string' && choice.id.trim() ? choice.id.trim() : `d${index + 1}`,
+          text: choice.text.trim(),
+          isCorrect: false,
+          whyWrong: typeof choice.whyWrong === 'string' ? choice.whyWrong.trim() : '',
+        })),
+      ])
+      updateQuizCard(entry.itemNumber, entry.card.id, {
+        mcq: {
+          sourceHash,
+          generatedAt: typeof payload.generatedAt === 'string' ? payload.generatedAt : new Date().toISOString(),
+          choices,
+          explanation: typeof payload.explanation === 'string' ? payload.explanation.trim() : '',
+        },
+      })
+    } catch (error) {
+      setQuizMcqErrorsByKey((current) => ({
+        ...current,
+        [entry.sessionKey]: error instanceof Error ? error.message : 'Generation QCM impossible.',
+      }))
+    } finally {
+      mcqGenerationInFlightRef.current.delete(entry.sessionKey)
+      setQuizMcqLoadingByKey((current) => ({ ...current, [entry.sessionKey]: false }))
+    }
+  }
+
+  function handleQuizMcqValidate() {
+    if (!activeQuizSessionEntry || !activeQuizCard || !activeQuizMcq || !quizMcqSelectedChoiceId || quizMcqAnsweredChoiceId) {
+      return
+    }
+    const selectedChoice = activeQuizMcq.choices.find((choice) => choice.id === quizMcqSelectedChoiceId)
+    if (!selectedChoice) {
+      return
+    }
+    const result: QuizResult = selectedChoice.isCorrect ? 'good' : 'hard'
+    setQuizMcqAnsweredChoiceId(selectedChoice.id)
+    setQuizFeedback(result)
+    setQuizSessionResults((current) => ({ ...current, [activeQuizSessionEntry.sessionKey]: result }))
+    applyQuizResultToCard(activeQuizSessionEntry.itemNumber, activeQuizCard.id, result)
+  }
+
+  function handleQuizMcqNext() {
+    moveToQuizSessionEntry(getNextQuizSessionEntry())
+  }
+
   function startQuizSession() {
     if (quizSessionMetrics.cards.length === 0) {
       return
@@ -5594,6 +5821,7 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSessionResults({})
     setQuizSessionCardIds(limitedCards.map((entry) => entry.sessionKey))
     setQuizFeedback(null)
+    resetQuizMcqAnswerState()
     setQuizSide('front')
     setQuizSessionStep('question')
     if (firstCard) {
@@ -5625,16 +5853,7 @@ function getPasswordStrengthMeta(password: string) {
 
     window.setTimeout(() => {
       setQuizFeedback((current) => (current === result ? null : current))
-      if (nextCard) {
-        setQuizItemId(nextCard.itemNumber)
-        setQuizActiveCardKey(nextCard.sessionKey)
-        updateItemQuizConfig(nextCard.itemNumber, { activeCardId: nextCard.card.id })
-        setQuizSide('front')
-        setQuizSessionStep(quizSessionStep === 'errors' ? 'errors' : 'question')
-        return
-      }
-      setQuizSide('front')
-      setQuizSessionStep('summary')
+      moveToQuizSessionEntry(nextCard)
     }, 460)
   }
 
@@ -9260,11 +9479,10 @@ function getPasswordStrengthMeta(password: string) {
                             <button
                               type="button"
                               className={quizSessionMode === 'quiz' ? 'active' : ''}
-                              disabled
-                              title="Le mode quiz arrive bientôt"
-                              onClick={() => setQuizSessionMode('flashcards')}
+                              title="Generer un QCM depuis les flashcards"
+                              onClick={() => setQuizSessionMode('quiz')}
                             >
-                              Quiz
+                              QCM
                             </button>
                           </span>
                         </label>
@@ -9340,11 +9558,13 @@ function getPasswordStrengthMeta(password: string) {
                       </button>
                     </div>
 	                    <p className="quiz-session-subtitle">
-	                      {quizSessionStep === 'errors'
-	                        ? 'Repassez uniquement les cartes manquées pendant cette révision.'
-	                        : quizSessionStep === 'answer'
-	                          ? 'Notez honnêtement votre réponse pour obtenir un bilan utile.'
-	                          : 'Prenez le temps de réfléchir avant de révéler la réponse.'}
+	                      {quizSessionMode === 'quiz'
+	                        ? 'Choisissez la bonne réponse parmi les propositions générées.'
+	                        : quizSessionStep === 'errors'
+	                          ? 'Repassez uniquement les cartes manquées pendant cette révision.'
+	                          : quizSessionStep === 'answer'
+	                            ? 'Notez honnêtement votre réponse pour obtenir un bilan utile.'
+	                            : 'Prenez le temps de réfléchir avant de révéler la réponse.'}
 	                    </p>
 	                    <div className={`quiz-study-stage quiz-study-stage-${quizSessionStep}`}>
 	                      <div className="quiz-session-progress">
@@ -9362,6 +9582,103 @@ function getPasswordStrengthMeta(password: string) {
 	                          {quizSessionActiveIndex + 1} / {Math.max(1, quizSessionActiveCards.length)}
 	                        </small>
 	                      </div>
+                        {quizSessionMode === 'quiz' ? (
+                          <article className="quiz-study-card quiz-mcq-card">
+                            <div className="quiz-study-card-meta">
+                              <span>{activeQuizCollegeLabel}</span>
+                              {quizCurrentCardFeeling ? <small>{quizCurrentCardFeeling.label}</small> : <small>QCM généré</small>}
+                              <Star className="quiz-study-star" aria-hidden="true" />
+                            </div>
+                            <div className="quiz-study-card-body quiz-mcq-question">
+                              <div
+                                className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizQuestion))} quiz-rich-rendered`}
+                                dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizQuestion) }}
+                              />
+                            </div>
+                            {activeQuizCard?.frontImageDataUrl ? (
+                              <img
+                                className="quiz-study-media"
+                                src={activeQuizCard.frontImageDataUrl}
+                                alt="Illustration du recto"
+                                onClick={() => openImageLightbox(activeQuizCard.frontImageDataUrl, 'Illustration du recto')}
+                              />
+                            ) : null}
+                            {activeQuizMcqLoading ? (
+                              <div className="quiz-mcq-state" role="status">Génération du QCM...</div>
+                            ) : activeQuizMcqError ? (
+                              <div className="quiz-mcq-state quiz-mcq-error" role="alert">
+                                <strong>QCM indisponible</strong>
+                                <span>{activeQuizMcqError}</span>
+                                {activeQuizSessionEntry ? (
+                                  <button type="button" className="ghost-btn" onClick={() => generateQuizMcqForEntry(activeQuizSessionEntry)}>
+                                    Réessayer
+                                  </button>
+                                ) : null}
+                              </div>
+                            ) : activeQuizMcq ? (
+                              <>
+                                <div className="quiz-mcq-choice-list" role="radiogroup" aria-label="Réponses QCM">
+                                  {activeQuizMcq.choices.map((choice) => {
+                                    const isSelected = choice.id === quizMcqSelectedChoiceId
+                                    const isAnswered = Boolean(quizMcqAnsweredChoiceId)
+                                    const isAnsweredChoice = choice.id === quizMcqAnsweredChoiceId
+                                    const tone = isAnswered
+                                      ? choice.isCorrect
+                                        ? 'correct'
+                                        : isAnsweredChoice
+                                          ? 'wrong'
+                                          : 'neutral'
+                                      : isSelected
+                                        ? 'selected'
+                                        : 'idle'
+                                    return (
+                                      <button
+                                        key={choice.id}
+                                        type="button"
+                                        className={`quiz-mcq-choice ${tone}`}
+                                        onClick={() => {
+                                          if (!quizMcqAnsweredChoiceId) {
+                                            setQuizMcqSelectedChoiceId(choice.id)
+                                          }
+                                        }}
+                                        disabled={Boolean(quizMcqAnsweredChoiceId)}
+                                      >
+                                        <span>{choice.text}</span>
+                                      </button>
+                                    )
+                                  })}
+                                </div>
+                                {quizMcqAnsweredChoiceId ? (
+                                  <div className={`quiz-mcq-correction ${activeQuizMcqAnsweredChoice?.isCorrect ? 'correct' : 'wrong'}`}>
+                                    <strong>{activeQuizMcqAnsweredChoice?.isCorrect ? 'Bonne réponse' : 'Réponse incorrecte'}</strong>
+                                    {activeQuizMcqAnsweredChoice && !activeQuizMcqAnsweredChoice.isCorrect && activeQuizMcqAnsweredChoice.whyWrong ? (
+                                      <p>{activeQuizMcqAnsweredChoice.whyWrong}</p>
+                                    ) : null}
+                                    {activeQuizMcqCorrectChoice ? <p>Réponse attendue : {activeQuizMcqCorrectChoice.text}</p> : null}
+                                    {activeQuizMcq.explanation ? <p>{activeQuizMcq.explanation}</p> : null}
+                                  </div>
+                                ) : null}
+                                <div className="quiz-mcq-actions">
+                                  {quizMcqAnsweredChoiceId ? (
+                                    <button type="button" className="quiz-session-primary" onClick={handleQuizMcqNext}>
+                                      {getNextQuizSessionEntry() ? 'Question suivante' : 'Terminer'}
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      className="quiz-session-primary"
+                                      onClick={handleQuizMcqValidate}
+                                      disabled={!activeQuizMcqSelectedChoice}
+                                    >
+                                      Valider
+                                    </button>
+                                  )}
+                                </div>
+                              </>
+                            ) : null}
+                          </article>
+                        ) : (
+		                      <>
 		                      <article className={`quiz-study-card ${quizSessionStep === 'answer' ? 'is-answer' : ''}`}>
 		                        <div className="quiz-study-card-meta">
 		                          <span>{activeQuizCollegeLabel}</span>
@@ -9424,6 +9741,8 @@ function getPasswordStrengthMeta(password: string) {
                             Très facile
                           </button>
                         </div>
+                      )}
+                      </>
                       )}
 	                    </div>
                   </>

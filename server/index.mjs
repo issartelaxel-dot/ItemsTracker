@@ -41,6 +41,11 @@ const STATE_MAX_IMAGE_UPSERT_PER_REQUEST = Number(process.env.STATE_MAX_IMAGE_UP
 const STATE_MAX_TOTAL_IMAGES_PER_USER = Number(process.env.STATE_MAX_TOTAL_IMAGES_PER_USER || 5000)
 const STATE_MAX_IMAGE_DATA_LENGTH = Number(process.env.STATE_MAX_IMAGE_DATA_LENGTH || 1_800_000)
 const STORAGE_LIMIT_BYTES = Number(process.env.STORAGE_LIMIT_BYTES || 2 * 1024 * 1024 * 1024)
+const N8N_MCQ_WEBHOOK_URL = (
+  process.env.N8N_MCQ_WEBHOOK_URL || 'https://n8n.setup-hub.com/webhook/generate-mcq'
+).trim()
+const MCQ_GENERATION_TIMEOUT_MS = Number(process.env.MCQ_GENERATION_TIMEOUT_MS || 30_000)
+const MCQ_GENERATION_LIMIT_PER_MIN = Number(process.env.MCQ_GENERATION_LIMIT_PER_MIN || 30)
 
 if (!JWT_SECRET || JWT_SECRET.length < 32) {
   console.error('JWT_SECRET must be set and at least 32 chars long.')
@@ -200,6 +205,13 @@ const verifyLimiter = rateLimit({
 const stateWriteLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: Math.max(20, STATE_WRITE_LIMIT_PER_MIN),
+  standardHeaders: true,
+  legacyHeaders: false,
+})
+
+const mcqGenerationLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  limit: Math.max(5, MCQ_GENERATION_LIMIT_PER_MIN),
   standardHeaders: true,
   legacyHeaders: false,
 })
@@ -824,6 +836,50 @@ const stateImageSyncSchema = z.object({
   requestId: z.string().trim().min(6).max(120).optional(),
 })
 
+const mcqGenerateSchema = z.object({
+  question: z.string().trim().min(1).max(2_000),
+  correctAnswer: z.string().trim().min(1).max(2_000),
+  itemNumber: z.number().int().positive().max(9999),
+  cardId: z.string().trim().min(1).max(120).optional(),
+  college: z.string().trim().max(160).optional().default(''),
+})
+
+function normalizeMcqWebhookPayload(payload) {
+  const source = payload && typeof payload === 'object' ? payload : {}
+  const rawDistractors = Array.isArray(source.distractors) ? source.distractors : []
+  const seen = new Set()
+  const distractors = []
+
+  for (const entry of rawDistractors) {
+    if (!entry || typeof entry !== 'object') {
+      continue
+    }
+    const text = typeof entry.text === 'string' ? entry.text.trim() : ''
+    if (!text || text.length > 1_000) {
+      continue
+    }
+    const key = text.toLowerCase()
+    if (seen.has(key)) {
+      continue
+    }
+    seen.add(key)
+    distractors.push({
+      id: `d${distractors.length + 1}`,
+      text,
+      whyWrong: typeof entry.whyWrong === 'string' ? entry.whyWrong.trim().slice(0, 1_000) : '',
+    })
+    if (distractors.length === 3) {
+      break
+    }
+  }
+
+  return {
+    success: Boolean(source.success) && distractors.length === 3,
+    distractors,
+    explanation: typeof source.explanation === 'string' ? source.explanation.trim().slice(0, 1_500) : '',
+  }
+}
+
 async function sendApprovalEmail({ requesterEmail, displayName, code }) {
   const tx = getTransporter()
   const from = process.env.SMTP_FROM || process.env.SMTP_USER
@@ -1071,6 +1127,71 @@ app.get('/api/storage-usage', enforceClientVersion, async (req, res) => {
     },
     ...(refreshedToken ? { token: refreshedToken } : {}),
   })
+})
+
+app.post('/api/quiz/generate-mcq', enforceClientVersion, mcqGenerationLimiter, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  const uid = Number(auth.uid)
+  if (!Number.isFinite(uid)) {
+    res.status(401).json({ error: 'Unauthorized' })
+    return
+  }
+
+  if (!N8N_MCQ_WEBHOOK_URL) {
+    res.status(503).json({ error: 'Generation QCM non configuree.', code: 'MCQ_WEBHOOK_NOT_CONFIGURED' })
+    return
+  }
+
+  const parsed = mcqGenerateSchema.safeParse(req.body)
+  if (!parsed.success) {
+    res.status(400).json({ error: 'Donnees QCM invalides.', code: 'INVALID_MCQ_INPUT' })
+    return
+  }
+
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), Math.max(5_000, MCQ_GENERATION_TIMEOUT_MS))
+
+  try {
+    const response = await fetch(N8N_MCQ_WEBHOOK_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(parsed.data),
+      signal: controller.signal,
+    })
+
+    const payload = await response.json().catch(() => null)
+    if (!response.ok) {
+      res.status(502).json({ error: 'Generation QCM indisponible.', code: 'MCQ_WEBHOOK_ERROR' })
+      return
+    }
+
+    const normalized = normalizeMcqWebhookPayload(payload)
+    if (!normalized.success) {
+      res.status(502).json({
+        error: 'Generation QCM incomplete.',
+        code: 'INVALID_MCQ_RESPONSE',
+        distractors: normalized.distractors,
+        explanation: normalized.explanation,
+      })
+      return
+    }
+
+    const refreshedToken = refreshAuthCookie(res, auth)
+    res.json({ ...normalized, generatedAt: new Date().toISOString(), ...(refreshedToken ? { token: refreshedToken } : {}) })
+  } catch (error) {
+    const isTimeout = error?.name === 'AbortError'
+    res.status(504).json({
+      error: isTimeout ? 'Generation QCM trop lente.' : 'Generation QCM impossible.',
+      code: isTimeout ? 'MCQ_TIMEOUT' : 'MCQ_GENERATION_FAILED',
+    })
+  } finally {
+    clearTimeout(timeout)
+  }
 })
 
 app.put('/api/state', enforceClientVersion, stateWriteLimiter, async (req, res) => {
