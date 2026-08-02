@@ -244,6 +244,7 @@
 }
 
 .flashcard-editor-preview-body {
+  min-width: 0;
   min-height: 240px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(150px, 230px);
@@ -253,6 +254,7 @@
 }
 
 .flashcard-editor-preview-body .quiz-rich-rendered {
+  min-width: 0;
   font-size: 1rem;
   line-height: 1.65;
 }
@@ -279,6 +281,7 @@
 
 .flashcard-editor-main {
   min-width: 0;
+  overflow-x: hidden;
 }
 
 .flashcard-editor-main .quiz-rich-editable {
@@ -1274,6 +1277,8 @@
 
 .quiz-rich-editable {
   --quiz-rich-clear-highlight-bg: var(--input-bg);
+  min-width: 0;
+  max-width: 100%;
   min-height: 3.25rem;
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--border);
@@ -1283,13 +1288,25 @@
   font-weight: 400;
   outline: none;
   white-space: pre-wrap;
+  overflow-x: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-all;
   caret-color: var(--text);
   color-scheme: light;
   user-select: text;
 }
 
 .quiz-rich-editable :where(div, p, span, em) {
+  min-width: 0;
   font-weight: 400;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.quiz-rich-editable * {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 .quiz-rich-editable strong {
@@ -1301,13 +1318,19 @@
 }
 
 .quiz-rich-editable ul {
+  min-width: 0;
   margin: 0.35rem 0 0.35rem 1.15rem;
   padding-left: 0.9rem;
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 .quiz-rich-editable li {
+  min-width: 0;
   margin: 0.16rem 0;
   padding-left: 0.1rem;
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 .quiz-rich-bold-text {
@@ -1356,13 +1379,26 @@
 .quiz-rich-rendered {
   --quiz-rich-clear-highlight-bg: var(--panel-bg);
   display: block;
+  min-width: 0;
+  max-width: 100%;
   white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-all;
   color: var(--text);
   font-weight: 400;
 }
 
 .quiz-rich-rendered > * {
+  min-width: 0;
   margin: 0;
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.quiz-rich-rendered * {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 .quiz-rich-rendered > div + div,
@@ -1373,13 +1409,19 @@
 }
 
 .quiz-rich-rendered ul {
+  min-width: 0;
   margin: 0.35rem 0 0.35rem 1.15rem;
   padding-left: 0.9rem;
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 .quiz-rich-rendered li {
+  min-width: 0;
   margin: 0.16rem 0;
   padding-left: 0.1rem;
+  overflow-wrap: anywhere;
+  word-break: break-all;
 }
 
 .quiz-rich-rendered strong {
