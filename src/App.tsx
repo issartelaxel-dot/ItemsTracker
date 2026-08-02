@@ -9854,14 +9854,6 @@ function getPasswordStrengthMeta(password: string) {
                     <button type="button" className="ghost-btn quiz-summary-close" onClick={closeQuiz}>
                       Quitter
                     </button>
-                    <div className="quiz-summary-confetti" aria-hidden="true">
-                      <span />
-                      <span />
-                      <span />
-                      <span />
-                      <span />
-                      <span />
-                    </div>
                     <div className="quiz-summary-top">
                       <section className="quiz-summary-score-panel">
                         <div className="quiz-summary-score-value">{quizSessionMetrics.score}%</div>
@@ -9916,7 +9908,7 @@ function getPasswordStrengthMeta(password: string) {
                         )}
                       </div>
                       <div>
-                        <h4>{quizSessionMetrics.mistakeCards.length === 0 ? 'Aucune notion à revoir 🎉' : 'Notions à revoir'}</h4>
+                        <h4>{quizSessionMetrics.mistakeCards.length === 0 ? 'Aucune notion à revoir' : 'Notions à revoir'}</h4>
                         {quizSessionReviewColleges.length > 0 ? (
                           <p>
                             {quizSessionReviewColleges
