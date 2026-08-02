@@ -9913,29 +9913,30 @@ function getPasswordStrengthMeta(password: string) {
                           <p>Toutes les cartes répondues sont validées.</p>
                         )}
                       </div>
-                      {quizSessionMetrics.mistakeCards.length === 0 ? (
-                        <CheckCircle className="quiz-summary-review-status" aria-hidden="true" />
-                      ) : (
-                        <WarningTriangle className="quiz-summary-review-status" aria-hidden="true" />
-                      )}
+                      <NavArrowRight className="quiz-summary-review-status" aria-hidden="true" />
                     </section>
                     <div className="quiz-summary-actions quiz-summary-actions-celebration">
                       <button
                         type="button"
-                        className="quiz-session-primary quiz-summary-continue"
+                        className="ghost-btn quiz-summary-action-card quiz-summary-action-new"
                         onClick={() => {
-                          closeQuiz()
-                          setActiveView('dashboard')
+                          setQuizSessionStep('setup')
+                          setQuizSessionResults({})
+                          setQuizSessionStartedAt(null)
+                          setQuizFeedback(null)
+                          setQuizSide('front')
                         }}
 	                      >
-	                        <Play className="inline-btn-icon" aria-hidden="true" />
-	                        Continuer la révision
+	                        <span className="quiz-summary-action-icon" aria-hidden="true">
+	                          <Play className="inline-btn-icon" aria-hidden="true" />
+	                        </span>
+	                        Lancer un nouveau quiz
 	                        <NavArrowRight className="inline-btn-icon" aria-hidden="true" />
 	                      </button>
 	                      {quizSessionMetrics.mistakeCards.length > 0 ? (
 	                        <button
 	                          type="button"
-	                          className="ghost-btn"
+	                          className="ghost-btn quiz-summary-action-card quiz-summary-action-errors"
 	                          onClick={() => {
 	                            const firstMistake = quizSessionMetrics.mistakeCards[0]
 	                            if (!firstMistake) {
@@ -9949,21 +9950,29 @@ function getPasswordStrengthMeta(password: string) {
 	                            setQuizSessionStep('errors')
 	                          }}
 	                        >
-	                          <Refresh className="inline-btn-icon" aria-hidden="true" />
+	                          <span className="quiz-summary-action-icon" aria-hidden="true">
+	                            <Refresh className="inline-btn-icon" aria-hidden="true" />
+	                          </span>
 	                          Revoir les erreurs
+	                          <NavArrowRight className="inline-btn-icon" aria-hidden="true" />
 	                        </button>
 	                      ) : null}
-	                      <button
-	                        type="button"
-	                        className="ghost-btn"
-	                        onClick={() => {
-	                          closeQuiz()
-	                          setActiveView('dashboard')
-	                        }}
-	                      >
-	                        <Dashboard className="inline-btn-icon" aria-hidden="true" />
-	                        Retour au dashboard
-	                      </button>
+	                      {quizSessionMetrics.mistakeCards.length === 0 ? (
+	                        <button
+	                          type="button"
+	                          className="ghost-btn quiz-summary-action-card"
+	                          onClick={() => {
+	                            closeQuiz()
+	                            setActiveView('dashboard')
+	                          }}
+	                        >
+	                          <span className="quiz-summary-action-icon" aria-hidden="true">
+	                            <Dashboard className="inline-btn-icon" aria-hidden="true" />
+	                          </span>
+	                          Retour au dashboard
+	                          <NavArrowRight className="inline-btn-icon" aria-hidden="true" />
+	                        </button>
+	                      ) : null}
 	                    </div>
 	                  </div>
 	                ) : null}
