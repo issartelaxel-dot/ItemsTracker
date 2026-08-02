@@ -4594,6 +4594,21 @@ function getPasswordStrengthMeta(password: string) {
     return Math.max(0, quizSessionActiveCards.findIndex((entry) => entry.sessionKey === activeQuizSessionEntry.sessionKey))
   }, [activeQuizSessionEntry, quizSessionActiveCards])
 
+  useEffect(() => {
+    if (
+      quizSessionMode !== 'quiz' ||
+      !activeQuizSessionEntry ||
+      (quizSessionStep !== 'question' && quizSessionStep !== 'errors')
+    ) {
+      return
+    }
+    const nextEntry = getNextQuizSessionEntryAfter(activeQuizSessionEntry)
+    if (!nextEntry) {
+      return
+    }
+    void generateQuizMcqForEntry(nextEntry)
+  }, [activeQuizSessionEntry, quizSessionActiveCards, quizSessionMode, quizSessionStep])
+
   const activeQuizCollegeLabel = useMemo(() => {
     const colleges = activeQuizItem?.tracking.assignedColleges ?? []
     if (colleges.length === 0) {
@@ -5686,11 +5701,15 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   function getNextQuizSessionEntry() {
-    if (!activeQuizSessionEntry) {
+    return getNextQuizSessionEntryAfter(activeQuizSessionEntry)
+  }
+
+  function getNextQuizSessionEntryAfter(entry: QuizSessionEntry | null) {
+    if (!entry) {
       return null
     }
     const currentIndex = quizSessionActiveCards.findIndex(
-      (entry) => entry.sessionKey === activeQuizSessionEntry.sessionKey,
+      (candidate) => candidate.sessionKey === entry.sessionKey,
     )
     return currentIndex >= 0 ? quizSessionActiveCards[currentIndex + 1] ?? null : null
   }
