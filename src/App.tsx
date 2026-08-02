@@ -150,6 +150,14 @@ type QuizSessionScope =
   | { type: 'global' }
   | { type: 'college'; college: string }
   | { type: 'item'; itemNumber: number }
+type QuizSessionSummarySnapshot = {
+  score: number
+  elapsedLabel: string
+  cardCount: number
+  mistakeCardKeys: string[]
+  reviewColleges: { college: string; count: number }[]
+  context: string
+}
 type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'settings' | 'stats'
 type ItemDetailTab = 'tracking' | 'resources' | 'flashcards' | 'assignments'
 type FlashGeneratorScope = 'items' | 'colleges'
@@ -2719,6 +2727,7 @@ function App() {
   const [quizSessionStartedAt, setQuizSessionStartedAt] = useState<number | null>(null)
   const [quizSessionResults, setQuizSessionResults] = useState<Record<string, QuizResult>>({})
   const [quizSessionErrorReviewIds, setQuizSessionErrorReviewIds] = useState<string[]>([])
+  const [quizSessionSummarySnapshot, setQuizSessionSummarySnapshot] = useState<QuizSessionSummarySnapshot | null>(null)
   const [quizMcqSelectedChoiceId, setQuizMcqSelectedChoiceId] = useState<string | null>(null)
   const [quizMcqAnsweredChoiceId, setQuizMcqAnsweredChoiceId] = useState<string | null>(null)
   const [quizMcqLoadingByKey, setQuizMcqLoadingByKey] = useState<Record<string, boolean>>({})
@@ -4709,15 +4718,22 @@ function getPasswordStrengthMeta(password: string) {
   }, [items, quizSessionScopeEntries])
 
   const quizSessionReviewColleges = useMemo(() => {
-    const counts = new Map<string, number>()
-    quizSessionMetrics.mistakeCards.forEach((entry) => {
-      entry.colleges.forEach((college) => counts.set(college, (counts.get(college) ?? 0) + 1))
-    })
-    return Array.from(counts.entries())
-      .map(([college, count]) => ({ college, count }))
-      .sort((a, b) => b.count - a.count || getFlashCollegeDisplayName(a.college).localeCompare(getFlashCollegeDisplayName(b.college), 'fr'))
-      .slice(0, 3)
+    return getQuizSessionReviewColleges(quizSessionMetrics.mistakeCards)
   }, [quizSessionMetrics.mistakeCards])
+
+  const quizSessionSummaryData = useMemo<QuizSessionSummarySnapshot>(() => {
+    if (quizSessionSummarySnapshot) {
+      return quizSessionSummarySnapshot
+    }
+    return {
+      score: quizSessionMetrics.score,
+      elapsedLabel: quizSessionMetrics.elapsedLabel,
+      cardCount: quizSessionMetrics.cards.length,
+      mistakeCardKeys: quizSessionMetrics.mistakeCards.map((entry) => entry.sessionKey),
+      reviewColleges: quizSessionReviewColleges,
+      context: quizSessionSummaryContext,
+    }
+  }, [quizSessionMetrics.cards.length, quizSessionMetrics.elapsedLabel, quizSessionMetrics.mistakeCards, quizSessionMetrics.score, quizSessionReviewColleges, quizSessionSummaryContext, quizSessionSummarySnapshot])
 
   const allFlashcards = useMemo<GlobalFlashcard[]>(() => {
     return items.flatMap((item) =>
@@ -5631,6 +5647,7 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSessionStep('setup')
     setQuizSessionResults({})
     setQuizSessionErrorReviewIds([])
+    setQuizSessionSummarySnapshot(null)
     setQuizSessionStartedAt(null)
     resetQuizMcqAnswerState()
   }
@@ -5667,6 +5684,7 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSessionObjective('learning')
     setQuizSessionResults({})
     setQuizSessionErrorReviewIds([])
+    setQuizSessionSummarySnapshot(null)
     setQuizSessionStartedAt(null)
     resetQuizMcqAnswerState()
   }
@@ -5690,6 +5708,7 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSessionStep('setup')
     setQuizSessionResults({})
     setQuizSessionErrorReviewIds([])
+    setQuizSessionSummarySnapshot(null)
     setQuizSessionStartedAt(null)
     resetQuizMcqAnswerState()
   }
@@ -5806,12 +5825,49 @@ function getPasswordStrengthMeta(password: string) {
       setQuizSessionStep(quizSessionStep === 'errors' ? 'errors' : 'question')
       return
     }
+    completeQuizSession()
+  }
+
+  function getQuizSessionReviewColleges(mistakeCards: QuizSessionEntry[]) {
+    const counts = new Map<string, number>()
+    mistakeCards.forEach((entry) => {
+      entry.colleges.forEach((college) => counts.set(college, (counts.get(college) ?? 0) + 1))
+    })
+    return Array.from(counts.entries())
+      .map(([college, count]) => ({ college, count }))
+      .sort((a, b) => b.count - a.count || getFlashCollegeDisplayName(a.college).localeCompare(getFlashCollegeDisplayName(b.college), 'fr'))
+      .slice(0, 3)
+  }
+
+  function buildQuizSessionSummarySnapshot(results: Record<string, QuizResult> = quizSessionResults): QuizSessionSummarySnapshot {
+    const cards = quizSessionMetrics.cards
+    const answeredEntries = cards
+      .map((entry) => results[entry.sessionKey])
+      .filter((result): result is QuizResult => Boolean(result))
+    const correctCount = answeredEntries.filter((result) => result === 'good' || result === 'easy').length
+    const mistakeCards = cards.filter((entry) => results[entry.sessionKey] === 'hard')
+    return {
+      score: answeredEntries.length === 0 ? 0 : Math.round((correctCount / answeredEntries.length) * 100),
+      elapsedLabel: quizSessionMetrics.elapsedLabel,
+      cardCount: cards.length,
+      mistakeCardKeys: mistakeCards.map((entry) => entry.sessionKey),
+      reviewColleges: getQuizSessionReviewColleges(mistakeCards),
+      context: quizSessionSummaryContext,
+    }
+  }
+
+  function completeQuizSession(results: Record<string, QuizResult> = quizSessionResults) {
+    const snapshot = buildQuizSessionSummarySnapshot(results)
+    setQuizSessionSummarySnapshot((current) => current ?? snapshot)
     setQuizSide('front')
     setQuizSessionStep('summary')
   }
 
   function startQuizErrorReview() {
-    const errorCards = quizSessionMetrics.mistakeCards
+    const errorCardKeys = quizSessionSummaryData.mistakeCardKeys
+    const errorCards = errorCardKeys
+      .map((sessionKey) => quizSessionMetrics.cards.find((entry) => entry.sessionKey === sessionKey))
+      .filter((entry): entry is QuizSessionEntry => Boolean(entry))
     const firstMistake = errorCards[0]
     if (!firstMistake) {
       return
@@ -5921,7 +5977,9 @@ function getPasswordStrengthMeta(password: string) {
     const result: QuizResult = selectedChoice.isCorrect ? 'good' : 'hard'
     setQuizMcqAnsweredChoiceId(selectedChoice.id)
     setQuizFeedback(result)
-    setQuizSessionResults((current) => ({ ...current, [activeQuizSessionEntry.sessionKey]: result }))
+    if (quizSessionStep !== 'errors') {
+      setQuizSessionResults((current) => ({ ...current, [activeQuizSessionEntry.sessionKey]: result }))
+    }
     applyQuizResultToCard(activeQuizSessionEntry.itemNumber, activeQuizCard.id, result)
   }
 
@@ -5949,6 +6007,7 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSessionStartedAt(Date.now())
     setQuizSessionResults({})
     setQuizSessionErrorReviewIds([])
+    setQuizSessionSummarySnapshot(null)
     setQuizSessionCardIds(limitedCards.map((entry) => entry.sessionKey))
     setQuizFeedback(null)
     resetQuizMcqAnswerState()
@@ -5976,14 +6035,23 @@ function getPasswordStrengthMeta(password: string) {
     const cardKey = activeQuizSessionEntry.sessionKey
     const currentIndex = quizSessionActiveCards.findIndex((entry) => entry.sessionKey === cardKey)
     const nextCard = currentIndex >= 0 ? quizSessionActiveCards[currentIndex + 1] : null
+    const nextResults = quizSessionStep === 'errors'
+      ? quizSessionResults
+      : { ...quizSessionResults, [cardKey]: result }
 
     setQuizFeedback(result)
-    setQuizSessionResults((current) => ({ ...current, [cardKey]: result }))
+    if (quizSessionStep !== 'errors') {
+      setQuizSessionResults(nextResults)
+    }
     applyQuizResultToCard(activeQuizSessionEntry.itemNumber, cardId, result)
 
     window.setTimeout(() => {
       setQuizFeedback((current) => (current === result ? null : current))
-      moveToQuizSessionEntry(nextCard)
+      if (nextCard) {
+        moveToQuizSessionEntry(nextCard)
+        return
+      }
+      completeQuizSession(nextResults)
     }, 460)
   }
 
@@ -9890,34 +9958,34 @@ function getPasswordStrengthMeta(password: string) {
                     </button>
                     <div className="quiz-summary-top">
                       <section className="quiz-summary-score-panel">
-                        <div className="quiz-summary-score-value">{quizSessionMetrics.score}%</div>
+                        <div className="quiz-summary-score-value">{quizSessionSummaryData.score}%</div>
                         <h3>
-                          {quizSessionMetrics.score >= 90
+                          {quizSessionSummaryData.score >= 90
                             ? 'Excellent !'
-                            : quizSessionMetrics.score >= 70
+                            : quizSessionSummaryData.score >= 70
                               ? 'Bonne révision !'
                               : 'À consolider'}
                         </h3>
                         <p>
-                          {quizSessionMetrics.score >= 90
+                          {quizSessionSummaryData.score >= 90
                             ? 'Tu maîtrises parfaitement ce quiz.'
-                            : quizSessionMetrics.score >= 70
+                            : quizSessionSummaryData.score >= 70
                               ? 'Tu progresses, garde ce rythme.'
                               : 'Reprends les erreurs pour solidifier les bases.'}
                         </p>
-                        <small className="quiz-summary-context">{quizSessionSummaryContext}</small>
+                        <small className="quiz-summary-context">{quizSessionSummaryData.context}</small>
                       </section>
                       <section className="quiz-summary-metric-grid">
                         <article>
                           <HelpCircle className="quiz-summary-metric-icon accuracy" aria-hidden="true" />
                           <span>Accuracy</span>
-                          <strong>{quizSessionMetrics.score}%</strong>
+                          <strong>{quizSessionSummaryData.score}%</strong>
                           <small aria-hidden="true" />
                         </article>
                         <article>
                           <ClockRotateRight className="quiz-summary-metric-icon time" aria-hidden="true" />
                           <span>Temps</span>
-                          <strong>{quizSessionMetrics.elapsedLabel}</strong>
+                          <strong>{quizSessionSummaryData.elapsedLabel}</strong>
                           <small aria-hidden="true" />
                         </article>
                         <article>
@@ -9930,22 +9998,22 @@ function getPasswordStrengthMeta(password: string) {
                     </div>
                     <button
                       type="button"
-                      className={`quiz-summary-review-banner ${quizSessionMetrics.mistakeCards.length === 0 ? 'is-clear' : 'has-errors'}`}
-                      onClick={quizSessionMetrics.mistakeCards.length > 0 ? startQuizErrorReview : undefined}
-                      disabled={quizSessionMetrics.mistakeCards.length === 0}
+                      className={`quiz-summary-review-banner ${quizSessionSummaryData.mistakeCardKeys.length === 0 ? 'is-clear' : 'has-errors'}`}
+                      onClick={quizSessionSummaryData.mistakeCardKeys.length > 0 ? startQuizErrorReview : undefined}
+                      disabled={quizSessionSummaryData.mistakeCardKeys.length === 0}
                     >
                       <div className="quiz-summary-review-illustration" aria-hidden="true">
-                        {quizSessionMetrics.mistakeCards.length === 0 ? (
+                        {quizSessionSummaryData.mistakeCardKeys.length === 0 ? (
                           <Learning className="ui-icon" aria-hidden="true" />
                         ) : (
                           <WarningTriangle className="ui-icon" aria-hidden="true" />
                         )}
                       </div>
                       <div>
-                        <h4>{quizSessionMetrics.mistakeCards.length === 0 ? 'Aucune notion à revoir' : 'Notions à revoir'}</h4>
-                        {quizSessionReviewColleges.length > 0 ? (
+                        <h4>{quizSessionSummaryData.mistakeCardKeys.length === 0 ? 'Aucune notion à revoir' : 'Notions à revoir'}</h4>
+                        {quizSessionSummaryData.reviewColleges.length > 0 ? (
                           <p>
-                            {quizSessionReviewColleges
+                            {quizSessionSummaryData.reviewColleges
                               .map((entry) => `${getFlashCollegeDisplayName(entry.college)} (${entry.count})`)
                               .join(', ')}
                           </p>
@@ -9953,7 +10021,7 @@ function getPasswordStrengthMeta(password: string) {
                           <p>Toutes les cartes répondues sont validées.</p>
                         )}
                       </div>
-                      {quizSessionMetrics.mistakeCards.length > 0 ? (
+                      {quizSessionSummaryData.mistakeCardKeys.length > 0 ? (
                         <NavArrowRight className="quiz-summary-review-status" aria-hidden="true" />
                       ) : null}
                     </button>
@@ -9965,6 +10033,7 @@ function getPasswordStrengthMeta(password: string) {
                           setQuizSessionStep('setup')
                           setQuizSessionResults({})
                           setQuizSessionErrorReviewIds([])
+                          setQuizSessionSummarySnapshot(null)
                           setQuizSessionStartedAt(null)
                           setQuizFeedback(null)
                           setQuizSide('front')
