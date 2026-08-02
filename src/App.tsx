@@ -4450,11 +4450,21 @@ function getPasswordStrengthMeta(password: string) {
     const orderedEntries = quizSessionCardIds
       .map((cardKey) => entriesByKey.get(cardKey))
       .filter((entry): entry is QuizSessionEntry => Boolean(entry))
+    const sessionIsLocked = quizSessionStep !== 'setup'
+
+    if (sessionIsLocked && quizSessionCardIds.length > 0) {
+      return orderedEntries
+    }
+
+    if (quizSessionCardIds.length === 0) {
+      return quizSessionBaseEntries
+    }
+
     const orderedKeys = new Set(orderedEntries.map((entry) => entry.sessionKey))
     const missingEntries = quizSessionBaseEntries.filter((entry) => !orderedKeys.has(entry.sessionKey))
 
     return [...orderedEntries, ...missingEntries]
-  }, [quizSessionBaseEntries, quizSessionCardIds])
+  }, [quizSessionBaseEntries, quizSessionCardIds, quizSessionStep])
 
   const activeQuizSessionEntry = useMemo(() => {
     return quizSessionCards.find((entry) => entry.sessionKey === quizActiveCardKey) ?? quizSessionCards[0] ?? null
