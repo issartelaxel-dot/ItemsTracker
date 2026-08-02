@@ -6,16 +6,19 @@ import {
   $isRangeSelection,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
+  COMMAND_PRIORITY_CRITICAL,
   COMMAND_PRIORITY_LOW,
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
   KEY_TAB_COMMAND,
   KEY_MODIFIER_COMMAND,
   OUTDENT_CONTENT_COMMAND,
+  PASTE_COMMAND,
   REDO_COMMAND,
   UNDO_COMMAND,
   type EditorState,
   type LexicalEditor,
+  type PasteCommandType,
 } from 'lexical'
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html'
 import { INSERT_UNORDERED_LIST_COMMAND, ListItemNode, ListNode } from '@lexical/list'
@@ -1088,21 +1091,38 @@ function QuizLexicalMaxLengthPlugin({ maxLength }: { maxLength?: number }) {
       }
     }
 
-    const handlePaste = (event: ClipboardEvent) => {
-      const pastedText = event.clipboardData?.getData('text/plain') ?? ''
+    const handlePaste = (event: PasteCommandType) => {
+      const clipboardData =
+        'clipboardData' in event
+          ? event.clipboardData
+          : 'dataTransfer' in event
+            ? event.dataTransfer
+            : null
+      const pastedText = clipboardData?.getData('text/plain') ?? ''
       if (!pastedText) {
-        return
+        return false
       }
       event.preventDefault()
+      event.stopPropagation()
+      event.stopImmediatePropagation()
       insertPlainText(getAllowedInsertionText(pastedText))
+      return true
     }
 
-    return editor.registerRootListener((rootElement, previousRootElement) => {
+    const unregisterPasteCommand = editor.registerCommand(
+      PASTE_COMMAND,
+      handlePaste,
+      COMMAND_PRIORITY_CRITICAL,
+    )
+    const unregisterRootListener = editor.registerRootListener((rootElement, previousRootElement) => {
       previousRootElement?.removeEventListener('beforeinput', handleBeforeInput)
-      previousRootElement?.removeEventListener('paste', handlePaste, true)
       rootElement?.addEventListener('beforeinput', handleBeforeInput)
-      rootElement?.addEventListener('paste', handlePaste, true)
     })
+
+    return () => {
+      unregisterPasteCommand()
+      unregisterRootListener()
+    }
   }, [editor, maxLength])
 
   return null
