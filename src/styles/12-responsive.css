@@ -259,7 +259,7 @@
     grid-column: 1 / -1;
     justify-content: stretch;
     display: grid;
-    grid-template-columns: repeat(6, minmax(52px, 1fr));
+    grid-template-columns: repeat(5, minmax(52px, 1fr));
     gap: 0.35rem;
     overflow-x: auto;
     padding: 0.05rem 0 0.1rem;
@@ -284,17 +284,6 @@
     padding: 0;
     border: 0;
     background: transparent;
-  }
-
-  .flashcard-editor-save-action {
-    border-color: #2563eb;
-    background: #2563eb;
-    color: #fff;
-  }
-
-  .flashcard-editor-save-action .flashcard-editor-action-icon {
-    background: transparent;
-    box-shadow: none;
   }
 
   .flashcard-editor-action.danger {

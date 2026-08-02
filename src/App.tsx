@@ -28,7 +28,6 @@ import {
   EditPencil,
   Eye,
   EyeClosed,
-  FloppyDisk,
   FireFlame,
   Globe,
   HalfMoon,
@@ -552,6 +551,7 @@ const QUIZ_TEXT_COLOR_OPTIONS = [
   { label: 'Brun', value: '#7a4b2f' },
 ] as const
 const QUIZ_TEXT_HIGHLIGHT_COLOR = '#fff59d'
+const QUIZ_RICH_TEXT_MAX_CHARS = 500
 type QuizRichTextCommand =
   | { type: 'bold' | 'italic' | 'highlight' | 'themeColor' | 'bulletList' }
   | { type: 'color'; value: string }
@@ -820,17 +820,32 @@ function getClosestEditorElementByTag(node: Node | null, editor: HTMLDivElement,
   return getClosestElementMatching(node, editor, (element) => element.tagName === tagName.toUpperCase())
 }
 
-function rangeHasQuizHighlight(editor: HTMLDivElement, range: Range) {
-  if (
-    getClosestElementMatching(range.startContainer, editor, isQuizHighlightElement) ||
-    getClosestElementMatching(range.endContainer, editor, isQuizHighlightElement)
-  ) {
-    return true
+function getTextNodesInEditorRange(editor: HTMLDivElement, range: Range) {
+  const textNodes: Text[] = []
+  const walker = document.createTreeWalker(editor, NodeFilter.SHOW_TEXT)
+  let node = walker.nextNode()
+  while (node) {
+    if ((node.textContent ?? '').length > 0 && range.intersectsNode(node)) {
+      textNodes.push(node as Text)
+    }
+    node = walker.nextNode()
   }
+  return textNodes
+}
 
-  const source = document.createElement('div')
-  source.appendChild(range.cloneContents())
-  return Array.from(source.querySelectorAll<HTMLElement>('*')).some(isQuizHighlightElement)
+function rangeHasActiveQuizHighlight(editor: HTMLDivElement, range: Range) {
+  return Boolean(
+    getClosestElementMatching(range.startContainer, editor, isQuizHighlightElement) ||
+      getClosestElementMatching(range.endContainer, editor, isQuizHighlightElement),
+  )
+}
+
+function rangeIsFullyQuizHighlighted(editor: HTMLDivElement, range: Range) {
+  const textNodes = getTextNodesInEditorRange(editor, range)
+  if (textNodes.length === 0) {
+    return rangeHasActiveQuizHighlight(editor, range)
+  }
+  return textNodes.every((node) => Boolean(getClosestElementMatching(node, editor, isQuizHighlightElement)))
 }
 
 function wrapEditorSelection(editor: HTMLDivElement, configureWrapper: (wrapper: HTMLSpanElement) => void) {
@@ -876,6 +891,21 @@ function formatEditorSelection(
     moveChildren(fragment, wrapper)
     configureWrapper?.(wrapper)
   })
+}
+
+function clearEditorSelectionHighlight(editor: HTMLDivElement) {
+  const range = getEditorRange(editor)
+  if (!range || range.collapsed || !range.toString()) {
+    return false
+  }
+  const fragment = range.extractContents()
+  cleanQuizRichTextFormatting(fragment, { highlight: true })
+  const caretAnchor = document.createTextNode('')
+  fragment.appendChild(caretAnchor)
+  range.insertNode(fragment)
+  placeCaretAfterNode(caretAnchor)
+  caretAnchor.remove()
+  return true
 }
 
 function moveChildren(source: Node, target: Node) {
@@ -1065,6 +1095,21 @@ function insertFormattedTextAtEditorSelection(
   caretAnchor.remove()
 }
 
+function getEditorPlainTextLength(editor: HTMLDivElement) {
+  return getQuizRichTextPlainText(editor.innerHTML).length
+}
+
+function getAllowedEditorInsertionText(editor: HTMLDivElement, text: string, maxLength?: number) {
+  if (!maxLength || maxLength <= 0) {
+    return text
+  }
+  const range = getEditorRange(editor)
+  const selectedLength = range && !range.collapsed ? getQuizRichTextPlainText(range.cloneContents().textContent ?? '').length : 0
+  const currentLength = getEditorPlainTextLength(editor)
+  const availableLength = Math.max(0, maxLength - Math.max(0, currentLength - selectedLength))
+  return text.slice(0, availableLength)
+}
+
 function applyQuizRichTextCommand(editor: HTMLDivElement, command: QuizRichTextCommand) {
   editor.focus({ preventScroll: true })
   if (command.type === 'bulletList') {
@@ -1082,10 +1127,13 @@ function applyQuizRichTextCommand(editor: HTMLDivElement, command: QuizRichTextC
   }
 
   if (command.type === 'highlight') {
-    const shouldClearHighlight = rangeHasQuizHighlight(editor, range)
-    formatEditorSelection(editor, { highlight: true }, (wrapper) => {
-      wrapper.classList.add(shouldClearHighlight ? 'quiz-rich-plain-highlight-text' : 'quiz-rich-highlight-text')
-    })
+    if (rangeIsFullyQuizHighlighted(editor, range)) {
+      clearEditorSelectionHighlight(editor)
+    } else {
+      formatEditorSelection(editor, { highlight: true }, (wrapper) => {
+        wrapper.classList.add('quiz-rich-highlight-text')
+      })
+    }
   }
   if (command.type === 'color') {
     formatEditorSelection(editor, { color: true }, (wrapper) => {
@@ -1127,9 +1175,10 @@ type QuizRichTextEditorProps = {
   value: string
   placeholder: string
   onChange: (value: string) => void
+  maxLength?: number
 }
 
-function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditorProps) {
+function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRichTextEditorProps) {
   const editorRef = useRef<HTMLDivElement | null>(null)
   const isFocusedRef = useRef(false)
   const lastSelectionRangeRef = useRef<Range | null>(null)
@@ -1220,14 +1269,13 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
           ...pendingFormatRef.current,
           color: undefined,
           themeColor: true,
-          highlight: false,
         }
       } else if (command.type === 'highlight') {
         const hasActiveHighlight =
-          pendingFormatRef.current.highlight === true || Boolean(range && rangeHasQuizHighlight(editor, range))
+          pendingFormatRef.current.highlight === true || Boolean(range && rangeHasActiveQuizHighlight(editor, range))
         const nextPendingFormat = { ...pendingFormatRef.current }
         if (hasActiveHighlight) {
-          if (range && rangeHasQuizHighlight(editor, range)) {
+          if (range && rangeHasActiveQuizHighlight(editor, range)) {
             nextPendingFormat.highlight = false
           } else {
             delete nextPendingFormat.highlight
@@ -1264,7 +1312,12 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
     if (!editor) {
       return
     }
-    insertFormattedTextAtEditorSelection(editor, pastedText, pendingFormatRef.current)
+    const allowedText = getAllowedEditorInsertionText(editor, pastedText, maxLength)
+    if (!allowedText) {
+      editor.focus({ preventScroll: true })
+      return
+    }
+    insertFormattedTextAtEditorSelection(editor, allowedText, pendingFormatRef.current)
     pendingFormatRef.current = {}
     syncValue()
     saveSelectionRange()
@@ -1279,13 +1332,39 @@ function QuizRichTextEditor({ value, placeholder, onChange }: QuizRichTextEditor
     }
     const pendingFormat = pendingFormatRef.current
     const hasPendingFormat = Boolean(pendingFormat.themeColor || pendingFormat.color || pendingFormat.highlight !== undefined)
-    if (inputType === 'insertText' && nativeEvent.data && hasPendingFormat) {
+    if (inputType === 'insertParagraph' && maxLength) {
       const editor = editorRef.current
       if (!editor) {
         return
       }
+      const allowedText = getAllowedEditorInsertionText(editor, '\n', maxLength)
+      if (!allowedText) {
+        event.preventDefault()
+        return
+      }
+      if (hasPendingFormat) {
+        event.preventDefault()
+        insertFormattedTextAtEditorSelection(editor, allowedText, pendingFormat)
+        syncValue()
+        saveSelectionRange()
+      }
+      return
+    }
+    if (inputType === 'insertText' && nativeEvent.data && (hasPendingFormat || maxLength)) {
+      const editor = editorRef.current
+      if (!editor) {
+        return
+      }
+      const allowedText = getAllowedEditorInsertionText(editor, nativeEvent.data, maxLength)
+      if (!allowedText) {
+        event.preventDefault()
+        return
+      }
+      if (!hasPendingFormat && allowedText === nativeEvent.data) {
+        return
+      }
       event.preventDefault()
-      insertFormattedTextAtEditorSelection(editor, nativeEvent.data, pendingFormat)
+      insertFormattedTextAtEditorSelection(editor, allowedText, pendingFormat)
       syncValue()
       saveSelectionRange()
     }
@@ -5616,6 +5695,7 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSessionSelectedColleges([])
     setQuizSessionSelectedItems([])
     setQuizSessionSelectedDifficulties([...DEFAULT_QUIZ_SESSION_DIFFICULTIES])
+    setQuizSessionPreset('today')
     setQuizSessionStep('setup')
     setQuizSessionResults({})
     setQuizSessionStartedAt(null)
@@ -5769,13 +5849,13 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   function handleQuizResult(result: QuizResult) {
-    if (!quizItem) {
+    if (!activeQuizSessionEntry || !activeQuizCard) {
       return
     }
 
     setQuizFeedback(result)
 
-    applyQuizResultToCard(quizItem.itemNumber, quizItem.tracking.quiz.activeCardId, result)
+    applyQuizResultToCard(activeQuizSessionEntry.itemNumber, activeQuizCard.id, result)
 
     window.setTimeout(() => {
       setQuizFeedback((current) => (current === result ? null : current))
@@ -6616,23 +6696,31 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   function duplicateQuizCard(itemNumber: number, cardId: string) {
+    const sourceItem = items.find((item) => item.itemNumber === itemNumber)
+    const sourceIndex = sourceItem?.tracking.quiz.cards.findIndex((card) => card.id === cardId) ?? -1
+    const sourceCard = sourceIndex >= 0 ? sourceItem?.tracking.quiz.cards[sourceIndex] : null
+    if (!sourceCard) {
+      return
+    }
+
+    const duplicatedCard = makeQuizCard({
+      question: sourceCard.question,
+      answer: sourceCard.answer,
+      frontImageDataUrl: sourceCard.frontImageDataUrl,
+      hasFrontImageDataUrl: sourceCard.hasFrontImageDataUrl,
+      backImageDataUrl: sourceCard.backImageDataUrl,
+      hasBackImageDataUrl: sourceCard.hasBackImageDataUrl,
+      personalNotes: sourceCard.personalNotes,
+    })
+    const duplicatedCardKey = `${itemNumber}:${duplicatedCard.id}`
+
     setTrackingState((current) => {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
       const sourceIndex = itemTracking.quiz.cards.findIndex((card) => card.id === cardId)
-      const sourceCard = itemTracking.quiz.cards[sourceIndex]
-      if (!sourceCard) {
+      if (sourceIndex < 0) {
         return current
       }
 
-      const duplicatedCard = makeQuizCard({
-        question: sourceCard.question,
-        answer: sourceCard.answer,
-        frontImageDataUrl: sourceCard.frontImageDataUrl,
-        hasFrontImageDataUrl: sourceCard.hasFrontImageDataUrl,
-        backImageDataUrl: sourceCard.backImageDataUrl,
-        hasBackImageDataUrl: sourceCard.hasBackImageDataUrl,
-        personalNotes: sourceCard.personalNotes,
-      })
       const cards = [...itemTracking.quiz.cards]
       cards.splice(sourceIndex + 1, 0, duplicatedCard)
 
@@ -6651,6 +6739,8 @@ function getPasswordStrengthMeta(password: string) {
         },
       }
     })
+    setQuizActiveCardKey(duplicatedCardKey)
+    setQuizSessionCardIds((current) => [duplicatedCardKey, ...current.filter((key) => key !== duplicatedCardKey)])
     setQuizSide('front')
     setQuizEditMode(true)
   }
@@ -6773,10 +6863,11 @@ function getPasswordStrengthMeta(password: string) {
   function removeQuizCard(itemNumber: number, cardId: string) {
     setTrackingState((current) => {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      const removedIndex = itemTracking.quiz.cards.findIndex((card) => card.id === cardId)
       const remaining = itemTracking.quiz.cards.filter((card) => card.id !== cardId)
       const nextActive = remaining.some((card) => card.id === itemTracking.quiz.activeCardId)
         ? itemTracking.quiz.activeCardId
-        : null
+        : remaining[Math.min(Math.max(removedIndex, 0), Math.max(remaining.length - 1, 0))]?.id ?? null
 
       return {
         ...current,
@@ -6803,8 +6894,19 @@ function getPasswordStrengthMeta(password: string) {
     if (!ok) {
       return
     }
+    const currentIndex = quizItem.tracking.quiz.cards.findIndex((card) => card.id === activeQuizCard.id)
+    const remainingCards = quizItem.tracking.quiz.cards.filter((card) => card.id !== activeQuizCard.id)
+    const nextCard = remainingCards[Math.min(Math.max(currentIndex, 0), Math.max(remainingCards.length - 1, 0))] ?? null
     removeQuizCard(quizItem.itemNumber, activeQuizCard.id)
-    setQuizEditMode(false)
+    if (!nextCard) {
+      closeQuiz()
+      return
+    }
+    const nextCardKey = `${quizItem.itemNumber}:${nextCard.id}`
+    setQuizActiveCardKey(nextCardKey)
+    setQuizSessionCardIds((current) => current.filter((key) => key !== `${quizItem.itemNumber}:${activeQuizCard.id}`))
+    setQuizSide('front')
+    setQuizFeedback(null)
   }
 
   function fileToDataUrl(file: File): Promise<string> {
@@ -9061,14 +9163,6 @@ function getPasswordStrengthMeta(password: string) {
                       <Trash className="flashcard-editor-action-icon" aria-hidden="true" />
                       Supprimer
                     </button>
-                    <button
-                      type="button"
-                      className="flashcard-editor-action flashcard-editor-save-action"
-                      onClick={() => setQuizEditMode(false)}
-                    >
-                      <FloppyDisk className="flashcard-editor-action-icon" aria-hidden="true" />
-                      Enregistrer
-                    </button>
                     <button type="button" className="flashcard-editor-action" onClick={closeQuiz}>
                       <Xmark className="flashcard-editor-action-icon" aria-hidden="true" />
                       Fermer
@@ -9135,9 +9229,10 @@ function getPasswordStrengthMeta(password: string) {
                           quizSide === 'front' ? { question: value } : { answer: value },
                         )
                       }
+                      maxLength={QUIZ_RICH_TEXT_MAX_CHARS}
                     />
                     <p className="flashcard-editor-char-count">
-                      {getQuizRichTextPlainText(quizSide === 'front' ? activeQuizCard.question : activeQuizCard.answer).length} / 500
+                      {getQuizRichTextPlainText(quizSide === 'front' ? activeQuizCard.question : activeQuizCard.answer).length} / {QUIZ_RICH_TEXT_MAX_CHARS}
                     </p>
                   </div>
                   <aside className="flashcard-editor-image-panel">
