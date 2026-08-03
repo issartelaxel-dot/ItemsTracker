@@ -9529,12 +9529,24 @@ function getPasswordStrengthMeta(password: string) {
                         alt={`Image du ${quizSide === 'front' ? 'recto' : 'verso'}`}
                       />
                     ) : (
-                      <div className="flashcard-editor-image-empty">IMG</div>
+                      <button
+                        type="button"
+                        className="flashcard-editor-image-empty"
+                        onClick={() => openQuizCardImagePicker(quizItem.itemNumber, activeQuizCard.id, quizSide)}
+                      >
+                        <Plus className="flashcard-editor-image-empty-icon" aria-hidden="true" />
+                        <strong>{dragOverQuizImageSlot === quizSide ? 'Relâche pour importer' : 'Glisser-déposer une image'}</strong>
+                        <span>ou cliquer pour parcourir</span>
+                      </button>
                     )}
                     {quizImageErrors[quizSide] ? (
                       <span className="quiz-file-name quiz-file-name-error">{quizImageErrors[quizSide]}</span>
                     ) : quizImageFileNames[quizSide] ? (
                       <span className="quiz-file-name">{quizImageFileNames[quizSide]}</span>
+                    ) : quizSide === 'front' ? (
+                      activeQuizCard.frontImageDataUrl ? <span className="flashcard-editor-image-hint">Glisse une image ici pour remplacer le recto.</span> : null
+                    ) : activeQuizCard.backImageDataUrl ? (
+                      <span className="flashcard-editor-image-hint">Glisse une image ici pour remplacer le verso.</span>
                     ) : null}
                     <div className="flashcard-editor-image-actions">
                       <button
