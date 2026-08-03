@@ -2697,6 +2697,7 @@ function App() {
   const [flashCreateError, setFlashCreateError] = useState('')
   const [draggedQuizCardId, setDraggedQuizCardId] = useState<string | null>(null)
   const [dragOverQuizCardId, setDragOverQuizCardId] = useState<string | null>(null)
+  const [dragOverQuizImageSlot, setDragOverQuizImageSlot] = useState<QuizImageSlot | null>(null)
   const avatarInputRef = useRef<HTMLInputElement | null>(null)
   const [avatarUploadError, setAvatarUploadError] = useState('')
   const [hasLoadedRemoteState, setHasLoadedRemoteState] = useState(false)
@@ -7219,6 +7220,39 @@ function getPasswordStrengthMeta(password: string) {
     void handleAvatarUploadFile(event.dataTransfer.files?.[0] ?? null)
   }
 
+  function handleQuizCardImageDragOver(event: ReactDragEvent<HTMLElement>, slot: QuizImageSlot) {
+    event.preventDefault()
+    event.stopPropagation()
+    event.dataTransfer.dropEffect = 'copy'
+    setDragOverQuizImageSlot(slot)
+  }
+
+  function handleQuizCardImageDragLeave(event: ReactDragEvent<HTMLElement>, slot: QuizImageSlot) {
+    const relatedTarget = event.relatedTarget
+    if (relatedTarget instanceof Node && event.currentTarget.contains(relatedTarget)) {
+      return
+    }
+    if (dragOverQuizImageSlot === slot) {
+      setDragOverQuizImageSlot(null)
+    }
+  }
+
+  function handleQuizCardImageDrop(
+    event: ReactDragEvent<HTMLElement>,
+    itemNumber: number,
+    cardId: string,
+    slot: QuizImageSlot,
+  ) {
+    event.preventDefault()
+    event.stopPropagation()
+    setDragOverQuizImageSlot(null)
+    if (!event.dataTransfer.files.length) {
+      setQuizImageFeedback(slot, { fileName: '', error: 'Dépose un fichier image depuis ton ordinateur.' })
+      return
+    }
+    void handleQuizCardImageUpload(itemNumber, cardId, slot, event.dataTransfer.files)
+  }
+
   function openQuizCardImagePicker(itemNumber: number, cardId: string, slot: QuizImageSlot) {
     setQuizImageFeedback(slot, { error: '' })
     const picker = document.createElement('input')
@@ -9479,7 +9513,12 @@ function getPasswordStrengthMeta(password: string) {
                       {getQuizRichTextPlainText(quizSide === 'front' ? activeQuizCard.question : activeQuizCard.answer).length} / {QUIZ_RICH_TEXT_MAX_CHARS}
                     </p>
                   </div>
-                  <aside className="flashcard-editor-image-panel">
+                  <aside
+                    className={`flashcard-editor-image-panel ${dragOverQuizImageSlot === quizSide ? 'is-drag-over' : ''}`}
+                    onDragOver={(event) => handleQuizCardImageDragOver(event, quizSide)}
+                    onDragLeave={(event) => handleQuizCardImageDragLeave(event, quizSide)}
+                    onDrop={(event) => handleQuizCardImageDrop(event, quizItem.itemNumber, activeQuizCard.id, quizSide)}
+                  >
                     <p className="flashcard-editor-section-label">
                       Image du {quizSide === 'front' ? 'recto' : 'verso'} <span>(optionnelle)</span>
                     </p>
