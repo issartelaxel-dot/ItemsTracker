@@ -28,7 +28,7 @@ const DB_SSL_REJECT_UNAUTHORIZED = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'f
 const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || 'lax').toLowerCase()
 const COOKIE_SECURE =
   process.env.COOKIE_SECURE === 'true' ? true : process.env.COOKIE_SECURE === 'false' ? false : NODE_ENV === 'production'
-const APP_VERSION = (process.env.APP_VERSION || process.env.RENDER_GIT_COMMIT || 'dev').trim()
+const APP_VERSION = (process.env.APP_VERSION || 'dev').trim()
 const MIN_CLIENT_VERSION = (process.env.MIN_CLIENT_VERSION || '').trim()
 const ADMIN_APPROVAL_EMAIL = process.env.ADMIN_APPROVAL_EMAIL || 'issartelaxel@gmail.com'
 const AUTH_COOKIE = 'med_auth'
@@ -403,39 +403,21 @@ function compareVersions(a, b) {
 
 const parsedMinClientVersion = parseVersion(MIN_CLIENT_VERSION)
 
-function isClientVersionAllowed(clientVersionRaw) {
-  if (!MIN_CLIENT_VERSION) {
-    return true
-  }
-
-  const normalizedClientVersion = String(clientVersionRaw || '').trim()
-  if (!normalizedClientVersion) {
-    return false
-  }
-
-  if (parsedMinClientVersion) {
-    const parsedClientVersion = parseVersion(normalizedClientVersion)
-    return Boolean(parsedClientVersion) && compareVersions(parsedClientVersion, parsedMinClientVersion) >= 0
-  }
-
-  return normalizedClientVersion === MIN_CLIENT_VERSION || normalizedClientVersion === APP_VERSION
-}
-
 function enforceClientVersion(req, res, next) {
-  res.setHeader('Cache-Control', 'no-store')
   res.setHeader('x-app-version', APP_VERSION)
-  if (MIN_CLIENT_VERSION) {
+  if (parsedMinClientVersion) {
     res.setHeader('x-min-client-version', MIN_CLIENT_VERSION)
   }
 
-  if (!MIN_CLIENT_VERSION) {
+  if (!parsedMinClientVersion) {
     next()
     return
   }
 
   const clientVersionRaw = req.get('x-client-version') || ''
+  const parsedClientVersion = parseVersion(clientVersionRaw)
 
-  if (!isClientVersionAllowed(clientVersionRaw)) {
+  if (!parsedClientVersion || compareVersions(parsedClientVersion, parsedMinClientVersion) < 0) {
     res.status(426).json({
       error: 'Client obsolète. Recharge la page pour appliquer la dernière mise à jour.',
       code: 'CLIENT_STALE',
@@ -1482,7 +1464,7 @@ app.use((error, _req, res, next) => {
   next(error)
 })
 
-app.post('/api/auth/register/request', enforceClientVersion, authLimiter, async (req, res) => {
+app.post('/api/auth/register/request', authLimiter, async (req, res) => {
   const parsed = requestSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Données invalides.' })
@@ -1547,7 +1529,7 @@ app.post('/api/auth/register/request', enforceClientVersion, authLimiter, async 
   })
 })
 
-app.post('/api/auth/register/verify', enforceClientVersion, verifyLimiter, async (req, res) => {
+app.post('/api/auth/register/verify', verifyLimiter, async (req, res) => {
   const parsed = verifySchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Code invalide.' })
@@ -1618,7 +1600,7 @@ app.post('/api/auth/register/verify', enforceClientVersion, verifyLimiter, async
   })
 })
 
-app.post('/api/auth/login', enforceClientVersion, authLimiter, async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   const parsed = loginSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Données invalides.' })
@@ -1662,7 +1644,7 @@ app.post('/api/auth/login', enforceClientVersion, authLimiter, async (req, res) 
   })
 })
 
-app.post('/api/auth/password/request', enforceClientVersion, authLimiter, async (req, res) => {
+app.post('/api/auth/password/request', authLimiter, async (req, res) => {
   const parsed = passwordResetRequestSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Email invalide.' })
@@ -1709,7 +1691,7 @@ app.post('/api/auth/password/request', enforceClientVersion, authLimiter, async 
   })
 })
 
-app.post('/api/auth/password/confirm', enforceClientVersion, verifyLimiter, async (req, res) => {
+app.post('/api/auth/password/confirm', verifyLimiter, async (req, res) => {
   const parsed = passwordResetConfirmSchema.safeParse(req.body)
   if (!parsed.success) {
     res.status(400).json({ error: 'Donnees invalides.' })

@@ -133,8 +133,6 @@ import therapeuticIcon from 'healthicons/public/icons/svg/outline/medications/pi
 import urologyIcon from 'healthicons/public/icons/svg/outline/body/bladder.svg?raw'
 import './App.css'
 
-declare const __APP_VERSION__: string
-
 type Mastery = 'Mauvais' | 'Moyen' | 'Bon' | 'Très bon' | 'Parfait'
 type Theme = 'light' | 'dark'
 type YouTubeDisplayMode = 'embed' | 'external'
@@ -394,13 +392,11 @@ type LocalShadowNotice = {
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '')
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
-const CLIENT_APP_VERSION = (import.meta.env.VITE_APP_VERSION ?? __APP_VERSION__ ?? '').trim()
+const CLIENT_APP_VERSION = (import.meta.env.VITE_APP_VERSION ?? '').trim()
 const AUTH_TOKEN_STORAGE_KEY = 'med_auth_token'
 const LOCAL_CLOUD_SHADOW_PREFIX = 'med_cloud_shadow_v1'
 const IDLE_LOGOUT_PENDING_STORAGE_KEY = 'med_idle_logout_pending_v1'
 const LAST_ACTIVITY_AT_STORAGE_KEY = 'med_last_activity_at_v1'
-const CLIENT_FORCE_REFRESH_STORAGE_KEY = 'med_force_refresh_at'
-const CLIENT_FORCE_REFRESH_LOOP_WINDOW_MS = 30_000
 const ALLOW_SAME_ORIGIN_API_FALLBACK = String(import.meta.env.VITE_ALLOW_SAME_ORIGIN_API_FALLBACK ?? '')
   .trim()
   .toLowerCase() === 'true'
@@ -2562,59 +2558,6 @@ class ApiRequestError extends Error {
   }
 }
 
-let clientRefreshInProgress = false
-
-async function clearBrowserAppCaches() {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  const cleanupTasks: Promise<unknown>[] = []
-
-  if ('caches' in window) {
-    cleanupTasks.push(
-      window.caches
-        .keys()
-        .then((keys) => Promise.all(keys.map((key) => window.caches.delete(key)))),
-    )
-  }
-
-  if ('serviceWorker' in navigator) {
-    cleanupTasks.push(
-      navigator.serviceWorker
-        .getRegistrations()
-        .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister()))),
-    )
-  }
-
-  await Promise.allSettled(cleanupTasks)
-}
-
-function getFreshClientUrl() {
-  const url = new URL(window.location.href)
-  url.searchParams.set('refresh', String(Date.now()))
-  return url.toString()
-}
-
-async function forceReloadLatestClient() {
-  if (typeof window === 'undefined' || clientRefreshInProgress) {
-    return
-  }
-  clientRefreshInProgress = true
-  const now = Date.now()
-  try {
-    const previousRefreshAt = Number(window.sessionStorage.getItem(CLIENT_FORCE_REFRESH_STORAGE_KEY) ?? 0)
-    if (Number.isFinite(previousRefreshAt) && now - previousRefreshAt < CLIENT_FORCE_REFRESH_LOOP_WINDOW_MS) {
-      return
-    }
-    window.sessionStorage.setItem(CLIENT_FORCE_REFRESH_STORAGE_KEY, String(now))
-  } catch {
-    // Best effort only: private browsing can reject sessionStorage.
-  }
-  await clearBrowserAppCaches()
-  window.location.replace(getFreshClientUrl())
-}
-
 function getSaveLockReason(error: unknown): SaveLockReason | null {
   if (error instanceof ApiRequestError) {
     if (error.status === 401 || error.status === 403) {
@@ -3453,7 +3396,6 @@ function App() {
         const candidateResponse = await fetch(candidate, {
           ...init,
           credentials: 'include',
-          cache: 'no-store',
           headers: {
             'Content-Type': 'application/json',
             ...(CLIENT_APP_VERSION ? { 'x-client-version': CLIENT_APP_VERSION } : {}),
@@ -3491,7 +3433,9 @@ function App() {
 
     const serverAppVersion = (response.headers.get('x-app-version') ?? '').trim()
     if (CLIENT_APP_VERSION && serverAppVersion && serverAppVersion !== CLIENT_APP_VERSION) {
-      await forceReloadLatestClient()
+      if (typeof window !== 'undefined') {
+        window.location.reload()
+      }
       throw new ApiRequestError(
         'Client obsolète. Recharge la page pour appliquer la dernière mise à jour.',
         426,
@@ -3528,9 +3472,6 @@ function App() {
     if (!response.ok) {
       const apiError = String(payload.error ?? '').trim()
       const apiCode = typeof payload.code === 'string' ? payload.code : ''
-      if (response.status === 426 || apiCode === 'CLIENT_STALE') {
-        await forceReloadLatestClient()
-      }
       throw new ApiRequestError(apiError || `Erreur API (${response.status})`, response.status, apiCode)
     }
     return payload
@@ -3886,7 +3827,7 @@ function App() {
 
   async function handleRecoveryAction() {
     if (saveLockReason === 'client-stale') {
-      await forceReloadLatestClient()
+      window.location.reload()
       return
     }
 
@@ -4210,7 +4151,7 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   async function forceLogoutForStaleClient() {
-    await forceReloadLatestClient()
+    await disconnectToAuth('Nouvelle version disponible: reconnecte-toi pour charger la dernière mise à jour.')
   }
 
   useEffect(() => {
