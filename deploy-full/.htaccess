@@ -1,6 +1,15 @@
 RewriteEngine On
 RewriteBase /ItemsTracker/
 
+<IfModule mod_headers.c>
+  <Files "index.html">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+  </Files>
+  <FilesMatch "^main\.(js|css)$">
+    Header set Cache-Control "no-cache, must-revalidate, max-age=0"
+  </FilesMatch>
+</IfModule>
+
 # Let real files and directories pass through unchanged.
 RewriteCond %{REQUEST_FILENAME} -f [OR]
 RewriteCond %{REQUEST_FILENAME} -d

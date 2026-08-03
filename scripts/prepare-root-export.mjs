@@ -21,8 +21,8 @@ cpSync(resolve(distDir, 'index.html'), rootIndex)
 const cacheVersion = Date.now().toString()
 const rootIndexContent = readFileSync(rootIndex, 'utf8')
 const cacheBustedRootIndex = rootIndexContent
-  .replace(/assets\/main\.js(\?v=\d+)?/g, `assets/main.js?v=${cacheVersion}`)
-  .replace(/assets\/main\.css(\?v=\d+)?/g, `assets/main.css?v=${cacheVersion}`)
+  .replace(/assets\/main\.js(\?v=[^"']*)?/g, `assets/main.js?v=${cacheVersion}`)
+  .replace(/assets\/main\.css(\?v=[^"']*)?/g, `assets/main.css?v=${cacheVersion}`)
 writeFileSync(rootIndex, cacheBustedRootIndex, 'utf8')
 
 rmSync(resolve(root, 'assets'), { recursive: true, force: true })
