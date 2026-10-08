@@ -24,3 +24,14 @@ Archive.zip
 *.njsproj
 *.sln
 *.sw?
+
+# Secrets et sauvegardes
+.env
+.env.server
+.env.backup
+.env.*.local
+.backups/
+*.itbackup
+*.itbackup.ok.json
+playwright-report/
+test-results/

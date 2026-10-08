@@ -1,0 +1,11 @@
+[Unit]
+Description=Run ItemsTracker backup daily
+
+[Timer]
+OnCalendar=*-*-* 03:00:00 UTC
+Persistent=true
+RandomizedDelaySec=300
+Unit=itemstracker-backup.service
+
+[Install]
+WantedBy=timers.target

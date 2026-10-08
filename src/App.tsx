@@ -1,3 +1,4 @@
+import { saveDraft, findDraft, removeDraft, mergeStates, type SaveOperation } from './lib/save-outbox'
 import {
   $createParagraphNode,
   $getRoot,
@@ -381,7 +382,7 @@ type StorageUsage = {
     idempotencyEntries: number
   }
 }
-type SaveLockReason = 'session-expired' | 'client-stale'
+type SaveLockReason = 'session-expired' | 'client-stale' | 'state-conflict'
 type IdleLogoutPending = {
   userId: number
   requestedAtMs: number
@@ -392,7 +393,7 @@ type LocalShadowNotice = {
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '')
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
-const CLIENT_APP_VERSION = (import.meta.env.VITE_APP_VERSION ?? '').trim()
+const CLIENT_APP_VERSION = (import.meta.env.VITE_APP_VERSION ?? '0.1.0').trim()
 const AUTH_TOKEN_STORAGE_KEY = 'med_auth_token'
 const LOCAL_CLOUD_SHADOW_PREFIX = 'med_cloud_shadow_v1'
 const IDLE_LOGOUT_PENDING_STORAGE_KEY = 'med_idle_logout_pending_v1'
@@ -405,8 +406,7 @@ const AUTO_SAVE_DEBOUNCE_MS = 4_000
 const IDLE_AUTO_LOGOUT_MS = 15 * 60_000
 const IDLE_CHECK_INTERVAL_MS = 5_000
 const IDLE_LOGOUT_RETRY_INTERVAL_MS = 15_000
-const SESSION_HEARTBEAT_MS = 60_000
-const VERSION_CHECK_INTERVAL_MS = 5 * 60_000
+const SESSION_HEARTBEAT_MS = 5 * 60_000
 const QUIZ_CARD_IMAGE_MAX_BYTES = 1024 * 1024
 const HABIT_TRACKER_YEAR = 2026
 const REMOTE_STATE_MAX_BYTES = 24_000_000
@@ -416,14 +416,6 @@ const SUPPORT_EMAIL = 'hello@setup-hub.com'
 const DEFAULT_DATE_FORMAT: DateFormatPreference = 'fr-short'
 const DEFAULT_TIME_ZONE: TimeZonePreference = 'auto'
 const QUIZ_IMAGE_SLOTS: QuizImageSlot[] = ['front', 'back']
-const REMOTE_PAYLOAD_FALLBACKS = [
-  { maxActionLogsPerItem: 220, allowProfilePhoto: true },
-  { maxActionLogsPerItem: 140, allowProfilePhoto: true },
-  { maxActionLogsPerItem: 80, allowProfilePhoto: true },
-  { maxActionLogsPerItem: 40, allowProfilePhoto: true },
-  { maxActionLogsPerItem: 20, allowProfilePhoto: false },
-  { maxActionLogsPerItem: 0, allowProfilePhoto: false },
-] as const
 const AVATAR_GRADIENTS = [
   'linear-gradient(135deg, #f90021 0%, #ff8f00 58%, #ffe400 100%)',
   'linear-gradient(135deg, #1d976c 0%, #93f9b9 100%)',
@@ -2303,7 +2295,7 @@ function trimTrackingStateForRemote(
 
     nextItems[itemNumber] = {
       ...tracking,
-      actionLogs: maxActionLogsPerItem > 0 ? tracking.actionLogs.slice(-maxActionLogsPerItem) : [],
+      actionLogs: maxActionLogsPerItem < 0 ? tracking.actionLogs : maxActionLogsPerItem > 0 ? tracking.actionLogs.slice(-maxActionLogsPerItem) : [],
       quiz: {
         ...tracking.quiz,
         cards: trimmedCards,
@@ -2329,28 +2321,14 @@ function sanitizeProfileForRemote(profile: ProfileState, allowPhoto: boolean): P
 }
 
 function buildRemotePersistPayload(payload: PersistStatePayload): { body: string; bytes: number } | null {
-  for (const strategy of REMOTE_PAYLOAD_FALLBACKS) {
-    const candidatePayload: PersistStatePayload = {
-      trackingState: trimTrackingStateForRemote(payload.trackingState, {
-        maxActionLogsPerItem: strategy.maxActionLogsPerItem,
-      }),
-	      theme: payload.theme,
-	      focusMode: payload.focusMode,
-	      dateFormat: payload.dateFormat,
-	      timeZone: payload.timeZone,
-	      youtubeDisplayMode: payload.youtubeDisplayMode,
-	      shuffleQuizCards: payload.shuffleQuizCards,
-	      profile: sanitizeProfileForRemote(payload.profile, strategy.allowProfilePhoto),
-    }
-
-    const body = JSON.stringify(candidatePayload)
-    const bytes = getUtf8ByteLength(body)
-    if (bytes <= REMOTE_STATE_MAX_BYTES) {
-      return { body, bytes }
-    }
+  const candidatePayload: PersistStatePayload = {
+    ...payload,
+    trackingState: trimTrackingStateForRemote(payload.trackingState, { maxActionLogsPerItem: -1 }),
+    profile: sanitizeProfileForRemote(payload.profile, true),
   }
-
-  return null
+  const body = JSON.stringify(candidatePayload)
+  const bytes = getUtf8ByteLength(body)
+  return bytes <= REMOTE_STATE_MAX_BYTES ? { body, bytes } : null
 }
 
 function parsePersistStatePayloadBody(body: string, authUser: AuthUser | null): PersistStatePayload | null {
@@ -2365,7 +2343,7 @@ function parsePersistStatePayloadBody(body: string, authUser: AuthUser | null): 
     return {
 	      trackingState: parsed.trackingState as TrackerState,
 	      theme: parsed.theme === 'dark' ? 'dark' : 'light',
-	      focusMode: false,
+	      focusMode: Boolean(parsed.focusMode),
 	      dateFormat: normalizeDateFormatPreference(parsed.dateFormat),
 	      timeZone: normalizeTimeZonePreference(parsed.timeZone),
 	      youtubeDisplayMode: parsed.youtubeDisplayMode === 'external' ? 'external' : 'embed',
@@ -2540,7 +2518,7 @@ function toSaveWarningMessage(error: unknown) {
     return 'Sauvegarde en attente: réseau/cloud indisponible. Reprise automatique dès reconnexion.'
   }
   if (lower.includes('etat modifi') && lower.includes('ailleurs')) {
-    return 'Sauvegarde en attente: état modifié dans une autre session. Recharge la page pour synchroniser.'
+    return 'Sauvegarde en attente : état modifié dans une autre session. Tes modifications locales sont conservées.'
   }
 
   return `Sauvegarde en attente: ${message}`
@@ -2563,6 +2541,7 @@ function getSaveLockReason(error: unknown): SaveLockReason | null {
     if (error.status === 401 || error.status === 403) {
       return 'session-expired'
     }
+    if (error.status === 409 && ['STATE_CONFLICT', 'IDEMPOTENCY_MISMATCH'].includes(error.code)) return 'state-conflict'
     if (error.status === 409 || error.status === 412 || error.status === 426) {
       return 'client-stale'
     }
@@ -2605,6 +2584,7 @@ function getSaveLockReason(error: unknown): SaveLockReason | null {
 }
 
 function getSaveLockMessage(reason: SaveLockReason) {
+  if (reason === 'state-conflict') return 'Une autre session a enregistré des changements. Tes modifications locales sont conservées. Synchronise pour résoudre le conflit.'
   if (reason === 'client-stale') {
     return 'Sauvegarde bloquée: cette page est obsolète après une mise à jour. Recharge la page.'
   }
@@ -2773,11 +2753,16 @@ function App() {
   const [usefulLinkSectionOpen, setUsefulLinkSectionOpen] = useState(true)
   const [itemVisualSectionOpen, setItemVisualSectionOpen] = useState(false)
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
-  const imageSyncInFlightRef = useRef<Promise<{ updatedAt: string | null } | false> | null>(null)
+  const operationRef = useRef<SaveOperation | null>(null)
+  const draftKeyRef = useRef(crypto.randomUUID())
+  const recoveredDraftKeyRef = useRef<string | null>(null)
+  const conflictStateRef = useRef<PersistStatePayload | null>(null)
+  const conflictVersionRef = useRef(0)
+  const conflictImageVersionsRef = useRef<Record<string, string>>({})
+  const [mergeConflictCount, setMergeConflictCount] = useState(0)
   const trackingStateRef = useRef(trackingState)
   const lazyImageLoadInFlightRef = useRef(new Set<string>())
   const mcqGenerationInFlightRef = useRef(new Set<string>())
-  const lastPayloadTooLargeWarningRef = useRef(0)
   const shouldForceFirstSyncRef = useRef(false)
   const hasPendingChangesRef = useRef(false)
   const hasPendingImageChangesRef = useRef(false)
@@ -2786,6 +2771,7 @@ function App() {
   const lastSavedStatePayloadRef = useRef('')
   const lastSavedStateVersionRef = useRef(0)
   const lastSyncedQuizImagesRef = useRef<Record<string, string>>({})
+  const lastSyncedImageVersionsRef = useRef<Record<string, string>>({})
   const idleLogoutTimerRef = useRef<number | null>(null)
   const idleLogoutInFlightRef = useRef(false)
   const lastUserActivityAtRef = useRef(Date.now())
@@ -2795,6 +2781,8 @@ function App() {
   const sidebarLogoRef = useRef<HTMLSpanElement | null>(null)
   const sidebarLogoOffsetRef = useRef({ x: 0, y: 0 })
   const isSaveLocked = saveLockReason !== null
+  const saveLockedRef = useRef(isSaveLocked)
+  saveLockedRef.current = isSaveLocked
   const isImageLightboxOpen = imageLightboxSrc !== null
 
   function activateSaveProtection(reason: SaveLockReason) {
@@ -2842,7 +2830,41 @@ function App() {
 	      }),
 	    [trackingState, theme, focusMode, dateFormat, timeZone, youtubeDisplayMode, shuffleQuizCards, profile],
 	  )
+  const fullPayload = useMemo(() => JSON.stringify({ trackingState, theme, focusMode, dateFormat, timeZone,
+    youtubeDisplayMode, shuffleQuizCards, profile: { ...profile, password: '' } }),
+    [trackingState, theme, focusMode, dateFormat, timeZone, youtubeDisplayMode, shuffleQuizCards, profile])
+  const fullPayloadRef = useRef(fullPayload)
+  fullPayloadRef.current = fullPayload
   const remotePayloadRef = useRef(remotePayload)
+
+  async function preserveDraft() {
+    if (!authUser) return
+    await saveDraft({ key: `${authUser.id}:${draftKeyRef.current}`, userId: authUser.id,
+      body: fullPayloadRef.current, baseBody: lastSavedStatePayloadRef.current,
+      baseVersion: lastSavedStateVersionRef.current, imageVersions: lastSyncedImageVersionsRef.current, imageBaseline: lastSyncedQuizImagesRef.current,
+      operation: operationRef.current, savedAtMs: Date.now() })
+  }
+
+  function applyRecoveredState(state: PersistStatePayload) {
+    setTrackingState(state.trackingState)
+    setTheme(state.theme)
+    setFocusMode(state.focusMode)
+    setDateFormat(state.dateFormat)
+    setTimeZone(state.timeZone)
+    setYoutubeDisplayMode(state.youtubeDisplayMode)
+    setShuffleQuizCards(state.shuffleQuizCards)
+    setProfile(state.profile)
+    trackingStateRef.current = state.trackingState
+    fullPayloadRef.current = JSON.stringify(state)
+    remotePayloadRef.current = buildRemotePersistPayload(state)
+    latestStatePayloadRef.current = remotePayloadRef.current?.body || ''
+  }
+
+  useEffect(() => {
+    if (saveStatus !== 'saved') return
+    const timer = window.setTimeout(() => setSaveStatus('idle'), 1800)
+    return () => window.clearTimeout(timer)
+  }, [saveStatus])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -2899,7 +2921,7 @@ function App() {
     return () => {
       cancelled = true
     }
-  }, [activeView, authStatus, authUser, hasLoadedRemoteState, lastSavedAt])
+  }, [activeView, authStatus, authUser?.id, hasLoadedRemoteState])
 
   useLayoutEffect(() => {
     if (activeView === 'settings') {
@@ -3040,6 +3062,7 @@ function App() {
             nextTrackingState = remoteState.trackingState as TrackerState
 	          }
 	          nextTheme = remoteState.theme === 'dark' ? 'dark' : 'light'
+          nextFocusMode = Boolean(remoteState.focusMode)
 	          nextDateFormat = normalizeDateFormatPreference(remoteState.dateFormat)
 	          nextTimeZone = normalizeTimeZonePreference(remoteState.timeZone)
 	          nextYoutubeDisplayMode = remoteState.youtubeDisplayMode === 'external' ? 'external' : 'embed'
@@ -3059,21 +3082,44 @@ function App() {
           }
         }
 
-        const shadow = readLocalCloudShadow(authUser.id)
+        const remoteVersion = Number(payload.version) || 0
+        const cloudState: PersistStatePayload = { trackingState: nextTrackingState, theme: nextTheme,
+          focusMode: Boolean(remoteState?.focusMode), dateFormat: nextDateFormat, timeZone: nextTimeZone,
+          youtubeDisplayMode: nextYoutubeDisplayMode, shuffleQuizCards: nextShuffleQuizCards, profile: nextProfile }
+        const baseline = buildRemotePersistPayload(cloudState)?.body || ''
+        lastSavedStatePayloadRef.current = baseline
+        lastSavedStateVersionRef.current = remoteVersion
+        lastSyncedQuizImagesRef.current = collectQuizImagePresenceMap(nextTrackingState)
+        lastSyncedImageVersionsRef.current = (payload.imageVersions || {}) as Record<string, string>
+        hasInitializedSnapshotRef.current = true
         let nextLocalShadowNotice: LocalShadowNotice | null = null
-        if (shadow) {
-          const parsedShadow = parsePersistStatePayloadBody(shadow.body, authUser)
-          const isShadowNewerThanRemote = shadow.savedAtMs > remoteUpdatedAtMs + 1_000
-          if (parsedShadow && isShadowNewerThanRemote) {
-            nextLocalShadowNotice = {
-              savedAtLabel: new Intl.DateTimeFormat('fr-FR', {
-                hour: '2-digit',
-                minute: '2-digit',
-                second: '2-digit',
-              }).format(new Date(shadow.savedAtMs)),
-            }
-          } else {
-            clearLocalCloudShadow(authUser.id)
+        const draft = await findDraft(authUser.id).catch(() => null)
+        if (cancelled) return
+        const shadow = readLocalCloudShadow(authUser.id)
+        const recovered = draft ? parsePersistStatePayloadBody(draft.body, authUser)
+          : shadow && shadow.savedAtMs > remoteUpdatedAtMs + 1000 ? parsePersistStatePayloadBody(shadow.body, authUser) : null
+        if (recovered) {
+          nextTrackingState = recovered.trackingState
+          nextTheme = recovered.theme
+          nextFocusMode = recovered.focusMode
+          nextDateFormat = recovered.dateFormat
+          nextTimeZone = recovered.timeZone
+          nextYoutubeDisplayMode = recovered.youtubeDisplayMode
+          nextShuffleQuizCards = recovered.shuffleQuizCards
+          nextProfile = recovered.profile
+          nextLocalShadowNotice = { savedAtLabel: new Date(draft?.savedAtMs || shadow?.savedAtMs || Date.now()).toLocaleTimeString('fr-FR') }
+          if (draft) {
+            recoveredDraftKeyRef.current = draft.key
+            lastSavedStatePayloadRef.current = draft.baseBody
+            lastSavedStateVersionRef.current = draft.baseVersion
+            lastSyncedQuizImagesRef.current = draft.imageBaseline
+            lastSyncedImageVersionsRef.current = draft.imageVersions || {}
+            operationRef.current = draft.operation
+          }
+          // A lost acknowledgement must first replay its original request; a
+          // version conflict then enters explicit recovery without discarding data.
+          if (!draft?.operation && (!draft || draft.baseVersion !== remoteVersion)) {
+            setSaveLockReason('state-conflict')
           }
         }
 
@@ -3089,10 +3135,7 @@ function App() {
         setSaveErrorMessage('')
         setLocalShadowNotice(nextLocalShadowNotice)
         setSaveStatus('idle')
-        const remoteVersion = Number((payload as Record<string, unknown>).version)
-        lastSavedStateVersionRef.current = Number.isFinite(remoteVersion) ? remoteVersion : 0
-        lastSyncedQuizImagesRef.current = collectQuizImagePresenceMap(nextTrackingState)
-        hasPendingImageChangesRef.current = false
+        hasPendingImageChangesRef.current = hasUnsyncedQuizImageChanges(lastSyncedQuizImagesRef.current, nextTrackingState)
         setHasLoadedRemoteState(true)
       } catch (error) {
         const lockReason = getSaveLockReason(error)
@@ -3130,7 +3173,7 @@ function App() {
 
     const snapshot = remotePayload?.body ?? ''
     latestStatePayloadRef.current = snapshot
-    if (snapshot) {
+    if (snapshot && snapshot !== lastSavedStatePayloadRef.current) {
       writeLocalCloudShadow(authUser.id, snapshot)
     }
 
@@ -3160,7 +3203,10 @@ function App() {
       return
     }
     hasPendingImageChangesRef.current = hasUnsyncedQuizImageChanges(lastSyncedQuizImagesRef.current, trackingState)
-  }, [authStatus, authUser?.id, hasLoadedRemoteState, trackingState])
+    if (hasPendingChangesRef.current || hasPendingImageChangesRef.current || operationRef.current) {
+      void preserveDraft().catch(() => setSaveErrorMessage('Copie locale indisponible. Garde cette page ouverte jusqu’à confirmation de la sauvegarde cloud.'))
+    }
+  }, [authStatus, authUser?.id, hasLoadedRemoteState, fullPayload])
 
   useEffect(() => {
     if (
@@ -3345,28 +3391,15 @@ function App() {
     }
 
     const flushWithKeepalive = () => {
-      if (!hasPendingChangesRef.current) {
-        return
-      }
-      const payload = latestStatePayloadRef.current
-      if (!payload) {
-        return
-      }
-      const candidates = resolveApiCandidates('/api/state')
-      const target = candidates[0]
-      if (!target) {
-        return
-      }
-      void fetch(target, {
-        method: 'PUT',
-        credentials: 'include',
-        keepalive: true,
-        headers: {
-          'Content-Type': 'application/json',
-          ...(CLIENT_APP_VERSION ? { 'x-client-version': CLIENT_APP_VERSION } : {}),
-        },
-        body: payload,
-      }).catch(() => undefined)
+      if (hasPendingChangesRef.current || hasPendingImageChangesRef.current) void preserveDraft().catch(() => undefined)
+      const op = operationRef.current
+      if (!op || getUtf8ByteLength(op.body) > 60_000 || saveLockedRef.current) return
+      const target = resolveApiCandidates(op.path)[0]
+      if (!target) return
+      const token = getStoredAuthToken()
+      void fetch(target, { method: op.method, credentials: 'include', keepalive: true,
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(CLIENT_APP_VERSION ? { 'x-client-version': CLIENT_APP_VERSION } : {}) }, body: op.body }).catch(() => undefined)
     }
 
     const onVisibilityChange = () => {
@@ -3434,9 +3467,6 @@ function App() {
 
     const serverAppVersion = (response.headers.get('x-app-version') ?? '').trim()
     if (CLIENT_APP_VERSION && serverAppVersion && serverAppVersion !== CLIENT_APP_VERSION) {
-      if (typeof window !== 'undefined') {
-        window.location.reload()
-      }
       throw new ApiRequestError(
         'Client obsolète. Recharge la page pour appliquer la dernière mise à jour.',
         426,
@@ -3478,286 +3508,92 @@ function App() {
     return payload
   }
 
-  async function persistQuizImages(options?: { silent?: boolean }) {
+  async function persistUserState(options?: { silent?: boolean; force?: boolean }): Promise<boolean> {
+    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState || isSaveLocked) return false
+    if (saveInFlightRef.current) return saveInFlightRef.current
     const silent = Boolean(options?.silent)
-    if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
-      return false
-    }
-    if (!hasPendingImageChangesRef.current) {
-      return { updatedAt: null as string | null }
-    }
-    if (imageSyncInFlightRef.current) {
-      const inFlightResult = await imageSyncInFlightRef.current
-      if (inFlightResult && hasPendingImageChangesRef.current) {
-        return persistQuizImages(options)
-      }
-      return inFlightResult
-    }
-
-    const syncPromise = (async () => {
-      const previousMap = lastSyncedQuizImagesRef.current
-      const currentMap = collectQuizImageMap(trackingStateRef.current)
-      const currentPresenceMap = collectQuizImagePresenceMap(trackingStateRef.current)
-      const upsert: Array<{ itemNumber: number; cardId: string; imageSlot: QuizImageSlot; imageDataUrl: string }> = []
-      const removed: Array<{ itemNumber: number; cardId: string; imageSlot: QuizImageSlot }> = []
-
-      for (const [key, value] of Object.entries(currentMap)) {
-        if (previousMap[key] === value) {
-          continue
-        }
-        const [itemRaw, cardId, imageSlotRaw] = key.split(':')
-        const itemNumber = Number(itemRaw)
-        const imageSlot = imageSlotRaw === 'front' ? 'front' : imageSlotRaw === 'back' ? 'back' : null
-        if (!Number.isFinite(itemNumber) || !cardId || !imageSlot) {
-          continue
-        }
-        upsert.push({ itemNumber, cardId, imageSlot, imageDataUrl: value })
-      }
-
-      for (const key of Object.keys(previousMap)) {
-        if (currentPresenceMap[key]) {
-          continue
-        }
-        const [itemRaw, cardId, imageSlotRaw] = key.split(':')
-        const itemNumber = Number(itemRaw)
-        const imageSlot = imageSlotRaw === 'front' ? 'front' : imageSlotRaw === 'back' ? 'back' : null
-        if (!Number.isFinite(itemNumber) || !cardId || !imageSlot) {
-          continue
-        }
-        removed.push({ itemNumber, cardId, imageSlot })
-      }
-
-      if (upsert.length === 0 && removed.length === 0) {
-        hasPendingImageChangesRef.current = false
-        return { updatedAt: null as string | null }
-      }
-
+    const saving = (async () => {
+      if (!silent) setSaveStatus('saving')
       try {
-        const requestId = generateRequestId('imgsync')
-        const imageRequestBody = JSON.stringify({
-          upsert,
-          removed,
-          requestId,
-        })
-        const imageRequestBytes = getUtf8ByteLength(imageRequestBody)
-        logOutgoingSavePayload('images', imageRequestBytes, {
-          upsertCount: upsert.length,
-          removedCount: removed.length,
-        })
-        const payload = await apiRequest('/api/state/images', {
-          method: 'POST',
-          body: imageRequestBody,
-        })
-        lastSyncedQuizImagesRef.current = {
-          ...currentPresenceMap,
-          ...currentMap,
+        // Replay a frozen request before generating any subsequent changes.
+        // Each acknowledgement advances only its own baseline.
+        for (let pass = 0; pass < 200; pass++) {
+          let op = operationRef.current
+          if (!op) {
+            const target = remotePayloadRef.current
+            if (!target) throw new Error('État trop volumineux. Exporte une copie locale avant de modifier les données.')
+            const previous = parsePersistStatePayloadBody(lastSavedStatePayloadRef.current, authUser)
+            const next = parsePersistStatePayloadBody(target.body, authUser)
+            if (!next) throw new Error('État local invalide.')
+            const patch = previous ? buildMergePatch(previous, next) : undefined
+            if (!previous || patch !== undefined || (lastSavedStateVersionRef.current === 0 && hasPendingImageChangesRef.current)) {
+              const id = generateRequestId('state')
+              const method = previous ? 'PATCH' : 'PUT'
+              op = { id, path: '/api/state', method, targetBody: target.body,
+                body: JSON.stringify({ ...(previous ? { patch: patch || {} } : next),
+                  baseVersion: lastSavedStateVersionRef.current, requestId: id }) }
+            } else {
+              const old = lastSyncedQuizImagesRef.current
+              const images = collectQuizImageMap(trackingStateRef.current)
+              const presence = collectQuizImagePresenceMap(trackingStateRef.current)
+              const changed: Array<[string, string]> = []
+              let batchBytes = 0
+              for (const [key, value] of Object.entries(images)) {
+                if (old[key] === value) continue
+                const size = getUtf8ByteLength(value) + 256
+                if (changed.length && (changed.length >= 80 || batchBytes + size > 4_000_000)) break
+                changed.push([key, value]); batchBytes += size
+              }
+              const removed = Object.keys(old).filter(key => !presence[key]).slice(0, 80)
+              if (!changed.length && !removed.length) {
+                hasPendingChangesRef.current = false
+                hasPendingImageChangesRef.current = false
+                await removeDraft(`${authUser.id}:${draftKeyRef.current}`)
+                if (recoveredDraftKeyRef.current) await removeDraft(recoveredDraftKeyRef.current)
+                recoveredDraftKeyRef.current = null
+                clearLocalCloudShadow(authUser.id)
+                setLocalShadowNotice(null)
+                setSaveErrorMessage('')
+                setSaveStatus(silent ? 'idle' : 'saved')
+                return true
+              }
+              const entry = (key: string) => {
+                const last = key.lastIndexOf(':')
+                const first = key.indexOf(':')
+                return { itemNumber: Number(key.slice(0, first)), cardId: key.slice(first + 1, last), imageSlot: key.slice(last + 1) }
+              }
+              const id = generateRequestId('images')
+              op = { id, path: '/api/state/images', method: 'POST', upsert: Object.fromEntries(changed), removed,
+                body: JSON.stringify({ upsert: changed.map(([key, imageDataUrl]) => ({ ...entry(key), imageDataUrl })),
+                  removed: removed.map(entry), baseVersion: lastSavedStateVersionRef.current, requestId: id }) }
+            }
+            operationRef.current = op
+          }
+          // This must commit before sending: a reload reuses the exact request.
+          await preserveDraft()
+          logOutgoingSavePayload(op.path === '/api/state/images' ? 'images' : op.method === 'PATCH' ? 'patch' : 'full', getUtf8ByteLength(op.body))
+          const response = await apiRequest(op.path, { method: op.method, body: op.body }, { requireServerAppHeader: true })
+          lastSavedStateVersionRef.current = Number(response.version)
+          if (op.targetBody) lastSavedStatePayloadRef.current = op.targetBody
+          for (const key of op.removed || []) { delete lastSyncedQuizImagesRef.current[key]; delete lastSyncedImageVersionsRef.current[key] }
+          Object.assign(lastSyncedImageVersionsRef.current, response.imageVersions || {})
+          Object.assign(lastSyncedQuizImagesRef.current, op.upsert || {})
+          operationRef.current = null
+          hasPendingChangesRef.current = remotePayloadRef.current?.body !== lastSavedStatePayloadRef.current
+          hasPendingImageChangesRef.current = hasUnsyncedQuizImageChanges(lastSyncedQuizImagesRef.current, trackingStateRef.current)
+          if (typeof response.updatedAt === 'string') setLastSavedAt(new Date(response.updatedAt).toLocaleTimeString('fr-FR'))
+          await preserveDraft()
         }
-        hasPendingImageChangesRef.current = hasUnsyncedQuizImageChanges(
-          lastSyncedQuizImagesRef.current,
-          trackingStateRef.current,
-        )
-        return {
-          updatedAt: typeof payload.updatedAt === 'string' ? payload.updatedAt : null,
-        }
+        throw new Error('Synchronisation encore en cours. Reprise au prochain enregistrement.')
       } catch (error) {
-        const lockReason = getSaveLockReason(error)
-        if (lockReason) {
-          activateSaveProtection(lockReason)
-        } else if (!silent) {
-          setSaveErrorMessage(toSaveWarningMessage(error))
-          setSaveStatus('error')
-          window.setTimeout(() => setSaveStatus('idle'), 2200)
-        }
+        const reason = getSaveLockReason(error)
+        if (reason) activateSaveProtection(reason)
+        else { setSaveErrorMessage(toSaveWarningMessage(error)); setSaveStatus('error') }
         return false
-      } finally {
-        imageSyncInFlightRef.current = null
-      }
+      } finally { saveInFlightRef.current = null }
     })()
-
-    imageSyncInFlightRef.current = syncPromise
-    return syncPromise
-  }
-
-  async function persistUserState(options?: { silent?: boolean; force?: boolean }) {
-    const silent = Boolean(options?.silent)
-    const force = Boolean(options?.force)
-
-    if (authStatus !== 'authed' || !authUser) {
-      return false
-    }
-
-    if (!force && !hasLoadedRemoteState) {
-      return false
-    }
-
-    const mustSeedRemoteStateForImages =
-      hasPendingImageChangesRef.current && (!lastSavedStatePayloadRef.current || lastSavedStateVersionRef.current <= 0)
-    const shouldSaveState = force || hasPendingChangesRef.current || mustSeedRemoteStateForImages
-    const shouldSaveImages = hasPendingImageChangesRef.current
-    const currentRemotePayload = remotePayloadRef.current
-
-    if (!shouldSaveState && !shouldSaveImages) {
-      return true
-    }
-
-    if (isSaveLocked) {
-      if (!silent && saveLockReason) {
-        setSaveStatus('error')
-        setSaveErrorMessage(getSaveLockMessage(saveLockReason))
-      }
-      return false
-    }
-
-    if (saveInFlightRef.current) {
-      const inFlightSaved = await saveInFlightRef.current
-      if (!inFlightSaved) {
-        return false
-      }
-      if (hasPendingChangesRef.current || hasPendingImageChangesRef.current) {
-        return persistUserState(options)
-      }
-      return true
-    }
-
-    if (shouldSaveState && !currentRemotePayload) {
-      const now = Date.now()
-      if (now - lastPayloadTooLargeWarningRef.current > 15_000) {
-        setSaveErrorMessage(
-          'Payload cloud encore trop volumineux après réduction automatique. Supprime quelques images/cartes puis réessaie.',
-        )
-        setSaveStatus('error')
-        window.setTimeout(() => setSaveStatus('idle'), 2800)
-        lastPayloadTooLargeWarningRef.current = now
-      }
-      return false
-    }
-
-    if (currentRemotePayload?.body) {
-      latestStatePayloadRef.current = currentRemotePayload.body
-    }
-
-    const savePromise = (async () => {
-      if (!silent) {
-        setSaveErrorMessage('')
-        setSaveStatus('saving')
-      }
-      try {
-        let updatedAtRaw: string | null = null
-        if (shouldSaveState && currentRemotePayload?.body) {
-          const previousPayload = parsePersistStatePayloadBody(lastSavedStatePayloadRef.current, authUser)
-          const nextPayload = parsePersistStatePayloadBody(currentRemotePayload.body, authUser)
-          if (!nextPayload) {
-            throw new Error('Etat cloud invalide: payload local non parsable.')
-          }
-
-          const mergePatch = previousPayload ? buildMergePatch(previousPayload, nextPayload) : undefined
-          const requestId = generateRequestId(mergePatch ? 'patch' : 'full')
-          const isPatchRequest = mergePatch && typeof mergePatch === 'object'
-          const requestBody = isPatchRequest
-            ? JSON.stringify({
-                patch: mergePatch,
-                baseVersion: lastSavedStateVersionRef.current,
-                requestId,
-              })
-            : JSON.stringify({
-                ...nextPayload,
-                baseVersion: lastSavedStateVersionRef.current,
-                requestId,
-              })
-          const requestBytes = getUtf8ByteLength(requestBody)
-          if (isPatchRequest) {
-            const patchBytes = getUtf8ByteLength(JSON.stringify(mergePatch))
-            logOutgoingSavePayload('patch', requestBytes, {
-              patchBytes,
-              patchSize: formatByteSize(patchBytes),
-              baseVersion: lastSavedStateVersionRef.current,
-            })
-          } else {
-            logOutgoingSavePayload('full', requestBytes, {
-              payloadBytes: currentRemotePayload.bytes,
-              payloadSize: formatByteSize(currentRemotePayload.bytes),
-              baseVersion: lastSavedStateVersionRef.current,
-            })
-          }
-          const payload =
-            isPatchRequest
-              ? await apiRequest(
-                  '/api/state',
-                  {
-                    method: 'PATCH',
-                    body: requestBody,
-                  },
-                  { requireServerAppHeader: true },
-                )
-              : await apiRequest(
-                  '/api/state',
-                  {
-                    method: 'PUT',
-                    body: requestBody,
-                  },
-                  { requireServerAppHeader: true },
-                )
-
-          lastSavedStatePayloadRef.current = currentRemotePayload.body
-          hasPendingChangesRef.current = latestStatePayloadRef.current !== lastSavedStatePayloadRef.current
-          const nextVersion = Number(payload.version)
-          if (Number.isFinite(nextVersion)) {
-            lastSavedStateVersionRef.current = nextVersion
-          }
-          updatedAtRaw = typeof payload.updatedAt === 'string' ? payload.updatedAt : null
-        }
-
-        if (shouldSaveImages) {
-          const imagesSaved = await persistQuizImages({ silent: true })
-          if (!imagesSaved) {
-            return false
-          }
-          if (imagesSaved.updatedAt) {
-            updatedAtRaw = imagesSaved.updatedAt
-          }
-        }
-
-        const savedAt = updatedAtRaw ? new Date(updatedAtRaw) : null
-        if (savedAt && !Number.isNaN(savedAt.getTime())) {
-          setLastSavedAt(
-            new Intl.DateTimeFormat('fr-FR', {
-              hour: '2-digit',
-              minute: '2-digit',
-              second: '2-digit',
-            }).format(savedAt),
-          )
-        }
-        setSaveErrorMessage('')
-        clearLocalCloudShadow(authUser.id)
-        setLocalShadowNotice(null)
-        if (!silent) {
-          setSaveStatus('saved')
-          window.setTimeout(() => setSaveStatus('idle'), 1800)
-        }
-        return true
-      } catch (error) {
-        const lockReason = getSaveLockReason(error)
-        if (lockReason) {
-          activateSaveProtection(lockReason)
-        } else {
-          setSaveErrorMessage(toSaveWarningMessage(error))
-          if (!silent) {
-            setSaveStatus('error')
-            window.setTimeout(() => setSaveStatus('idle'), 2200)
-          }
-        }
-        return false
-      } finally {
-        saveInFlightRef.current = null
-      }
-    })()
-
-    saveInFlightRef.current = savePromise
-    const saved = await savePromise
-    if (saved && (hasPendingChangesRef.current || hasPendingImageChangesRef.current)) {
-      return persistUserState(options)
-    }
-    return saved
+    saveInFlightRef.current = saving
+    return saving
   }
 
   function resetSessionToGuest(authMessage?: string) {
@@ -3774,6 +3610,7 @@ function App() {
     latestStatePayloadRef.current = ''
     lastSavedStatePayloadRef.current = ''
     lastSavedStateVersionRef.current = 0
+    operationRef.current = null
     lastSyncedQuizImagesRef.current = {}
     lazyImageLoadInFlightRef.current.clear()
     hasPendingImageChangesRef.current = false
@@ -3827,6 +3664,53 @@ function App() {
   }
 
   async function handleRecoveryAction() {
+    if (saveLockReason === 'state-conflict') {
+      try {
+        const response = await apiRequest('/api/state?imageMode=metadata', undefined, { requireServerAppHeader: true })
+        const remote = parsePersistStatePayloadBody(JSON.stringify(response.state), authUser)
+        const local = parsePersistStatePayloadBody(remotePayloadRef.current?.body || '', authUser)
+        const base = parsePersistStatePayloadBody(lastSavedStatePayloadRef.current, authUser)
+        if (!remote || !local || !base) throw new Error('Synchronisation impossible. Exporte tes modifications locales avant de reprendre.')
+        const merged = mergeStates(base, local, remote)
+        const versions = (response.imageVersions || {}) as Record<string, string>
+        const localImages = collectQuizImageMap(trackingStateRef.current)
+        const localPresence = collectQuizImagePresenceMap(trackingStateRef.current)
+        for (const key of new Set([...Object.keys(localImages), ...Object.keys(lastSyncedQuizImagesRef.current)])) {
+          const pending = (localImages[key] && localImages[key] !== lastSyncedQuizImagesRef.current[key]) || !localPresence[key]
+          if (pending && versions[key] !== lastSyncedImageVersionsRef.current[key]) merged.conflicts.push(`/images/${key}`)
+        }
+        conflictStateRef.current = remote
+        conflictVersionRef.current = Number(response.version)
+        conflictImageVersionsRef.current = versions
+        setMergeConflictCount(merged.conflicts.length)
+        if (merged.conflicts.length) {
+          setSaveErrorMessage(`${merged.conflicts.length} conflit(s). Exporte les changements locaux, puis choisis la version à conserver.`)
+          return
+        }
+        // Restore loaded local image bytes onto merged metadata where retained.
+        for (const [n, item] of Object.entries(merged.value.trackingState.items)) {
+          for (const card of item.quiz?.cards || []) {
+            const original = trackingStateRef.current.items[Number(n)]?.quiz.cards.find(c => c.id === card.id)
+            for (const slot of QUIZ_IMAGE_SLOTS) {
+              const key = `${n}:${card.id}:${slot}`
+              const pending = localImages[key] && localImages[key] !== lastSyncedQuizImagesRef.current[key]
+              if (original?.[`${slot}ImageDataUrl`] && card[`has${slot === 'front' ? 'Front' : 'Back'}ImageDataUrl`] &&
+                  (pending || versions[key] === lastSyncedImageVersionsRef.current[key])) card[`${slot}ImageDataUrl`] = original[`${slot}ImageDataUrl`]
+            }
+          }
+        }
+        operationRef.current = null
+        lastSavedStateVersionRef.current = Number(response.version)
+        lastSavedStatePayloadRef.current = buildRemotePersistPayload(remote)?.body || ''
+        lastSyncedQuizImagesRef.current = collectQuizImagePresenceMap(remote.trackingState)
+        lastSyncedImageVersionsRef.current = versions
+        applyRecoveredState(merged.value)
+        clearSaveProtection()
+        await preserveDraft()
+      } catch (error) { setSaveErrorMessage(toSaveWarningMessage(error)) }
+      return
+    }
+
     if (saveLockReason === 'client-stale') {
       window.location.reload()
       return
@@ -3855,6 +3739,21 @@ function App() {
         setSaveErrorMessage(toSaveWarningMessage(error))
       }
     }
+  }
+
+  async function chooseConflictVersion(keepLocal: boolean) {
+    const remote = conflictStateRef.current
+    if (!remote) return
+    exportLocalRecovery()
+    operationRef.current = null
+    lastSavedStateVersionRef.current = conflictVersionRef.current
+    lastSavedStatePayloadRef.current = buildRemotePersistPayload(remote)?.body || ''
+    lastSyncedQuizImagesRef.current = collectQuizImagePresenceMap(remote.trackingState)
+    lastSyncedImageVersionsRef.current = conflictImageVersionsRef.current
+    if (!keepLocal) applyRecoveredState(remote)
+    setMergeConflictCount(0)
+    clearSaveProtection()
+    await preserveDraft()
   }
 
   async function confirmSessionAfterAuth(options?: { fallbackUser?: AuthUser }) {
@@ -4156,59 +4055,19 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   useEffect(() => {
-    if (authStatus !== 'authed' || !authUser || isSaveLocked) {
-      return
-    }
-
-    const verifySession = async () => {
-      try {
-        await apiRequest('/api/auth/me', undefined, { requireServerAppHeader: true })
-      } catch (error) {
-        const lockReason = getSaveLockReason(error)
-        if (lockReason === 'session-expired') {
-          activateSaveProtection(lockReason)
-        }
-      }
-    }
-
-    void verifySession()
-    const interval = window.setInterval(() => {
-      void verifySession()
-    }, SESSION_HEARTBEAT_MS)
-
-    return () => window.clearInterval(interval)
-  }, [authStatus, authUser, isSaveLocked])
-
-  useEffect(() => {
-    if (authStatus !== 'authed' || !authUser) {
-      return
-    }
-
+    if (authStatus !== 'authed' || !authUser || isSaveLocked) return
     let checking = false
-
-    const checkClientVersion = async () => {
-      if (checking) {
-        return
-      }
+    const verifySession = async () => {
+      if (checking || document.visibilityState !== 'visible') return
       checking = true
-      try {
-        await apiRequest('/api/auth/me', undefined, { requireServerAppHeader: true })
-      } catch (error) {
-        const lockReason = getSaveLockReason(error)
-        if (lockReason === 'client-stale') {
-          await forceLogoutForStaleClient()
-        }
-      } finally {
-        checking = false
-      }
+      try { await apiRequest('/api/session', undefined, { requireServerAppHeader: true }) }
+      catch (error) { const reason = getSaveLockReason(error); if (reason) activateSaveProtection(reason) }
+      finally { checking = false }
     }
-
-    const interval = window.setInterval(() => {
-      void checkClientVersion()
-    }, VERSION_CHECK_INTERVAL_MS)
-
-    return () => window.clearInterval(interval)
-  }, [authStatus, authUser])
+    const interval = window.setInterval(() => void verifySession(), SESSION_HEARTBEAT_MS)
+    document.addEventListener('visibilitychange', verifySession)
+    return () => { window.clearInterval(interval); document.removeEventListener('visibilitychange', verifySession) }
+  }, [authStatus, authUser?.id, isSaveLocked])
 
   const items = useMemo<ItemComputed[]>(() => {
     return rawItems.map((item) => {
@@ -7399,21 +7258,26 @@ function getPasswordStrengthMeta(password: string) {
     setUsefulLinkInputError('')
   }
 
-  function exportBackup() {
+  function exportLocalRecovery() {
+    const state = JSON.parse(fullPayloadRef.current)
+    downloadBackup(state, 'local-recovery')
+  }
+
+  async function exportBackup() {
+    try {
+      if (!(await persistUserState({ force: true }))) throw new Error('Synchronisation requise. Utilise « Exporter les changements locaux » pour la récupération hors ligne.')
+      const response = await apiRequest('/api/state', undefined, { requireServerAppHeader: true })
+      if (!response.state) throw new Error('Aucune donnée cloud à exporter.')
+      downloadBackup(response.state as PersistStatePayload, 'backup-complet')
+    } catch (error) { setSaveErrorMessage(toSaveWarningMessage(error)); setSaveStatus('error') }
+  }
+
+  function downloadBackup(state: PersistStatePayload, kind: string) {
     const payload: BackupPayload = {
       app: 'med-learning-tracker',
       version: 1,
       exportedAt: new Date().toISOString(),
-      data: {
-	        trackingState,
-	        theme,
-	        focusMode,
-	        dateFormat,
-	        timeZone,
-	        youtubeDisplayMode,
-	        shuffleQuizCards,
-	        profile,
-      },
+      data: state,
     }
 
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' })
@@ -7421,7 +7285,7 @@ function getPasswordStrengthMeta(password: string) {
     const datePart = new Date().toISOString().slice(0, 10)
     const anchor = document.createElement('a')
     anchor.href = url
-    anchor.download = `med-tracker-backup-${datePart}.json`
+    anchor.download = `med-tracker-${kind}-${datePart}.json`
     document.body.appendChild(anchor)
     anchor.click()
     document.body.removeChild(anchor)
@@ -7698,8 +7562,8 @@ function getPasswordStrengthMeta(password: string) {
     ? [
         { label: 'Données actives', value: storageUsage.breakdown.currentStateBytes },
         { label: 'Images', value: storageUsage.breakdown.imagesBytes },
-        { label: 'Sauvegardes', value: storageUsage.breakdown.snapshotsBytes },
-        { label: 'Synchronisation', value: storageUsage.breakdown.idempotencyBytes },
+        { label: 'Historique (hors quota actif)', value: storageUsage.breakdown.snapshotsBytes },
+        { label: 'Accusés techniques (hors quota actif)', value: storageUsage.breakdown.idempotencyBytes },
       ]
     : [
         { label: 'Images', value: fallbackStorageImageBytes },
@@ -7723,8 +7587,14 @@ function getPasswordStrengthMeta(password: string) {
           <p>{saveLockReason ? getSaveLockMessage(saveLockReason) : 'Sauvegarde bloquée.'}</p>
           <div className="save-lock-actions">
             <button type="button" className="ghost-btn" onClick={() => void handleRecoveryAction()}>
-              {saveLockReason === 'client-stale' ? 'Recharger la page' : 'Se reconnecter'}
+              {saveLockReason === 'client-stale' ? 'Recharger la page' : saveLockReason === 'state-conflict' ? 'Synchroniser' : 'Se reconnecter'}
             </button>
+            <button type="button" className="ghost-btn" onClick={exportLocalRecovery}>Exporter les changements locaux</button>
+            {saveLockReason === 'state-conflict' && mergeConflictCount > 0 ? <>
+              <p>{saveErrorMessage}</p>
+              <button type="button" className="ghost-btn" onClick={() => void chooseConflictVersion(true)}>Conserver mes changements locaux</button>
+              <button type="button" className="ghost-btn" onClick={() => void chooseConflictVersion(false)}>Charger la version cloud</button>
+            </> : null}
             {saveLockReason === 'session-expired' ? (
               <button type="button" className="ghost-btn" onClick={() => window.location.reload()}>
                 Recharger quand même
@@ -7901,7 +7771,7 @@ function getPasswordStrengthMeta(password: string) {
             ) : null}
             {localShadowNotice ? (
               <span className="topbar-save-note">
-                Copie locale plus récente détectée ({localShadowNotice.savedAtLabel}) sur cet appareil. Version cloud confirmée chargée.
+                Modifications locales restaurées ({localShadowNotice.savedAtLabel}). La synchronisation cloud reste à confirmer.
               </span>
             ) : null}
           </div>
@@ -11297,9 +11167,10 @@ function getPasswordStrengthMeta(password: string) {
               <div className="settings-subsection">
                 <h3>Données</h3>
 	                <div className="settings-action-row">
-	                  <button type="button" className="ghost-btn" onClick={exportBackup}>
+	                  <button type="button" className="ghost-btn" onClick={() => void exportBackup()}>
 	                    Exporter toutes mes données
 	                  </button>
+                  <button type="button" className="ghost-btn" onClick={exportLocalRecovery}>Exporter les changements locaux</button>
 	                </div>
 	              </div>
             </article>

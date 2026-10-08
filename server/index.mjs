@@ -12,6 +12,9 @@ import jwt from 'jsonwebtoken'
 import nodemailer from 'nodemailer'
 import pg from 'pg'
 import { z } from 'zod'
+import { createStateStore } from './state-store.mjs'
+import { createMediaStore } from './media-store.mjs'
+import { persistSchema, StateError } from './state-model.mjs'
 
 const { Pool } = pg
 
@@ -28,19 +31,16 @@ const DB_SSL_REJECT_UNAUTHORIZED = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'f
 const COOKIE_SAMESITE = (process.env.COOKIE_SAMESITE || 'lax').toLowerCase()
 const COOKIE_SECURE =
   process.env.COOKIE_SECURE === 'true' ? true : process.env.COOKIE_SECURE === 'false' ? false : NODE_ENV === 'production'
-const APP_VERSION = (process.env.APP_VERSION || 'dev').trim()
-const MIN_CLIENT_VERSION = (process.env.MIN_CLIENT_VERSION || '').trim()
+const APP_VERSION = (process.env.APP_VERSION || '0.1.0').trim()
+const MIN_CLIENT_VERSION = (process.env.MIN_CLIENT_VERSION || '0.1.0').trim()
 const ADMIN_APPROVAL_EMAIL = process.env.ADMIN_APPROVAL_EMAIL || 'issartelaxel@gmail.com'
 const AUTH_COOKIE = 'med_auth'
 const APPROVAL_CODE_TTL_MS = 15 * 60 * 1000
 const AUTH_SESSION_TTL_MS = 45 * 60 * 1000
 const JSON_BODY_LIMIT = (process.env.JSON_BODY_LIMIT || '80mb').trim() || '80mb'
-const STATE_SNAPSHOT_INTERVAL_MS = 24 * 60 * 60 * 1000
 const STATE_WRITE_LIMIT_PER_MIN = Number(process.env.STATE_WRITE_LIMIT_PER_MIN || 120)
 const STATE_MAX_IMAGE_UPSERT_PER_REQUEST = Number(process.env.STATE_MAX_IMAGE_UPSERT_PER_REQUEST || 80)
-const STATE_MAX_TOTAL_IMAGES_PER_USER = Number(process.env.STATE_MAX_TOTAL_IMAGES_PER_USER || 5000)
 const STATE_MAX_IMAGE_DATA_LENGTH = Number(process.env.STATE_MAX_IMAGE_DATA_LENGTH || 1_800_000)
-const STORAGE_LIMIT_BYTES = Number(process.env.STORAGE_LIMIT_BYTES || 2 * 1024 * 1024 * 1024)
 const N8N_MCQ_WEBHOOK_URL = (
   process.env.N8N_MCQ_WEBHOOK_URL || 'https://n8n.setup-hub.com/webhook/generate-mcq'
 ).trim()
@@ -62,6 +62,8 @@ const pool = new Pool({
   connectionString: DATABASE_URL,
   ssl: useSsl ? { rejectUnauthorized: DB_SSL_REJECT_UNAUTHORIZED } : false,
 })
+
+const stateStore = createStateStore(pool, { mediaStore: createMediaStore() })
 
 async function initDb() {
   await pool.query(`
@@ -151,15 +153,14 @@ async function initDb() {
       ADD COLUMN IF NOT EXISTS image_slot TEXT NOT NULL DEFAULT 'back'
   `)
 
-  await pool.query(`
-    ALTER TABLE user_quiz_images
-      DROP CONSTRAINT IF EXISTS user_quiz_images_pkey
-  `)
-
-  await pool.query(`
-    ALTER TABLE user_quiz_images
-      ADD PRIMARY KEY(user_id, item_number, card_id, image_slot)
-  `)
+  await pool.query(`DO $$ BEGIN
+    IF EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid='user_quiz_images'::regclass
+      AND contype='p' AND array_length(conkey,1)=3) THEN
+      ALTER TABLE user_quiz_images DROP CONSTRAINT user_quiz_images_pkey;
+      ALTER TABLE user_quiz_images ADD PRIMARY KEY(user_id,item_number,card_id,image_slot);
+    END IF;
+  END $$`)
+  await stateStore.init()
 }
 
 const app = express()
@@ -457,62 +458,8 @@ function recordStateMetric(kind, bytes) {
   }
 }
 
-function getDefaultPersistState() {
-  return {
-    trackingState: { items: {} },
-    theme: 'light',
-    focusMode: false,
-    youtubeDisplayMode: 'embed',
-    profile: null,
-  }
-}
-
 function normalizeQuizImageSlot(rawValue) {
   return rawValue === 'front' ? 'front' : 'back'
-}
-
-function extractQuizImagesFromTrackingState(trackingState) {
-  const clonedTrackingState = JSON.parse(JSON.stringify(trackingState ?? { items: {} }))
-  const images = []
-  const items = clonedTrackingState && typeof clonedTrackingState === 'object' ? clonedTrackingState.items : null
-  if (!items || typeof items !== 'object') {
-    return { trackingState: { items: {} }, images }
-  }
-
-  for (const [itemNumberRaw, itemTracking] of Object.entries(items)) {
-    const itemNumber = Number(itemNumberRaw)
-    if (!Number.isFinite(itemNumber) || !itemTracking || typeof itemTracking !== 'object') {
-      continue
-    }
-    const cards = itemTracking?.quiz?.cards
-    if (!Array.isArray(cards)) {
-      continue
-    }
-    for (const card of cards) {
-      if (!card || typeof card !== 'object') {
-        continue
-      }
-      const cardId = typeof card.id === 'string' ? card.id.trim() : ''
-      if (!cardId) {
-        continue
-      }
-      const frontImageDataUrl = typeof card.frontImageDataUrl === 'string' ? card.frontImageDataUrl.trim() : ''
-      const legacyBackImageDataUrl = typeof card.imageDataUrl === 'string' ? card.imageDataUrl.trim() : ''
-      const backImageDataUrl =
-        typeof card.backImageDataUrl === 'string' ? card.backImageDataUrl.trim() : legacyBackImageDataUrl
-      if (frontImageDataUrl) {
-        images.push({ itemNumber, cardId, imageSlot: 'front', imageDataUrl: frontImageDataUrl })
-      }
-      if (backImageDataUrl) {
-        images.push({ itemNumber, cardId, imageSlot: 'back', imageDataUrl: backImageDataUrl })
-      }
-      card.frontImageDataUrl = ''
-      card.backImageDataUrl = ''
-      card.imageDataUrl = ''
-    }
-  }
-
-  return { trackingState: clonedTrackingState, images }
 }
 
 function applyQuizImagesToTrackingState(trackingState, imageRows, options = {}) {
@@ -576,196 +523,6 @@ function applyQuizImagesToTrackingState(trackingState, imageRows, options = {}) 
   return clonedTrackingState
 }
 
-function normalizeRequestId(rawValue) {
-  const requestId = String(rawValue || '').trim()
-  if (!requestId) {
-    return ''
-  }
-  return requestId.slice(0, 120)
-}
-
-function createGeneratedRequestId(prefix) {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
-}
-
-async function consumeIdempotentResponse({ userId, endpoint, requestId }) {
-  if (!requestId) {
-    return null
-  }
-  const existing = await pool.query(
-    `SELECT response FROM user_state_idempotency WHERE user_id = $1 AND endpoint = $2 AND request_id = $3`,
-    [userId, endpoint, requestId],
-  )
-  return (existing.rows[0]?.response ?? null) || null
-}
-
-async function storeIdempotentResponse({ userId, endpoint, requestId, response }) {
-  if (!requestId) {
-    return
-  }
-  await pool.query(
-    `
-      INSERT INTO user_state_idempotency(user_id, endpoint, request_id, response, created_at)
-      VALUES($1, $2, $3, $4::jsonb, $5)
-      ON CONFLICT(user_id, endpoint, request_id) DO NOTHING
-    `,
-    [userId, endpoint, requestId, JSON.stringify(response), new Date().toISOString()],
-  )
-}
-
-function applyMergePatch(baseValue, patchValue) {
-  if (patchValue === null || patchValue === undefined) {
-    return null
-  }
-  if (Array.isArray(patchValue)) {
-    return JSON.parse(JSON.stringify(patchValue))
-  }
-  if (typeof patchValue !== 'object') {
-    return patchValue
-  }
-
-  const baseObject = baseValue && typeof baseValue === 'object' && !Array.isArray(baseValue) ? baseValue : {}
-  const nextValue = JSON.parse(JSON.stringify(baseObject))
-  for (const [key, value] of Object.entries(patchValue)) {
-    if (value === null) {
-      delete nextValue[key]
-      continue
-    }
-    nextValue[key] = applyMergePatch(nextValue[key], value)
-  }
-  return nextValue
-}
-
-async function loadUserStateRow(userId) {
-  const result = await pool.query(
-    `
-      SELECT
-        tracking_state AS "trackingState",
-        theme,
-        focus_mode AS "focusMode",
-        youtube_mode AS "youtubeDisplayMode",
-        profile,
-        updated_at AS "updatedAt",
-        version,
-        last_snapshot_at AS "lastSnapshotAt"
-      FROM user_state
-      WHERE user_id = $1
-    `,
-    [userId],
-  )
-  return result.rows[0] ?? null
-}
-
-function rowToPersistPayload(row) {
-  if (!row) {
-    return getDefaultPersistState()
-  }
-  return {
-    trackingState: row.trackingState && typeof row.trackingState === 'object' ? row.trackingState : { items: {} },
-    theme: row.theme === 'dark' ? 'dark' : 'light',
-    focusMode: Boolean(row.focusMode),
-    youtubeDisplayMode: row.youtubeDisplayMode === 'external' ? 'external' : 'embed',
-    profile: row.profile ?? null,
-  }
-}
-
-async function maybeCreateStateSnapshot({ userId, version, payload, lastSnapshotAt }) {
-  const lastSnapshotMs = typeof lastSnapshotAt === 'string' ? Date.parse(lastSnapshotAt) : 0
-  const nowMs = Date.now()
-  const needsSnapshot = !Number.isFinite(lastSnapshotMs) || lastSnapshotMs <= 0 || nowMs - lastSnapshotMs >= STATE_SNAPSHOT_INTERVAL_MS
-  if (!needsSnapshot) {
-    return null
-  }
-  const createdAt = new Date(nowMs).toISOString()
-  await pool.query(
-    `INSERT INTO user_state_snapshots(user_id, version, state, created_at) VALUES($1, $2, $3::jsonb, $4)`,
-    [userId, version, JSON.stringify(payload), createdAt],
-  )
-  return createdAt
-}
-
-async function touchUserStateUpdatedAt(userId, updatedAt) {
-  await pool.query(
-    `
-      UPDATE user_state
-      SET updated_at = $2
-      WHERE user_id = $1
-    `,
-    [userId, updatedAt],
-  )
-}
-
-async function upsertQuizImages(userId, upsertRows, removedRows) {
-  const safeUpserts = Array.isArray(upsertRows) ? upsertRows : []
-  const safeRemoved = Array.isArray(removedRows) ? removedRows : []
-
-  if (safeUpserts.length > STATE_MAX_IMAGE_UPSERT_PER_REQUEST) {
-    throw new Error(`Too many images in one request (${safeUpserts.length}).`)
-  }
-
-  const normalizedUpserts = []
-  for (const row of safeUpserts) {
-    const itemNumber = Number(row?.itemNumber)
-    const cardId = typeof row?.cardId === 'string' ? row.cardId.trim() : ''
-    const imageSlot = normalizeQuizImageSlot(row?.imageSlot)
-    const imageDataUrl = typeof row?.imageDataUrl === 'string' ? row.imageDataUrl.trim() : ''
-    if (!Number.isFinite(itemNumber) || !cardId || !imageDataUrl) {
-      continue
-    }
-    if (imageDataUrl.length > STATE_MAX_IMAGE_DATA_LENGTH) {
-      throw new Error(`Image too large for card ${cardId}.`)
-    }
-    normalizedUpserts.push({ itemNumber, cardId, imageSlot, imageDataUrl })
-  }
-
-  const normalizedRemoved = []
-  for (const row of safeRemoved) {
-    const itemNumber = Number(row?.itemNumber)
-    const cardId = typeof row?.cardId === 'string' ? row.cardId.trim() : ''
-    const imageSlot = normalizeQuizImageSlot(row?.imageSlot)
-    if (!Number.isFinite(itemNumber) || !cardId) {
-      continue
-    }
-    normalizedRemoved.push({ itemNumber, cardId, imageSlot })
-  }
-
-  const currentCountResult = await pool.query('SELECT COUNT(*)::int AS count FROM user_quiz_images WHERE user_id = $1', [userId])
-  const currentCount = Number(currentCountResult.rows[0]?.count || 0)
-  const estimatedFinalCount = Math.max(0, currentCount - normalizedRemoved.length + normalizedUpserts.length)
-  if (estimatedFinalCount > STATE_MAX_TOTAL_IMAGES_PER_USER) {
-    throw new Error(`Image quota exceeded (${STATE_MAX_TOTAL_IMAGES_PER_USER}).`)
-  }
-
-  for (const row of normalizedRemoved) {
-    await pool.query('DELETE FROM user_quiz_images WHERE user_id = $1 AND item_number = $2 AND card_id = $3 AND image_slot = $4', [
-      userId,
-      row.itemNumber,
-      row.cardId,
-      row.imageSlot,
-    ])
-  }
-
-  const now = new Date().toISOString()
-  for (const row of normalizedUpserts) {
-    await pool.query(
-      `
-        INSERT INTO user_quiz_images(user_id, item_number, card_id, image_slot, image_data, updated_at)
-        VALUES($1, $2, $3, $4, $5, $6)
-        ON CONFLICT(user_id, item_number, card_id, image_slot) DO UPDATE SET
-          image_data = EXCLUDED.image_data,
-          updated_at = EXCLUDED.updated_at
-      `,
-      [userId, row.itemNumber, row.cardId, row.imageSlot, row.imageDataUrl, now],
-    )
-  }
-
-  return {
-    upserted: normalizedUpserts.length,
-    removed: normalizedRemoved.length,
-    total: estimatedFinalCount,
-  }
-}
-
 const requestSchema = z.object({
   email: z.string().email(),
   password: z.string().min(12).max(256),
@@ -793,27 +550,18 @@ const passwordResetConfirmSchema = z.object({
   newPassword: z.string().min(12).max(256),
 })
 
-const stateUpdateSchema = z.object({
-  trackingState: z.unknown(),
-  theme: z.enum(['light', 'dark']),
-  focusMode: z.boolean(),
-  youtubeDisplayMode: z.enum(['embed', 'external']).optional().default('embed'),
-  profile: z.unknown().optional(),
-  baseVersion: z.number().int().nonnegative().optional(),
-  requestId: z.string().trim().min(6).max(120).optional(),
-})
-
-const statePatchSchema = z.object({
-  patch: z.unknown(),
-  baseVersion: z.number().int().nonnegative().optional(),
-  requestId: z.string().trim().min(6).max(120).optional(),
-})
+const saveProtocol = {
+  baseVersion: z.number().int().nonnegative(),
+  requestId: z.string().trim().min(6).max(120),
+}
+const stateUpdateSchema = persistSchema.extend(saveProtocol)
+const statePatchSchema = z.object({ patch: z.record(z.string(), z.unknown()), ...saveProtocol })
 
 const stateImageSyncSchema = z.object({
   upsert: z
     .array(
       z.object({
-        itemNumber: z.number().int(),
+        itemNumber: z.number().int().min(1).max(9999),
         cardId: z.string().trim().min(1).max(120),
         imageSlot: z.enum(['front', 'back']).optional().default('back'),
         imageDataUrl: z.string().trim().min(1).max(STATE_MAX_IMAGE_DATA_LENGTH),
@@ -825,7 +573,7 @@ const stateImageSyncSchema = z.object({
   removed: z
     .array(
       z.object({
-        itemNumber: z.number().int(),
+        itemNumber: z.number().int().min(1).max(9999),
         cardId: z.string().trim().min(1).max(120),
         imageSlot: z.enum(['front', 'back']).optional().default('back'),
       }),
@@ -833,7 +581,7 @@ const stateImageSyncSchema = z.object({
     .max(STATE_MAX_IMAGE_UPSERT_PER_REQUEST * 2)
     .optional()
     .default([]),
-  requestId: z.string().trim().min(6).max(120).optional(),
+  ...saveProtocol,
 })
 
 const mcqGenerateSchema = z.object({
@@ -956,177 +704,41 @@ app.get('/api/auth/me', enforceClientVersion, async (req, res) => {
   res.json({ user, ...(refreshedToken ? { token: refreshedToken } : {}) })
 })
 
+// Le renouvellement de session ne réveille pas PostgreSQL.
+app.get('/api/session', enforceClientVersion, (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
+  const token = refreshAuthCookie(res, auth)
+  res.json({ ok: true, ...(token ? { token } : {}) })
+})
+
 app.get('/api/state', enforceClientVersion, async (req, res) => {
   const auth = authFromRequest(req)
-  if (!auth) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
-
-  const uid = Number(auth.uid)
-  if (!Number.isFinite(uid)) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
-
-  const row = await loadUserStateRow(uid)
-  if (!row) {
-    const refreshedToken = refreshAuthCookie(res, auth)
-    res.json({ state: null, version: 0, ...(refreshedToken ? { token: refreshedToken } : {}) })
-    return
-  }
-
-  const extractedLegacyImages = extractQuizImagesFromTrackingState(row.trackingState)
-  if (extractedLegacyImages.images.length > 0) {
-    try {
-      await upsertQuizImages(uid, extractedLegacyImages.images, [])
-      await pool.query('UPDATE user_state SET tracking_state = $2::jsonb WHERE user_id = $1', [
-        uid,
-        JSON.stringify(extractedLegacyImages.trackingState),
-      ])
-      row.trackingState = extractedLegacyImages.trackingState
-    } catch (error) {
-      console.error('Legacy image migration failed:', error)
-    }
-  }
-
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
   const metadataOnly = req.query.imageMode === 'metadata'
-  const imageRows = await pool.query(
-    metadataOnly
-      ? `SELECT item_number, card_id, image_slot FROM user_quiz_images WHERE user_id = $1`
-      : `SELECT item_number, card_id, image_slot, image_data FROM user_quiz_images WHERE user_id = $1`,
-    [uid],
-  )
-  const hydratedTrackingState = applyQuizImagesToTrackingState(row.trackingState, imageRows.rows, { metadataOnly })
-
-  const state = {
-    trackingState: hydratedTrackingState,
-    theme: row.theme,
-    focusMode: row.focusMode,
-    youtubeDisplayMode: row.youtubeDisplayMode,
-    profile: row.profile,
-    updatedAt: row.updatedAt,
-  }
-  const refreshedToken = refreshAuthCookie(res, auth)
-  res.json({ state, version: Number(row.version || 0), ...(refreshedToken ? { token: refreshedToken } : {}) })
+  const { state, version, images } = await stateStore.read(Number(auth.uid), { metadataOnly })
+  if (state) state.trackingState = applyQuizImagesToTrackingState(state.trackingState, images, { metadataOnly })
+  const token = refreshAuthCookie(res, auth)
+  res.json({ state, version, imageVersions: Object.fromEntries((images || []).map(row => [`${row.item_number}:${row.card_id}:${row.image_slot}`, row.content_hash || row.updated_at || 'legacy'])), ...(token ? { token } : {}) })
 })
 
 app.get('/api/state/images/:itemNumber/:cardId', enforceClientVersion, async (req, res) => {
   const auth = authFromRequest(req)
-  if (!auth) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
-
-  const uid = Number(auth.uid)
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
   const itemNumber = Number(req.params.itemNumber)
-  const cardId = typeof req.params.cardId === 'string' ? req.params.cardId.trim() : ''
-  if (!Number.isFinite(uid) || !Number.isFinite(itemNumber) || !cardId || cardId.length > 120) {
-    res.status(400).json({ error: 'Image invalide.' })
-    return
+  const cardId = req.params.cardId?.trim()
+  if (!Number.isInteger(itemNumber) || itemNumber < 1 || itemNumber > 9999 || !cardId || cardId.length > 120) {
+    return res.status(400).json({ error: 'Image invalide.' })
   }
-
-  const result = await pool.query(
-    `SELECT image_slot, image_data FROM user_quiz_images WHERE user_id = $1 AND item_number = $2 AND card_id = $3`,
-    [uid, itemNumber, cardId],
-  )
-  let frontImageDataUrl = ''
-  let backImageDataUrl = ''
-  for (const row of result.rows) {
-    const imageSlot = normalizeQuizImageSlot(row.image_slot)
-    const imageDataUrl = typeof row.image_data === 'string' ? row.image_data : ''
-    if (imageSlot === 'front') {
-      frontImageDataUrl = imageDataUrl
-    } else {
-      backImageDataUrl = imageDataUrl
-    }
-  }
-  const refreshedToken = refreshAuthCookie(res, auth)
-  res.json({ frontImageDataUrl, backImageDataUrl, ...(refreshedToken ? { token: refreshedToken } : {}) })
+  const images = await stateStore.cardImages(Number(auth.uid), itemNumber, cardId)
+  const token = refreshAuthCookie(res, auth)
+  res.json({ ...images, ...(token ? { token } : {}) })
 })
 
 app.get('/api/storage-usage', enforceClientVersion, async (req, res) => {
   const auth = authFromRequest(req)
-  if (!auth) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
-
-  const uid = Number(auth.uid)
-  if (!Number.isFinite(uid)) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
-
-  const result = await pool.query(
-    `
-      WITH
-        state_usage AS (
-          SELECT COALESCE(SUM(pg_column_size(s)), 0)::bigint AS bytes
-          FROM user_state s
-          WHERE s.user_id = $1
-        ),
-        image_usage AS (
-          SELECT
-            COALESCE(SUM(pg_column_size(i)), 0)::bigint AS bytes,
-            COUNT(*)::int AS count
-          FROM user_quiz_images i
-          WHERE i.user_id = $1
-        ),
-        snapshot_usage AS (
-          SELECT
-            COALESCE(SUM(pg_column_size(sn)), 0)::bigint AS bytes,
-            COUNT(*)::int AS count
-          FROM user_state_snapshots sn
-          WHERE sn.user_id = $1
-        ),
-        idempotency_usage AS (
-          SELECT
-            COALESCE(SUM(pg_column_size(idem)), 0)::bigint AS bytes,
-            COUNT(*)::int AS count
-          FROM user_state_idempotency idem
-          WHERE idem.user_id = $1
-        )
-      SELECT
-        state_usage.bytes AS "currentStateBytes",
-        image_usage.bytes AS "imagesBytes",
-        image_usage.count AS "imageCount",
-        snapshot_usage.bytes AS "snapshotsBytes",
-        snapshot_usage.count AS "snapshotCount",
-        idempotency_usage.bytes AS "idempotencyBytes",
-        idempotency_usage.count AS "idempotencyCount"
-      FROM state_usage, image_usage, snapshot_usage, idempotency_usage
-    `,
-    [uid],
-  )
-  const row = result.rows[0] ?? {}
-  const currentStateBytes = Number(row.currentStateBytes || 0)
-  const imagesBytes = Number(row.imagesBytes || 0)
-  const snapshotsBytes = Number(row.snapshotsBytes || 0)
-  const idempotencyBytes = Number(row.idempotencyBytes || 0)
-  const usedBytes = currentStateBytes + imagesBytes + snapshotsBytes + idempotencyBytes
-  const refreshedToken = refreshAuthCookie(res, auth)
-
-  res.json({
-    ok: true,
-    storage: {
-      usedBytes,
-      limitBytes: Number.isFinite(STORAGE_LIMIT_BYTES) && STORAGE_LIMIT_BYTES > 0 ? STORAGE_LIMIT_BYTES : 2 * 1024 * 1024 * 1024,
-      measuredAt: new Date().toISOString(),
-      breakdown: {
-        currentStateBytes,
-        imagesBytes,
-        snapshotsBytes,
-        idempotencyBytes,
-      },
-      counts: {
-        images: Number(row.imageCount || 0),
-        snapshots: Number(row.snapshotCount || 0),
-        idempotencyEntries: Number(row.idempotencyCount || 0),
-      },
-    },
-    ...(refreshedToken ? { token: refreshedToken } : {}),
-  })
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
+  res.json(await stateStore.storageUsage(Number(auth.uid)))
 })
 
 app.post('/api/quiz/generate-mcq', enforceClientVersion, mcqGenerationLimiter, async (req, res) => {
@@ -1194,258 +806,22 @@ app.post('/api/quiz/generate-mcq', enforceClientVersion, mcqGenerationLimiter, a
   }
 })
 
-app.put('/api/state', enforceClientVersion, stateWriteLimiter, async (req, res) => {
-  const auth = authFromRequest(req)
-  if (!auth) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
-
-  const uid = Number(auth.uid)
-  if (!Number.isFinite(uid)) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
-
-  const parsed = stateUpdateSchema.safeParse(req.body)
-  if (!parsed.success) {
-    res.status(400).json({ error: 'Etat invalide.' })
-    return
-  }
-
-  const requestId = normalizeRequestId(parsed.data.requestId) || createGeneratedRequestId('full')
-  const existingIdempotent = await consumeIdempotentResponse({ userId: uid, endpoint: 'state-full', requestId })
-  if (existingIdempotent) {
-    const refreshedToken = refreshAuthCookie(res, auth)
-    res.json({ ...existingIdempotent, ...(refreshedToken ? { token: refreshedToken } : {}) })
-    return
-  }
-
-  if (!parsed.data.trackingState || typeof parsed.data.trackingState !== 'object') {
-    res.status(400).json({ error: 'Etat invalide.' })
-    return
-  }
-
-  const existingRow = await loadUserStateRow(uid)
-  const currentVersion = Number(existingRow?.version || 0)
-  const baseVersion = Number.isFinite(parsed.data.baseVersion) ? Number(parsed.data.baseVersion) : null
-  if (baseVersion !== null && baseVersion !== currentVersion) {
-    res.status(409).json({ error: 'Etat modifié ailleurs.', code: 'STATE_CONFLICT', version: currentVersion })
-    return
-  }
-
-  const extracted = extractQuizImagesFromTrackingState(parsed.data.trackingState)
-  try {
-    await upsertQuizImages(uid, extracted.images, [])
-  } catch (error) {
-    res.status(413).json({ error: error instanceof Error ? error.message : 'Erreur quota images.' })
-    return
-  }
-
-  const now = new Date().toISOString()
-  const nextVersion = currentVersion + 1
-  const snapshotPayload = {
-    trackingState: extracted.trackingState,
-    theme: parsed.data.theme,
-    focusMode: parsed.data.focusMode,
-    youtubeDisplayMode: parsed.data.youtubeDisplayMode,
-    profile: parsed.data.profile ?? null,
-  }
-  const nextSnapshotAt = await maybeCreateStateSnapshot({
-    userId: uid,
-    version: nextVersion,
-    payload: snapshotPayload,
-    lastSnapshotAt: existingRow?.lastSnapshotAt,
+for (const [method, path, kind, schema] of [
+  ['put', '/api/state', 'state-full', stateUpdateSchema],
+  ['patch', '/api/state', 'state-patch', statePatchSchema],
+  ['post', '/api/state/images', 'state-images', stateImageSyncSchema],
+]) {
+  app[method](path, enforceClientVersion, stateWriteLimiter, async (req, res) => {
+    const auth = authFromRequest(req)
+    if (!auth) return res.status(401).json({ error: 'Unauthorized' })
+    const parsed = schema.safeParse(req.body)
+    if (!parsed.success) return res.status(400).json({ error: 'Sauvegarde invalide : version et identifiant requis.', code: 'SAVE_PROTOCOL_REQUIRED' })
+    const response = await stateStore.write(Number(auth.uid), kind, parsed.data)
+    recordStateMetric(kind === 'state-full' ? 'full' : kind === 'state-patch' ? 'patch' : 'images', Buffer.byteLength(JSON.stringify(req.body)))
+    const token = refreshAuthCookie(res, auth)
+    res.json({ ...response, ...(token ? { token } : {}) })
   })
-
-  await pool.query(
-    `
-      INSERT INTO user_state(user_id, tracking_state, theme, focus_mode, youtube_mode, profile, updated_at, version, last_snapshot_at)
-      VALUES($1, $2::jsonb, $3, $4, $5, $6::jsonb, $7, $8, $9)
-      ON CONFLICT(user_id) DO UPDATE SET
-        tracking_state = EXCLUDED.tracking_state,
-        theme = EXCLUDED.theme,
-        focus_mode = EXCLUDED.focus_mode,
-        youtube_mode = EXCLUDED.youtube_mode,
-        profile = EXCLUDED.profile,
-        updated_at = EXCLUDED.updated_at,
-        version = EXCLUDED.version,
-        last_snapshot_at = COALESCE(EXCLUDED.last_snapshot_at, user_state.last_snapshot_at)
-    `,
-    [
-      uid,
-      JSON.stringify(extracted.trackingState),
-      parsed.data.theme,
-      parsed.data.focusMode,
-      parsed.data.youtubeDisplayMode,
-      JSON.stringify(parsed.data.profile ?? null),
-      now,
-      nextVersion,
-      nextSnapshotAt,
-    ],
-  )
-
-  const bodyBytes = Buffer.byteLength(JSON.stringify(req.body), 'utf8')
-  recordStateMetric('full', bodyBytes)
-
-  const responsePayload = { ok: true, updatedAt: now, version: nextVersion }
-  await storeIdempotentResponse({ userId: uid, endpoint: 'state-full', requestId, response: responsePayload })
-
-  const refreshedToken = refreshAuthCookie(res, auth)
-  res.json({ ...responsePayload, ...(refreshedToken ? { token: refreshedToken } : {}) })
-})
-
-app.patch('/api/state', enforceClientVersion, stateWriteLimiter, async (req, res) => {
-  const auth = authFromRequest(req)
-  if (!auth) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
-
-  const uid = Number(auth.uid)
-  if (!Number.isFinite(uid)) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
-
-  const parsed = statePatchSchema.safeParse(req.body)
-  if (!parsed.success || !parsed.data.patch || typeof parsed.data.patch !== 'object') {
-    res.status(400).json({ error: 'Patch invalide.' })
-    return
-  }
-
-  const requestId = normalizeRequestId(parsed.data.requestId) || createGeneratedRequestId('patch')
-  const existingIdempotent = await consumeIdempotentResponse({ userId: uid, endpoint: 'state-patch', requestId })
-  if (existingIdempotent) {
-    const refreshedToken = refreshAuthCookie(res, auth)
-    res.json({ ...existingIdempotent, ...(refreshedToken ? { token: refreshedToken } : {}) })
-    return
-  }
-
-  const existingRow = await loadUserStateRow(uid)
-  const currentVersion = Number(existingRow?.version || 0)
-  const baseVersion = Number.isFinite(parsed.data.baseVersion) ? Number(parsed.data.baseVersion) : null
-  if (baseVersion !== null && baseVersion !== currentVersion) {
-    res.status(409).json({ error: 'Etat modifié ailleurs.', code: 'STATE_CONFLICT', version: currentVersion })
-    return
-  }
-
-  const currentPayload = rowToPersistPayload(existingRow)
-  const mergedPayload = applyMergePatch(currentPayload, parsed.data.patch)
-  const validated = stateUpdateSchema.safeParse(mergedPayload)
-  if (!validated.success || !validated.data.trackingState || typeof validated.data.trackingState !== 'object') {
-    res.status(400).json({ error: 'Patch invalide (état final non valide).' })
-    return
-  }
-
-  const extracted = extractQuizImagesFromTrackingState(validated.data.trackingState)
-  try {
-    await upsertQuizImages(uid, extracted.images, [])
-  } catch (error) {
-    res.status(413).json({ error: error instanceof Error ? error.message : 'Erreur quota images.' })
-    return
-  }
-
-  const now = new Date().toISOString()
-  const nextVersion = currentVersion + 1
-  const snapshotPayload = {
-    trackingState: extracted.trackingState,
-    theme: validated.data.theme,
-    focusMode: validated.data.focusMode,
-    youtubeDisplayMode: validated.data.youtubeDisplayMode,
-    profile: validated.data.profile ?? null,
-  }
-  const nextSnapshotAt = await maybeCreateStateSnapshot({
-    userId: uid,
-    version: nextVersion,
-    payload: snapshotPayload,
-    lastSnapshotAt: existingRow?.lastSnapshotAt,
-  })
-
-  await pool.query(
-    `
-      INSERT INTO user_state(user_id, tracking_state, theme, focus_mode, youtube_mode, profile, updated_at, version, last_snapshot_at)
-      VALUES($1, $2::jsonb, $3, $4, $5, $6::jsonb, $7, $8, $9)
-      ON CONFLICT(user_id) DO UPDATE SET
-        tracking_state = EXCLUDED.tracking_state,
-        theme = EXCLUDED.theme,
-        focus_mode = EXCLUDED.focus_mode,
-        youtube_mode = EXCLUDED.youtube_mode,
-        profile = EXCLUDED.profile,
-        updated_at = EXCLUDED.updated_at,
-        version = EXCLUDED.version,
-        last_snapshot_at = COALESCE(EXCLUDED.last_snapshot_at, user_state.last_snapshot_at)
-    `,
-    [
-      uid,
-      JSON.stringify(extracted.trackingState),
-      validated.data.theme,
-      validated.data.focusMode,
-      validated.data.youtubeDisplayMode,
-      JSON.stringify(validated.data.profile ?? null),
-      now,
-      nextVersion,
-      nextSnapshotAt,
-    ],
-  )
-
-  const patchBytes = Buffer.byteLength(JSON.stringify(parsed.data.patch), 'utf8')
-  recordStateMetric('patch', patchBytes)
-
-  const responsePayload = { ok: true, updatedAt: now, version: nextVersion }
-  await storeIdempotentResponse({ userId: uid, endpoint: 'state-patch', requestId, response: responsePayload })
-
-  const refreshedToken = refreshAuthCookie(res, auth)
-  res.json({ ...responsePayload, ...(refreshedToken ? { token: refreshedToken } : {}) })
-})
-
-app.post('/api/state/images', enforceClientVersion, stateWriteLimiter, async (req, res) => {
-  const auth = authFromRequest(req)
-  if (!auth) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
-
-  const uid = Number(auth.uid)
-  if (!Number.isFinite(uid)) {
-    res.status(401).json({ error: 'Unauthorized' })
-    return
-  }
-
-  const parsed = stateImageSyncSchema.safeParse(req.body)
-  if (!parsed.success) {
-    res.status(400).json({ error: 'Payload images invalide.' })
-    return
-  }
-
-  const requestId = normalizeRequestId(parsed.data.requestId) || createGeneratedRequestId('images')
-  const existingIdempotent = await consumeIdempotentResponse({ userId: uid, endpoint: 'state-images', requestId })
-  if (existingIdempotent) {
-    const refreshedToken = refreshAuthCookie(res, auth)
-    res.json({ ...existingIdempotent, ...(refreshedToken ? { token: refreshedToken } : {}) })
-    return
-  }
-
-  let syncResult = null
-  try {
-    syncResult = await upsertQuizImages(uid, parsed.data.upsert, parsed.data.removed)
-  } catch (error) {
-    res.status(413).json({ error: error instanceof Error ? error.message : 'Erreur synchronisation images.' })
-    return
-  }
-
-  const updatedAt = new Date().toISOString()
-  await touchUserStateUpdatedAt(uid, updatedAt)
-
-  const payloadBytes = Buffer.byteLength(JSON.stringify(req.body), 'utf8')
-  recordStateMetric('images', payloadBytes)
-
-  const responsePayload = { ok: true, updatedAt, ...syncResult }
-  await storeIdempotentResponse({ userId: uid, endpoint: 'state-images', requestId, response: responsePayload })
-
-  const refreshedToken = refreshAuthCookie(res, auth)
-  res.json({ ...responsePayload, ...(refreshedToken ? { token: refreshedToken } : {}) })
-})
+}
 
 app.get('/api/state/metrics', enforceClientVersion, async (req, res) => {
   const auth = authFromRequest(req)
@@ -1774,6 +1150,11 @@ app.use((error, _req, res, next) => {
     return
   }
 
+  if (error instanceof StateError) {
+    res.status(error.status).json({ error: error.message, code: error.code,
+      ...(error.version !== undefined ? { version: error.version } : {}) })
+    return
+  }
   const status = Number(error?.status || error?.statusCode)
   const safeStatus = Number.isInteger(status) && status >= 400 && status < 500 ? status : 500
   if (safeStatus >= 500) {

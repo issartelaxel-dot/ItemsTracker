@@ -1,0 +1,45 @@
+{
+  "version": "0.1.0",
+  "date": "2026-10-08",
+  "scope": "local, isolated test data; no production connection",
+  "checks": {
+    "npm run test:backup": {
+      "passed": 20,
+      "failed": 0,
+      "realPostgreSQL": true,
+      "realDumpRestore": true
+    },
+    "npm run test:browser": {
+      "passed": true,
+      "cases": [
+        "persistent draft",
+        "lost acknowledgement replay after reload",
+        "edits during an in-flight save"
+      ]
+    },
+    "npm run package:full": {
+      "passed": true,
+      "typescript": true,
+      "artifact": "deploy-full/"
+    },
+    "eslint src/lib/save-outbox.ts": {
+      "passed": true
+    },
+    "node --check server/scripts modules": {
+      "passed": true
+    },
+    "original tracked code": {
+      "unchanged": true
+    }
+  },
+  "externalActivation": {
+    "productionDeployment": false,
+    "neonPITR": false,
+    "mediaBucket": false,
+    "dailyServerTimer": false
+  },
+  "notes": [
+    "Provider credentials unavailable; see MISE_EN_SERVICE.md.",
+    "Existing dependency audit findings and frontend bundle-size warning remain."
+  ]
+}
