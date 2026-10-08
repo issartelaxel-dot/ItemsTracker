@@ -1,5 +1,5 @@
 RewriteEngine On
-RewriteBase /ItemsTracker/
+RewriteBase /itemstracker/
 
 # Let real files and directories pass through unchanged.
 RewriteCond %{REQUEST_FILENAME} -f [OR]
@@ -7,5 +7,5 @@ RewriteCond %{REQUEST_FILENAME} -d
 RewriteRule ^ - [L]
 
 # SPA fallback (except API) to the root app entrypoint.
-RewriteCond %{REQUEST_URI} !^/ItemsTracker/api/
+RewriteCond %{REQUEST_URI} !^/itemstracker/api/
 RewriteRule ^ index.html [L]

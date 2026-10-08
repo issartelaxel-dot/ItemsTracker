@@ -23,4 +23,4 @@ for (const entryName of includedTopLevel) {
 }
 
 console.log('Full deploy package ready in ./deploy-full')
-console.log('Upload the CONTENTS of ./deploy-full to /ItemsTracker/')
+console.log('Upload the CONTENTS of ./deploy-full to /itemstracker/')
