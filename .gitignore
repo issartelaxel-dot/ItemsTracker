@@ -13,6 +13,8 @@ deploy
 dist-ssr
 Archive.zip
 /deploy-full.zip
+/installation-mail-lws/
+**/relay-config.local.php
 *.local
 
 # Editor directories and files

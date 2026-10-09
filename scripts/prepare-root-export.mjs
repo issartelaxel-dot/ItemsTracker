@@ -1,5 +1,6 @@
 import { cpSync, existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { prepareMailRelay } from './prepare-mail-relay.mjs'
 
 const root = process.cwd()
 const distDir = resolve(root, 'dist')
@@ -33,6 +34,7 @@ rmSync(resolve(root, 'assets'), { recursive: true, force: true })
 cpSync(resolve(distDir, 'assets'), resolve(root, 'assets'), { recursive: true })
 
 const publicDir = resolve(root, 'public')
+prepareMailRelay(root)
 for (const file of ['favicon.svg', 'icons.svg']) {
   const src = resolve(publicDir, file)
   if (existsSync(src)) {

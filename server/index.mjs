@@ -598,6 +598,7 @@ function normalizeMcqWebhookPayload(payload) {
 
 async function sendVerificationEmail({ email, code }) {
   await sendEmail({
+    kind: 'verification', code,
     to: email,
     subject: 'Votre code de vérification ItemsTracker',
     text: `Bienvenue sur ItemsTracker !\n\nVotre code de vérification : ${code}\n\nCe code est valable 15 minutes. Ne le partagez pas.\nSi vous n’avez pas demandé cette inscription, ignorez cet e-mail.`,
@@ -607,6 +608,7 @@ async function sendVerificationEmail({ email, code }) {
 
 async function sendPasswordResetEmail({ userEmail, displayName, code }) {
   await sendEmail({
+    kind: 'password-reset', code,
     to: userEmail,
     subject: 'Reinitialisation de mot de passe',
     text: [

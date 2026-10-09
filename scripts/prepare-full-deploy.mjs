@@ -1,6 +1,7 @@
 import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { archiveDeploy } from './archive-deploy.mjs'
+import { prepareMailRelay } from './prepare-mail-relay.mjs'
 
 const root = process.cwd()
 const outDir = resolve(root, 'deploy-full')
@@ -23,6 +24,7 @@ for (const entryName of includedTopLevel) {
   cpSync(src, dst, { recursive: true })
 }
 
+prepareMailRelay(outDir)
 archiveDeploy(outDir)
 cpSync(resolve(outDir, 'Archive.zip'), resolve(root, 'deploy-full.zip'))
 console.log('Full deploy package ready in ./deploy-full')
