@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { cpSync, existsSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { loadEnv } from 'vite'
@@ -14,6 +15,14 @@ if (!rawBase.startsWith('/') || rawBase.startsWith('//') || /[?#"'`\s]/.test(raw
 const base = rawBase.endsWith('/') ? rawBase : `${rawBase}/`
 if (!existsSync(resolve(marketing, 'index.html'))) throw new Error('Missing marketing/index.html')
 renameSync(resolve(dist, 'index.html'), resolve(dist, 'app.html'))
+// Fixed asset filenames need a content key, including in the dist/deploy exports.
+const appPath = resolve(dist, 'app.html')
+const appHtml = readFileSync(appPath, 'utf8').replace(/assets\/main\.(js|css)(?:\?v=[^"']*)?/g, (_, extension) => {
+  const hash = createHash('sha256').update(readFileSync(resolve(dist, `assets/main.${extension}`))).digest('hex').slice(0, 16)
+  return `assets/main.${extension}?v=${hash}`
+})
+writeFileSync(appPath, appHtml)
+
 cpSync(marketing, presentation, { recursive: true })
 
 const appUrl = `${base}app.html`

@@ -9,3 +9,10 @@ RewriteRule ^ - [L]
 # SPA fallback (except API) to the application; index.html is the sales page.
 RewriteCond %{REQUEST_URI} !^/itemstracker/api/
 RewriteRule ^ app.html [L]
+
+# Safari must revalidate the HTML and fixed-name application assets after an upload.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(html|js|css)$">
+    Header always set Cache-Control "no-cache, max-age=0, must-revalidate"
+  </FilesMatch>
+</IfModule>

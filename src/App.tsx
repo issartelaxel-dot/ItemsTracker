@@ -1,3 +1,4 @@
+import { isClientBelowMinimum, refreshObsoleteClient } from './lib/client-refresh'
 import { saveDraft, findDraft, removeDraft, mergeStates, type SaveOperation } from './lib/save-outbox'
 import {
   $createParagraphNode,
@@ -3443,6 +3444,7 @@ function App() {
         const candidateResponse = await fetch(candidate, {
           ...init,
           credentials: 'include',
+          cache: 'no-store',
           headers: {
             'Content-Type': 'application/json',
             ...(CLIENT_APP_VERSION ? { 'x-client-version': CLIENT_APP_VERSION } : {}),
@@ -3478,15 +3480,6 @@ function App() {
       throw new Error("API indisponible. Lance aussi le serveur backend (`npm run dev:full`) et vérifie la connexion.")
     }
 
-    const serverAppVersion = (response.headers.get('x-app-version') ?? '').trim()
-    if (CLIENT_APP_VERSION && serverAppVersion && serverAppVersion !== CLIENT_APP_VERSION) {
-      throw new ApiRequestError(
-        'Client obsolète. Recharge la page pour appliquer la dernière mise à jour.',
-        426,
-        'CLIENT_STALE',
-      )
-    }
-
     let payload: Record<string, unknown> = {}
     const contentType = (response.headers.get('content-type') ?? '').toLowerCase()
     const looksJson = contentType.includes('application/json')
@@ -3506,6 +3499,20 @@ function App() {
 
     if (response.ok && !looksJson) {
       throw new Error('Réponse API invalide: format non JSON.')
+    }
+
+    const minimumVersion = (response.headers.get('x-min-client-version') ?? String(payload.minClientVersion ?? '')).trim()
+    const staleClient = payload.code === 'CLIENT_STALE' || response.status === 426 ||
+      isClientBelowMinimum(CLIENT_APP_VERSION, minimumVersion)
+    if (staleClient) {
+      let message = 'Client obsolète. Recharge la page pour appliquer la dernière mise à jour.'
+      if (authStatus !== 'authed' && !hasPendingChangesRef.current) {
+        const refreshing = refreshObsoleteClient(minimumVersion)
+        message = refreshing
+          ? 'Mise à jour de la page de connexion…'
+          : 'La version disponible sur le site est encore obsolète. La mise à jour doit être déployée pour permettre la connexion.'
+      }
+      throw new ApiRequestError(message, 426, 'CLIENT_STALE')
     }
 
     const nextToken = typeof payload.token === 'string' ? payload.token.trim() : ''
@@ -3667,6 +3674,9 @@ function App() {
         }
       } else {
         clearSaveProtection()
+      }
+      if (!hadActiveSession && error instanceof ApiRequestError && error.code === 'CLIENT_STALE') {
+        setAuthError(error.message)
       }
       if (error instanceof Error && error.message.includes('404')) {
         setAuthError(
