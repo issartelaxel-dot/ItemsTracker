@@ -8,9 +8,17 @@ La page de vente est désormais l’accueil de `/itemstracker/`. L’application
 npm run package:full
 ```
 
-La commande crée aussi `deploy-full/Archive.zip`, à téléverser puis extraire directement dans votre dossier LWS. `package:deploy` crée `deploy/Archive.zip`. La création des archives utilise la commande `zip` (disponible sur ce Mac).
+La commande crée aussi `deploy-full.zip` et `deploy-full/Archive.zip`, à téléverser puis extraire directement dans votre dossier LWS. `package:deploy` crée `deploy/Archive.zip`. La création des archives utilise la commande `zip` (disponible sur ce Mac).
 
 Déposez le **contenu** de `deploy-full/` dans votre dossier LWS `/itemstracker/`, comme auparavant : `index.html`, `app.html`, `.htaccess`, `assets/`, `presentation/`, les icônes. `npm run package:deploy` produit la même organisation dans `deploy/`. Aucun build sur LWS n’est nécessaire.
+
+## Inscription et vérification de l’e-mail
+
+« Créer un compte » ouvre directement `app.html?auth=register`. Le serveur envoie un code à **6 chiffres à l’utilisateur**, valable 15 minutes. Le compte et la session sont créés seulement après vérification. Le renvoi est disponible après 60 secondes ; cinq codes incorrects imposent de recommencer l’inscription. Les comptes existants restent accessibles.
+
+**Cette fonctionnalité nécessite aussi de redéployer le backend Node**, en plus de téléverser le frontend sur LWS. Configurer `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` et `SMTP_FROM` sur le serveur de l’API (voir `.env.server.example`). `ADMIN_APPROVAL_EMAIL` n’est plus utilisé. Le démarrage ajoute automatiquement la colonne nécessaire aux inscriptions en attente ; aucune suppression des utilisateurs existants n’est requise. Les anciennes demandes de code administrateur doivent être recommencées.
+
+`npm run test:auth` vérifie l’inscription sur PostgreSQL temporaire et un serveur SMTP local, sans envoi d’e-mail réel : vérification, consommation unique, expiration, renvoi, limites de tentatives et échecs d’envoi.
 
 - `marketing/` : source durable de la page de vente (HTML/CSS/JS et médias). Modifiez cette version pour les prochains déploiements.
 - `src/` : source de l’application React.

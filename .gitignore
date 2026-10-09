@@ -12,6 +12,7 @@ dist
 deploy
 dist-ssr
 Archive.zip
+/deploy-full.zip
 *.local
 
 # Editor directories and files

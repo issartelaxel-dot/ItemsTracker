@@ -24,5 +24,7 @@ for (const entryName of includedTopLevel) {
 }
 
 archiveDeploy(outDir)
+cpSync(resolve(outDir, 'Archive.zip'), resolve(root, 'deploy-full.zip'))
 console.log('Full deploy package ready in ./deploy-full')
+console.log('Upload-ready archive also available as ./deploy-full.zip')
 console.log('Upload the CONTENTS of ./deploy-full to /itemstracker/')

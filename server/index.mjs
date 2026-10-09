@@ -15,6 +15,7 @@ import { z } from 'zod'
 import { createStateStore } from './state-store.mjs'
 import { createMediaStore } from './media-store.mjs'
 import { persistSchema, StateError } from './state-model.mjs'
+import { mountRegistration } from './registration.mjs'
 
 const { Pool } = pg
 
@@ -33,7 +34,6 @@ const COOKIE_SECURE =
   process.env.COOKIE_SECURE === 'true' ? true : process.env.COOKIE_SECURE === 'false' ? false : NODE_ENV === 'production'
 const APP_VERSION = (process.env.APP_VERSION || '0.1.0').trim()
 const MIN_CLIENT_VERSION = (process.env.MIN_CLIENT_VERSION || '0.1.0').trim()
-const ADMIN_APPROVAL_EMAIL = process.env.ADMIN_APPROVAL_EMAIL || 'issartelaxel@gmail.com'
 const AUTH_COOKIE = 'med_auth'
 const APPROVAL_CODE_TTL_MS = 15 * 60 * 1000
 const AUTH_SESSION_TTL_MS = 45 * 60 * 1000
@@ -84,6 +84,8 @@ async function initDb() {
       attempts INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL
     );
+
+    ALTER TABLE signup_requests ADD COLUMN IF NOT EXISTS verification_token_hash TEXT;
 
     CREATE TABLE IF NOT EXISTS password_resets (
       email TEXT PRIMARY KEY,
@@ -237,6 +239,9 @@ function getTransporter() {
     port,
     secure: port === 465,
     auth: { user, pass },
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
   })
   return transporter
 }
@@ -523,18 +528,6 @@ function applyQuizImagesToTrackingState(trackingState, imageRows, options = {}) 
   return clonedTrackingState
 }
 
-const requestSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(12).max(256),
-  firstName: z.string().trim().max(120).optional().default(''),
-  lastName: z.string().trim().max(120).optional().default(''),
-})
-
-const verifySchema = z.object({
-  email: z.string().email(),
-  code: z.string().regex(/^\d{8}$/),
-})
-
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1).max(256),
@@ -628,24 +621,13 @@ function normalizeMcqWebhookPayload(payload) {
   }
 }
 
-async function sendApprovalEmail({ requesterEmail, displayName, code }) {
-  const tx = getTransporter()
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER
-
-  await tx.sendMail({
-    from,
-    to: ADMIN_APPROVAL_EMAIL,
-    subject: 'Nouvelle demande de création de compte',
-    text: [
-      'Nouvelle demande de compte:',
-      `Email: ${requesterEmail}`,
-      `Nom: ${displayName || '(non renseigné)'}`,
-      '',
-      `Code temporaire (8 chiffres): ${code}`,
-      'Validité: 15 minutes',
-      '',
-      'Transmets ce code à l’utilisateur pour validation du compte.',
-    ].join('\n'),
+async function sendVerificationEmail({ email, code }) {
+  await getTransporter().sendMail({
+    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+    to: email,
+    subject: 'Votre code de vérification ItemsTracker',
+    text: `Bienvenue sur ItemsTracker !\n\nVotre code de vérification : ${code}\n\nCe code est valable 15 minutes. Ne le partagez pas.\nSi vous n’avez pas demandé cette inscription, ignorez cet e-mail.`,
+    html: `<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;padding:32px;color:#14233d"><strong style="color:#1767ff">ItemsTracker</strong><h1 style="font-size:24px">Confirmez votre adresse e-mail.</h1><p>Pour créer votre espace de révision, saisissez ce code :</p><p style="font-size:36px;font-weight:700;letter-spacing:8px;color:#1767ff;background:#edf4ff;padding:24px;text-align:center">${code}</p><p>Valable 15 minutes. Ne partagez pas ce code.</p><p style="font-size:12px;color:#667085">Si vous n’avez pas demandé cette inscription, ignorez cet e-mail.</p></div>`,
   })
 }
 
@@ -840,140 +822,10 @@ app.use((error, _req, res, next) => {
   next(error)
 })
 
-app.post('/api/auth/register/request', authLimiter, async (req, res) => {
-  const parsed = requestSchema.safeParse(req.body)
-  if (!parsed.success) {
-    res.status(400).json({ error: 'Données invalides.' })
-    return
-  }
-
-  const email = normalizeEmail(parsed.data.email)
-  const passwordError = validatePasswordStrength(parsed.data.password)
-  if (passwordError) {
-    res.status(400).json({ error: passwordError })
-    return
-  }
-
-  const displayName = `${parsed.data.firstName} ${parsed.data.lastName}`.trim()
-  const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email])
-  if (existing.rows.length > 0) {
-    res.status(409).json({ error: 'Un compte existe déjà avec cet email.' })
-    return
-  }
-
-  const passwordHash = await argon2.hash(parsed.data.password, {
-    type: argon2.argon2id,
-    memoryCost: 19456,
-    timeCost: 2,
-    parallelism: 1,
-  })
-
-  const code = generateApprovalCode()
-  const codeHash = hashApprovalCode(code)
-  const now = Date.now()
-
-  await pool.query(
-    `
-      INSERT INTO signup_requests(email, display_name, password_hash, code_hash, expires_at, attempts, created_at)
-      VALUES($1, $2, $3, $4, $5, 0, $6)
-      ON CONFLICT(email) DO UPDATE SET
-        display_name = EXCLUDED.display_name,
-        password_hash = EXCLUDED.password_hash,
-        code_hash = EXCLUDED.code_hash,
-        expires_at = EXCLUDED.expires_at,
-        attempts = 0,
-        created_at = EXCLUDED.created_at
-    `,
-    [email, displayName, passwordHash, codeHash, now + APPROVAL_CODE_TTL_MS, new Date(now).toISOString()],
-  )
-
-  try {
-    await sendApprovalEmail({ requesterEmail: email, displayName, code })
-  } catch (error) {
-    console.error('Failed to send approval email:', error)
-    res.status(500).json({
-      error:
-        'Impossible d\'envoyer l\'email de validation (SMTP non configuré ou indisponible). Vérifie les variables SMTP.',
-    })
-    return
-  }
-
-  res.json({
-    ok: true,
-    message:
-      'Demande envoyée. Un code temporaire de 8 chiffres a été transmis à l’administrateur pour validation.',
-  })
-})
-
-app.post('/api/auth/register/verify', verifyLimiter, async (req, res) => {
-  const parsed = verifySchema.safeParse(req.body)
-  if (!parsed.success) {
-    res.status(400).json({ error: 'Code invalide.' })
-    return
-  }
-
-  const email = normalizeEmail(parsed.data.email)
-  const requestResult = await pool.query(
-    `SELECT email, display_name AS "displayName", password_hash AS "passwordHash", code_hash AS "codeHash", expires_at AS "expiresAt", attempts
-     FROM signup_requests WHERE email = $1`,
-    [email],
-  )
-  const requestRow = requestResult.rows[0]
-
-  if (!requestRow) {
-    res.status(404).json({ error: 'Aucune demande en attente pour cet email.' })
-    return
-  }
-
-  if (Date.now() > Number(requestRow.expiresAt)) {
-    await pool.query('DELETE FROM signup_requests WHERE email = $1', [email])
-    res.status(400).json({ error: 'Le code a expiré. Recommence la demande.' })
-    return
-  }
-
-  const providedHash = hashApprovalCode(parsed.data.code)
-  const ok = crypto.timingSafeEqual(Buffer.from(providedHash, 'hex'), Buffer.from(requestRow.codeHash, 'hex'))
-
-  if (!ok) {
-    const attempts = Number(requestRow.attempts || 0) + 1
-    if (attempts >= 5) {
-      await pool.query('DELETE FROM signup_requests WHERE email = $1', [email])
-      res.status(429).json({ error: 'Trop de tentatives. Recommence la demande.' })
-      return
-    }
-
-    await pool.query('UPDATE signup_requests SET attempts = $1 WHERE email = $2', [attempts, email])
-    res.status(400).json({ error: 'Code incorrect.' })
-    return
-  }
-
-  const existing = await pool.query('SELECT id FROM users WHERE email = $1', [email])
-  if (existing.rows.length > 0) {
-    await pool.query('DELETE FROM signup_requests WHERE email = $1', [email])
-    res.status(409).json({ error: 'Un compte existe déjà avec cet email.' })
-    return
-  }
-
-  const insertResult = await pool.query(
-    'INSERT INTO users(email, display_name, password_hash, created_at) VALUES($1, $2, $3, $4) RETURNING id',
-    [email, requestRow.displayName, requestRow.passwordHash, new Date().toISOString()],
-  )
-
-  await pool.query('DELETE FROM signup_requests WHERE email = $1', [email])
-
-  const userId = Number(insertResult.rows[0]?.id)
-  const token = signAuthToken({ uid: userId, email })
-  setAuthCookie(res, token)
-
-  res.json({
-    ok: true,
-    token,
-    user: {
-      id: userId,
-      email,
-      displayName: requestRow.displayName,
-    },
-  })
+mountRegistration(app, {
+  pool, secret: JWT_SECRET, sendEmail: sendVerificationEmail,
+  authLimiter, verifyLimiter, validatePassword: validatePasswordStrength,
+  signToken: signAuthToken, setCookie: setAuthCookie,
 })
 
 app.post('/api/auth/login', authLimiter, async (req, res) => {

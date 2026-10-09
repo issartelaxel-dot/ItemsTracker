@@ -1658,6 +1658,8 @@ function shouldSkipAuthTokenForRequest(url: string) {
     normalized.includes('/api/auth/login') ||
     normalized.includes('/api/auth/register/request') ||
     normalized.includes('/api/auth/register/verify') ||
+    normalized.includes('/api/auth/register/resend') ||
+    normalized.includes('/api/auth/register/config') ||
     normalized.includes('/api/auth/password/request') ||
     normalized.includes('/api/auth/password/confirm')
   )
@@ -2682,7 +2684,7 @@ function App() {
   const [avatarUploadError, setAvatarUploadError] = useState('')
   const [hasLoadedRemoteState, setHasLoadedRemoteState] = useState(false)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
-  const [authView, setAuthView] = useState<AuthView>('login')
+  const [authView, setAuthView] = useState<AuthView>(() => new URLSearchParams(window.location.search).get('auth') === 'register' ? 'register' : 'login')
   const [authUser, setAuthUser] = useState<AuthUser | null>(null)
   const [authMessage, setAuthMessage] = useState('')
   const [authError, setAuthError] = useState('')
@@ -2703,6 +2705,17 @@ function App() {
   const [showPassword, setShowPassword] = useState(false)
   const [showResetPassword, setShowResetPassword] = useState(false)
   const [codeInput, setCodeInput] = useState('')
+  const [registration, setRegistration] = useState<{ email: string; verificationToken: string } | null>(null)
+  const [registrationPending, setRegistrationPending] = useState(false)
+  const [resendAvailableAt, setResendAvailableAt] = useState(0)
+  const [resendSeconds, setResendSeconds] = useState(0)
+  useEffect(() => {
+    const update = () => setResendSeconds(Math.max(0, Math.ceil((resendAvailableAt - Date.now()) / 1000)))
+    update()
+    if (!resendAvailableAt) return
+    const interval = window.setInterval(update, 1000)
+    return () => window.clearInterval(interval)
+  }, [resendAvailableAt])
   const [resetMode, setResetMode] = useState(false)
   const [resetCodeInput, setResetCodeInput] = useState('')
   const [resetPasswordInput, setResetPasswordInput] = useState('')
@@ -3870,44 +3883,69 @@ function getPasswordStrengthMeta(password: string) {
 }
 
   async function handleRequestCode() {
+    if (registrationPending) return
     setAuthError('')
     setAuthMessage('')
     const passwordError = getPasswordStrengthError(passwordInput)
-    if (passwordError) {
-      setAuthError(passwordError)
-      return
-    }
+    if (passwordError) { setAuthError(passwordError); return }
+    setRegistrationPending(true)
     try {
+      // Do not invoke the legacy administrator-mail flow during a partial deployment.
+      let config: Record<string, unknown>
+      try { config = await apiRequest('/api/auth/register/config') }
+      catch { throw new Error('L’inscription est temporairement indisponible. Réessaie dans quelques instants.') }
+      if (config.method !== 'email' || config.codeLength !== 6) {
+        throw new Error('L’inscription est temporairement indisponible. Réessaie dans quelques instants.')
+      }
+      const email = emailInput.trim().toLowerCase()
       const payload = await apiRequest('/api/auth/register/request', {
         method: 'POST',
-        body: JSON.stringify({
-          firstName: firstNameInput,
-          lastName: lastNameInput,
-          email: emailInput,
-          password: passwordInput,
-        }),
+        body: JSON.stringify({ firstName: firstNameInput, lastName: lastNameInput, email, password: passwordInput }),
       })
-      setAuthMessage(String(payload.message ?? 'Demande envoyée.'))
+      if (typeof payload.verificationToken !== 'string') throw new Error('L’inscription est temporairement indisponible. Réessaie dans quelques instants.')
+      setRegistration({ email, verificationToken: payload.verificationToken })
+      setPasswordInput('')
+      setCodeInput('')
+      setResendAvailableAt(Date.now() + Number(payload.resendAfter ?? 60) * 1000)
+      setAuthMessage(String(payload.message ?? 'Un code a été envoyé à ton adresse e-mail.'))
     } catch (error) {
-      setAuthError(error instanceof Error ? error.message : 'Erreur lors de la demande.')
-    }
+      setAuthError(error instanceof Error ? error.message : 'Impossible d’envoyer le code.')
+    } finally { setRegistrationPending(false) }
   }
 
-  async function handleVerifyCode() {
+  async function handleResendCode() {
+    if (!registration || registrationPending || resendSeconds > 0) return
+    setRegistrationPending(true)
     setAuthError('')
     setAuthMessage('')
     try {
+      const payload = await apiRequest('/api/auth/register/resend', {
+        method: 'POST', body: JSON.stringify(registration),
+      })
+      setCodeInput('')
+      setResendAvailableAt(Date.now() + Number(payload.resendAfter ?? 60) * 1000)
+      setAuthMessage(String(payload.message ?? 'Un nouveau code a été envoyé.'))
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Impossible de renvoyer le code.')
+    } finally { setRegistrationPending(false) }
+  }
+
+  async function handleVerifyCode() {
+    if (!registration || registrationPending) return
+    setAuthError('')
+    setAuthMessage('')
+    if (!/^\d{6}$/.test(codeInput)) { setAuthError('Saisis le code à 6 chiffres reçu par e-mail.'); return }
+    setRegistrationPending(true)
+    try {
       const payload = await apiRequest('/api/auth/register/verify', {
-        method: 'POST',
-        body: JSON.stringify({
-          email: emailInput,
-          code: codeInput,
-        }),
+        method: 'POST', body: JSON.stringify({ ...registration, code: codeInput }),
       })
       await confirmSessionAfterAuth({ fallbackUser: payload.user as AuthUser | undefined })
+      setRegistration(null)
+      setCodeInput('')
     } catch (error) {
       setAuthError(error instanceof Error ? error.message : 'Erreur lors de la vérification.')
-    }
+    } finally { setRegistrationPending(false) }
   }
 
   async function handleLogin() {
@@ -7439,78 +7477,72 @@ function getPasswordStrengthMeta(password: string) {
                 </>
               ) : (
                 <>
-                  <p className="auth-sub">Inscription validée par code 8 chiffres envoyé à l’administrateur.</p>
-                  <p className="auth-sub">Mot de passe requis: 12+ caractères, 1 chiffre, 1 caractère spécial.</p>
-                  <div className="auth-grid">
-                    <input
-                      placeholder="Prénom"
-                      value={firstNameInput}
-                      onChange={(event) => setFirstNameInput(event.target.value)}
-                    />
-                    <input placeholder="Nom" value={lastNameInput} onChange={(event) => setLastNameInput(event.target.value)} />
-                    <label className="auth-input-wrap auth-input-full">
-                      <span className="auth-input-icon" aria-hidden="true">
-                        <Mail className="ui-icon" aria-hidden="true" />
-                      </span>
-                      <input
-                        type="email"
-                        placeholder="Email"
-                        value={emailInput}
-                        onChange={(event) => setEmailInput(event.target.value)}
-                      />
-                    </label>
-                    <label className="auth-input-wrap auth-input-full">
-                      <span className="auth-input-icon" aria-hidden="true">
-                        <Lock className="ui-icon" aria-hidden="true" />
-                      </span>
-                      <input
-                        type={showPassword ? 'text' : 'password'}
-                        placeholder="Mot de passe"
-                        value={passwordInput}
-                        onChange={(event) => setPasswordInput(event.target.value)}
-                      />
-                      <button
-                        type="button"
-                        className="auth-password-toggle"
-                        onClick={() => setShowPassword((value) => !value)}
-                        aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
-                      >
-                        {showPassword ? (
-                          <EyeClosed className="ui-icon" aria-hidden="true" />
-                        ) : (
-                          <Eye className="ui-icon" aria-hidden="true" />
-                        )}
-                      </button>
-                    </label>
-                    <input
-                      placeholder="Code admin (8 chiffres)"
-                      value={codeInput}
-                      onChange={(event) => setCodeInput(event.target.value)}
-                      maxLength={8}
-                    />
-                  </div>
-
-                  <div className={`auth-strength auth-strength-${passwordStrength.tone}`}>
-                    <span className="auth-strength-label">Force mot de passe: {passwordStrength.label}</span>
-                    <div className="auth-strength-track">
-                      <span style={{ width: `${Math.max(12, passwordStrength.score * 20)}%` }} />
-                    </div>
-                  </div>
-
-                  <div className="auth-actions">
-                    <button className="ghost-btn" onClick={() => void handleRequestCode()}>
-                      Demander code admin
-                    </button>
-                    <button className="ghost-btn" onClick={() => void handleVerifyCode()}>
-                      Valider code et créer compte
-                    </button>
-                  </div>
+                  {registration ? (
+                    <form onSubmit={event => { event.preventDefault(); void handleVerifyCode() }}>
+                      <h3>Vérifie ton adresse e-mail</h3>
+                      <p className="auth-sub">Saisis le code à 6 chiffres envoyé à <strong>{registration.email}</strong>. Il est valable 15 minutes.</p>
+                      <label className="auth-code-label" htmlFor="registration-code">Code de vérification</label>
+                      <input id="registration-code" className="auth-verification-code" type="text" inputMode="numeric"
+                        autoComplete="one-time-code" autoFocus required pattern="[0-9]{6}" maxLength={6}
+                        placeholder="000000" value={codeInput} disabled={registrationPending}
+                        onPaste={event => { event.preventDefault(); setCodeInput(event.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6)) }}
+                        onChange={event => setCodeInput(event.target.value.replace(/\D/g, '').slice(0, 6))} />
+                      <p className="auth-sub">Pense à vérifier tes courriers indésirables si tu ne vois pas l’e-mail.</p>
+                      <div className="auth-actions">
+                        <button className="btn auth-register-primary" type="submit" disabled={registrationPending || codeInput.length !== 6}>
+                          {registrationPending ? 'Vérification…' : 'Vérifier et créer mon compte'}
+                        </button>
+                        <button className="ghost-btn" type="button" onClick={() => void handleResendCode()}
+                          disabled={registrationPending || resendSeconds > 0}>
+                          {resendSeconds > 0 ? `Renvoyer le code dans ${resendSeconds} s` : 'Renvoyer le code'}
+                        </button>
+                        <button className="ghost-btn" type="button" disabled={registrationPending} onClick={() => {
+                          setRegistration(null); setCodeInput(''); setAuthError(''); setAuthMessage('')
+                        }}>Modifier mon e-mail / recommencer</button>
+                      </div>
+                    </form>
+                  ) : (
+                    <form onSubmit={event => { event.preventDefault(); void handleRequestCode() }}>
+                      <p className="auth-sub">Crée ton compte, puis confirme ton adresse e-mail avec un code à 6 chiffres.</p>
+                      <div className="auth-grid">
+                        <input aria-label="Prénom" placeholder="Prénom" autoComplete="given-name" maxLength={120}
+                          value={firstNameInput} disabled={registrationPending} onChange={event => setFirstNameInput(event.target.value)} />
+                        <input aria-label="Nom" placeholder="Nom" autoComplete="family-name" maxLength={120}
+                          value={lastNameInput} disabled={registrationPending} onChange={event => setLastNameInput(event.target.value)} />
+                        <label className="auth-input-wrap auth-input-full">
+                          <span className="auth-input-icon" aria-hidden="true"><Mail className="ui-icon" aria-hidden="true" /></span>
+                          <input type="email" aria-label="Adresse e-mail" placeholder="Adresse e-mail" autoComplete="email" required
+                            value={emailInput} disabled={registrationPending} onChange={event => setEmailInput(event.target.value)} />
+                        </label>
+                        <label className="auth-input-wrap auth-input-full">
+                          <span className="auth-input-icon" aria-hidden="true"><Lock className="ui-icon" aria-hidden="true" /></span>
+                          <input type={showPassword ? 'text' : 'password'} aria-label="Mot de passe" placeholder="Mot de passe"
+                            autoComplete="new-password" required minLength={12} maxLength={256} value={passwordInput}
+                            disabled={registrationPending} onChange={event => setPasswordInput(event.target.value)} />
+                          <button type="button" className="auth-password-toggle" onClick={() => setShowPassword(value => !value)}
+                            aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}>
+                            {showPassword ? <EyeClosed className="ui-icon" aria-hidden="true" /> : <Eye className="ui-icon" aria-hidden="true" />}
+                          </button>
+                        </label>
+                      </div>
+                      <p className="auth-sub">12 caractères minimum, avec un chiffre et un caractère spécial.</p>
+                      <div className={`auth-strength auth-strength-${passwordStrength.tone}`}>
+                        <span className="auth-strength-label">Force du mot de passe : {passwordStrength.label}</span>
+                        <div className="auth-strength-track"><span style={{ width: `${Math.max(12, passwordStrength.score * 20)}%` }} /></div>
+                      </div>
+                      <div className="auth-actions">
+                        <button className="btn auth-register-primary" type="submit" disabled={registrationPending}>
+                          {registrationPending ? 'Envoi du code…' : 'Créer mon compte'}
+                        </button>
+                      </div>
+                    </form>
+                  )}
                 </>
               )}
             </div>
 
-            {authMessage ? <p className="auth-success">{authMessage}</p> : null}
-            {authError ? <p className="auth-error">{authError}</p> : null}
+            {authMessage ? <p className="auth-success" role="status">{authMessage}</p> : null}
+            {authError ? <p className="auth-error" role="alert">{authError}</p> : null}
             {authStatus === 'loading' || isAuthBootstrapping ? <p className="auth-sub">Chargement...</p> : null}
           </div>
         </div>

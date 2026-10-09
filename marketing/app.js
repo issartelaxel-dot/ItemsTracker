@@ -192,14 +192,6 @@ $('#reset-demo').addEventListener('click', () => {
   selectTab(activeTab);
   notify('Tous les exemples ont été réinitialisés.');
 });
-const dialog = $('#access-dialog');
-$$('[data-access]').forEach(button => button.addEventListener('click', () => dialog.showModal()));
-$('#close-dialog').addEventListener('click', () => dialog.close());
-dialog.addEventListener('click', event => {
-  if (event.target !== dialog) return;
-  const bounds = dialog.getBoundingClientRect();
-  if (event.clientX < bounds.left || event.clientX > bounds.right || event.clientY < bounds.top || event.clientY > bounds.bottom) dialog.close();
-});
 // Decorative icon instances inherit no accessible name; their controls carry the labels.
 $$('svg.icon').forEach(svg => svg.setAttribute('aria-hidden', 'true'));
 renderItems(); renderSelected(); renderHero(); renderResources();

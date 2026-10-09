@@ -3,8 +3,9 @@
   width: 100vw;
   margin-left: calc(50% - 50vw);
   margin-right: calc(50% - 50vw);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: clamp(0.8rem, 2vw, 1.2rem);
   position: relative;
   overflow: hidden;
@@ -364,3 +365,9 @@
 .auth-expand-content p {
   margin: 0;
 }
+
+.auth-code-label { display: block; margin: 20px 0 8px; font-weight: 600; }
+.auth-verification-code { width: 100%; padding: 16px; text-align: center; font-size: 28px; font-weight: 700; letter-spacing: .32em; border: 1px solid #c9d8e7; border-radius: 12px; color: #102236; background: #f7fbff; }
+.auth-verification-code:focus { outline: 2px solid #1767ff; outline-offset: 3px; }
+.auth-register-primary { background: #1767ff; color: white; border: 0; padding: 12px 18px; border-radius: 10px; font-weight: 600; cursor: pointer; }
+.auth-actions button:disabled { opacity: .55; cursor: default; }
