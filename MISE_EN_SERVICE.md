@@ -66,3 +66,11 @@ Le stockage objet reste optionnel. Activer le bucket pour les nouveaux médias n
 Ces vérifications ne consultent aucune donnée de production. Les versions de `pg_dump`/`pg_restore` doivent être disponibles via `PG_DUMP_PATH`/`PG_RESTORE_PATH`. Pour `test:backup`, sur macOS les chemins Homebrew libpq@18 sont utilisés par défaut ; sur Linux les outils doivent être dans `PATH`. PostgreSQL embarqué ne fonctionne pas en tant que root ; exécuter les tests avec un utilisateur normal.
 
 La compilation frontend produit un avertissement sur la taille du bundle déjà présent dans l’application. L’installation npm signale également des vulnérabilités dans les dépendances existantes ; cette version n’a pas appliqué de mise à jour globale qui pourrait modifier d’autres fonctions.
+
+## Correctif mémoire de la connexion (9 octobre 2026)
+
+Une ancienne sauvegarde pouvait contenir toutes les images dans son JSON. La première lecture déclenchait leur migration en chargeant ces octets plusieurs fois dans Node, ce qui pouvait dépasser la mémoire de Render et provoquer des erreurs 502/503. L’extraction et la déduplication des médias se font désormais dans PostgreSQL, dans la transaction existante ; Node ne reçoit que les cartes sans leurs images. Les images restent disponibles à la demande.
+
+Ce correctif nécessite le **déploiement du backend Render depuis le dernier commit de main**, en plus du remplacement des fichiers frontend sur LWS. Un simple upload du ZIP LWS ne modifie pas le serveur Node. Après le déploiement, `https://api.setup-hub.com/api/health` doit renvoyer `stateMigration: "sql-media-v1"`. La migration se déclenche à la lecture du compte et conserve sa version, ses cartes et ses images.
+
+Test de charge local : 96 Mio d’images héritées, serveur Node limité à 128 Mio de heap. Le code précédent sature cette mémoire ; le correctif renvoie les métadonnées et permet de charger une image séparément. Les tests de sauvegarde/restauration et de concurrence restent applicables.

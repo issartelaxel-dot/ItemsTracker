@@ -1,3 +1,4 @@
+import { withRequestTimeout } from './lib/request-timeout'
 import { getFreshApiUrl } from './lib/api-cache'
 import { isClientBelowMinimum, refreshObsoleteClient } from './lib/client-refresh'
 import { saveDraft, findDraft, removeDraft, mergeStates, type SaveOperation } from './lib/save-outbox'
@@ -3038,8 +3039,10 @@ function App() {
 
     let cancelled = false
     let retryTimer: number | null = null
+    let loadAttempts = 0
 
     const loadRemoteState = async () => {
+      loadAttempts += 1
       try {
         const payload = await apiRequest('/api/state?imageMode=metadata', undefined, { requireServerAppHeader: true })
         if (cancelled) {
@@ -3108,7 +3111,7 @@ function App() {
         lastSyncedImageVersionsRef.current = (payload.imageVersions || {}) as Record<string, string>
         hasInitializedSnapshotRef.current = true
         let nextLocalShadowNotice: LocalShadowNotice | null = null
-        const draft = await findDraft(authUser.id).catch(() => null)
+        const draft = await withRequestTimeout(() => findDraft(authUser.id).catch(() => null), 15_000)
         if (cancelled) return
         const shadow = readLocalCloudShadow(authUser.id)
         const recovered = draft ? parsePersistStatePayloadBody(draft.body, authUser)
@@ -3164,10 +3167,15 @@ function App() {
         }
         if (!cancelled) {
           setHasLoadedRemoteState(false)
-          setSaveErrorMessage('Cloud indisponible. Vérifie Render puis réessaie.')
-          retryTimer = window.setTimeout(() => {
-            void loadRemoteState()
-          }, 15_000)
+          if (loadAttempts < 2) {
+            // One automatic recovery for a temporary outage; never an endless loop.
+            retryTimer = window.setTimeout(() => { void loadRemoteState() }, 3_000)
+          } else {
+            setLoginPending(false)
+            setAuthUser(null)
+            setAuthStatus('guest')
+            setAuthError('Impossible de charger tes données : la connexion au serveur est bloquée ou indisponible. Tes données enregistrées sont conservées.')
+          }
         }
       }
     }
@@ -3433,6 +3441,12 @@ function App() {
   }, [authStatus, authUser?.id, hasLoadedRemoteState])
 
   async function apiRequest(url: string, init?: RequestInit, options?: { requireServerAppHeader?: boolean }) {
+    const timeout = url.startsWith('/api/quiz/') ? 75_000 :
+      init?.method && !['GET', 'HEAD'].includes(init.method.toUpperCase()) && !url.startsWith('/api/auth/') ? 90_000 : 45_000
+    return withRequestTimeout(signal => apiRequestWithSignal(url, { ...init, signal }, options), timeout)
+  }
+
+  async function apiRequestWithSignal(url: string, init?: RequestInit, options?: { requireServerAppHeader?: boolean }) {
     let response: Response | null = null
     let lastFetchError: unknown = null
     const candidates = resolveApiCandidates(url)
@@ -3501,6 +3515,8 @@ function App() {
     if (response.ok && !looksJson) {
       throw new Error('Réponse API invalide: format non JSON.')
     }
+
+    if (init?.signal?.aborted) throw new Error('Requête interrompue.')
 
     const minimumVersion = (response.headers.get('x-min-client-version') ?? String(payload.minClientVersion ?? '')).trim()
     const staleClient = payload.code === 'CLIENT_STALE' || response.status === 426 ||
@@ -3675,6 +3691,9 @@ function App() {
         }
       } else {
         clearSaveProtection()
+      }
+      if (!hadActiveSession && error instanceof Error && lockReason !== 'session-expired') {
+        setAuthError(error.message)
       }
       if (!hadActiveSession && error instanceof ApiRequestError && error.code === 'CLIENT_STALE') {
         setAuthError(error.message)

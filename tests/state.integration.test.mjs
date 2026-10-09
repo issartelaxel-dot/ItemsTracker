@@ -48,7 +48,7 @@ test.before(async () => {
   const apiPort = await freePort()
   api = `http://127.0.0.1:${apiPort}`
   let output = ''
-  server = spawn(process.execPath, ['server/index.mjs'], { env: { ...process.env, DATABASE_URL: connectionString, JWT_SECRET: secret, PORT: String(apiPort),
+  server = spawn(process.execPath, ['--max-old-space-size=128', 'server/index.mjs'], { env: { ...process.env, DATABASE_URL: connectionString, JWT_SECRET: secret, PORT: String(apiPort),
     BOOTSTRAP_EMAIL: '', BOOTSTRAP_PASSWORD: '', MEDIA_S3_BUCKET: '', APP_VERSION: '0.1.0', MIN_CLIENT_VERSION: '0.1.0', STORAGE_LIMIT_BYTES: '2097152', STATE_WRITE_LIMIT_PER_MIN: '10000' }, stdio: ['ignore', 'pipe', 'pipe'] })
   server.stdout.on('data', data => { output += data }); server.stderr.on('data', data => { output += data })
   for (let attempt = 0; attempt < 200; attempt++) {
@@ -59,7 +59,7 @@ test.before(async () => {
   store = createStateStore(pool)
 })
 test.after(async () => {
-  if (server?.exitCode === null) { server.kill('SIGTERM'); await new Promise(resolve => server.once('exit', resolve)) }
+  if (server?.exitCode === null && server?.signalCode === null) { server.kill('SIGTERM'); await new Promise(resolve => server.once('exit', resolve)) }
   if (pool) await pool.end()
   if (cluster) await cluster.stop()
   if (directory) await rm(directory, { recursive: true, force: true })
@@ -133,6 +133,42 @@ test('legacy migration preserves embedded images, version and card order; avatar
   assert.equal(removed.status, 200, JSON.stringify(removed.body))
   assert.equal((await request(uid, 'GET', '/api/state')).body.state.profile.photoUrl, '')
 })
+test('large legacy images migrate under a 128 MiB Node heap without being loaded as one JSON payload', async () => {
+  const uid = await user(), cardCount = 32, imageSize = 3 * 1024 * 1024
+  try {
+    // Construct 96 MiB in PostgreSQL, keeping the test runner's heap small too.
+    await pool.query(`INSERT INTO user_state(user_id,tracking_state,theme,focus_mode,youtube_mode,profile,updated_at,version)
+      SELECT $1,jsonb_build_object('items',jsonb_build_object('1',jsonb_build_object('label','Heavy legacy',
+        'quiz',jsonb_build_object('cards',jsonb_agg(jsonb_build_object('id','card-' || n,'answer','Answer ' || n,
+          'imageDataUrl','data:image/png;base64,' || repeat('a',$2))))))),
+        'light',false,'embed','null'::jsonb,$3,9 FROM generate_series(1,$4) n`,
+      [uid, imageSize, new Date().toISOString(), cardCount])
+    const result = await request(uid, 'GET', '/api/state?imageMode=metadata')
+    assert.equal(result.status, 200, JSON.stringify(result.body))
+    assert.equal(result.body.version, 9)
+    assert.equal(result.body.state.profile, null)
+    assert.ok(JSON.stringify(result.body).length < 50_000)
+    assert.equal(result.body.state.trackingState.items[1].quiz.cards.length, cardCount)
+    assert.deepEqual(result.body.state.trackingState.items[1].quiz.cards.map(c => c.id), Array.from({ length: cardCount }, (_, n) => `card-${n + 1}`))
+    assert.equal(result.body.state.trackingState.items[1].quiz.cards[0].hasBackImageDataUrl, true)
+    const stored = (await pool.query(`SELECT
+      (SELECT storage_version FROM user_state WHERE user_id=$1) AS version,
+      (SELECT COUNT(*) FROM user_quiz_images WHERE user_id=$1 AND image_data='' AND blob_key IS NOT NULL) AS images,
+      (SELECT COUNT(*) FROM user_media_blobs WHERE user_id=$1) AS blobs,
+      (SELECT SUM(octet_length(image_data)) FROM user_media_blobs WHERE user_id=$1) AS bytes`, [uid])).rows[0]
+    assert.equal(stored.version, 2)
+    assert.equal(Number(stored.images), cardCount)
+    assert.equal(Number(stored.blobs), 1)
+    assert.equal(Number(stored.bytes), imageSize + 'data:image/png;base64,'.length)
+    const loaded = await request(uid, 'GET', '/api/state/images/1/card-1')
+    assert.equal(loaded.status, 200)
+    assert.equal(loaded.body.backImageDataUrl.length, imageSize + 'data:image/png;base64,'.length)
+    const health = await fetch(`${api}/api/health`)
+    assert.equal(health.status, 200)
+    assert.equal((await health.json()).stateMigration, 'sql-media-v1')
+  } finally { await pool.query('DELETE FROM users WHERE id=$1', [uid]) }
+})
+
 test('private immutable media storage keeps bytes out of SQL and snapshots', async () => {
   const uid = await user(), blobs = new Map()
   const privateStore = createStateStore(pool, { mediaStore: { async put(id, parsed) { const key = `${id}/${parsed.hash}`; blobs.set(key, parsed.body); return key },

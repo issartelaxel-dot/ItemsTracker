@@ -10,13 +10,18 @@ const user = { id: 123, email: 'test@example.test', displayName: 'Test' }
 const state = { trackingState: { items: {} }, theme: 'light', focusMode: false, dateFormat: 'fr-short', timeZone: 'auto',
   youtubeDisplayMode: 'embed', shuffleQuizCards: false,
   profile: { firstName: 'Test', lastName: 'Local', email: user.email, photoUrl: '', password: '', avatarGradient: 'red' } }
-let base, apiBase, browser
+let base, apiBase, browser, outage = 'none', stateFailures = 0
 const requests = []
 const corsHandler = cors({ origin: (origin, callback) => callback(null, origin === base), credentials: true,
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Client-Version'],
   exposedHeaders: ['x-app-version', 'x-min-client-version'], methods: ['GET', 'POST', 'PUT', 'PATCH', 'OPTIONS'] })
 const api = createServer((req, res) => {
   requests.push({ method: req.method, url: req.url, headers: req.headers })
+  if (outage === 'blocked' && req.url.startsWith('/api/state?')) {
+    stateFailures++
+    res.statusCode = 502
+    return res.end('Bad Gateway')
+  }
   corsHandler(req, res, () => {
     res.setHeader('Content-Type', 'application/json')
     res.setHeader('x-app-version', '0.1.0')
@@ -26,6 +31,10 @@ const api = createServer((req, res) => {
     if (path === '/api/auth/me') {
       if (req.headers.authorization !== 'Bearer test-token') { res.statusCode = 401; return res.end(JSON.stringify({ error: 'Non connecté' })) }
       return res.end(JSON.stringify({ user }))
+    }
+    if (path === '/api/state' && outage === 'once' && stateFailures++ === 0) {
+      res.statusCode = 503
+      return res.end(JSON.stringify({ error: 'Temporary outage' }))
     }
     if (path === '/api/state') return res.end(JSON.stringify({ state, version: 1, imageVersions: {} }))
     return res.end(JSON.stringify({ ok: true, token: 'test-token' }))
@@ -67,6 +76,21 @@ try {
     assert.doesNotMatch(req.headers['access-control-request-headers'] || '', /cache-control|pragma/i)
   }
   console.log('WebKit: real cross-origin login and authenticated dashboard passed')
+  outage = 'blocked'; stateFailures = 0
+  await page.reload()
+  await page.getByRole('alert').filter({ hasText: 'Impossible de charger tes données' }).waitFor()
+  assert.equal(await page.getByRole('button', { name: 'Se connecter', exact: true }).isEnabled(), true)
+  assert.equal(await page.getByRole('button', { name: /réessayer/i }).count(), 0)
+  assert.equal(stateFailures, 2, 'At most one automatic recovery, never endless requests')
+  await page.waitForTimeout(3500)
+  assert.equal(stateFailures, 2)
+  console.log('WebKit: gateway/CORS failure stops infinite loading without an extra button')
+  outage = 'once'; stateFailures = 0
+  await page.reload()
+  await page.getByRole('heading', { name: /Bonjour, Test/ }).waitFor()
+  assert.equal(stateFailures, 2)
+  console.log('WebKit: a temporary 503 recovers automatically')
+
 } finally {
   await browser?.close()
   await Promise.all([new Promise(resolve => api.close(resolve)), new Promise(resolve => site.close(resolve))])

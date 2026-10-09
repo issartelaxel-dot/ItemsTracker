@@ -208,25 +208,58 @@ export function createStateStore(pool, { mediaStore = null, env = process.env } 
   }
 
   async function migrate(client, userId) {
-    const row = (await client.query(META_SQL, [userId])).rows[0]
-    if (!row || Number(row.storageVersion) === 2) return
+    // Never ask pg to deserialize the legacy JSON/image collection into Node's heap.
+    const status = (await client.query('SELECT storage_version FROM user_state WHERE user_id=$1', [userId])).rows[0]
+    if (!status || Number(status.storage_version) === 2) return
+    const row = (await client.query(META_SQL.replace('tracking_state AS', "(tracking_state - 'items') AS")
+      .replace('profile, preferences', `CASE WHEN profile IS NULL OR jsonb_typeof(profile)='null' THEN NULL
+        WHEN profile->>'photoUrl' LIKE 'data:%'
+        THEN (profile || '{"photoUrl":"","hasPhoto":true,"password":""}'::jsonb)
+        ELSE profile || '{"password":""}'::jsonb END AS profile, preferences`), [userId])).rows[0]
+    const cleanCard = `c.card - 'frontImageDataUrl' - 'backImageDataUrl' - 'imageDataUrl'
+      || '{"frontImageDataUrl":"","backImageDataUrl":"","imageDataUrl":""}'::jsonb
+      || CASE WHEN COALESCE(c.card->>'frontImageDataUrl','')<>'' THEN '{"hasFrontImageDataUrl":true}'::jsonb ELSE '{}'::jsonb END
+      || CASE WHEN COALESCE(NULLIF(c.card->>'backImageDataUrl',''),c.card->>'imageDataUrl','')<>''
+        THEN '{"hasBackImageDataUrl":true}'::jsonb ELSE '{}'::jsonb END`
+    const items = await client.query(`SELECT i.key, CASE WHEN i.value ? 'quiz' THEN
+      jsonb_set(i.value, '{quiz,cards}', COALESCE((SELECT jsonb_agg(${cleanCard} ORDER BY c.position)
+        FROM jsonb_array_elements(COALESCE(i.value->'quiz'->'cards','[]'::jsonb)) WITH ORDINALITY AS c(card,position)), '[]'::jsonb))
+      ELSE i.value END AS data
+      FROM user_state s CROSS JOIN LATERAL jsonb_each(s.tracking_state->'items') i WHERE s.user_id=$1`, [userId])
+    row.trackingState.items = Object.fromEntries(items.rows.map(item => [item.key, item.data]))
     const original = payload(row)
     assertSafeObject(original)
-    const { state, upsert } = extractMedia(persistSchema.parse(original))
+    const { state } = extractMedia(persistSchema.parse(original))
+
+    // Extract original image bytes in PostgreSQL before replacing the legacy state.
+    await client.query(`WITH sources AS (
+      SELECT i.key::integer AS item_number, c.card->>'id' AS card_id, slot AS image_slot,
+        CASE WHEN slot='front' THEN COALESCE(c.card->>'frontImageDataUrl','')
+          ELSE COALESCE(NULLIF(c.card->>'backImageDataUrl',''),c.card->>'imageDataUrl','') END AS image_data
+      FROM user_state s CROSS JOIN LATERAL jsonb_each(s.tracking_state->'items') i
+      CROSS JOIN LATERAL jsonb_array_elements(COALESCE(i.value->'quiz'->'cards','[]'::jsonb)) c(card)
+      CROSS JOIN (VALUES ('front'),('back')) slots(slot) WHERE s.user_id=$1
+      UNION ALL SELECT 0,'__profile__','back',profile->>'photoUrl' FROM user_state
+        WHERE user_id=$1 AND profile->>'photoUrl' LIKE 'data:%'
+    ) INSERT INTO user_quiz_images(user_id,item_number,card_id,image_slot,image_data,updated_at,image_bytes)
+      SELECT $1,item_number,card_id,image_slot,image_data,$2,octet_length(image_data) FROM sources WHERE image_data<>''
+      ON CONFLICT(user_id,item_number,card_id,image_slot) DO UPDATE SET image_data=EXCLUDED.image_data,
+        updated_at=EXCLUDED.updated_at,image_bytes=EXCLUDED.image_bytes,object_key=NULL,blob_key=NULL,content_hash=NULL`,
+    [userId, new Date().toISOString()])
+    // Deduplicate without returning any base64 strings to the JavaScript process.
+    await client.query(`INSERT INTO user_media_blobs(user_id,blob_key,image_data)
+      SELECT user_id,'legacy:' || encode(sha256(convert_to(image_data,'UTF8')),'hex'),image_data
+      FROM user_quiz_images WHERE user_id=$1 AND object_key IS NULL AND image_data<>''
+      ON CONFLICT DO NOTHING`, [userId])
+    await client.query(`UPDATE user_quiz_images SET
+      blob_key='legacy:' || encode(sha256(convert_to(image_data,'UTF8')),'hex'),
+      content_hash=encode(sha256(convert_to(image_data,'UTF8')),'hex'),
+      image_bytes=octet_length(image_data),image_data=''
+      WHERE user_id=$1 AND object_key IS NULL AND image_data<>''`, [userId])
     const delta = await persistItems(client, userId, { items: {} }, state.trackingState)
     await persistHead(client, userId, state, Number(row.version), row.updatedAt, bytes(header(state)) + delta, row.lastSnapshotAt)
-    await client.query(`UPDATE user_quiz_images SET image_bytes=octet_length(image_data) WHERE user_id=$1 AND image_bytes=0 AND object_key IS NULL`, [userId])
     const media = (await client.query('SELECT COALESCE(SUM(image_bytes),0) AS bytes, COUNT(*)::integer AS count FROM user_quiz_images WHERE user_id=$1', [userId])).rows[0]
     await client.query('UPDATE user_state SET media_bytes=$2,media_count=$3 WHERE user_id=$1', [userId, media.bytes, media.count])
-    await syncMedia(client, userId, upsert, [], { legacy: true })
-    // Une seule copie immuable par média, partagée avec les snapshots.
-    const inline = await client.query("SELECT * FROM user_quiz_images WHERE user_id=$1 AND object_key IS NULL AND image_data<>''", [userId])
-    for (const image of inline.rows) {
-      const hash = crypto.createHash('sha256').update(image.image_data).digest('hex')
-      const key = `legacy:${hash}`
-      await client.query('INSERT INTO user_media_blobs(user_id,blob_key,image_data) VALUES($1,$2,$3) ON CONFLICT DO NOTHING', [userId, key, image.image_data])
-      await client.query("UPDATE user_quiz_images SET image_data='',blob_key=$5,content_hash=$6 WHERE user_id=$1 AND item_number=$2 AND card_id=$3 AND image_slot=$4", [userId, image.item_number, image.card_id, image.image_slot, key, hash])
-    }
   }
 
   async function read(userId, { metadataOnly = true } = {}) {

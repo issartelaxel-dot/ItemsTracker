@@ -625,7 +625,7 @@ async function sendPasswordResetEmail({ userEmail, displayName, code }) {
 }
 
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true })
+  res.json({ ok: true, stateMigration: 'sql-media-v1' })
 })
 
 app.get('/api/auth/me', enforceClientVersion, async (req, res) => {
