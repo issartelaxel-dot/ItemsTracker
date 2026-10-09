@@ -1,3 +1,4 @@
+import { getFreshApiUrl } from './lib/api-cache'
 import { isClientBelowMinimum, refreshObsoleteClient } from './lib/client-refresh'
 import { saveDraft, findDraft, removeDraft, mergeStates, type SaveOperation } from './lib/save-outbox'
 import {
@@ -3441,10 +3442,10 @@ function App() {
     for (let index = 0; index < candidates.length; index += 1) {
       const candidate = candidates[index]
       try {
-        const candidateResponse = await fetch(candidate, {
+        const candidateResponse = await fetch(getFreshApiUrl(candidate, init?.method), {
           ...init,
           credentials: 'include',
-          cache: 'no-store',
+          cache: 'default',
           headers: {
             'Content-Type': 'application/json',
             ...(CLIENT_APP_VERSION ? { 'x-client-version': CLIENT_APP_VERSION } : {}),
@@ -3475,7 +3476,7 @@ function App() {
 
     if (!response) {
       if (lastFetchError instanceof Error) {
-        throw new Error(`API indisponible: ${lastFetchError.message}`)
+        throw new Error('Connexion au serveur impossible. Réessaie dans un instant.')
       }
       throw new Error("API indisponible. Lance aussi le serveur backend (`npm run dev:full`) et vérifie la connexion.")
     }

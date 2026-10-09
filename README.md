@@ -49,7 +49,7 @@ The frontend calls `/api/...` by default on the same domain.
 If your backend is hosted elsewhere, set:
 
 ```bash
-VITE_API_BASE_URL=https://your-backend-domain.com
+VITE_API_BASE_URL=https://api.setup-hub.com
 ```
 
 Example for local dev:
@@ -75,7 +75,9 @@ For the most reliable auth cookies, serve API on the same site (for example `htt
 - Preferred: frontend uses same-origin `/api`
 - Fallback: set `VITE_API_BASE_URL=https://your-backend-domain.com`
 
-The app now tries same-origin first, then falls back to `VITE_API_BASE_URL` if the proxy route is unavailable.
+Production uses `https://api.setup-hub.com`, the verified custom domain of the Render backend. Keeping the frontend and API on the same site improves Safari session reliability. Do not replace this with the `onrender.com` URL in a production build.
+
+An explicit external API is used first; same-origin fallback is disabled unless explicitly enabled.
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
