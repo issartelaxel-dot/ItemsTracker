@@ -72,7 +72,7 @@ test.before(async () => {
   let output = ''
   backend = spawn(process.execPath, ['server/index.mjs'], { env: { ...process.env,
     DATABASE_URL: connectionString, JWT_SECRET: 'test-registration-secret-only-01234567890123456789', PORT: String(apiPort), NODE_ENV: 'test',
-    SMTP_HOST: '127.0.0.1', SMTP_PORT: String(smtp.address().port), SMTP_USER: 'local-test', SMTP_PASS: 'local-test', SMTP_FROM: 'test@local.invalid',
+    EMAIL_PROVIDER: 'smtp', MAIL_FROM: 'test@local.invalid', SMTP_HOST: '127.0.0.1', SMTP_PORT: String(smtp.address().port), SMTP_USER: 'local-test', SMTP_PASS: 'local-test', SMTP_FROM: 'test@local.invalid',
     BOOTSTRAP_EMAIL: '', BOOTSTRAP_PASSWORD: '', MEDIA_S3_BUCKET: '', COOKIE_SECURE: 'false',
   }, stdio: ['ignore', 'pipe', 'pipe'] })
   backend.stdout.on('data', data => { output += data }); backend.stderr.on('data', data => { output += data })

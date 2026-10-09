@@ -16,9 +16,19 @@ Déposez le **contenu** de `deploy-full/` dans votre dossier LWS `/itemstracker/
 
 « Créer un compte » ouvre directement `app.html?auth=register`. Le serveur envoie un code à **6 chiffres à l’utilisateur**, valable 15 minutes. Le compte et la session sont créés seulement après vérification. Le renvoi est disponible après 60 secondes ; cinq codes incorrects imposent de recommencer l’inscription. Les comptes existants restent accessibles.
 
-**Cette fonctionnalité nécessite aussi de redéployer le backend Node**, en plus de téléverser le frontend sur LWS. Configurer `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` et `SMTP_FROM` sur le serveur de l’API (voir `.env.server.example`). `ADMIN_APPROVAL_EMAIL` n’est plus utilisé. Le démarrage ajoute automatiquement la colonne nécessaire aux inscriptions en attente ; aucune suppression des utilisateurs existants n’est requise. Les anciennes demandes de code administrateur doivent être recommencées.
+**Cette fonctionnalité nécessite aussi de redéployer le backend Node**, en plus de téléverser le frontend sur LWS. Configurer le service d’envoi sur le serveur de l’API (voir `.env.server.example` et les options ci-dessous). `ADMIN_APPROVAL_EMAIL` n’est plus utilisé. Le démarrage ajoute automatiquement la colonne nécessaire aux inscriptions en attente ; aucune suppression des utilisateurs existants n’est requise. Les anciennes demandes de code administrateur doivent être recommencées.
 
-`npm run test:auth` vérifie l’inscription sur PostgreSQL temporaire et un serveur SMTP local, sans envoi d’e-mail réel : vérification, consommation unique, expiration, renvoi, limites de tentatives et échecs d’envoi.
+### Envoi des e-mails sur Render
+
+Render Free bloque les connexions SMTP sortantes sur les ports 25, 465 et 587 ([documentation Render](https://render.com/docs/free)). L’inscription et la réinitialisation peuvent utiliser une API HTTPS :
+
+- **Resend** : `EMAIL_PROVIDER=resend`, `RESEND_API_KEY` et `MAIL_FROM`, par exemple `ItemsTracker <noreply@setup-hub.com>`. Vérifier le domaine d’envoi et les DNS demandés chez LWS avant d’utiliser cette adresse. [Domaines Resend](https://resend.com/docs/dashboard/domains/introduction).
+- **Brevo** : `EMAIL_PROVIDER=brevo`, `BREVO_API_KEY` et `MAIL_FROM` correspondant à un expéditeur vérifié. [API Brevo](https://developers.brevo.com/reference/send-transac-email).
+- **SMTP** : `EMAIL_PROVIDER=smtp`, `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` et `SMTP_FROM` (ou `MAIL_FROM`), si l’hébergement autorise ce trafic.
+
+Sans `EMAIL_PROVIDER`, la sélection est automatique : clé Resend, sinon clé Brevo, sinon SMTP. Les clés restent exclusivement sur le backend. Il n’y a aucun basculement automatique après un échec d’envoi, pour éviter les doublons. Les logs du backend indiquent seulement le fournisseur, un code d’erreur et un statut HTTP/SMTP éventuel (`SMTP_CONFIG_MISSING`, `SMTP_AUTH_FAILED`, `SMTP_TIMEOUT`, `EMAIL_API_KEY_MISSING`, `EMAIL_API_REJECTED`, etc.) ; aucun contenu du message, destinataire ou secret n’est enregistré. Une erreur d’envoi ne crée pas le compte.
+
+`npm run test:auth` vérifie l’inscription sur PostgreSQL temporaire et un serveur SMTP local, ainsi que les API Resend/Brevo simulées, sans envoi d’e-mail réel : vérification, consommation unique, expiration, renvoi, limites de tentatives, diagnostics et échecs d’envoi.
 
 - `marketing/` : source durable de la page de vente (HTML/CSS/JS et médias). Modifiez cette version pour les prochains déploiements.
 - `src/` : source de l’application React.

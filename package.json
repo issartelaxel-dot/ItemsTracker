@@ -21,7 +21,7 @@
     "preview": "vite preview",
     "import:items": "node scripts/import-items.mjs",
     "test:backup": "node --import tsx --test tests/*.test.mjs tests/*.test.ts",
-    "test:auth": "node --test tests/registration.integration.test.mjs",
+    "test:auth": "node --test tests/email.test.mjs tests/registration.integration.test.mjs",
     "backup:create": "node scripts/backup.mjs create",
     "backup:verify": "node scripts/backup.mjs verify",
     "backup:restore": "node scripts/backup.mjs restore",

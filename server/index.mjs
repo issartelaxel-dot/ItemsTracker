@@ -9,13 +9,13 @@ import express from 'express'
 import rateLimit from 'express-rate-limit'
 import helmet from 'helmet'
 import jwt from 'jsonwebtoken'
-import nodemailer from 'nodemailer'
 import pg from 'pg'
 import { z } from 'zod'
 import { createStateStore } from './state-store.mjs'
 import { createMediaStore } from './media-store.mjs'
 import { persistSchema, StateError } from './state-model.mjs'
 import { mountRegistration } from './registration.mjs'
+import { createEmailSender } from './email.mjs'
 
 const { Pool } = pg
 
@@ -219,32 +219,7 @@ const mcqGenerationLimiter = rateLimit({
   legacyHeaders: false,
 })
 
-let transporter = null
-function getTransporter() {
-  if (transporter) {
-    return transporter
-  }
-
-  const host = process.env.SMTP_HOST
-  const port = Number(process.env.SMTP_PORT || 587)
-  const user = process.env.SMTP_USER
-  const pass = process.env.SMTP_PASS
-
-  if (!host || !user || !pass) {
-    throw new Error('Missing SMTP_HOST/SMTP_USER/SMTP_PASS in environment variables')
-  }
-
-  transporter = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth: { user, pass },
-    connectionTimeout: 10_000,
-    greetingTimeout: 10_000,
-    socketTimeout: 15_000,
-  })
-  return transporter
-}
+const sendEmail = createEmailSender()
 
 function normalizeEmail(email) {
   return email.trim().toLowerCase()
@@ -622,8 +597,7 @@ function normalizeMcqWebhookPayload(payload) {
 }
 
 async function sendVerificationEmail({ email, code }) {
-  await getTransporter().sendMail({
-    from: process.env.SMTP_FROM || process.env.SMTP_USER,
+  await sendEmail({
     to: email,
     subject: 'Votre code de vérification ItemsTracker',
     text: `Bienvenue sur ItemsTracker !\n\nVotre code de vérification : ${code}\n\nCe code est valable 15 minutes. Ne le partagez pas.\nSi vous n’avez pas demandé cette inscription, ignorez cet e-mail.`,
@@ -632,11 +606,7 @@ async function sendVerificationEmail({ email, code }) {
 }
 
 async function sendPasswordResetEmail({ userEmail, displayName, code }) {
-  const tx = getTransporter()
-  const from = process.env.SMTP_FROM || process.env.SMTP_USER
-
-  await tx.sendMail({
-    from,
+  await sendEmail({
     to: userEmail,
     subject: 'Reinitialisation de mot de passe',
     text: [
@@ -907,7 +877,7 @@ app.post('/api/auth/password/request', authLimiter, async (req, res) => {
       console.error('Failed to send password reset email:', error)
       res.status(500).json({
         error:
-          "Impossible d'envoyer l'email de reinitialisation (SMTP non configure ou indisponible). Verifie les variables SMTP.",
+          "L’e-mail de réinitialisation n’a pas pu être envoyé. Réessaie dans un instant.",
       })
       return
     }
