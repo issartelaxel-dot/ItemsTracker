@@ -7,10 +7,10 @@
     "node": ">=22.12.0 <23"
   },
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run dev:restore-index && vite",
     "server": "node server/index.mjs",
     "dev:full": "concurrently -k \"npm:server\" \"npm:dev\"",
-    "build": "npm run dev:restore-index && tsc -b && vite build",
+    "build": "npm run dev:restore-index && tsc -b && vite build && node scripts/prepare-landing-deploy.mjs",
     "build:deploy": "npm run build && cp .htaccess dist/.htaccess",
     "package:deploy": "npm run build:deploy && node scripts/prepare-deploy.mjs",
     "package:full": "npm run export:ready && node scripts/prepare-full-deploy.mjs",

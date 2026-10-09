@@ -1,5 +1,6 @@
 import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
+import { archiveDeploy } from './archive-deploy.mjs'
 
 const root = process.cwd()
 const distDir = resolve(root, 'dist')
@@ -15,5 +16,6 @@ mkdirSync(outDir, { recursive: true })
 
 cpSync(distDir, outDir, { recursive: true })
 
+archiveDeploy(outDir)
 console.log('Deploy package ready in ./deploy')
-console.log('Upload only the CONTENTS of ./deploy to /ItemsTracker/')
+console.log('Upload only the CONTENTS of ./deploy to /itemstracker/')

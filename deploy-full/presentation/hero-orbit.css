@@ -1,0 +1,46 @@
+/* Three independent benefit cards, framing the animated native dashboard. */
+.relief-benefit-card,.relief-benefit-orbits{display:none}
+html[data-hero-design=relief] .hero-showcase{width:100%;aspect-ratio:760/790;max-width:790px}
+html[data-hero-design=relief] .showcase-dashboard{left:2%;top:14%;width:96%}
+html[data-hero-design=relief] .relief-floating-plane{display:none!important}
+html[data-hero-design=relief] .relief-flip-inner{animation:none}
+html[data-hero-design=relief] .relief-benefit-card{position:absolute;display:flex;align-items:center;gap:14px;z-index:4;background:linear-gradient(135deg,#fff,#fcfdff);border:1px solid #bfd7ff;border-radius:17px;padding:17px 18px;box-shadow:0 12px 28px #05265d30,0 2px 6px #05265d12;font-family:'IBM Plex Sans',sans-serif;color:#17243d;transform-origin:center;animation:relief-benefit-float 8s ease-in-out infinite;animation-play-state:var(--hero-motion-play-state)}
+.relief-benefit-card strong{display:block;font-size:clamp(12px,2.15cqw,17px);font-weight:600;line-height:1.3;letter-spacing:-.025em}
+.relief-benefit-card small{display:block;font-size:clamp(10px,1.7cqw,13px);line-height:1.4;color:#53658c;margin-top:4px}
+.relief-benefit-organize{top:0;right:2%;width:46%;transform:rotate(4deg)}
+.relief-benefit-rhythm{top:85%;left:1%;width:43%;transform:rotate(7deg);animation-delay:-2.6s!important}
+.relief-benefit-students{top:85%;right:2%;width:46%;transform:rotate(-4deg);animation-delay:-5.3s!important}
+.relief-benefit-icon{width:54px;height:54px;flex-shrink:0;display:grid;place-items:center;border-radius:15px;box-shadow:inset 0 1px 0 #fff9}
+.relief-benefit-icon svg{width:34px;height:34px}
+.relief-benefit-icon.blue{color:#0e69fc;background:linear-gradient(145deg,#dcecff,#edf5ff)}
+.relief-benefit-icon.mint{color:#16ae80;background:linear-gradient(145deg,#dff8ee,#edfdf6)}
+.relief-benefit-icon.purple{color:#8043e4;background:linear-gradient(145deg,#eae2ff,#f5f0ff)}
+html[data-hero-design=relief] .relief-benefit-orbits{display:block;position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:0;overflow:visible}
+.relief-orbit-ring{stroke:#92caff;stroke-width:1;stroke-dasharray:4 6;opacity:.38}
+.relief-orbit-links{stroke:#2d7bff;stroke-width:1.6}
+.relief-orbit-dots{fill:#2475ff;stroke:#bddaff;stroke-width:1}
+html[data-hero-design=relief] .showcase-caption{bottom:-40px;right:2%}
+@keyframes relief-benefit-float{0%,100%{translate:0 0}25%{translate:3px -5px}50%{translate:0 -7px}75%{translate:-3px -2px}}
+@media(max-width:1100px) and (min-width:621px){html[data-hero-design=relief] .relief-benefit-card{gap:10px;padding:14px 15px;border-radius:14px}.relief-benefit-icon{width:44px;height:44px;border-radius:12px}.relief-benefit-icon svg{width:29px;height:29px}}
+@media(max-width:1000px){html[data-hero-design=relief] .hero-showcase{max-width:680px;aspect-ratio:760/790}}
+@media(max-width:620px){
+ html[data-hero-design=relief] .hero-showcase{display:grid;grid-template-columns:1fr 1fr;gap:23px 15px;aspect-ratio:auto;max-width:550px}
+ html[data-hero-design=relief] .showcase-dashboard{position:relative;left:auto;top:auto;width:100%;grid-column:1/-1;order:2;transform:none}
+ html[data-hero-design=relief] .relief-benefit-card{position:relative;inset:auto;width:100%;gap:10px;padding:14px;border-radius:14px}
+ html[data-hero-design=relief] .relief-benefit-organize{grid-column:1/-1;order:1;width:min(330px,90%);justify-self:end;transform:rotate(3deg)}
+ html[data-hero-design=relief] .relief-benefit-rhythm{order:3;transform:rotate(2deg)}
+ html[data-hero-design=relief] .relief-benefit-students{order:4;transform:rotate(-2deg)}
+ .relief-benefit-icon{width:40px;height:40px;border-radius:11px}.relief-benefit-icon svg{width:27px;height:27px}
+ .relief-benefit-card strong{font-size:14px}.relief-benefit-card small{font-size:11px}
+ .relief-benefit-card br{display:none}
+ html[data-hero-design=relief] .relief-benefit-orbits{display:none}
+ html[data-hero-design=relief] .showcase-caption{position:relative;inset:auto;order:5;grid-column:1/-1;font-size:9px}
+}
+@media(max-width:500px){
+ html[data-hero-design=relief] .hero-showcase{grid-template-columns:1fr;gap:22px}
+ html[data-hero-design=relief] .relief-benefit-rhythm,html[data-hero-design=relief] .relief-benefit-students{width:92%;justify-self:start;transform:rotate(2deg)}
+ html[data-hero-design=relief] .relief-benefit-students{justify-self:end;transform:rotate(-2deg)}
+ .relief-benefit-card strong{font-size:16px}.relief-benefit-card small{font-size:12px}
+ .relief-benefit-icon{width:46px;height:46px;border-radius:12px}.relief-benefit-icon svg{width:30px;height:30px}
+}
+@media(prefers-reduced-motion:reduce){html[data-hero-design=relief] .relief-benefit-card{animation:none}}

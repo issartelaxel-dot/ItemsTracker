@@ -1,0 +1,106 @@
+/* Centered presentation, with a live native preview inside a pale panel. */
+.hero-surface{display:contents}.hero-centered-only{display:none}.header-actions{display:flex;align-items:center;gap:20px}
+html[data-hero-layout=centered] .hero-previous-only{display:none}
+html[data-hero-layout=centered] .hero-centered-only{display:block}
+html[data-hero-layout=centered] .blue-zone{padding:42px 52px 44px;background:radial-gradient(ellipse at 96% 4%,#57bfff77,transparent 58%),linear-gradient(130deg,#1241a6,#0864ed 45%,#168cff);color:#fff}
+html[data-hero-layout=centered] .hero-surface{display:block;color:#101b38;position:relative;max-width:1320px;margin:auto;border:1px solid #f0f7ff;border-radius:26px;overflow:hidden;background:radial-gradient(ellipse at 2% 52%,#dceeffbb,transparent 50%),radial-gradient(ellipse at 98% 48%,#d9edffbb,transparent 50%),linear-gradient(180deg,#fff,#f4f9ff);box-shadow:0 24px 75px #06246b28}
+html[data-hero-layout=centered] .site-header{width:calc(100% - 84px);height:88px;gap:24px;border:0}
+html[data-hero-layout=centered] .site-header .brand{color:#101b38;gap:10px;font-size:18px}
+html[data-hero-layout=centered] .site-header .logo{width:35px;height:35px;border-radius:10px;background:linear-gradient(180deg,#348cff,#0962f5);border-color:#257bfd;box-shadow:inset 0 1px 0 #ffffff55}
+html[data-hero-layout=centered] .site-header nav{margin-right:auto;margin-left:22px;gap:27px;font-size:12px}
+html[data-hero-layout=centered] .site-header nav a{color:#172646}
+html[data-hero-layout=centered] .site-header .login{padding:0;border:0;font-size:12px;color:#172646}
+html[data-hero-layout=centered] .site-header .login .icon{display:none}
+html[data-hero-layout=centered] .header-access{display:inline-flex;background:linear-gradient(180deg,#2178ff,#0758f4);color:#fff;border-color:#0758f4;border-radius:10px;padding:12px 18px;font-size:12px;white-space:nowrap;box-shadow:0 6px 14px #0060f317}
+html[data-hero-layout=centered] .hero{width:calc(100% - 94px);max-width:1180px;display:flex;flex-direction:column;align-items:stretch;gap:0;padding:24px 0 28px}
+html[data-hero-layout=centered] .hero-copy{text-align:center;max-width:900px;width:100%;margin:auto}
+html[data-hero-layout=centered] .hero .eyebrow{display:inline-block;border-radius:30px;background:#eaf3ff;color:#075bee;padding:9px 16px;font-size:10px;letter-spacing:.14em;margin-bottom:19px}
+html[data-hero-layout=centered] .hero h1{font-size:clamp(34px,4.4vw,64px);font-weight:700;line-height:1.1;letter-spacing:-.055em;color:#090f2b}
+.hero-word-blue{color:#065bfc;margin-left:.07em}
+html[data-hero-layout=centered] .hero-intro{font-size:18px;line-height:1.5;color:#536a92;margin:18px auto 0;max-width:660px}
+html[data-hero-layout=centered] .hero-actions-centered{display:flex;justify-content:center;gap:13px;margin-top:25px}
+html[data-hero-layout=centered] .hero-actions-centered .button{min-height:51px;padding:15px 27px;font-size:14px;border-radius:11px}
+html[data-hero-layout=centered] .hero-primary{background:linear-gradient(180deg,#217bff,#0755ef);color:#fff;border-color:#0860f6;box-shadow:0 8px 18px #075ded22}
+html[data-hero-layout=centered] .hero-primary:hover,html[data-hero-layout=centered] .header-access:hover{background:#0755e8}
+html[data-hero-layout=centered] .hero-secondary{background:#ffffffb3;color:#16264c;border-color:#cbdffc;box-shadow:0 4px 12px #1d62c305}
+html[data-hero-layout=centered] .hero-secondary:hover{background:#eff6ff}
+html[data-hero-layout=centered] .hero-benefit-row{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:19px;margin-top:23px;color:#405982;font-size:12px}
+.hero-benefit-row>span{display:flex;align-items:center;gap:6px}.hero-benefit-row .icon{width:15px;height:15px;color:#1268f6;stroke-width:2}
+html[data-hero-layout=centered] .hero-note{color:#566b8d;font-size:10px;margin-top:13px}
+html[data-hero-layout=centered] .hero-showcase{width:100%;max-width:none;aspect-ratio:auto;margin:30px auto 0;position:relative;display:block;padding:20px 20px 14px;border:1px solid #fff;border-radius:27px;background:linear-gradient(135deg,#6bb2fa,#c7ebff 45%,#69aaff);box-shadow:0 18px 55px #226fbc20,inset 0 1px 0 #fff}
+html[data-hero-layout=centered] .hero-showcase:before{inset:-40px -10px -30px;background:radial-gradient(ellipse at 50% 55%,#61baff80,transparent 76%);opacity:.6}
+html[data-hero-layout=centered] .hero-showcase:after{inset:0;opacity:.12}
+html[data-hero-layout=centered] .showcase-dashboard{position:relative;inset:auto;width:100%;height:auto;aspect-ratio:auto;border-radius:17px;transform:none;border-color:#cfe0f7;box-shadow:0 8px 24px #164f9633}
+html[data-hero-layout=centered] .showcase-dashboard-inner{grid-template-columns:17% 83%;min-height:0}
+html[data-hero-layout=centered] .showcase-sidebar{padding:2.1cqw 1.3cqw;align-items:stretch;background:linear-gradient(160deg,#173f92,#102a66 85%)}
+html[data-hero-layout=centered] .showcase-brand{justify-content:flex-start;gap:.8cqw;font-size:1.48cqw;margin-bottom:2.8cqw}
+html[data-hero-layout=centered] .showcase-brand>span:last-child,html[data-hero-layout=centered] .showcase-theme,html[data-hero-layout=centered] .showcase-profile>div{display:block}
+html[data-hero-layout=centered] .showcase-brand small{font-size:.95cqw}
+html[data-hero-layout=centered] .showcase-brand .logo{width:3.2cqw;height:3.2cqw;border-radius:.8cqw;background:linear-gradient(180deg,#3689ff,#1668ef)}
+html[data-hero-layout=centered] .showcase-brand .logo:after{top:.6cqw;width:1.75cqw;height:.55cqw}
+html[data-hero-layout=centered] .showcase-nav{gap:.65cqw}
+html[data-hero-layout=centered] .showcase-nav>span{justify-content:flex-start;gap:.8cqw;padding:1.05cqw .8cqw;font-size:1.18cqw;border-radius:.7cqw}
+html[data-hero-layout=centered] .showcase-nav .icon{width:1.75cqw;height:1.75cqw}
+html[data-hero-layout=centered] .showcase-nav .is-selected{background:linear-gradient(100deg,#0969fa,#1e59c4);border-color:#7eabed}
+html[data-hero-layout=centered] .showcase-theme{display:flex;font-size:1.02cqw}
+html[data-hero-layout=centered] .showcase-profile{justify-content:flex-start;gap:.75cqw;background:#3961a72e;border:1px solid #9dbcdd24;padding:.8cqw}
+html[data-hero-layout=centered] .showcase-profile>span{width:3.2cqw;height:3.2cqw}
+html[data-hero-layout=centered] .showcase-profile>div{font-size:1.1cqw}
+html[data-hero-layout=centered] .showcase-profile small{font-size:.9cqw}
+html[data-hero-layout=centered] .showcase-content{padding:1.8cqw;gap:1.15cqw;background:linear-gradient(145deg,#f0f7ff,#f9fcff)}
+html[data-hero-layout=centered] .showcase-dashboard-head strong{font-size:2.6cqw}
+html[data-hero-layout=centered] .showcase-metric{padding:1.3cqw}
+html[data-hero-layout=centered] .showcase-metric>span:first-child{font-size:1.3cqw}
+html[data-hero-layout=centered] .showcase-metric>strong{font-size:3.7cqw}
+html[data-hero-layout=centered] .showcase-metric>small{font-size:1cqw}
+html[data-hero-layout=centered] .showcase-mid{grid-template-columns:1.3fr 1fr}
+html[data-hero-layout=centered] .showcase-college-row>span:nth-child(2){font-size:1.35cqw}
+html[data-hero-layout=centered] .showcase-college-row small{font-size:1.02cqw}
+html[data-hero-layout=centered] .relief-benefit-card,html[data-hero-layout=centered] .relief-benefit-orbits{display:none!important}
+html[data-hero-layout=centered] .showcase-caption{position:relative;inset:auto;display:flex;justify-content:space-between;align-items:center;gap:12px;margin:13px 4px 0;font-size:10px;color:#214b7d}
+html[data-hero-layout=centered] .relief-motion-toggle{color:#163c6d;border-color:#4b80be80;background:#f5fbffb3;font-size:10px;min-height:30px}
+html[data-hero-layout=centered] .relief-motion-toggle:hover{background:#fff}
+html[data-hero-layout=centered] .blue-zone :focus-visible{outline-color:#0878c8}
+@media(max-width:1100px){html[data-hero-layout=centered] .blue-zone{padding:30px 28px}html[data-hero-layout=centered] .site-header{width:calc(100% - 54px);gap:15px}html[data-hero-layout=centered] .site-header nav{gap:18px;margin-left:5px}html[data-hero-layout=centered] .header-actions{gap:15px}html[data-hero-layout=centered] .hero{width:calc(100% - 60px)}}
+@media(max-width:900px){html[data-hero-layout=centered] .site-header nav{display:none}html[data-hero-layout=centered] .hero h1{font-size:48px}html[data-hero-layout=centered] .hero-intro{font-size:16px}html[data-hero-layout=centered] .hero-showcase{padding:14px 14px 12px;border-radius:21px}}
+@media(max-width:620px){
+ html[data-hero-layout=centered] .blue-zone{padding:17px 13px 22px}
+ html[data-hero-layout=centered] .hero-surface{border-radius:20px}
+ html[data-hero-layout=centered] .site-header{width:calc(100% - 34px);height:72px;gap:10px}
+ html[data-hero-layout=centered] .site-header .brand{font-size:15px;gap:8px}
+ html[data-hero-layout=centered] .site-header .logo{width:31px;height:31px;border-radius:9px}
+ html[data-hero-layout=centered] .site-header .login{font-size:11px}
+ html[data-hero-layout=centered] .header-access{display:none}
+ html[data-hero-layout=centered] .hero{width:calc(100% - 34px);padding-top:16px;padding-bottom:20px}
+ html[data-hero-layout=centered] .hero .eyebrow{font-size:8px;padding:8px 10px;letter-spacing:.08em;margin-bottom:16px}
+ html[data-hero-layout=centered] .hero h1{font-size:clamp(28px,6.8vw,40px);line-height:1.15;letter-spacing:-.05em}
+ html[data-hero-layout=centered] .hero-intro{font-size:13px;margin-top:15px;line-height:1.6}
+ html[data-hero-layout=centered] .hero-intro br{display:none}
+ html[data-hero-layout=centered] .hero-actions-centered{margin-top:20px;gap:9px}
+ html[data-hero-layout=centered] .hero-actions-centered .button{min-height:46px;padding:12px 15px;font-size:12px;border-radius:9px}
+ html[data-hero-layout=centered] .hero-benefit-row{gap:9px 15px;font-size:10px;margin-top:19px}
+ html[data-hero-layout=centered] .hero-note{font-size:9px;line-height:1.5;margin-top:10px}
+ html[data-hero-layout=centered] .hero-showcase{display:block;margin-top:22px;padding:9px 9px 10px;border-radius:15px}
+ html[data-hero-layout=centered] .showcase-dashboard{grid-column:auto;order:0;border-radius:10px}
+ html[data-hero-layout=centered] .showcase-dashboard-inner{grid-template-columns:11% 89%}
+ html[data-hero-layout=centered] .showcase-brand{justify-content:center}
+ html[data-hero-layout=centered] .showcase-brand>span:last-child,html[data-hero-layout=centered] .showcase-theme,html[data-hero-layout=centered] .showcase-profile>div{display:none}
+ html[data-hero-layout=centered] .showcase-brand .logo{width:5.6cqw;height:5.6cqw}
+ html[data-hero-layout=centered] .showcase-brand .logo:after{width:3cqw;height:1cqw;top:1cqw}
+ html[data-hero-layout=centered] .showcase-nav>span{justify-content:center;font-size:0;gap:0;padding:1.6cqw .5cqw}
+ html[data-hero-layout=centered] .showcase-nav .icon{width:3cqw;height:3cqw}
+ html[data-hero-layout=centered] .showcase-profile{justify-content:center;padding:0;border:0;background:none}
+ html[data-hero-layout=centered] .showcase-profile>span{width:5cqw;height:5cqw}
+ html[data-hero-layout=centered] .showcase-caption{font-size:8px;margin:10px 0 0;gap:5px;flex-wrap:wrap}
+ html[data-hero-layout=centered] .relief-motion-toggle{font-size:9px;padding:5px 7px}
+}
+@media(max-width:390px){html[data-hero-layout=centered] .hero-actions-centered{flex-direction:column;align-items:stretch;max-width:230px;margin-inline:auto}html[data-hero-layout=centered] .hero-benefit-row{gap:8px 12px}html[data-hero-layout=centered] .hero-benefit-row .icon{width:12px;height:12px}}
+
+.hero-free{display:flex;flex-direction:column;align-items:flex-start;gap:5px;margin-top:19px}
+.hero-free-badge{display:inline-flex;align-items:center;gap:7px;padding:7px 12px;border:1px solid #c6ddff;border-radius:30px;background:#eaf3ff;color:#125fd4;font-size:13px;line-height:1.4}
+.hero-free-badge .icon{width:15px;height:15px;stroke-width:2}
+.hero-free-badge strong{font-weight:600}
+.hero-free>small{font-size:10px;line-height:1.5;color:#dceaff}
+html[data-hero-layout=centered] .hero-free{align-items:center;margin-top:18px}
+html[data-hero-layout=centered] .hero-free>small{color:#526b8d}
+@media(max-width:620px){.hero-free-badge{font-size:12px;padding:6px 11px}.hero-free>small{font-size:9px}.hero-free,html[data-hero-layout=centered] .hero-free{margin-top:15px}}

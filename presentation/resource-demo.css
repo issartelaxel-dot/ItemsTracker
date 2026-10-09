@@ -1,0 +1,24 @@
+#panel-resources .resource-list{display:grid;gap:14px}
+.resource-section{border:1px solid #cedef2;border-radius:10px;overflow:hidden;background:#fff}
+.resource-section>summary{display:flex;align-items:center;gap:10px;padding:13px 15px;font-size:13px;font-weight:600;cursor:pointer;list-style:none;background:#fafdff;color:#182d45}
+.resource-section>summary::-webkit-details-marker{display:none}
+.resource-section>summary>.icon{width:17px;height:17px;color:#2f73e5}
+.resource-section>summary>.resource-chevron{margin-left:auto;width:25px;height:25px;display:grid;place-items:center;border:1px solid #d5e3f6;border-radius:6px}
+.resource-chevron .icon{width:14px;height:14px;transition:transform .2s}
+.resource-section[open] .resource-chevron .icon{transform:rotate(90deg)}
+.resource-section-body{padding:0 15px 15px}
+.resource-section-body h4{font-size:14px;line-height:1.4;margin-top:8px;color:#193655}
+.resource-video{display:block;width:100%;aspect-ratio:854/480;object-fit:contain;background:#fff;border:1px solid #dde8f5;border-radius:8px;margin-top:11px}
+.resource-media-meta{display:flex;gap:8px;align-items:center;font-size:10px;color:#597191;margin:6px 0 0}
+.resource-media-meta>span{border:1px solid #d5e4fa;background:#f1f7ff;color:#37639e;padding:2px 5px;border-radius:4px}
+.resource-credit{font-size:10px;line-height:1.6;color:#5b7190;margin-top:10px;overflow-wrap:anywhere}
+.resource-credit a{color:#255caa;text-underline-offset:3px}
+.resource-link-preview{display:flex;align-items:flex-start;gap:12px;border:1px solid #dce8f7;border-radius:8px;padding:14px;text-decoration:none;background:linear-gradient(125deg,#f5f9ff,#fff)}
+.resource-link-preview>.icon{width:22px;height:22px;color:#2e75e8;margin-top:3px}
+.resource-link-preview>span{min-width:0;flex:1}
+.resource-link-preview strong{display:block;font-size:14px;line-height:1.4;color:#1f3958}
+.resource-link-preview small{display:block;font-size:11px;color:#597294;margin-top:5px;line-height:1.5}
+.resource-link-preview>.resource-link-arrow{width:16px;height:16px;margin-top:4px}
+.resource-link-preview:hover{border-color:#9dbff5;background:#f2f7ff}
+@media(max-width:500px){.resource-section>summary{padding:12px}.resource-section-body{padding:0 12px 12px}.resource-link-preview{padding:12px;gap:9px}}
+@media(prefers-reduced-motion:reduce){.resource-chevron .icon{transition:none}}

@@ -1,4 +1,26 @@
-# React + TypeScript + Vite
+# ItemsTracker — application et page de vente
+
+## Page de vente intégrée au déploiement LWS
+
+La page de vente est désormais l’accueil de `/itemstracker/`. L’application React est accessible à `/itemstracker/app.html`. Les boutons de connexion et de demande d’accès de la page de vente pointent vers cette application sur le même hébergement. L’API et la connexion de l’application ne sont pas modifiées.
+
+```bash
+npm run package:full
+```
+
+La commande crée aussi `deploy-full/Archive.zip`, à téléverser puis extraire directement dans votre dossier LWS. `package:deploy` crée `deploy/Archive.zip`. La création des archives utilise la commande `zip` (disponible sur ce Mac).
+
+Déposez le **contenu** de `deploy-full/` dans votre dossier LWS `/itemstracker/`, comme auparavant : `index.html`, `app.html`, `.htaccess`, `assets/`, `presentation/`, les icônes. `npm run package:deploy` produit la même organisation dans `deploy/`. Aucun build sur LWS n’est nécessaire.
+
+- `marketing/` : source durable de la page de vente (HTML/CSS/JS et médias). Modifiez cette version pour les prochains déploiements.
+- `src/` : source de l’application React.
+- `dist/index.html` : page de vente générée ; `dist/app.html` : entrée React.
+- `presentation/` : styles/scripts/médias de la page de vente, distincts de `assets/` de l’application.
+- La section d’essai reste masquée. Les animations, le parcours médecine et la gratuité validés sont conservés.
+
+Le build inclut les deux pages automatiquement. `export:ready` prépare aussi l’export à la racine du projet avec la même organisation. La restauration du modèle `index.dev.html` avant le build et le démarrage du développement reste active ; le développement React avec Vite fonctionne comme avant.
+
+Les archives de déploiement contiennent le frontend et la page de vente ; votre API existante conserve son déploiement et sa configuration.
 
 ## API configuration (production)
 
@@ -42,19 +64,19 @@ Use a Render **Static Site** that publishes `dist`:
 
 - Build command: `npm ci && npm run build`
 - Publish directory: `dist`
-- Environment variable: `VITE_BASE_PATH=/ItemsTracker/`
+- Environment variable: `VITE_BASE_PATH=/itemstracker/`
 
 If you use Render Blueprint, this repo already includes [`render.yaml`](./render.yaml) with this setup.
 
-## Deploy all files (manual upload)
+## Deploy application and sales page (manual upload)
 
-If you want to upload the whole project each time (not only `dist`), run:
+To prepare the application and sales page together for manual upload, run:
 
 ```bash
 npm run package:full
 ```
 
-Then upload the **contents** of `deploy-full/` to `/ItemsTracker/`.
+Then upload the **contents** of `deploy-full/` to `/itemstracker/`.
 
 Currently, two official plugins are available:
 

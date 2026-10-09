@@ -1,0 +1,6 @@
+/* The original white capsule retreats within its blue logo. */
+.brand-motion{overflow:hidden;--brand-bar-y:0px;--brand-drop:16px}
+.brand-motion:after{transform:translate(-50%,var(--brand-bar-y));transition:transform .26s cubic-bezier(.22,1,.36,1);pointer-events:none;will-change:transform}
+.brand-motion.is-brand-greeting:after{animation:brand-greeting 1.05s cubic-bezier(.22,1,.36,1) both}
+@keyframes brand-greeting{0%,100%{transform:translate(-50%,0)}35%,55%{transform:translate(-50%,var(--brand-drop))}}
+@media(prefers-reduced-motion:reduce){.brand-motion:after{animation:none!important;transition:none!important;transform:translate(-50%,0)!important}}

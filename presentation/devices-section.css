@@ -1,0 +1,37 @@
+.devices-section{padding:74px 0 54px;margin-top:18px;background:radial-gradient(ellipse at 77% 52%,#d9ecff99,transparent 54%),linear-gradient(180deg,#fff,#f7fbff);overflow:hidden}
+.devices-layout{display:grid;grid-template-columns:.8fr 1.35fr;gap:46px;align-items:center}
+.devices-copy .eyebrow{font-size:10px;line-height:1.6;letter-spacing:.1em;margin-bottom:22px}
+.devices-copy h2{font-size:clamp(32px,3.2vw,46px);line-height:1.13;letter-spacing:-.05em;color:#0e1b35;margin-bottom:22px}
+.devices-copy>p:not(.eyebrow){font-size:17px;line-height:1.7;color:#536f97;max-width:380px}
+.devices-copy .button{margin-top:27px;padding:15px 21px;border-radius:10px;font-size:13px;box-shadow:0 9px 20px #1268df18}
+.devices-stage{position:relative;min-width:0;aspect-ratio:710/530;display:flex;align-items:flex-start;padding-top:24px;isolation:isolate}
+.devices-stage:before{content:'';position:absolute;inset:-10% -9%;z-index:-1;pointer-events:none;background:radial-gradient(ellipse at 60% 57%,#99cdff65,transparent 68%)}
+.device-browser{width:92%;background:#f7fbff;border:1px solid #c6daf7;border-radius:17px;overflow:hidden;box-shadow:0 20px 55px #1c559d23,0 2px 5px #1a416c10}
+.device-browser>img{display:block;width:100%;height:auto}
+.device-phone{position:absolute;right:0;bottom:12px;width:28%;padding:6px;border-radius:30px;background:#101e35;border:1px solid #8aa2bd;box-shadow:0 19px 45px #0c326236}
+.device-phone-screen{background:#f2f7ff;aspect-ratio:390/805;border-radius:24px;overflow:hidden;position:relative;display:flex;flex-direction:column;justify-content:center}
+.device-phone-header{display:flex;align-items:center;gap:6px;padding:25px 10px 12px;background:#fff;font-size:10px;font-weight:600;color:#1b3a65}
+.device-brand-icon{display:inline-block;width:18px;height:18px;border-radius:5px;background:linear-gradient(180deg,#3383fd,#0760f4);position:relative;flex-shrink:0}
+.device-brand-icon:after{content:'';position:absolute;width:10px;height:3px;left:4px;top:4px;border-radius:3px;background:#fff}
+.device-phone-header small{margin-left:auto;font-size:8px;font-weight:400;color:#5e7698}
+.device-phone-screen>img{width:100%;height:auto;display:block;margin-block:auto}
+.device-phone:before{content:'';position:absolute;z-index:1;top:11px;left:39%;width:22%;height:9px;background:#111e34;border-radius:9px}
+.device-phone:after{content:'';position:absolute;bottom:12px;left:35%;width:30%;height:3px;background:#17305270;border-radius:5px}
+@media(max-width:1050px) and (min-width:801px){.devices-layout{gap:25px}.devices-copy h2{font-size:34px}.devices-copy>p:not(.eyebrow){font-size:14px}.device-phone-header{font-size:8px;padding:20px 7px 9px;gap:4px}.device-phone-header small{font-size:6px}.devices-note{font-size:9px;padding:8px 10px}}
+@media(max-width:800px){.devices-section{padding:42px 0 44px;margin-top:0}.devices-layout{grid-template-columns:1fr;gap:25px}.devices-copy{text-align:center}.devices-copy h2{font-size:34px;margin-bottom:18px}.devices-copy>p:not(.eyebrow){font-size:14px;margin:0 auto;max-width:430px}.devices-copy .eyebrow{font-size:8px;margin-bottom:16px}.devices-copy .button{margin-top:21px}.devices-stage{padding-top:15px;aspect-ratio:710/555;max-width:710px;width:100%;margin:auto}}
+@media(max-width:480px){.device-browser{border-radius:11px}.device-phone{border-radius:18px;padding:4px;bottom:12px}.device-phone-screen{border-radius:13px}.device-phone:before{top:7px;height:5px}.device-phone-header{padding:13px 5px 7px;gap:3px;font-size:6px}.device-brand-icon{width:11px;height:11px;border-radius:3px}.device-brand-icon:after{width:6px;height:2px;left:2.5px;top:2px}.device-phone-header small{font-size:5px}.device-phone:after{height:2px;bottom:7px}.devices-note{left:2px;bottom:4px;font-size:7px;padding:7px 9px;gap:5px}.devices-note .icon{width:11px;height:11px}}
+
+/* Native phone content keeps text and icons crisp at every density. */
+.device-phone-screen{container-type:inline-size}
+.device-revision{display:flex;flex-direction:column;padding:8cqw 6cqw 10cqw;flex:1;min-height:0;gap:8cqw}
+.device-revision-meta{display:flex;justify-content:space-between;align-items:center;color:#526f93;font-size:5cqw;font-weight:500;letter-spacing:.03em}
+.device-revision-progress{height:1.5cqw;background:#e3edff;border-radius:2cqw;overflow:hidden}
+.device-revision-progress i{display:block;height:100%;width:100%;background:#216df8}
+.device-question-card{margin-block:auto;padding:9cqw 7cqw;background:#fff;border:1px solid #dbe7f7;border-radius:7cqw;box-shadow:0 5cqw 10cqw #294d7b0b;min-height:66cqw;display:flex;flex-direction:column;justify-content:center;align-items:flex-start}
+.device-specialty{display:inline-block;background:#246eff;color:#fff;padding:2cqw 4cqw;border-radius:5cqw;font-size:5cqw;line-height:1.2}
+.device-item{font:4.3cqw 'IBM Plex Mono',monospace;color:#627795;margin-top:4cqw}
+.device-question,.device-answer{font-size:7cqw;line-height:1.55;color:#1f3553;margin-top:7cqw}
+.device-reveal{display:flex;align-items:center;justify-content:center;gap:3cqw;border:1px solid #dae7fc;border-radius:12cqw;background:#fff;color:#1760dc;padding:4cqw 5cqw;font-size:6cqw;font-weight:500;box-shadow:0 3cqw 6cqw #284d7b0c;width:100%}
+.device-reveal .icon{width:7cqw;height:7cqw;flex-shrink:0}
+.device-reveal:hover{background:#edf5ff;border-color:#afd0ff}
+.device-reveal:focus-visible{outline:2px solid #176be9;outline-offset:3px}
