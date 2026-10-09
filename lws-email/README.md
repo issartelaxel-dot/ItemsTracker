@@ -5,15 +5,15 @@ L’API Node transmet une demande signée en HTTPS à ce dossier. Le PHP sur LWS
 ## Première installation
 
 1. Dans le dossier local du projet, exécuter `npm run setup:mail-relay`. La commande crée `installation-mail-lws/relay-config.local.php` et `installation-mail-lws/render.env.local`, sans afficher leur secret. Réexécuter la commande conserve le secret et la configuration existants.
-2. Téléverser et extraire `deploy-full.zip` dans `/itemstracker/` sur LWS. Le paquet contient `email-relay/send.php`, le relais et PHPMailer. Le dossier `installation-mail-lws` reste local.
-3. **Avant de téléverser des secrets**, ouvrir `https://setup-hub.com/itemstracker/email-relay/send.php`. PHP doit répondre en JSON avec `MAIL_RELAY_METHOD_NOT_ALLOWED` (HTTP 405). Un téléchargement du fichier PHP, son code source ou un 404 signifie que PHP/le chemin n’est pas encore opérationnel. Activer PHP sur LWS avant de poursuivre. PHP 7.4+ avec OpenSSL est requis.
-4. Ouvrir le fichier local `installation-mail-lws/relay-config.local.php` et renseigner uniquement `smtpPass` avec le mot de passe actuel de la boîte `hello@setup-hub.com`. Téléverser ce fichier dans `/itemstracker/email-relay/`. Ne pas renommer le fichier ni le placer à la racine du site. Le serveur SMTP LWS est prérempli (`mail89.lwspanel.com`, SSL, 465) ; `mail.setup-hub.com` peut aussi être utilisé selon la configuration de la boîte.
+2. Dans LWS → Zone DNS, ajouter un enregistrement **A**, nom `mail-relay`, valeur `193.203.239.86`. Ne pas modifier l’enregistrement `@` : le site principal utilise un autre serveur.
+3. Dans LWS → Sous domaines, créer `mail-relay.setup-hub.com`. Utiliser le dossier existant `ItemsTracker` comme racine si le panneau le permet. Sinon, copier le dossier `email-relay` dans la racine créée pour ce sous-domaine. Activer son certificat HTTPS dans LWS → SSL. L’URL finale doit être `https://mail-relay.setup-hub.com/email-relay/send.php`.
+4. Renseigner `smtpPass` dans `installation-mail-lws/relay-config.local.php`, puis exécuter `node scripts/prepare-full-deploy.mjs`. Le paquet privé `deploy-full.zip` inclut alors la configuration existante. Installer son dossier `email-relay` dans la racine du sous-domaine. PHP 7.4+ avec OpenSSL est requis. Ouvrir l’URL précédente : elle doit répondre en JSON avec `MAIL_RELAY_METHOD_NOT_ALLOWED` (HTTP 405). Le serveur SMTP est prérempli (`mail89.lwspanel.com`, SSL, 465).
 5. Dans **Render → service backend → Environment**, copier les trois variables du fichier `installation-mail-lws/render.env.local` : `EMAIL_PROVIDER=lws`, `MAIL_RELAY_URL`, `MAIL_RELAY_SECRET`. Enregistrer et redéployer le backend. Le mot de passe de la boîte reste sur LWS ; le secret de signature doit correspondre sur les deux serveurs.
 6. Effectuer une inscription depuis l’application. Le code de vérification doit être reçu par e-mail. La réinitialisation du mot de passe utilise le même relais.
 
 ## Mises à jour
 
-Les archives habituelles ne contiennent **jamais** `relay-config.local.php` : elles préservent la configuration déjà installée sur LWS. Le fichier d’exemple ne contient aucun secret. Ne pas supprimer le dossier distant avant de mettre à jour ses scripts ; remplacer les fichiers du nouveau paquet.
+Sans configuration locale, les archives ne contiennent aucun secret. Lorsque `installation-mail-lws/relay-config.local.php` existe, le paquet complet inclut cette configuration : cette archive est privée et ne doit pas être partagée. Le fichier d’exemple ne contient aucun secret. Ne pas supprimer le dossier distant avant de mettre à jour ses scripts ; remplacer les fichiers du nouveau paquet.
 
 Les deux fichiers générés dans `installation-mail-lws/` sont privés et exclus de Git. Ne pas les copier dans le frontend, les ajouter au dépôt ou partager leur contenu. Si le mot de passe de la boîte change, actualiser `smtpPass` sur LWS et la copie locale.
 

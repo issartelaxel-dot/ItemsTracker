@@ -1,4 +1,4 @@
-import { cpSync, existsSync, mkdirSync, rmSync } from 'node:fs'
+import { chmodSync, cpSync, existsSync, mkdirSync, rmSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { archiveDeploy } from './archive-deploy.mjs'
 import { prepareMailRelay } from './prepare-mail-relay.mjs'
@@ -25,8 +25,20 @@ for (const entryName of includedTopLevel) {
 }
 
 prepareMailRelay(outDir)
+const localConfig = resolve(root, 'installation-mail-lws/relay-config.local.php')
+const hasLocalConfig = existsSync(localConfig)
+if (hasLocalConfig) {
+  const destination = resolve(outDir, 'email-relay/relay-config.local.php')
+  cpSync(localConfig, destination)
+  chmodSync(destination, 0o600)
+}
 archiveDeploy(outDir)
 cpSync(resolve(outDir, 'Archive.zip'), resolve(root, 'deploy-full.zip'))
+if (hasLocalConfig) {
+  chmodSync(resolve(outDir, 'Archive.zip'), 0o600)
+  chmodSync(resolve(root, 'deploy-full.zip'), 0o600)
+  console.log('Private package: includes your local relay configuration. Do not share this archive.')
+}
 console.log('Full deploy package ready in ./deploy-full')
 console.log('Upload-ready archive also available as ./deploy-full.zip')
 console.log('Upload the CONTENTS of ./deploy-full to /itemstracker/')
