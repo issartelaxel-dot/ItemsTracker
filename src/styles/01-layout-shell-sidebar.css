@@ -693,3 +693,61 @@
   color: rgba(219, 234, 255, 0.74);
   font-size: 0.72rem;
 }
+
+/* Spacious workspace navigation, with the goal and account actions below. */
+.dashboard-sidebar {
+  grid-template-rows: auto auto minmax(min-content, 1fr);
+  padding: 1rem 0.85rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  box-shadow: none;
+}
+.sidebar-head { margin-bottom: 1rem; padding-bottom: 1.25rem; }
+.sidebar-head-top { align-items: center; gap: 0.8rem; }
+.sidebar-logo { margin-bottom: 0; width: 48px; height: 48px; }
+.sidebar-grade { font-size: 1.12rem; line-height: 1.3; }
+.sidebar-title { margin-top: 0.3rem; font-size: 0.9rem; }
+.sidebar-workspace-label {
+  margin: 0 0 0.55rem;
+  padding: 0 0.35rem;
+  color: #b6cfff;
+  font-size: 0.68rem;
+  letter-spacing: 0.055em;
+  font-weight: 500;
+  grid-column: 1 / -1;
+}
+.sidebar-nav { gap: 0.4rem; }
+.sidebar-nav-item { min-height: 48px; padding: 0.65rem 0.7rem; gap: 0.85rem; font-weight: 400; font-size: 1rem; }
+.sidebar-nav-item.active { font-weight: 600; }
+.sidebar-nav-icon,
+.sidebar-nav-item.active .sidebar-nav-icon {
+  width: 23px;
+  height: 23px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.sidebar-nav-icon-img { width: 22px; height: 22px; }
+.sidebar-footer { border-top: 0; padding-top: 1.25rem; gap: 0.25rem; }
+.sidebar-daily-goal { background: #ffffff0e; border-radius: 10px; padding: 0.8rem; margin-bottom: 0.9rem; }
+.sidebar-daily-goal-heading { display: flex; align-items: center; gap: 0.5rem; font-size: 0.8rem; }
+.sidebar-daily-goal-heading .ui-icon { color: #ffb477; font-size: 1.1rem; }
+.sidebar-daily-goal-heading small { margin-left: auto; font-size: 0.72rem; color: #c9dbff; }
+.sidebar-daily-goal-track { height: 5px; border-radius: 99px; overflow: hidden; background: #ffffff25; margin-top: 0.75rem; }
+.sidebar-daily-goal-track span { display: block; height: 100%; background: #b9d4ff; border-radius: inherit; transition: width 0.25s ease; }
+.sidebar-footer-action { border-bottom: 0; padding: 0.65rem 0.6rem; min-height: 44px; font-weight: 400; }
+.sidebar-profile-wrap { margin-top: 0.55rem; }
+.sidebar-profile-trigger { border: 0; border-radius: 10px; background: transparent; padding: 0.6rem; box-shadow: none; gap: 0.75rem; grid-template-columns: 40px minmax(0, 1fr) auto; }
+.sidebar-profile-trigger:hover { background: #ffffff10; }
+.sidebar-profile-avatar { width: 40px; height: 40px; border-radius: 50%; }
+.sidebar-profile-meta strong { font-size: 0.95rem; }
+.sidebar-profile-meta small { font-size: 0.75rem; color: #b9cfff; }
+.sidebar-profile-more { margin-left: auto; color: #d9e6ff; font-size: 1.2rem; }
+.dashboard-layout.is-sidebar-collapsed .sidebar-workspace-label,
+.dashboard-layout.is-sidebar-collapsed .sidebar-daily-goal,
+.dashboard-layout.is-sidebar-collapsed .sidebar-profile-more,
+.dashboard-layout.is-sidebar-collapsed .sidebar-logout-arrow { display: none; }
+:root[data-theme='dark'] .dashboard-sidebar { box-shadow: none; }
+
+.sidebar-theme-action { border-top: 1px solid #ffffff25; padding-top: 0.9rem; }
+.dashboard-layout.is-sidebar-collapsed .sidebar-profile-trigger { grid-template-columns: 1fr; }

@@ -7733,7 +7733,8 @@ function getPasswordStrengthMeta(password: string) {
             </div>
           </div>
         </div>
-        <nav ref={sidebarNavRef} className={`sidebar-nav ${sidebarNavBubble.ready ? 'with-active-bubble' : ''}`}>
+        <nav ref={sidebarNavRef} aria-label="Navigation principale" className={`sidebar-nav ${sidebarNavBubble.ready ? 'with-active-bubble' : ''}`}>
+          <p className="sidebar-workspace-label">WORKSPACE</p>
           <span
             className="sidebar-nav-active-bubble"
             aria-hidden="true"
@@ -7752,7 +7753,7 @@ function getPasswordStrengthMeta(password: string) {
             onClick={() => setActiveView('dashboard')}
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
-              <Dashboard className="sidebar-nav-icon-img" aria-hidden="true" />
+              <svg className="sidebar-nav-icon-img" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="10" rx="1.5" /><rect x="14" y="3" width="7" height="6" rx="1.5" /><rect x="3" y="17" width="7" height="4" rx="1" /><rect x="14" y="13" width="7" height="8" rx="1.5" /></svg>
             </span>
             <span className="sidebar-nav-label">Dashboard</span>
           </button>
@@ -7809,6 +7810,16 @@ function getPasswordStrengthMeta(password: string) {
           </button>
         </nav>
         <div className="sidebar-footer">
+          <div className="sidebar-daily-goal">
+            <div className="sidebar-daily-goal-heading">
+              <FireFlame className="ui-icon" aria-hidden="true" />
+              <span>Objectif quotidien</span>
+              <small>{dashboardStudyStats.weekDays.find(day => day.isToday)?.count ?? 0}/20</small>
+            </div>
+            <div className="sidebar-daily-goal-track" role="progressbar" aria-label="Objectif quotidien de lectures" aria-valuemin={0} aria-valuemax={20} aria-valuenow={Math.min(20, dashboardStudyStats.weekDays.find(day => day.isToday)?.count ?? 0)} aria-valuetext={`${dashboardStudyStats.weekDays.find(day => day.isToday)?.count ?? 0} lectures sur un objectif de 20`}>
+              <span style={{ width: `${Math.min(100, (dashboardStudyStats.weekDays.find(day => day.isToday)?.count ?? 0) * 5)}%` }} />
+            </div>
+          </div>
           <button
             type="button"
             className="sidebar-footer-action sidebar-theme-action"
@@ -7827,7 +7838,7 @@ function getPasswordStrengthMeta(password: string) {
             <span className="sidebar-footer-icon" aria-hidden="true">
               <LogOut className="sidebar-footer-icon-img" aria-hidden="true" />
             </span>
-            <span className="sidebar-footer-label">Déconnexion</span>
+            <span className="sidebar-footer-label">Déconnexion</span><NavArrowRight className="ui-icon sidebar-logout-arrow" aria-hidden="true" />
           </button>
           <div className="sidebar-profile-wrap">
             <button
@@ -7847,8 +7858,9 @@ function getPasswordStrengthMeta(password: string) {
               )}
               <span className="sidebar-profile-meta">
                 <strong>{profile.firstName || authUser?.displayName || 'Setup Hub'}</strong>
-                <small>{profile.email || authUser?.email || 'hello@setup-hub.com'}</small>
+                <small>Mon profil</small>
               </span>
+              <MoreHoriz className="ui-icon sidebar-profile-more" aria-hidden="true" />
             </button>
           </div>
         </div>
