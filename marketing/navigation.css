@@ -88,3 +88,23 @@
   .mobile-navigation .menu-label { display: none; }
   .mobile-navigation summary { width: 44px; padding: 10px; }
 }
+
+/* Group navigation and account actions into a balanced mobile/tablet footer. */
+.footer-sections, .footer-account { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 24px; }
+@media (max-width: 1100px) {
+  .site-footer { flex-direction: column; align-items: center; gap: 20px; padding-block: 28px; }
+  .site-footer .footer-navigation { display: flex; flex-direction: column; width: 100%; max-width: 560px; gap: 16px; font-size: 13px; }
+  .footer-sections { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); width: 100%; gap: 0 8px; }
+  .footer-sections a { justify-content: center; text-align: center; padding: 6px; }
+  .footer-account { width: 100%; justify-content: center; gap: 12px; padding-top: 16px; border-top: 1px solid #e1e9f3; }
+  .footer-account a { justify-content: center; padding: 10px 16px; border-radius: 10px; }
+  .footer-account .footer-register { background: #0758f4; color: #fff; font-weight: 500; text-decoration: none; }
+  .footer-account .footer-register:hover { background: #0755e8; }
+}
+@media (max-width: 620px) {
+  .site-footer .footer-navigation { max-width: 380px; }
+  .footer-sections { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .footer-sections a:last-child { grid-column: 1 / -1; }
+  .footer-account { gap: 8px; }
+  .footer-account a { flex: 1; padding-inline: 8px; }
+}
