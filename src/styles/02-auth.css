@@ -154,30 +154,30 @@
   width: min(1100px, 100%);
   margin: 0 auto;
   padding: 16px 22px;
-  border: 1px solid #ffffff30;
+  border: 1px solid #d1dfed;
   border-radius: 14px;
-  background: #04235566;
+  background: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 12px 24px;
 }
-.auth-public-footer .auth-public-brand { color: #fff; font-size: 14px; }
+.auth-public-footer .auth-public-brand { color: #101b38; font-size: 15px; }
 .auth-footer-brand .logo { width: 28px; height: 28px; border-radius: 8px; }
 .auth-footer-brand .logo::after { width: 17px; height: 5px; top: 6px; }
-.auth-public-footer nav { display: flex; gap: 20px; }
+.auth-public-footer nav { display: flex; align-items: center; justify-content: flex-end; flex-wrap: wrap; gap: 4px 20px; }
 .auth-public-footer nav a {
   display: inline-flex;
   align-items: center;
   min-height: 44px;
-  color: #fff;
-  font-size: 13px;
+  color: #425c7d;
+  font-size: 12px;
   text-decoration: none;
 }
 .auth-public-footer nav a:hover { text-decoration: underline; text-underline-offset: 4px; }
-.auth-public-footer p { margin: 0; color: #fff; font-size: 12px; }
-.auth-public-footer :focus-visible { outline-color: #fff; }
+.auth-public-footer p { margin: 0; color: #5d7188; font-size: 12px; }
+.auth-public-footer :focus-visible { outline-color: #007fb5; }
 
 .auth-shell-public .auth-card {
   width: min(440px, calc(100% - 48px));
@@ -311,7 +311,7 @@
   .auth-intro { font-size: 14px; }
   .auth-benefits h2 { font-size: 19px; }
   .auth-public-footer { justify-content: center; text-align: center; }
-  .auth-public-footer nav { justify-content: center; width: 100%; gap: 24px; }
+  .auth-public-footer nav { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); justify-content: start; width: 100%; gap: 4px 16px; text-align: left; }
   .auth-public-footer p { width: 100%; }
 }
 

@@ -7609,9 +7609,13 @@ function getPasswordStrengthMeta(password: string) {
             <span>ItemsTracker</span>
           </a>
           <nav aria-label="Liens de pied de page">
-            <a href={`${APP_BASE_URL}/`}>Accueil</a>
+            <a href={`${APP_BASE_URL}/#fonctionnalites`}>Fonctionnalités</a>
+            <a href={`${APP_BASE_URL}/#benefices`}>Bénéfices</a>
+            <a href={`${APP_BASE_URL}/#vos-ecrans`}>Vos écrans</a>
+            <a href={`${APP_BASE_URL}/#votre-parcours`}>Votre parcours</a>
             <a href={`${APP_BASE_URL}/#faq`}>FAQ</a>
-            <a href={`mailto:${SUPPORT_EMAIL}`}>Contact</a>
+            <a href={`${APP_BASE_URL}/app.html`}>Se connecter</a>
+            <a href={`${APP_BASE_URL}/app.html?auth=register`}>Créer un compte</a>
           </nav>
           <p>© {new Date().getFullYear()} ItemsTracker</p>
         </footer>
