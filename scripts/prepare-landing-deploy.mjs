@@ -42,6 +42,15 @@ let html = readFileSync(resolve(marketing, 'index.html'), 'utf8')
 html = html.replaceAll(`href="${appUrl}" target="_blank" rel="noopener"`, `href="${appUrl}"`)
 html = html.replace(`${base}presentation/page-transition.css"`, `${transitionStyles}"`)
   .replace(`${base}presentation/page-transition.js"`, `${transitionScript}"`)
+// A new HTML export must load its matching presentation styles and scripts.
+html = html.replace(/\b(src|href)="([^"]+)"/g, (attribute, name, value) => {
+  const prefix = `${base}presentation/`
+  if (!value.startsWith(prefix) || value.includes('?') || value.includes('#')) return attribute
+  const asset = value.slice(prefix.length)
+  if (!/^[\w.-]+\.(css|js)$/.test(asset)) return attribute
+  const hash = createHash('sha256').update(readFileSync(resolve(marketing, asset))).digest('hex').slice(0, 16)
+  return `${name}="${value}?v=${hash}"`
+})
 writeFileSync(resolve(dist, 'index.html'), html)
 // There is only one public landing entrypoint; CSS/assets remain relative here.
 rmSync(resolve(presentation, 'index.html'))

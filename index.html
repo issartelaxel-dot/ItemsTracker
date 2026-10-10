@@ -8,31 +8,33 @@
   <title>ItemsTracker — Des révisions EDN plus régulières, à votre façon</title>
   <link rel="stylesheet" href="/itemstracker/presentation/page-transition.css?v=a81bf0ba93d80ae1">
   <script src="/itemstracker/presentation/page-transition.js?v=1ac84985037f78f2"></script>
-  <link rel="stylesheet" href="/itemstracker/presentation/styles.css">
-  <link rel="stylesheet" href="/itemstracker/presentation/benefit-scenes.css">
-  <link rel="stylesheet" href="/itemstracker/presentation/ai-preview.css">
-  <link rel="stylesheet" href="/itemstracker/presentation/medical-quiz.css">
-  <link rel="stylesheet" href="/itemstracker/presentation/item-demo.css">
-  <link rel="stylesheet" href="/itemstracker/presentation/feature-overview.css">
-  <link rel="stylesheet" href="/itemstracker/presentation/hero-showcase.css">
-  <link rel="stylesheet" href="/itemstracker/presentation/hero-designs.css">
-  <link rel="stylesheet" href="/itemstracker/presentation/hero-relief.css">
-  <link rel="stylesheet" href="/itemstracker/presentation/hero-orbit.css">
-  <link rel="stylesheet" href="/itemstracker/presentation/hero-centered.css">
-  <link rel="stylesheet" href="/itemstracker/presentation/resource-demo.css">
-  <link rel="stylesheet" href="/itemstracker/presentation/devices-section.css">
-  <link rel="stylesheet" href="/itemstracker/presentation/audience-section.css">
-  <link rel="stylesheet" href="/itemstracker/presentation/brand-motion.css">
-  <script src="/itemstracker/presentation/hero-designs.js"></script>
-  <script src="/itemstracker/presentation/app.js" defer></script>
-  <script src="/itemstracker/presentation/benefit-scenes.js" defer></script>
-  <script src="/itemstracker/presentation/ai-preview.js" defer></script>
-  <script src="/itemstracker/presentation/devices-section.js" defer></script>
-  <script src="/itemstracker/presentation/audience-section.js" defer></script>
-  <script src="/itemstracker/presentation/brand-motion.js" defer></script>
-  <script src="/itemstracker/presentation/medical-quiz.js" defer></script>
-  <script src="/itemstracker/presentation/feature-overview.js" defer></script>
-  <script src="/itemstracker/presentation/hero-relief.js" defer></script>
+  <link rel="stylesheet" href="/itemstracker/presentation/styles.css?v=3caa18c21996a16c">
+  <link rel="stylesheet" href="/itemstracker/presentation/benefit-scenes.css?v=c83933371a70559a">
+  <link rel="stylesheet" href="/itemstracker/presentation/ai-preview.css?v=5e7f018cc71694be">
+  <link rel="stylesheet" href="/itemstracker/presentation/medical-quiz.css?v=061ebca6efe480f9">
+  <link rel="stylesheet" href="/itemstracker/presentation/item-demo.css?v=18d5786473895343">
+  <link rel="stylesheet" href="/itemstracker/presentation/feature-overview.css?v=c55054f89d30a06b">
+  <link rel="stylesheet" href="/itemstracker/presentation/hero-showcase.css?v=4dccd8714a66fae6">
+  <link rel="stylesheet" href="/itemstracker/presentation/hero-designs.css?v=4b6a38d0764fd50a">
+  <link rel="stylesheet" href="/itemstracker/presentation/hero-relief.css?v=9e8f598cd71ffb59">
+  <link rel="stylesheet" href="/itemstracker/presentation/hero-orbit.css?v=79743b814dbbbc85">
+  <link rel="stylesheet" href="/itemstracker/presentation/hero-centered.css?v=57bdd3a3f72a59d2">
+  <link rel="stylesheet" href="/itemstracker/presentation/resource-demo.css?v=5a28ff76144ad188">
+  <link rel="stylesheet" href="/itemstracker/presentation/devices-section.css?v=43c6d30f9faf37ae">
+  <link rel="stylesheet" href="/itemstracker/presentation/audience-section.css?v=ee8d1fd2f3b342e9">
+  <link rel="stylesheet" href="/itemstracker/presentation/brand-motion.css?v=1c702e159dbba3d8">
+  <link rel="stylesheet" href="/itemstracker/presentation/navigation.css?v=aa58a7e43e8b05eb">
+  <script src="/itemstracker/presentation/navigation.js?v=f2e1f4789ffaf642" defer></script>
+  <script src="/itemstracker/presentation/hero-designs.js?v=24f71f395c7c51b3"></script>
+  <script src="/itemstracker/presentation/app.js?v=f96bae9368d2ef9b" defer></script>
+  <script src="/itemstracker/presentation/benefit-scenes.js?v=ab165a8852eae373" defer></script>
+  <script src="/itemstracker/presentation/ai-preview.js?v=59909d42660c374b" defer></script>
+  <script src="/itemstracker/presentation/devices-section.js?v=af10bbd714dfe744" defer></script>
+  <script src="/itemstracker/presentation/audience-section.js?v=025c4caf960d0aac" defer></script>
+  <script src="/itemstracker/presentation/brand-motion.js?v=7dba9a175b02da48" defer></script>
+  <script src="/itemstracker/presentation/medical-quiz.js?v=f41e7f6b5381152c" defer></script>
+  <script src="/itemstracker/presentation/feature-overview.js?v=c7ac03fe061f5988" defer></script>
+  <script src="/itemstracker/presentation/hero-relief.js?v=bd9667bf1618028d" defer></script>
 </head>
 <body>
 <a class="skip" href="#contenu">Aller au contenu</a>
@@ -72,8 +74,19 @@
 <div class="hero-surface">
   <header class="site-header wrap">
     <a class="brand" href="#" aria-label="ItemsTracker — accueil"><span class="logo" aria-hidden="true"></span><span>ItemsTracker</span></a>
-    <nav aria-label="Navigation principale"><a href="#fonctionnalites">Fonctionnalités</a><a href="#benefices">Bénéfices</a><a href="#atelier">Essayer</a><a href="#faq">FAQ</a></nav>
+    <nav class="desktop-navigation" aria-label="Navigation principale"><a href="#fonctionnalites">Fonctionnalités</a><a href="#benefices">Bénéfices</a><a href="#vos-ecrans">Vos écrans</a><a href="#votre-parcours">Votre parcours</a><a href="#faq">FAQ</a></nav>
     <div class="header-actions"><a class="login" href="/itemstracker/app.html">Se connecter <svg class="icon"><use href="#i-arrow"/></svg></a><a class="button header-access hero-centered-only" href="/itemstracker/app.html?auth=register">Créer un compte</a></div>
+    <details class="mobile-navigation">
+      <summary>Menu <span class="menu-bars" aria-hidden="true"></span></summary>
+      <nav aria-label="Navigation mobile">
+        <a href="#fonctionnalites">Fonctionnalités</a>
+        <a href="#benefices">Bénéfices</a>
+        <a href="#vos-ecrans">Vos écrans</a><a href="#votre-parcours">Votre parcours</a>
+        <a href="#faq">FAQ</a>
+        <a class="mobile-login" href="/itemstracker/app.html">Se connecter</a>
+        <a class="mobile-register" href="/itemstracker/app.html?auth=register">Créer un compte</a>
+      </nav>
+    </details>
   </header>
   <div id="contenu">
   <section class="hero wrap" aria-labelledby="hero-title">
@@ -402,7 +415,7 @@
   </div></section>
   <section class="closing blue-zone" aria-labelledby="closing-title"><div class="wrap closing-inner"><div><p class="eyebrow">ITEMSTRACKER</p><h2 id="closing-title">Gardez votre méthode.<br>Donnez un rythme à vos révisions.</h2></div><div><a class="button button-white" href="/itemstracker/app.html?auth=register">Créer un compte <svg class="icon"><use href="#i-arrow"/></svg></a><p>Vérification de votre e-mail par code à 6 chiffres.</p></div></div></section>
 </main>
-<footer class="site-footer wrap"><a class="brand" href="#"><span class="logo" aria-hidden="true"></span><span>ItemsTracker</span></a><div><a href="#faq">FAQ</a><a href="/itemstracker/app.html">Se connecter</a></div></footer>
+<footer class="site-footer wrap"><a class="brand" href="#" aria-label="ItemsTracker — accueil"><span class="logo" aria-hidden="true"></span><span>ItemsTracker</span></a><nav class="footer-navigation" aria-label="Navigation de pied de page"><a href="#fonctionnalites">Fonctionnalités</a><a href="#benefices">Bénéfices</a><a href="#vos-ecrans">Vos écrans</a><a href="#votre-parcours">Votre parcours</a><a href="#faq">FAQ</a><a href="/itemstracker/app.html">Se connecter</a><a href="/itemstracker/app.html?auth=register">Créer un compte</a></nav></footer>
 
 
 <dialog id="medical-image-dialog" class="medical-image-dialog" aria-labelledby="medical-image-title"><button class="icon-button" data-close-medical aria-label="Fermer le schéma agrandi" autofocus><svg class="icon" aria-hidden="true"><use href="#i-close"/></svg></button><p class="eyebrow blue">CARDIOLOGIE · SCHÉMA PÉDAGOGIQUE</p><h2 id="medical-image-title">Le souffle du rétrécissement aortique.</h2><img src="/itemstracker/presentation/assets/souffle-aortique.svg" alt="Entre le premier bruit B1 et le deuxième bruit B2, le souffle systolique éjectionnel augmente puis diminue d’intensité ; il n’y a pas de souffle représenté en diastole." width="640" height="440"><p>Schéma simplifié, non enregistré : il illustre la forme du souffle, sans quantifier sa sévérité.</p><a href="https://www.sfcardio.fr/publication/chapitre-4-valvulopathies/" target="_blank" rel="noopener">Consulter le référentiel de cardiologie <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a></dialog>
