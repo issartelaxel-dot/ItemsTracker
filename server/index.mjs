@@ -16,6 +16,7 @@ import { createMediaStore } from './media-store.mjs'
 import { persistSchema, StateError } from './state-model.mjs'
 import { mountRegistration } from './registration.mjs'
 import { createEmailSender } from './email.mjs'
+import { mountResourcePreview } from './resource-preview.mjs'
 
 const { Pool } = pg
 
@@ -674,6 +675,12 @@ app.get('/api/state', enforceClientVersion, async (req, res) => {
   if (state) state.trackingState = applyQuizImagesToTrackingState(state.trackingState, images, { metadataOnly })
   const token = refreshAuthCookie(res, auth)
   res.json({ state, version, imageVersions: Object.fromEntries((images || []).map(row => [`${row.item_number}:${row.card_id}:${row.image_slot}`, row.content_hash || row.updated_at || 'legacy'])), ...(token ? { token } : {}) })
+})
+
+mountResourcePreview(app, {
+  authenticate: authFromRequest,
+  enforceClientVersion,
+  limiter: rateLimit({ windowMs: 60_000, limit: 20, standardHeaders: true, legacyHeaders: false }),
 })
 
 app.get('/api/state/images/:itemNumber/:cardId', enforceClientVersion, async (req, res) => {

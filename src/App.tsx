@@ -1,4 +1,5 @@
 import { withRequestTimeout } from './lib/request-timeout'
+import { ResourceTypeIcon, ResourceLinkPreview, useResourcePreview, getResourceFallback, formatResourceSize } from './components/ResourcePreview'
 import { getFreshApiUrl } from './lib/api-cache'
 import { isClientBelowMinimum, refreshObsoleteClient } from './lib/client-refresh'
 import { saveDraft, findDraft, removeDraft, mergeStates, type SaveOperation } from './lib/save-outbox'
@@ -2765,8 +2766,8 @@ function App() {
   const [youtubeInputError, setYoutubeInputError] = useState('')
   const [usefulLinkInput, setUsefulLinkInput] = useState('')
   const [usefulLinkInputError, setUsefulLinkInputError] = useState('')
-  const [youtubeSectionOpen, setYoutubeSectionOpen] = useState(true)
-  const [usefulLinkSectionOpen, setUsefulLinkSectionOpen] = useState(true)
+  const [youtubeSectionOpen, setYoutubeSectionOpen] = useState(false)
+  const [usefulLinkSectionOpen, setUsefulLinkSectionOpen] = useState(false)
   const [itemVisualSectionOpen, setItemVisualSectionOpen] = useState(false)
   const saveInFlightRef = useRef<Promise<boolean> | null>(null)
   const operationRef = useRef<SaveOperation | null>(null)
@@ -4329,6 +4330,12 @@ function getPasswordStrengthMeta(password: string) {
     () => (effectiveSelectedItem ? extractYouTubeVideoId(effectiveSelectedItem.tracking.youtubeUrl) : null),
     [effectiveSelectedItem],
   )
+
+  const savedResourceUrl = effectiveSelectedItem?.tracking.usefulLinkUrl || ''
+  const resourceFallback = getResourceFallback(savedResourceUrl)
+  const resourcePreview = useResourcePreview(savedResourceUrl, authStatus === 'authed' && itemDetailTab === 'resources', (url, signal) =>
+    apiRequestWithSignal('/api/resources/preview', { method: 'POST', body: JSON.stringify({ url }), signal }, { requireServerAppHeader: true }))
+  const resourceIsPdf = resourceFallback?.kind === 'pdf' || resourcePreview?.kind === 'pdf'
 
   const itemTableList = filteredAndSortedItems
 
@@ -8561,23 +8568,28 @@ function getPasswordStrengthMeta(password: string) {
                     />
                   </label>
 
-                    <div id="item-detail-resources" className="inline-accordion item-detail-card item-detail-video-card item-detail-tab-panel item-detail-tab-panel-resources">
+                    <div id="item-detail-resources" className="inline-accordion item-detail-card item-detail-video-card resource-card resource-video-card item-detail-tab-panel item-detail-tab-panel-resources">
                     <button
                       type="button"
                       className={`inline-accordion-head ${youtubeSectionOpen ? 'open' : ''}`}
                       aria-expanded={youtubeSectionOpen}
                       onClick={() => setYoutubeSectionOpen((current) => !current)}
                     >
-                      <h3>Vidéo YouTube</h3>
+                      <ResourceTypeIcon kind="youtube" />
+                      <span className="resource-summary-copy">
+                        <span className="resource-summary-title">Vidéo YouTube</span>
+                        <span className="resource-meta"><span className="resource-meta-dot" />YouTube · {selectedYouTubeVideoId ? 'Lecture intégrée' : 'Ajouter une vidéo'}</span>
+                      </span>
                       <span className="inline-accordion-chevron" aria-hidden="true">
                         ▾
                       </span>
                     </button>
                     {youtubeSectionOpen ? (
-                      <div className="youtube-editor">
+                      <div className="youtube-editor resource-editor">
                         <div className="youtube-input-row">
                           <input
                             type="url"
+                            aria-label="Lien YouTube"
                             placeholder="Coller le lien YouTube ici (ex. https://www.youtube.com/watch?v=...)"
                             value={youtubeInput}
                             onChange={(event) => {
@@ -8616,24 +8628,31 @@ function getPasswordStrengthMeta(password: string) {
                     ) : null}
                   </div>
 
-                    <div className="inline-accordion item-detail-card item-detail-tab-panel item-detail-tab-panel-resources">
+                    <div className="inline-accordion item-detail-card resource-card resource-link-card item-detail-tab-panel item-detail-tab-panel-resources">
                     <button
                       type="button"
                       className={`inline-accordion-head ${usefulLinkSectionOpen ? 'open' : ''}`}
                       aria-expanded={usefulLinkSectionOpen}
                       onClick={() => setUsefulLinkSectionOpen((current) => !current)}
                     >
-                      <h3>Lien utile</h3>
+                      <ResourceTypeIcon kind={resourceIsPdf ? 'pdf' : 'link'} />
+                      <span className="resource-summary-copy">
+                        <span className="resource-summary-title">{resourcePreview?.title || resourceFallback?.title || 'Lien utile'}</span>
+                        <span className="resource-meta"><span className="resource-meta-dot" />{resourceIsPdf ? 'PDF' : 'Lien'} · {formatResourceSize(resourcePreview?.byteSize ?? null) || resourcePreview?.siteName || resourceFallback?.siteName || 'Ajouter une ressource'}</span>
+                      </span>
+                      {resourcePreview?.image ? <img key={resourcePreview.image.dataUrl} className={'resource-summary-thumbnail is-' + resourcePreview.image.kind} src={resourcePreview.image.dataUrl} alt="" loading="lazy" onError={event => { event.currentTarget.hidden = true }} /> : null}
                       <span className="inline-accordion-chevron" aria-hidden="true">
                         ▾
                       </span>
                     </button>
                     {usefulLinkSectionOpen ? (
-                      <div className="useful-link-editor">
+                      <div className="useful-link-editor resource-editor">
+                        {savedResourceUrl ? <ResourceLinkPreview url={savedResourceUrl} preview={resourcePreview} /> : null}
                         <div className="youtube-input-row">
                           <input
                             type="url"
-                            placeholder="Coller un lien utile (ex. https://example.com)"
+                            aria-label="Lien de la ressource"
+                            placeholder="Coller un lien utile ou PDF (ex. https://example.com)"
                             value={usefulLinkInput}
                             onChange={(event) => {
                               setUsefulLinkInput(event.target.value)
