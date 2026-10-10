@@ -73,7 +73,7 @@ html[data-hero-design=relief] .showcase-activity-grid>span.is-current-read{scale
 .relief-reading-toast{display:none}
 html[data-hero-design=relief] .relief-reading-toast{display:flex;align-items:center;gap:6px;position:absolute;right:4%;bottom:4%;border:1px solid #add8e7;background:#edfbff;color:#196582;box-shadow:0 4px 14px #1436691a;padding:8px 10px;border-radius:8px;font-size:12px;opacity:0;translate:0 6px;transition:opacity .3s,translate .3s}
 .relief-reading-toast .icon{width:16px;height:16px}
-.relief-caption{display:flex;align-items:center;gap:12px;justify-content:flex-end}
+.relief-caption{display:none;align-items:center;gap:12px;justify-content:flex-end}
 .relief-motion-toggle{display:none;border:1px solid #ffffff66;border-radius:5px;background:#ffffff0d;color:#e2ecff;font-size:10px;padding:6px 9px;min-height:30px}
 html[data-hero-design=relief] .relief-motion-toggle{display:inline-block}
 .relief-motion-toggle:hover{background:#ffffff20}
@@ -88,3 +88,5 @@ html[data-hero-design=relief] .relief-reading-toast.is-visible{opacity:1;transla
 
 html[data-hero-design=relief] .hero-reading-paused .showcase-activity-grid>span,html[data-hero-design=relief] .hero-reading-paused .showcase-progress>i,html[data-hero-design=relief] .hero-reading-paused .relief-week-bars>span>i,html[data-hero-design=relief] .hero-reading-paused .relief-reading-toast{transition:none}
 @media(prefers-reduced-motion:reduce){html[data-hero-design=relief] .showcase-activity-grid>span,html[data-hero-design=relief] .showcase-progress>i,html[data-hero-design=relief] .relief-week-bars>span>i{transition:none}}
+
+html[data-hero-design=relief] .relief-caption{display:flex}
