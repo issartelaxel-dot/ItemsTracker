@@ -12,6 +12,16 @@ La disposition de l’éditeur, le format HTML des cartes, les images, les notes
 
 L’état initial est chargé une seule fois dans la configuration de Lexical. Les rendus React n’écrasent pas le contenu ni le curseur. L’abonnement aux modifications reste stable pendant la saisie.
 
+## Combinaisons de mise en forme
+
+- **Gras + italique** : le style de la classe italique est maintenant défini. Lexical utilise un seul élément `strong` portant les deux classes dans l’éditeur ; sans cette règle, l’italique était invisible malgré son activation.
+- **Puces** : un deuxième clic retire désormais la liste. La conversion en paragraphes conserve la couleur, le gras, l’italique et le surlignage.
+- **Couleur normale** : ce bouton rétablit la couleur du thème et conserve les autres formats. Gras, italique et surlignage se retirent en recliquant sur leur bouton. Le texte normal correspond à ces formats désactivés ; il peut aussi être utilisé dans une liste.
+
+Le test `npm run test:browser:editor-formats` couvre les 16 combinaisons d’activation de gras, italique, surlignage et puces, avec les six couleurs et la couleur normale : **112 combinaisons par navigateur et largeur**. Il applique les commandes dans plusieurs ordres et contrôle les styles réellement affichés dans l’éditeur et dans l’aperçu, puis les styles après changement de face, sauvegarde simulée et rechargement. Il vérifie également le retour à la couleur normale sans effacer les autres formats et le retrait indépendant de chaque format avec les sept choix de couleur.
+
+Ces contrôles utilisent Chrome et WebKit, à 390 px avec interactions tactiles simulées et à 1440 px avec la souris, soit 448 cas de combinaison. Ils ne constituent pas un test de toutes les permutations d’actions ou de tous les claviers physiques.
+
 ## Validation reproductible
 
 Après `npm run build`, lancer `npm run test:browser:editor` (Chrome installé sur macOS et navigateur Playwright WebKit requis).

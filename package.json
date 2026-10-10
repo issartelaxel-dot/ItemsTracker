@@ -30,7 +30,8 @@
     "neon:pitr": "node scripts/neon-pitr.mjs",
     "test:browser": "node tests/browser-save.mjs",
     "test:browser:mobile": "node tests/browser-mobile.mjs",
-    "test:browser:editor": "node tests/browser-editor.mjs"
+    "test:browser:editor": "node tests/browser-editor.mjs",
+    "test:browser:editor-formats": "node tests/browser-editor-formats.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1147.0",

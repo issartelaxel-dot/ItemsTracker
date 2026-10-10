@@ -2005,6 +2005,10 @@
   font-weight: 800 !important;
 }
 
+.quiz-rich-italic-text {
+  font-style: italic;
+}
+
 .quiz-rich-normal-text {
   font-weight: 400 !important;
 }

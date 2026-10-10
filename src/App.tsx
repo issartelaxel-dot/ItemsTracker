@@ -36,7 +36,7 @@ import {
   type RangeSelection,
 } from 'lexical'
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html'
-import { INSERT_UNORDERED_LIST_COMMAND, ListItemNode, ListNode } from '@lexical/list'
+import { $isListNode, INSERT_UNORDERED_LIST_COMMAND, REMOVE_LIST_COMMAND, ListItemNode, ListNode } from '@lexical/list'
 import { $getSelectionStyleValueForProperty, $patchStyleText } from '@lexical/selection'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
 import { useLexicalComposerContext } from '@lexical/react/LexicalComposerContext'
@@ -1188,6 +1188,25 @@ function QuizRichTextToolbar() {
     })
   }
 
+  const toggleBullets = () => {
+    editor.update(() => {
+      const selection = $getSelection()
+      if (!$isRangeSelection(selection)) return
+      const nodes = selection.getNodes()
+      const allBulleted = nodes.length > 0 && nodes.every((node) => {
+        for (let parent = node; parent; ) {
+          if ($isListNode(parent)) return parent.getListType() === 'bullet'
+          const next = parent.getParent()
+          if (!next) break
+          parent = next
+        }
+        return false
+      })
+      // Changing the block type must preserve the selected inline formats.
+      editor.dispatchCommand(allBulleted ? REMOVE_LIST_COMMAND : INSERT_UNORDERED_LIST_COMMAND, undefined)
+    })
+  }
+
   return (
     <div className="quiz-rich-toolbar">
       <button
@@ -1239,7 +1258,7 @@ function QuizRichTextToolbar() {
         aria-label="Puces"
         className="ghost-btn"
         onMouseDown={(event) => event.preventDefault()}
-        onClick={() => runToolbarAction(() => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined))}
+        onClick={() => runToolbarAction(toggleBullets)}
       >
         <span className="quiz-rich-tool-label">Puces</span><List className="quiz-rich-tool-symbol" aria-hidden="true" />
       </button>
