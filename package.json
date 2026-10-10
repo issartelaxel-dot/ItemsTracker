@@ -29,7 +29,8 @@
     "backup:restore": "node scripts/backup.mjs restore",
     "neon:pitr": "node scripts/neon-pitr.mjs",
     "test:browser": "node tests/browser-save.mjs",
-    "test:browser:mobile": "node tests/browser-mobile.mjs"
+    "test:browser:mobile": "node tests/browser-mobile.mjs",
+    "test:browser:editor": "node tests/browser-editor.mjs"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1147.0",

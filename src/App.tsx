@@ -13,21 +13,27 @@ import {
   $getSelection,
   $insertNodes,
   $isRangeSelection,
+  $isTextNode,
+  $setSelection,
+  BEFORE_INPUT_COMMAND,
   CAN_REDO_COMMAND,
   CAN_UNDO_COMMAND,
   COMMAND_PRIORITY_CRITICAL,
+  COMMAND_PRIORITY_HIGH,
   COMMAND_PRIORITY_LOW,
   FORMAT_TEXT_COMMAND,
   INDENT_CONTENT_COMMAND,
   KEY_TAB_COMMAND,
-  KEY_MODIFIER_COMMAND,
+  KEY_DOWN_COMMAND,
   OUTDENT_CONTENT_COMMAND,
   PASTE_COMMAND,
   REDO_COMMAND,
   UNDO_COMMAND,
-  type EditorState,
+  TextNode,
+  type DOMConversionMap,
   type LexicalEditor,
   type PasteCommandType,
+  type RangeSelection,
 } from 'lexical'
 import { $generateHtmlFromNodes, $generateNodesFromDOM } from '@lexical/html'
 import { INSERT_UNORDERED_LIST_COMMAND, ListItemNode, ListNode } from '@lexical/list'
@@ -38,7 +44,6 @@ import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
 import { createEmptyHistoryState, HistoryPlugin, type HistoryState } from '@lexical/react/LexicalHistoryPlugin'
 import { ListPlugin } from '@lexical/react/LexicalListPlugin'
-import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
 import {
   useEffect,
@@ -48,7 +53,6 @@ import {
   useState,
   type CSSProperties,
   type DragEvent as ReactDragEvent,
-  type MouseEvent as ReactMouseEvent,
   type PointerEvent,
 } from 'react'
 import {
@@ -609,7 +613,6 @@ const QUIZ_TEXT_COLOR_OPTIONS = [
 ] as const
 const QUIZ_TEXT_HIGHLIGHT_COLOR = '#fff59d'
 const QUIZ_RICH_TEXT_MAX_CHARS = 500
-const QUIZ_RICH_TEXT_SYNC_DELAY_MS = 320
 
 function normalizeQuizRichTextColor(value: string) {
   const normalized = value.trim().toLowerCase()
@@ -857,7 +860,40 @@ function prepareQuizRichTextHtmlForLexical(value: string) {
   root.querySelectorAll<HTMLElement>('.quiz-rich-theme-text').forEach((element) => {
     element.style.removeProperty('color')
   })
+  root.querySelectorAll<HTMLElement>('.quiz-rich-normal-text').forEach((element) => {
+    element.style.fontWeight = '400'
+  })
   return root.innerHTML
+}
+
+// Lexical's standard span importer restores bold/italic but omits inline colors.
+// Import only the styles supported by the existing sanitized storage format.
+const QUIZ_LEXICAL_HTML_IMPORT: DOMConversionMap = {
+  span: (element) => {
+    const original = TextNode.importDOM?.()?.span?.(element)
+    if (!original) return null
+    return {
+      priority: 1,
+      conversion: (span) => {
+        const converted = original.conversion(span)
+        if (!converted) return null
+        return {
+          ...converted,
+          forChild: (child, parent) => {
+            const node = converted.forChild ? converted.forChild(child, parent) : child
+            if (!$isTextNode(node)) return node
+            const style = document.createElement('span').style
+            style.cssText = node.getStyle()
+            if (isAllowedQuizTextColor(span.style.color)) style.color = span.style.color
+            if (isAllowedQuizHighlightColor(span.style.backgroundColor)) style.backgroundColor = span.style.backgroundColor
+            if (span.style.fontWeight === '400' && node.hasFormat('bold')) node.toggleFormat('bold')
+            if (span.style.fontStyle === 'normal' && node.hasFormat('italic')) node.toggleFormat('italic')
+            return node.setStyle(style.cssText)
+          },
+        }
+      },
+    }
+  },
 }
 
 function initializeQuizLexicalEditor(editor: LexicalEditor, value: string) {
@@ -917,61 +953,24 @@ type QuizRichTextEditorProps = {
   maxLength?: number
 }
 
-function QuizLexicalInitialValuePlugin({ value }: { value: string }) {
-  const [editor] = useLexicalComposerContext()
-  const initializedRef = useRef(false)
-
-  useLayoutEffect(() => {
-    if (initializedRef.current) {
-      return
-    }
-    initializedRef.current = true
-    editor.update(() => {
-      initializeQuizLexicalEditor(editor, value)
-    })
-  }, [editor, value])
-
-  return null
-}
-
 function QuizLexicalOnChangePlugin({ onChange }: { onChange: (value: string) => void }) {
-  const lastEmittedValueRef = useRef('')
-  const pendingValueRef = useRef('')
-  const syncTimeoutRef = useRef<number | null>(null)
-
-  useEffect(() => {
-    return () => {
-      if (syncTimeoutRef.current !== null) {
-        window.clearTimeout(syncTimeoutRef.current)
-      }
-    }
-  }, [])
-
-  const emitValue = (nextValue: string) => {
-    pendingValueRef.current = nextValue
-    if (syncTimeoutRef.current !== null) {
-      window.clearTimeout(syncTimeoutRef.current)
-    }
-    syncTimeoutRef.current = window.setTimeout(() => {
-      syncTimeoutRef.current = null
-      const valueToEmit = pendingValueRef.current
-      if (lastEmittedValueRef.current !== valueToEmit) {
-        lastEmittedValueRef.current = valueToEmit
-        onChange(valueToEmit)
-      }
-    }, QUIZ_RICH_TEXT_SYNC_DELAY_MS)
-  }
-
-  return (
-    <OnChangePlugin
-      ignoreSelectionChange
-      onChange={(_editorState: EditorState, activeEditor) => {
-        activeEditor.getEditorState().read(() => {
-          emitValue(sanitizeQuizRichTextHtml($generateHtmlFromNodes(activeEditor, null)))
-        })
-      }}
-    />
-  )
+  const [editor] = useLexicalComposerContext()
+  const onChangeRef = useRef(onChange)
+  useLayoutEffect(() => { onChangeRef.current = onChange }, [onChange])
+  // Subscribe once. Do not replace Lexical's content or selection on React renders.
+  // Local edits must be current before switching faces, duplicating or closing;
+  // the existing cloud autosave already batches network writes separately.
+  useLayoutEffect(() => {
+    let lastValue = editor.getEditorState().read(() => sanitizeQuizRichTextHtml($generateHtmlFromNodes(editor, null)))
+    return editor.registerUpdateListener(({ editorState, dirtyElements, dirtyLeaves }) => {
+      if (dirtyElements.size === 0 && dirtyLeaves.size === 0) return
+      const nextValue = editorState.read(() => sanitizeQuizRichTextHtml($generateHtmlFromNodes(editor, null)))
+      if (nextValue === lastValue) return
+      lastValue = nextValue
+      onChangeRef.current(nextValue)
+    })
+  }, [editor])
+  return null
 }
 
 function QuizLexicalShortcutsPlugin() {
@@ -979,7 +978,9 @@ function QuizLexicalShortcutsPlugin() {
 
   useEffect(() => {
     const unregisterModifierCommand = editor.registerCommand(
-      KEY_MODIFIER_COMMAND,
+      // KEY_MODIFIER runs after Lexical's own shortcuts: handling undo/bold
+      // there executed them twice. Intercept keydown before the default handler.
+      KEY_DOWN_COMMAND,
       (event) => {
         if (!(event.metaKey || event.ctrlKey)) {
           return false
@@ -1011,7 +1012,7 @@ function QuizLexicalShortcutsPlugin() {
         }
         return false
       },
-      COMMAND_PRIORITY_LOW,
+      COMMAND_PRIORITY_HIGH,
     )
     const unregisterTabCommand = editor.registerCommand(
       KEY_TAB_COMMAND,
@@ -1040,23 +1041,19 @@ function QuizLexicalMaxLengthPlugin({ maxLength }: { maxLength?: number }) {
 
   useEffect(() => {
     const getNextLength = (insertedText: string) => {
-      return editor.getEditorState().read(() => {
-        const currentLength = getQuizLexicalTextLength()
-        const selectedLength = getQuizLexicalSelectionTextLength()
-        return Math.max(0, currentLength - selectedLength) + insertedText.length
-      })
+      const currentLength = getQuizLexicalTextLength()
+      const selectedLength = getQuizLexicalSelectionTextLength()
+      return Math.max(0, currentLength - selectedLength) + insertedText.length
     }
 
     const getAllowedInsertionText = (insertedText: string) => {
       if (!maxLength || maxLength <= 0) {
         return insertedText
       }
-      return editor.getEditorState().read(() => {
-        const currentLength = getQuizLexicalTextLength()
-        const selectedLength = getQuizLexicalSelectionTextLength()
-        const availableLength = Math.max(0, maxLength - Math.max(0, currentLength - selectedLength))
-        return insertedText.slice(0, availableLength)
-      })
+      const currentLength = getQuizLexicalTextLength()
+      const selectedLength = getQuizLexicalSelectionTextLength()
+      const availableLength = Math.max(0, maxLength - Math.max(0, currentLength - selectedLength))
+      return insertedText.slice(0, availableLength)
     }
 
     const insertPlainText = (text: string) => {
@@ -1076,21 +1073,23 @@ function QuizLexicalMaxLengthPlugin({ maxLength }: { maxLength?: number }) {
       const inputType = event.inputType ?? ''
       if (inputType.startsWith('format')) {
         event.preventDefault()
-        return
+        return true
       }
       if (!maxLength || maxLength <= 0) {
-        return
+        return false
       }
       if (!inputType.startsWith('insert')) {
-        return
+        return false
       }
       const insertedText = inputType === 'insertParagraph' ? '\n' : event.data ?? ''
       if (!insertedText) {
-        return
+        return false
       }
       if (getNextLength(insertedText) > maxLength) {
         event.preventDefault()
+        return true
       }
+      return false
     }
 
     const handlePaste = (event: PasteCommandType) => {
@@ -1116,14 +1115,13 @@ function QuizLexicalMaxLengthPlugin({ maxLength }: { maxLength?: number }) {
       handlePaste,
       COMMAND_PRIORITY_CRITICAL,
     )
-    const unregisterRootListener = editor.registerRootListener((rootElement, previousRootElement) => {
-      previousRootElement?.removeEventListener('beforeinput', handleBeforeInput)
-      rootElement?.addEventListener('beforeinput', handleBeforeInput)
-    })
+    // A DOM listener registered after Lexical runs too late: the character is
+    // already inserted. Stop the command before its default insertion handler.
+    const unregisterBeforeInput = editor.registerCommand(BEFORE_INPUT_COMMAND, handleBeforeInput, COMMAND_PRIORITY_CRITICAL)
 
     return () => {
       unregisterPasteCommand()
-      unregisterRootListener()
+      unregisterBeforeInput()
     }
   }, [editor, maxLength])
 
@@ -1134,8 +1132,15 @@ function QuizRichTextToolbar() {
   const [editor] = useLexicalComposerContext()
   const [canUndo, setCanUndo] = useState(false)
   const [canRedo, setCanRedo] = useState(false)
+  const selectionRef = useRef<RangeSelection | null>(null)
 
   useEffect(() => {
+    const unregisterSelection = editor.registerUpdateListener(({ editorState }) => {
+      editorState.read(() => {
+        const selection = $getSelection()
+        if ($isRangeSelection(selection)) selectionRef.current = selection.clone()
+      })
+    })
     const unregisterCanUndoCommand = editor.registerCommand(
       CAN_UNDO_COMMAND,
       (nextCanUndo) => {
@@ -1154,15 +1159,19 @@ function QuizRichTextToolbar() {
     )
 
     return () => {
+      unregisterSelection()
       unregisterCanUndoCommand()
       unregisterCanRedoCommand()
     }
   }, [editor])
 
-  const runToolbarAction = (event: ReactMouseEvent<HTMLButtonElement>, action: () => void) => {
-    event.preventDefault()
-    editor.focus()
-    action()
+  const runToolbarAction = (action: () => void) => {
+    // Keyboard and touch focus can clear the DOM selection. Restore the last
+    // Lexical range, rather than silently formatting at the end of the card.
+    const selection = selectionRef.current?.clone()
+    if (selection) editor.update(() => { $setSelection(selection) }, { discrete: true })
+    // Wait for focus restoration before applying the command to the selection.
+    editor.focus(action)
   }
 
   const patchSelectionColor = (color: string | null) => {
@@ -1187,7 +1196,8 @@ function QuizRichTextToolbar() {
         title="Annuler"
         aria-label="Annuler"
         disabled={!canUndo}
-        onMouseDown={(event) => runToolbarAction(event, () => editor.dispatchCommand(UNDO_COMMAND, undefined))}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => runToolbarAction(() => editor.dispatchCommand(UNDO_COMMAND, undefined))}
       >
         <UndoAction className="inline-btn-icon" aria-hidden="true" />
       </button>
@@ -1197,7 +1207,8 @@ function QuizRichTextToolbar() {
         title="Rétablir"
         aria-label="Rétablir"
         disabled={!canRedo}
-        onMouseDown={(event) => runToolbarAction(event, () => editor.dispatchCommand(REDO_COMMAND, undefined))}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => runToolbarAction(() => editor.dispatchCommand(REDO_COMMAND, undefined))}
       >
         <RedoAction className="inline-btn-icon" aria-hidden="true" />
       </button>
@@ -1205,7 +1216,8 @@ function QuizRichTextToolbar() {
         type="button"
         aria-label="Gras"
         className="ghost-btn"
-        onMouseDown={(event) => runToolbarAction(event, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold'))}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => runToolbarAction(() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold'))}
       >
         <span className="quiz-rich-tool-label">Gras</span><b className="quiz-rich-tool-symbol" aria-hidden="true">B</b>
       </button>
@@ -1213,18 +1225,21 @@ function QuizRichTextToolbar() {
         type="button"
         aria-label="Italique"
         className="ghost-btn"
-        onMouseDown={(event) => runToolbarAction(event, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic'))}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => runToolbarAction(() => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic'))}
       >
         <span className="quiz-rich-tool-label">Italique</span><i className="quiz-rich-tool-symbol" aria-hidden="true">I</i>
       </button>
-      <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarAction(event, toggleHighlight)}>
+      <button type="button" className="ghost-btn" onMouseDown={(event) => event.preventDefault()}
+        onClick={() => runToolbarAction(toggleHighlight)}>
         Surligner
       </button>
       <button
         type="button"
         aria-label="Puces"
         className="ghost-btn"
-        onMouseDown={(event) => runToolbarAction(event, () => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined))}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => runToolbarAction(() => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined))}
       >
         <span className="quiz-rich-tool-label">Puces</span><List className="quiz-rich-tool-symbol" aria-hidden="true" />
       </button>
@@ -1233,7 +1248,8 @@ function QuizRichTextToolbar() {
         className="ghost-btn quiz-rich-color-btn"
         title="Couleur normale"
         aria-label="Couleur normale"
-        onMouseDown={(event) => runToolbarAction(event, () => patchSelectionColor(null))}
+        onMouseDown={(event) => event.preventDefault()}
+        onClick={() => runToolbarAction(() => patchSelectionColor(null))}
       >
         <span className="quiz-rich-color-swatch quiz-rich-theme-color-swatch" aria-hidden="true" />
       </button>
@@ -1244,7 +1260,8 @@ function QuizRichTextToolbar() {
           className="ghost-btn quiz-rich-color-btn"
           title={option.label}
           aria-label={option.label}
-          onMouseDown={(event) => runToolbarAction(event, () => patchSelectionColor(option.value))}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={() => runToolbarAction(() => patchSelectionColor(option.value))}
         >
           <span className="quiz-rich-color-swatch" style={{ backgroundColor: option.value }} aria-hidden="true" />
         </button>
@@ -1254,23 +1271,25 @@ function QuizRichTextToolbar() {
 }
 
 function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRichTextEditorProps) {
+  const [initialValue] = useState(value)
   const historyState = useMemo<HistoryState>(() => createEmptyHistoryState(), [])
   const initialConfig = useMemo(
     () => ({
       namespace: 'QuizRichTextEditor',
       theme: QUIZ_LEXICAL_THEME,
       nodes: [ListNode, ListItemNode],
+      html: { import: QUIZ_LEXICAL_HTML_IMPORT },
+      editorState: (editor: LexicalEditor) => initializeQuizLexicalEditor(editor, initialValue),
       onError(error: Error) {
         throw error
       },
     }),
-    [],
+    [initialValue],
   )
 
   return (
     <div className="quiz-rich-editor">
       <LexicalComposer initialConfig={initialConfig}>
-        <QuizLexicalInitialValuePlugin value={value} />
         <QuizRichTextToolbar />
         <RichTextPlugin
           contentEditable={
