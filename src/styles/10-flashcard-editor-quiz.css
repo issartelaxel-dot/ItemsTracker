@@ -38,7 +38,7 @@
 }
 
 .quiz-modal.flashcard-editor-modal {
-  width: min(1080px, calc(100vw - 2rem));
+  width: min(960px, calc(100vw - 2rem));
   max-height: calc(100dvh - 2rem);
   overflow: auto;
   padding: 0;
@@ -105,7 +105,7 @@
 .flashcard-editor-title h3 {
   margin: 0;
   color: var(--text);
-  font-size: clamp(1.25rem, 2vw, 1.72rem);
+  font-size: clamp(1.2rem, 1.8vw, 1.5rem);
   line-height: 1.12;
 }
 
@@ -170,11 +170,11 @@
 .flashcard-editor-tabs {
   display: flex;
   gap: 0.55rem;
-  padding: 1.35rem 1.35rem 0.75rem;
+  padding: 1rem 1rem 0.6rem;
 }
 
 .flashcard-editor-tabs button {
-  min-width: 240px;
+  min-width: 200px;
   border: 1px solid transparent;
   border-radius: 10px;
   background: transparent;
@@ -229,7 +229,7 @@
 .flashcard-editor-preview,
 .flashcard-editor-content,
 .flashcard-editor-notes {
-  margin-inline: 1.35rem;
+  margin-inline: 1rem;
 }
 
 .flashcard-editor-preview {
@@ -256,12 +256,12 @@
 
 .flashcard-editor-preview-body {
   min-width: 0;
-  min-height: 240px;
+  min-height: 170px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(150px, 230px);
   align-items: center;
   gap: 2rem;
-  padding: 1.35rem 2.3rem;
+  padding: 0.75rem 1.25rem;
 }
 
 .flashcard-editor-preview-body .quiz-rich-rendered {
@@ -272,7 +272,7 @@
 
 .flashcard-editor-preview-image {
   width: 100%;
-  max-height: 220px;
+  max-height: 170px;
   object-fit: contain;
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -282,7 +282,7 @@
 
 .flashcard-editor-content {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 250px;
+  grid-template-columns: minmax(0, 1fr) 220px;
   gap: 1rem;
   margin-top: 1rem;
   padding: 1rem;
@@ -296,7 +296,7 @@
 }
 
 .flashcard-editor-main .quiz-rich-editable {
-  min-height: 250px;
+  min-height: 190px;
   padding: 1rem 1.25rem;
   font-size: 1rem;
   line-height: 1.6;
