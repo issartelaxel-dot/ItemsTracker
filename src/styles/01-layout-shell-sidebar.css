@@ -7,13 +7,11 @@
   padding: 0;
   padding-top: 15px;
   overflow: hidden;
-  background: linear-gradient(180deg, #2147c0 0, #2147c0 3px, #213f9f 3px, #213f9f 100%);
+  background: radial-gradient(ellipse at 96% 4%, #57bfff77, transparent 58%),
+    linear-gradient(130deg, #1241a6, #0864ed 45%, #168cff);
   transition: grid-template-columns 0.22s ease;
 }
 
-:root[data-theme='dark'] .dashboard-layout {
-  background: linear-gradient(180deg, #0a2f8d 0, #0a2f8d 3px, #051a52 3px, #041238 100%);
-}
 
 .dashboard-layout.is-sidebar-collapsed {
   grid-template-columns: 86px minmax(0, 1fr);
