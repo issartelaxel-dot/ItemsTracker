@@ -751,3 +751,13 @@
 
 .sidebar-theme-action { border-top: 1px solid #ffffff25; padding-top: 0.9rem; }
 .dashboard-layout.is-sidebar-collapsed .sidebar-profile-trigger { grid-template-columns: 1fr; }
+
+.dashboard-layout.is-sidebar-collapsed .sidebar-nav-item {
+  justify-content: center;
+  padding: 0;
+  gap: 0;
+}
+.dashboard-layout.is-sidebar-collapsed .sidebar-head-top { justify-items: center; }
+.dashboard-layout.is-sidebar-collapsed .sidebar-logo { justify-self: center; }
+.sidebar-nav-icon { display: grid; place-items: center; }
+.sidebar-nav-icon-img { display: block; flex: none; }
