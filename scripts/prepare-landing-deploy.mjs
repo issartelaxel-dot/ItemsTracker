@@ -16,6 +16,10 @@ const base = rawBase.endsWith('/') ? rawBase : `${rawBase}/`
 if (!existsSync(resolve(marketing, 'index.html'))) throw new Error('Missing marketing/index.html')
 const contentKey = content => createHash('sha256').update(content).digest('hex').slice(0, 16)
 cpSync(marketing, presentation, { recursive: true })
+// The proxy must route these domain-root paths to this static frontend.
+for (const file of ['robots.txt', 'llms.txt']) {
+  cpSync(resolve(root, 'ops/frontend/public-root', file), resolve(dist, file))
+}
 
 // Fingerprint media and fonts so long-lived caching cannot serve an old release.
 const media = new Map()
