@@ -1,0 +1,5 @@
+traefik.http.routers.itemstracker-public-files.rule=Host(`setup-hub.com`) && (Path(`/robots.txt`) || Path(`/llms.txt`))
+traefik.http.routers.itemstracker-public-files.service=https-0-fcf2vtvk5myl8d3l1f8m9l0z
+traefik.http.routers.itemstracker-public-files.tls=true
+traefik.http.routers.itemstracker-public-files.tls.certresolver=letsencrypt
+traefik.http.routers.itemstracker-public-files.priority=100
