@@ -649,7 +649,7 @@ h3 {
   display: grid;
   grid-template-columns: repeat(auto-fill, var(--habit-cell-size));
   max-width: 100%;
-  gap: 12px var(--habit-gap);
+  gap: 10px var(--habit-gap);
   align-items: flex-start;
   overflow: visible;
   padding: 0.3rem 0 0.75rem;

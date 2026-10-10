@@ -1,3 +1,4 @@
+import { HabitGrid } from './components/HabitGrid'
 import { withRequestTimeout } from './lib/request-timeout'
 import { ResourceTypeIcon, ResourceLinkPreview, useResourcePreview, getResourceFallback, formatResourceSize } from './components/ResourcePreview'
 import { getFreshApiUrl } from './lib/api-cache'
@@ -8055,7 +8056,7 @@ function getPasswordStrengthMeta(password: string) {
 
               <article className="dashboard-habit-card">
                 <p>Habit tracking {HABIT_TRACKER_YEAR} (lectures)</p>
-                <div className="habit-tracker-wrap dashboard-habit-wrap">
+                <HabitGrid weeks={weeklyReviewSeries.length}>
                   {weeklyReviewSeries.map((week, weekIndex) => (
                     <div className="habit-week" key={week.weekKey} title={`Semaine du ${week.weekLabel}`}>
                       {week.days.map((day, dayIndex) => (
@@ -8068,7 +8069,7 @@ function getPasswordStrengthMeta(password: string) {
                       ))}
                     </div>
                   ))}
-                </div>
+                </HabitGrid>
                 <div className="habit-legend">
                   <span>Faible</span>
                   <div className="legend-scale">
