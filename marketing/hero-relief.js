@@ -10,7 +10,10 @@
   const collegeValues = [...hero.querySelectorAll('.showcase-college-row>strong')];
   const collegeTargets = collegeValues.map(node=>parseInt(node.textContent,10));
   const toast = hero.querySelector('.relief-reading-toast');
-  let inViewport = false, userPaused = false, running = false;
+  // Keep the initial preview complete and stable; motion starts on request.
+  let inViewport = false, userPaused = true, running = false;
+  pause.textContent = 'Lancer l’animation';
+  pause.setAttribute('aria-pressed', 'true');
   let frame = 0, lastTime = null, elapsed = 0, duration = 14000;
   let cells = [], readings = [], schedule = [], total = 13, lastStep = -1;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -88,6 +91,7 @@
   };
   window.ItemsHeroRelief.updateTotal(Number(hero.querySelector('#hero-count').textContent));
   if(active){
+    hero.querySelector('.relief-caption').hidden = false;
     hero.querySelector('.relief-caption>span').textContent='Aperçu animé · données d’exemple.';
     hero.querySelector('.showcase-dashboard').setAttribute('aria-label','Aperçu animé du tableau de bord : les lectures se cumulent de gauche à droite, ligne par ligne, et les indicateurs de progression avancent au même rythme. Données d’exemple.');
   }
