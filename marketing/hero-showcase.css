@@ -44,6 +44,7 @@
 .showcase-metric:nth-child(2)>strong{color:#126eab}
 .showcase-metric:nth-child(3)>strong{color:#704bc4}
 .showcase-metric>strong>span{font-size:2.7cqw;margin-left:.2cqw}
+.showcase-metric>strong,.showcase-college-row>strong{font-variant-numeric:tabular-nums}
 .showcase-metric>small{display:block;font-size:1.05cqw;color:#5c6f87;line-height:1.4;margin-top:.6cqw}
 .showcase-progress{height:.8cqw;background:#e8eef7;border-radius:1cqw;display:block;overflow:hidden}
 .showcase-progress>i{display:block;height:100%;background:#347bf2;border-radius:inherit}
@@ -62,7 +63,7 @@
 .showcase-activity-grid>span.filled{background:#397cf0}
 .showcase-activity-grid>span.filled:nth-child(3n){background:#82aff5}
 .showcase-habit>small{font-size:1.08cqw;color:#536b8a}
-.showcase-quote{padding:1.65cqw;background:#f4f9ff url('assets/dashboard-mountain-bg.png') right bottom/cover no-repeat;display:flex;flex-direction:column;justify-content:center;isolation:isolate;position:relative}
+.showcase-quote{padding:1.65cqw;background:#f4f9ff url('assets/dashboard-mountain-bg.webp') right bottom/cover no-repeat;display:flex;flex-direction:column;justify-content:center;isolation:isolate;position:relative}
 .showcase-quote:after{content:'';position:absolute;inset:0;background:linear-gradient(90deg,#f7fbfffa,#f7fbffb0 60%,#f7fbff00);z-index:-1}
 .showcase-quote>span{font-family:Georgia,serif;color:#246ae6;font-size:3.5cqw;line-height:.6}
 .showcase-quote>strong{display:block;font-size:1.65cqw;max-width:26cqw;line-height:1.45;font-weight:600;margin-top:.7cqw}

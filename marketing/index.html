@@ -6,6 +6,9 @@
   <meta name="description" content="Donnez un rythme à vos révisions EDN, travaillez votre mémoire avec vos propres flashcards et gardez votre méthode dans un espace organisé. Découvrez ItemsTracker avec ses démos interactives.">
   <meta name="theme-color" content="#153f9d">
   <title>ItemsTracker — Des révisions EDN plus régulières, à votre façon</title>
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+  <link rel="preload" href="assets/fonts/sora-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/ibm-plex-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="stylesheet" href="page-transition.css">
   <script src="page-transition.js"></script>
   <link rel="stylesheet" href="styles.css">
@@ -227,7 +230,7 @@
         </article>
         <article class="overview-card overview-blue">
           <div class="overview-copy"><span class="overview-icon" aria-hidden="true"><img src="assets/feature-icons/flashcards.svg" alt="" width="64" height="64"></span><h3>Flashcards personnelles</h3><p>Créez vos propres cartes, révisez par item et retrouvez l’essentiel de mémoire.</p></div>
-          <div class="overview-preview overview-flip"><button class="overview-flip-button" type="button" aria-pressed="false" aria-label="Retourner la flashcard d’exemple pour afficher la réponse."><span class="overview-flip-inner"><span class="overview-flip-face overview-flip-front"><small>VOTRE FLASHCARD</small><span class="overview-flip-lines" aria-hidden="true"><i></i><i></i></span><em>Cliquez pour retourner.</em><span class="overview-card-dots" aria-hidden="true"><i></i><i></i><i></i></span></span><span class="overview-flip-face overview-flip-back" aria-hidden="true"><small>RÉPONSE</small><strong>Échocardiographie transthoracique avec Doppler.</strong><em>Cliquez pour revoir la question.</em></span></span></button></div>
+          <div class="overview-preview overview-flip"><button class="overview-flip-button" type="button" aria-pressed="false" aria-label="Votre flashcard. Cliquez pour retourner et afficher la réponse."><span class="overview-flip-inner"><span class="overview-flip-face overview-flip-front"><small>VOTRE FLASHCARD</small><span class="overview-flip-lines" aria-hidden="true"><i></i><i></i></span><em>Cliquez pour retourner.</em><span class="overview-card-dots" aria-hidden="true"><i></i><i></i><i></i></span></span><span class="overview-flip-face overview-flip-back" aria-hidden="true"><small>RÉPONSE</small><strong>Échocardiographie transthoracique avec Doppler.</strong><em>Cliquez pour revoir la question.</em></span></span></button></div>
         </article>
         <article class="overview-card overview-navy">
           <div class="overview-copy"><span class="overview-icon" aria-hidden="true"><img src="assets/feature-icons/notion-official.png" alt="" width="64" height="64"></span><h3>Références par item</h3><p>Retrouvez vos notes, références et ressources classées par item, pour un accès rapide et structuré.</p></div>
@@ -244,7 +247,7 @@
         </article>
         <article class="overview-card overview-teal">
           <div class="overview-copy"><span class="overview-icon" aria-hidden="true"><img src="assets/feature-icons/gallery.svg" alt="" width="64" height="64"></span><h3>Galerie et visuels</h3><p>Centralisez vos images, schémas et visuels pour une révision plus claire et plus efficace.</p></div>
-          <div class="overview-preview overview-gallery"><div class="overview-gallery-deck" aria-hidden="true"><span class="gallery-layer gallery-brain"><img src="assets/galerie-cerveau-v2.png" alt="" width="768" height="1024" loading="lazy" decoding="async"></span><span class="gallery-layer gallery-histology"><img src="assets/galerie-histologie-v2.png" alt="" width="768" height="1024" loading="lazy" decoding="async"></span><span class="gallery-layer gallery-heart"><img src="assets/galerie-coeur-v2.png" alt="" width="768" height="1024" loading="lazy" decoding="async"></span></div></div>
+          <div class="overview-preview overview-gallery"><div class="overview-gallery-deck" aria-hidden="true"><span class="gallery-layer gallery-brain"><img src="assets/galerie-cerveau-v2.webp" srcset="assets/galerie-cerveau-v2-224.webp 224w, assets/galerie-cerveau-v2.webp 384w" sizes="(max-width: 380px) 61px, 80px" alt="" width="768" height="1024" loading="lazy" decoding="async"></span><span class="gallery-layer gallery-histology"><img src="assets/galerie-histologie-v2.webp" srcset="assets/galerie-histologie-v2-224.webp 224w, assets/galerie-histologie-v2.webp 384w" sizes="(max-width: 380px) 61px, 80px" alt="" width="768" height="1024" loading="lazy" decoding="async"></span><span class="gallery-layer gallery-heart"><img src="assets/galerie-coeur-v2.webp" srcset="assets/galerie-coeur-v2-224.webp 224w, assets/galerie-coeur-v2.webp 384w" sizes="(max-width: 380px) 61px, 80px" alt="" width="768" height="1024" loading="lazy" decoding="async"></span></div></div>
         </article>
         <article class="overview-card overview-purple">
           <span class="overview-coming">À venir</span><div class="overview-copy"><span class="overview-icon" aria-hidden="true"><img src="assets/feature-icons/ai.svg" alt="" width="64" height="64"></span><h3>Analyse IA</h3><p>Un rapport précis, des points à retravailler et un plan personnalisé pour guider vos prochaines révisions.</p></div>
@@ -295,7 +298,7 @@
                 </svg><div class="ai-donut-label" aria-live="polite"><strong>45<span>%</span></strong><span>À consolider</span></div>
               </div></div>
                 <div class="ai-mini-card ai-mini-flashcards"><div><span>Flashcards</span><svg class="icon" aria-hidden="true"><use href="#i-card"/></svg></div><strong>26</strong><div class="ai-spark-bars" role="img" aria-label="Exemple de suivi des flashcards"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div></div>
-                <button class="ai-mini-card ai-mini-coming" type="button" data-ai-open="reco" aria-label="Découvrir les recommandations IA à venir"><span class="ai-mini-top"><span>IA</span><svg class="icon" aria-hidden="true"><use href="#i-overview-spark"/></svg></span><span class="ai-coming-pill">À venir</span><span class="ai-spark-bars ai-bars-blurred" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></button>
+                <button class="ai-mini-card ai-mini-coming" type="button" data-ai-open="reco" aria-label="IA à venir : découvrir les recommandations"><span class="ai-mini-top"><span>IA</span><svg class="icon" aria-hidden="true"><use href="#i-overview-spark"/></svg></span><span class="ai-coming-pill">À venir</span><span class="ai-spark-bars ai-bars-blurred" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span></button>
               </div>
             </div>
             <div id="ai-reco" role="tabpanel" aria-labelledby="ai-tab-reco" hidden>
@@ -364,7 +367,7 @@
         <a class="button button-blue" href="#atelier" data-select-demo="cards">Essayer une révision <svg class="icon" aria-hidden="true"><use href="#i-arrow"/></svg></a>
       </div>
       <div class="devices-stage" role="group" aria-label="Tableau de bord sur ordinateur et flashcard sur mobile, données de démonstration">
-        <div class="device-browser"><img src="assets/devices/dashboard-principal.png" alt="Tableau de bord principal : progression globale, lectures, flashcards, activité de révision et progression par collège. Exemple illustratif." width="1520" height="1028" loading="lazy"></div>
+        <div class="device-browser"><img src="assets/devices/dashboard-principal.webp" srcset="assets/devices/dashboard-principal-800.webp 800w, assets/devices/dashboard-principal.webp 1520w" sizes="(max-width: 760px) calc(100vw - 70px), (max-width: 1180px) 70vw, 820px" decoding="async" alt="Tableau de bord principal : progression globale, lectures, flashcards, activité de révision et progression par collège. Exemple illustratif." width="1520" height="1028" loading="lazy"></div>
         <div class="device-phone"><div class="device-phone-screen"><div class="device-phone-header"><span class="device-brand-icon" aria-hidden="true"></span>ItemsTracker<small>Mobile</small></div><div class="device-revision"><div class="device-revision-meta"><span>RÉVISION</span><span>1 / 1</span></div><div class="device-revision-progress" aria-hidden="true"><i></i></div><div class="device-question-card"><span class="device-specialty">Cardiologie</span><span class="device-item">ITEM 233</span><p class="device-question">Quel souffle évoque un rétrécissement aortique ?</p><p class="device-answer" hidden>Un souffle systolique éjectionnel au foyer aortique, irradiant aux carotides.</p></div><button class="device-reveal" type="button" aria-pressed="false"><svg class="icon" aria-hidden="true"><use href="#i-card"/></svg><span>Afficher la réponse</span></button></div></div></div>
       </div>
     </div>

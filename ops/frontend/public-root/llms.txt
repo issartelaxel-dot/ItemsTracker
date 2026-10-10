@@ -1,0 +1,14 @@
+# ItemsTracker
+
+> Un espace de révision pour les étudiants en médecine : suivi des lectures, flashcards personnelles, ressources par item et calendrier.
+
+## Présentation
+
+- [ItemsTracker](https://setup-hub.com/itemstracker/): présentation du service, exemples interactifs, fonctionnalités et questions fréquentes.
+- [Fonctionnalités](https://setup-hub.com/itemstracker/#fonctionnalites): suivi des lectures, flashcards, références, calendrier et galerie ; analyse IA annoncée à venir.
+- [Questions fréquentes](https://setup-hub.com/itemstracker/#faq): accès au service et organisation des révisions.
+
+## Accès
+
+- [Connexion](https://setup-hub.com/itemstracker/app.html): application nécessitant un compte personnel.
+- [Inscription](https://setup-hub.com/itemstracker/app.html?auth=register): création de compte avec vérification de l'adresse e-mail.

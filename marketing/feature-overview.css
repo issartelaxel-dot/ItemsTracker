@@ -32,6 +32,11 @@
 .overview-card.is-in-view .overview-read-progress span{animation:overview-progress-enter .9s cubic-bezier(.2,.75,.3,1) both;transform-origin:left}
 .overview-card.is-in-view .overview-ai-line{animation:overview-ink 5s ease-in-out infinite}.overview-card.is-in-view .overview-ai-line:nth-child(3){animation-delay:.3s}.overview-card.is-in-view .overview-ai-line:nth-child(4){animation-delay:.6s}
 .overview-card.is-in-view .overview-calendar-grid button[aria-pressed=true]{animation:overview-date-glow 5s ease-in-out infinite}
+/* Enlarge the three real date controls without widening the miniature calendar. */
+.overview-calendar-grid button{width:24px;height:24px;aspect-ratio:auto;justify-self:center;align-self:center}
+.overview-calendar-grid button:nth-of-type(1){translate:-5px 0}
+.overview-calendar-grid button:nth-of-type(2){translate:5px 0}
+.overview-calendar-grid button:nth-of-type(3){translate:3px 0}
 .overview-card:hover *, .overview-card:focus-within *,.feature-overview.is-background *{animation-play-state:paused!important}
 @keyframes overview-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
 @keyframes overview-progress-enter{from{transform:scaleX(.3);opacity:.55}to{transform:scaleX(1);opacity:1}}

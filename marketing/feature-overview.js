@@ -11,7 +11,7 @@
   flip.addEventListener('click',()=>{
     const answer=flip.getAttribute('aria-pressed')!=='true';
     flip.setAttribute('aria-pressed',String(answer));
-    flip.setAttribute('aria-label',answer?'Réponse : Échocardiographie transthoracique avec Doppler. Retourner à la question.':'Retourner la flashcard d’exemple pour afficher la réponse.');
+    flip.setAttribute('aria-label',answer?'Réponse : Échocardiographie transthoracique avec Doppler. Cliquez pour revoir la question.':'Votre flashcard. Cliquez pour retourner et afficher la réponse.');
     flip.querySelector('.overview-flip-front').setAttribute('aria-hidden',String(answer));
     flip.querySelector('.overview-flip-back').setAttribute('aria-hidden',String(!answer));
   });

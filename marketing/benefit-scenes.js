@@ -5,6 +5,15 @@
   const stillProgress = scene => scene.type === 'memory' ? .08 : .9;
   let frameId = null;
   let previousTime = null;
+  // SVG geometry is static; cache it before changing drawing attributes.
+  for (const scene of scenes) {
+    if (scene.type === 'rhythm') {
+      scene.steady = scene.element.querySelector('.rhythm-steady');
+      scene.pathLength = scene.steady.getTotalLength();
+      scene.lines = [...scene.element.querySelectorAll('.rhythm-line')];
+      scene.point = scene.element.querySelector('.rhythm-point');
+    }
+  }
   function controls(scene) {
     const control = scene.element.querySelector('.scene-playback');
     const text = `${scene.wanted ? 'Mettre l’animation en pause' : 'Lancer l’animation'} : ${scene.name}`;
@@ -17,11 +26,10 @@
     const root = scene.element;
     if (scene.type === 'rhythm') {
       const drawProgress = Math.min(1, progress / .74);
-      root.querySelectorAll('.rhythm-line').forEach(line => {line.style.strokeDashoffset = String(1-drawProgress);});
-      const steady = root.querySelector('.rhythm-steady');
-      const point = steady.getPointAtLength(steady.getTotalLength()*drawProgress);
-      root.querySelector('.rhythm-point').setAttribute('cx',point.x);
-      root.querySelector('.rhythm-point').setAttribute('cy',point.y);
+      const point = scene.steady.getPointAtLength(scene.pathLength*drawProgress);
+      scene.lines.forEach(line => {line.style.strokeDashoffset = String(1-drawProgress);});
+      scene.point.setAttribute('cx',point.x);
+      scene.point.setAttribute('cy',point.y);
       root.dataset.phase = String(Math.min(3,Math.floor(progress*4)));
       return;
     }

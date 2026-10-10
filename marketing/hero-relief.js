@@ -25,14 +25,18 @@
     const step=complete?readings.length:schedule.filter(at=>at<=time).length;
     const latest=step?readings[step-1]:null;
     const recent=!complete && step>0 && time-schedule[step-1]<500;
-    toast.classList.toggle('is-visible',recent);
+    if (toast.classList.contains('is-visible') !== recent) toast.classList.toggle('is-visible',recent);
     if(step===lastStep) {
       if (!recent && latest) latest.classList.remove('is-current-read');
       return;
     }
     lastStep=step;
-    cells.forEach(cell=>cell.classList.remove('is-read','is-current-read'));
-    readings.slice(0,step).forEach(cell=>cell.classList.add('is-read'));
+    // Update only changed cells, rather than repainting the entire grid each step.
+    const read = new Set(readings.slice(0,step));
+    cells.forEach(cell=>{
+      if (cell.classList.contains('is-read') !== read.has(cell)) cell.classList.toggle('is-read',read.has(cell));
+      if (cell !== latest && cell.classList.contains('is-current-read')) cell.classList.remove('is-current-read');
+    });
     if(recent && latest) latest.classList.add('is-current-read');
     const ratio=readings.length?step/readings.length:0;
     hero.querySelector('#hero-count').textContent=String(Math.round(total*ratio));

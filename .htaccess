@@ -15,4 +15,12 @@ RewriteRule ^ app.html [L]
   <FilesMatch "\.(html|js|css)$">
     Header always set Cache-Control "no-cache, max-age=0, must-revalidate"
   </FilesMatch>
+  # Content-hashed presentation assets change URL whenever their content changes.
+  <FilesMatch "\.[a-f0-9]{16}\.(css|js|woff2|svg|png|jpe?g|webp)$">
+    Header always set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+</IfModule>
+
+<IfModule mod_deflate.c>
+  AddOutputFilterByType DEFLATE text/html text/css text/javascript application/javascript application/json image/svg+xml text/plain text/vtt
 </IfModule>

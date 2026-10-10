@@ -1,0 +1,25 @@
+# Build only application sources; deployment exports and tooling are regenerated.
+.git
+node_modules
+dist
+deploy
+deploy-full
+presentation
+assets
+exports
+rapports
+out
+output
+audit-itemstracker-*
+goclaw
+*.zip
+*.log
+.env
+.env.server
+.env.backup
+.env.*.local
+.backups
+installation-mail-lws
+**/relay-config.local.php
+playwright-report
+test-results

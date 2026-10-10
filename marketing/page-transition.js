@@ -1,7 +1,8 @@
 (() => {
   const script = document.currentScript;
   if (!script) return;
-  const base = new URL('../', script.src);
+  // Production inlines this small bootstrap before the first paint.
+  const base = new URL(script.dataset.base || '../', script.src || location.href);
   const root = document.documentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const key = `itemstracker:page-transition:${base.pathname}`;
