@@ -1,3 +1,4 @@
+import { useMediaQuery } from './lib/use-responsive'
 import { HabitGrid } from './components/HabitGrid'
 import { withRequestTimeout } from './lib/request-timeout'
 import { ResourceTypeIcon, ResourceLinkPreview, useResourcePreview, getResourceFallback, formatResourceSize } from './components/ResourcePreview'
@@ -75,6 +76,8 @@ import {
   Lock,
   LogOut,
   Mail,
+  MediaImage,
+  NavArrowDown,
   MoreHoriz,
   NavArrowLeft,
   NavArrowRight,
@@ -1198,27 +1201,30 @@ function QuizRichTextToolbar() {
       </button>
       <button
         type="button"
+        aria-label="Gras"
         className="ghost-btn"
         onMouseDown={(event) => runToolbarAction(event, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'bold'))}
       >
-        Gras
+        <span className="quiz-rich-tool-label">Gras</span><b className="quiz-rich-tool-symbol" aria-hidden="true">B</b>
       </button>
       <button
         type="button"
+        aria-label="Italique"
         className="ghost-btn"
         onMouseDown={(event) => runToolbarAction(event, () => editor.dispatchCommand(FORMAT_TEXT_COMMAND, 'italic'))}
       >
-        Italique
+        <span className="quiz-rich-tool-label">Italique</span><i className="quiz-rich-tool-symbol" aria-hidden="true">I</i>
       </button>
       <button type="button" className="ghost-btn" onMouseDown={(event) => runToolbarAction(event, toggleHighlight)}>
         Surligner
       </button>
       <button
         type="button"
+        aria-label="Puces"
         className="ghost-btn"
         onMouseDown={(event) => runToolbarAction(event, () => editor.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined))}
       >
-        Puces
+        <span className="quiz-rich-tool-label">Puces</span><List className="quiz-rich-tool-symbol" aria-hidden="true" />
       </button>
       <button
         type="button"
@@ -2645,6 +2651,7 @@ function App() {
   const [masteryFilter, setMasteryFilter] = useState<string>('ALL')
   const [sortKey, setSortKey] = useState<SortKey>('reviews')
   const [activeView, setActiveView] = useState<NavView>('dashboard')
+  const isMobile = useMediaQuery('(max-width: 767px)')
   const [selectedCollegeDetail, setSelectedCollegeDetail] = useState<string | null>(null)
   const [collegeDetailFilter, setCollegeDetailFilter] = useState<CollegeDetailFilter>('all')
   const [collegeDetailPage, setCollegeDetailPage] = useState(1)
@@ -2728,6 +2735,9 @@ function App() {
   const [historyItemId, setHistoryItemId] = useState<number | null>(null)
   const [quizItemId, setQuizItemId] = useState<number | null>(null)
   const [quizSide, setQuizSide] = useState<'front' | 'back'>('front')
+  const [quizEditorPanel, setQuizEditorPanel] = useState<'preview' | 'image'>('preview')
+  const [quizEditorMenuOpen, setQuizEditorMenuOpen] = useState(false)
+  const [quizEditorMediaOpen, setQuizEditorMediaOpen] = useState(true)
   const [quizFeedback, setQuizFeedback] = useState<QuizResult | null>(null)
   const [quizEditMode, setQuizEditMode] = useState(false)
   const [quizSessionScope, setQuizSessionScope] = useState<QuizSessionScope>({ type: 'global' })
@@ -5588,6 +5598,9 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   function openQuizCardEditor(itemNumber: number, cardId: string) {
+    setQuizEditorPanel('preview')
+    setQuizEditorMenuOpen(false)
+    setQuizEditorMediaOpen(true)
     updateItemQuizConfig(itemNumber, { activeCardId: cardId })
     setQuizItemId(itemNumber)
     setQuizSessionScope({ type: 'item', itemNumber })
@@ -9405,10 +9418,14 @@ function getPasswordStrengthMeta(password: string) {
               !quizEditMode && quizSessionMode === 'quiz' ? 'quiz-modal-mcq' : ''
             }`}
             onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-label={quizEditMode ? 'Éditer une flashcard' : 'Révision'}
           >
             {quizEditMode && activeQuizCard ? (
               <>
                 <div className="flashcard-editor-head">
+                  {isMobile ? <button type="button" className="flashcard-editor-back ghost-btn" aria-label="Fermer l’éditeur" onClick={closeQuiz}><NavArrowLeft aria-hidden="true" /></button> : null}
                   <div className="flashcard-editor-title">
                     <h3>
                       Flashcard #
@@ -9426,7 +9443,8 @@ function getPasswordStrengthMeta(password: string) {
                     )}{' '}
                     / {Math.max(1, quizItem.tracking.quiz.cards.length)}
                   </span>
-                  <div className="flashcard-editor-actions">
+                  {isMobile ? <button type="button" className="flashcard-editor-menu-toggle ghost-btn" aria-label="Actions de la flashcard" aria-expanded={quizEditorMenuOpen} aria-controls="flashcard-editor-actions" onClick={() => setQuizEditorMenuOpen((open) => !open)}><MoreHoriz aria-hidden="true" /></button> : null}
+                  <div id="flashcard-editor-actions" className="flashcard-editor-actions" hidden={isMobile && !quizEditorMenuOpen} onClick={() => setQuizEditorMenuOpen(false)}>
                     <button type="button" className="flashcard-editor-action" onClick={() => navigateQuizCard('prev')}>
                       <NavArrowLeft className="flashcard-editor-action-icon" aria-hidden="true" />
                       Précédente
@@ -9454,9 +9472,10 @@ function getPasswordStrengthMeta(password: string) {
                   </div>
                 </div>
 
-                <div className="flashcard-editor-tabs" role="tablist" aria-label="Face de la flashcard">
+                <div className="flashcard-editor-tabs" role="group" aria-label="Face de la flashcard">
                   <button
                     type="button"
+                    aria-pressed={quizSide === 'front'}
                     className={quizSide === 'front' ? 'active' : ''}
                     onClick={() => setQuizSide('front')}
                   >
@@ -9465,6 +9484,7 @@ function getPasswordStrengthMeta(password: string) {
                   </button>
                   <button
                     type="button"
+                    aria-pressed={quizSide === 'back'}
                     className={quizSide === 'back' ? 'active' : ''}
                     onClick={() => setQuizSide('back')}
                   >
@@ -9472,33 +9492,6 @@ function getPasswordStrengthMeta(password: string) {
                     Verso
                   </button>
                 </div>
-
-                <section className="flashcard-editor-preview" aria-label={`Aperçu du ${quizSide === 'front' ? 'recto' : 'verso'}`}>
-                  <p className="flashcard-editor-section-label">
-                    <Eye className="flashcard-editor-label-icon" aria-hidden="true" />
-                    Aperçu du {quizSide === 'front' ? 'recto' : 'verso'}
-                  </p>
-                  <div className="flashcard-editor-preview-body">
-                    <div
-                      className={`${getQuizTextSizeClass(getQuizRichTextPlainText(quizSide === 'front' ? quizQuestion : quizAnswer))} quiz-rich-rendered`}
-                      dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizSide === 'front' ? quizQuestion : quizAnswer) }}
-                    />
-                    {(quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl) ? (
-                      <img
-                        className="flashcard-editor-preview-image"
-                        src={quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl}
-                        alt={`Illustration du ${quizSide === 'front' ? 'recto' : 'verso'}`}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          openImageLightbox(
-                            quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl,
-                            `Illustration du ${quizSide === 'front' ? 'recto' : 'verso'}`,
-                          )
-                        }}
-                      />
-                    ) : null}
-                  </div>
-                </section>
 
                 <section className="flashcard-editor-content">
                   <div className="flashcard-editor-main">
@@ -9526,9 +9519,35 @@ function getPasswordStrengthMeta(password: string) {
                     onDragLeave={(event) => handleQuizCardImageDragLeave(event, quizSide)}
                     onDrop={(event) => handleQuizCardImageDrop(event, quizItem.itemNumber, activeQuizCard.id, quizSide)}
                   >
-                    <p className="flashcard-editor-section-label">
-                      Image du {quizSide === 'front' ? 'recto' : 'verso'} <span>(optionnelle)</span>
-                    </p>
+                    {isMobile ? (
+                      <button type="button" className="flashcard-editor-media-toggle" aria-expanded={quizEditorMediaOpen} aria-controls="flashcard-editor-media-body" onClick={() => setQuizEditorMediaOpen((open) => !open)}>
+                        <Eye className="flashcard-editor-label-icon" aria-hidden="true" /> Aperçu &amp; image <small>(optionnelle)</small>
+                        <NavArrowDown className="flashcard-editor-notes-chevron" aria-hidden="true" />
+                      </button>
+                    ) : (
+                      <p className="flashcard-editor-section-label"><Eye className="flashcard-editor-label-icon" aria-hidden="true" /> Aperçu &amp; Image <span>(optionnelle)</span></p>
+                    )}
+                    <div id="flashcard-editor-media-body" className="flashcard-editor-media-body" hidden={isMobile && !quizEditorMediaOpen}>
+                      {!isMobile ? <div className="flashcard-editor-media-tabs" role="group" aria-label="Affichage du panneau">
+                        <button type="button" className={quizEditorPanel === 'preview' ? 'active' : ''} aria-pressed={quizEditorPanel === 'preview'} onClick={() => setQuizEditorPanel('preview')}>
+                          <Page className="flashcard-editor-tab-icon" aria-hidden="true" /> Aperçu
+                        </button>
+                        <button type="button" className={quizEditorPanel === 'image' ? 'active' : ''} aria-pressed={quizEditorPanel === 'image'} onClick={() => setQuizEditorPanel('image')}>
+                          <MediaImage className="flashcard-editor-tab-icon" aria-hidden="true" /> Image
+                        </button>
+                      </div> : null}
+                      {(isMobile || quizEditorPanel === 'preview') ? (
+                        <div className="flashcard-editor-preview-body" aria-label={`Aperçu du ${quizSide === 'front' ? 'recto' : 'verso'}`}>
+                          {getQuizRichTextPlainText(quizSide === 'front' ? activeQuizCard.question : activeQuizCard.answer) ? <div className="quiz-rich-rendered" dangerouslySetInnerHTML={{ __html: sanitizeQuizRichTextHtml(quizSide === 'front' ? activeQuizCard.question : activeQuizCard.answer) }} /> : null}
+                          {!getQuizRichTextPlainText(quizSide === 'front' ? activeQuizCard.question : activeQuizCard.answer) && !(quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl) ? <p className="flashcard-editor-preview-placeholder">L’aperçu de votre {quizSide === 'front' ? 'recto' : 'verso'} apparaîtra ici.</p> : null}
+                          {(quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl) ? (
+                            <button type="button" className="flashcard-editor-preview-zoom" aria-label={`Agrandir l’image du ${quizSide === 'front' ? 'recto' : 'verso'}`} onClick={() => openImageLightbox(quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl, `Illustration du ${quizSide === 'front' ? 'recto' : 'verso'}`)}>
+                              <img className="flashcard-editor-preview-image" src={quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl} alt={`Illustration du ${quizSide === 'front' ? 'recto' : 'verso'}`} />
+                            </button>
+                          ) : null}
+                        </div>
+                      ) : <>
+
                     {(quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl) ? (
                       <img
                         className="flashcard-editor-image-thumb"
@@ -9546,6 +9565,7 @@ function getPasswordStrengthMeta(password: string) {
                         <span>ou cliquer pour parcourir</span>
                       </button>
                     )}
+                    </>}
                     {quizImageErrors[quizSide] ? (
                       <span className="quiz-file-name quiz-file-name-error">{quizImageErrors[quizSide]}</span>
                     ) : quizImageFileNames[quizSide] ? (
@@ -9562,7 +9582,7 @@ function getPasswordStrengthMeta(password: string) {
                         onClick={() => openQuizCardImagePicker(quizItem.itemNumber, activeQuizCard.id, quizSide)}
                       >
                         <Refresh className="inline-btn-icon" aria-hidden="true" />
-                        Remplacer
+                        {(quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl) ? 'Remplacer' : 'Ajouter'}
                       </button>
                       <button
                         type="button"
@@ -9581,6 +9601,7 @@ function getPasswordStrengthMeta(password: string) {
                         Retirer
                       </button>
                     </div>
+                    </div>
                   </aside>
                 </section>
 
@@ -9588,6 +9609,7 @@ function getPasswordStrengthMeta(password: string) {
                   <summary>
                     <Notes className="inline-btn-icon" aria-hidden="true" />
                     Notes personnelles <small>(optionnel)</small>
+                    <NavArrowDown className="flashcard-editor-notes-chevron" aria-hidden="true" />
                   </summary>
                   <textarea
                     value={activeQuizCard.personalNotes}
