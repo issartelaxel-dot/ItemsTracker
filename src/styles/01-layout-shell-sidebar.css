@@ -13,6 +13,11 @@
 }
 
 
+:root[data-theme='dark'] .dashboard-layout {
+  background: radial-gradient(ellipse at 96% 4%, #2563a833, transparent 58%),
+    linear-gradient(130deg, #08162f, #102952 45%, #163b68);
+}
+
 .dashboard-layout.is-sidebar-collapsed {
   grid-template-columns: 86px minmax(0, 1fr);
 }
