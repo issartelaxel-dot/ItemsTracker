@@ -63,6 +63,10 @@
   position: relative;
 }
 
+:root:not([data-theme='dark']) .dashboard-shell {
+  background: #fff;
+}
+
 .dashboard-content {
   min-height: 0;
   overflow-y: auto;
