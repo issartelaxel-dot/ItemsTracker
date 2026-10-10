@@ -17,10 +17,17 @@ if (!existsSync(resolve(marketing, 'index.html'))) throw new Error('Missing mark
 renameSync(resolve(dist, 'index.html'), resolve(dist, 'app.html'))
 // Fixed asset filenames need a content key, including in the dist/deploy exports.
 const appPath = resolve(dist, 'app.html')
+const transitionVersion = extension => createHash('sha256')
+  .update(readFileSync(resolve(marketing, `page-transition.${extension}`)))
+  .digest('hex').slice(0, 16)
+const transitionStyles = `${base}presentation/page-transition.css?v=${transitionVersion('css')}`
+const transitionScript = `${base}presentation/page-transition.js?v=${transitionVersion('js')}`
 const appHtml = readFileSync(appPath, 'utf8').replace(/assets\/main\.(js|css)(?:\?v=[^"']*)?/g, (_, extension) => {
   const hash = createHash('sha256').update(readFileSync(resolve(dist, `assets/main.${extension}`))).digest('hex').slice(0, 16)
   return `assets/main.${extension}?v=${hash}`
 })
+  .replace('<script type="module"', '<script blocking="render" type="module"')
+  .replace('</head>', `  <link rel="stylesheet" href="${transitionStyles}">\n    <script src="${transitionScript}"></script>\n  </head>`)
 writeFileSync(appPath, appHtml)
 
 cpSync(marketing, presentation, { recursive: true })
@@ -33,6 +40,8 @@ let html = readFileSync(resolve(marketing, 'index.html'), 'utf8')
     return `${name}="${base}presentation/${value}"`
   })
 html = html.replaceAll(`href="${appUrl}" target="_blank" rel="noopener"`, `href="${appUrl}"`)
+html = html.replace(`${base}presentation/page-transition.css"`, `${transitionStyles}"`)
+  .replace(`${base}presentation/page-transition.js"`, `${transitionScript}"`)
 writeFileSync(resolve(dist, 'index.html'), html)
 // There is only one public landing entrypoint; CSS/assets remain relative here.
 rmSync(resolve(presentation, 'index.html'))

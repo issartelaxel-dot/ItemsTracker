@@ -7364,36 +7364,33 @@ function getPasswordStrengthMeta(password: string) {
 
   if (authStatus !== 'authed' || isAuthBootstrapping) {
     return (
-      <div className={`auth-shell ${authTransitionPhase === 'expanding' ? 'is-auth-expanding' : ''}`}>
+      <div className={`auth-shell auth-shell-public ${authTransitionPhase === 'expanding' ? 'is-auth-expanding' : ''}`}>
         <div className="auth-layout">
-          <aside className="auth-brand">
-            <div className="auth-brand-inner">
-              <p className="auth-brand-kicker">ItemsTracker</p>
-              {authView === 'login' ? (
-                <>
-                  <h1>Bienvenue</h1>
-                  <p>Accède à ton dashboard EDN et optimise tes révisions</p>
-                </>
-              ) : (
-                <>
-                  <h1>Crée ton espace de révision</h1>
-                  <p>Commence à maîtriser les 367 items efficacement</p>
-                </>
-              )}
-            </div>
-          </aside>
+          <header className="auth-public-header">
+            <a className="auth-public-brand" href={`${APP_BASE_URL}/`} aria-label="ItemsTracker — accueil">
+              <span className="logo" aria-hidden="true" />
+              <span>ItemsTracker</span>
+            </a>
+            <a className="auth-back-link" href={`${APP_BASE_URL}/`}>
+              <NavArrowLeft className="ui-icon" aria-hidden="true" />
+              <span>Retour à l’accueil</span>
+            </a>
+          </header>
 
           <div ref={authCardRef} className="auth-card">
-            <h2 className="auth-title">Authentification</h2>
+            <h1 className="auth-title">{authView === 'login' ? 'Bon retour parmi nous' : 'Crée ton espace de révision'}</h1>
+            <p className="auth-intro">{authView === 'login' ? 'Connecte-toi à ton espace de révision' : 'Tes révisions, tes flashcards, ton rythme.'}</p>
             <div className="auth-switch">
               <button
                 className={`ghost-btn auth-switch-btn ${authView === 'login' ? 'active' : ''}`}
+                aria-pressed={authView === 'login'}
                 onClick={() => setAuthView('login')}
               >
                 Connexion
               </button>
               <button
                 className={`ghost-btn auth-switch-btn ${authView === 'register' ? 'active' : ''}`}
+                aria-pressed={authView === 'register'}
                 onClick={() => setAuthView('register')}
               >
                 Inscription
@@ -7402,9 +7399,7 @@ function getPasswordStrengthMeta(password: string) {
 
             <div key={authView} className="auth-panel-content">
               {authView === 'login' ? (
-                <>
-                  <p className="auth-sub">Connecte-toi avec ton email et ton mot de passe.</p>
-                  <p className="auth-sub">Mot de passe oublié: demande un code puis valide le nouveau mot de passe.</p>
+                <form onSubmit={event => { event.preventDefault(); if (!loginPending && !isAuthBootstrapping) void handleLogin() }}>
                   <div className="auth-grid">
                     <label className="auth-input-wrap auth-input-full">
                       <span className="auth-input-icon" aria-hidden="true">
@@ -7412,6 +7407,9 @@ function getPasswordStrengthMeta(password: string) {
                       </span>
                       <input
                         type="email"
+                        aria-label="Adresse e-mail"
+                        autoComplete="email"
+                        required
                         placeholder="Email"
                         value={emailInput}
                         onChange={(event) => setEmailInput(event.target.value)}
@@ -7423,6 +7421,9 @@ function getPasswordStrengthMeta(password: string) {
                       </span>
                       <input
                         type={showPassword ? 'text' : 'password'}
+                        aria-label="Mot de passe"
+                        autoComplete="current-password"
+                        required
                         placeholder="Mot de passe"
                         value={passwordInput}
                         onChange={(event) => setPasswordInput(event.target.value)}
@@ -7444,8 +7445,8 @@ function getPasswordStrengthMeta(password: string) {
                   <div className="auth-actions">
                     <button
                       className="ghost-btn auth-login-btn"
+                      type="submit"
                       disabled={loginPending || isAuthBootstrapping}
-                      onClick={() => void handleLogin()}
                     >
                       {loginPending || isAuthBootstrapping ? (
                         <>
@@ -7456,8 +7457,8 @@ function getPasswordStrengthMeta(password: string) {
                         'Se connecter'
                       )}
                     </button>
-                    <button className="ghost-btn" onClick={() => setResetMode((value) => !value)}>
-                      {resetMode ? 'Annuler reset' : 'Mot de passe oublié'}
+                    <button className="auth-forgot-link" type="button" aria-expanded={resetMode} onClick={() => setResetMode((value) => !value)}>
+                      {resetMode ? 'Annuler la réinitialisation' : 'Mot de passe oublié ?'}
                     </button>
                   </div>
                   {resetMode ? (
@@ -7495,16 +7496,16 @@ function getPasswordStrengthMeta(password: string) {
                         </label>
                       </div>
                       <div className="auth-actions">
-                        <button className="ghost-btn" onClick={() => void handleRequestPasswordReset()}>
+                        <button className="ghost-btn" type="button" onClick={() => void handleRequestPasswordReset()}>
                           Recevoir un code reset
                         </button>
-                        <button className="ghost-btn" onClick={() => void handleConfirmPasswordReset()}>
+                        <button className="ghost-btn" type="button" onClick={() => void handleConfirmPasswordReset()}>
                           Valider reset mot de passe
                         </button>
                       </div>
                     </>
                   ) : null}
-                </>
+                </form>
               ) : (
                 <>
                   {registration ? (
@@ -7576,6 +7577,44 @@ function getPasswordStrengthMeta(password: string) {
             {authStatus === 'loading' || isAuthBootstrapping ? <p className="auth-sub">Chargement...</p> : null}
           </div>
         </div>
+        <section className="auth-benefits" aria-labelledby="auth-benefits-title">
+          <h2 id="auth-benefits-title">Un espace pour avancer à ton rythme.</h2>
+          <div className="auth-benefits-grid">
+            <article className="auth-benefit">
+              <Book className="auth-benefit-icon" aria-hidden="true" />
+              <div>
+                <h3>Un suivi clair par item</h3>
+                <p>Retrouve tes lectures, tes notes et tes ressources au même endroit.</p>
+              </div>
+            </article>
+            <article className="auth-benefit">
+              <CreditCards className="auth-benefit-icon" aria-hidden="true" />
+              <div>
+                <h3>Des flashcards à ta façon</h3>
+                <p>Crée tes cartes et révise les notions qui comptent pour toi.</p>
+              </div>
+            </article>
+            <article className="auth-benefit">
+              <Dashboard className="auth-benefit-icon" aria-hidden="true" />
+              <div>
+                <h3>Ta progression en un coup d’œil</h3>
+                <p>Visualise ton avancement et organise tes prochaines révisions.</p>
+              </div>
+            </article>
+          </div>
+        </section>
+        <footer className="auth-public-footer">
+          <a className="auth-public-brand auth-footer-brand" href={`${APP_BASE_URL}/`} aria-label="ItemsTracker — accueil">
+            <span className="logo" aria-hidden="true" />
+            <span>ItemsTracker</span>
+          </a>
+          <nav aria-label="Liens de pied de page">
+            <a href={`${APP_BASE_URL}/`}>Accueil</a>
+            <a href={`${APP_BASE_URL}/#faq`}>FAQ</a>
+            <a href={`mailto:${SUPPORT_EMAIL}`}>Contact</a>
+          </nav>
+          <p>© {new Date().getFullYear()} ItemsTracker</p>
+        </footer>
         {authTransitionPhase === 'expanding' ? (
           <div className="auth-expand-card" style={authExpandStyle}>
             <div className="auth-expand-content">

@@ -3,7 +3,7 @@
 html[data-hero-layout=centered] .hero-previous-only{display:none}
 html[data-hero-layout=centered] .hero-centered-only{display:block}
 html[data-hero-layout=centered] .blue-zone{padding:42px 52px 44px;background:radial-gradient(ellipse at 96% 4%,#57bfff77,transparent 58%),linear-gradient(130deg,#1241a6,#0864ed 45%,#168cff);color:#fff}
-html[data-hero-layout=centered] .hero-surface{display:block;color:#101b38;position:relative;max-width:1320px;margin:auto;border:1px solid #f0f7ff;border-radius:26px;overflow:hidden;background:radial-gradient(ellipse at 2% 52%,#dceeffbb,transparent 50%),radial-gradient(ellipse at 98% 48%,#d9edffbb,transparent 50%),linear-gradient(180deg,#fff,#f4f9ff);box-shadow:0 24px 75px #06246b28}
+html[data-hero-layout=centered] .hero-surface{display:block;color:#101b38;position:relative;max-width:1320px;margin:auto;border:1px solid #f0f7ff;border-radius:26px;overflow:hidden;background:linear-gradient(180deg,#fff,#edf6ff 48%,#f4f9ff);box-shadow:0 24px 75px #06246b28}
 html[data-hero-layout=centered] .site-header{width:calc(100% - 84px);height:88px;gap:24px;border:0}
 html[data-hero-layout=centered] .site-header .brand{color:#101b38;gap:10px;font-size:18px}
 html[data-hero-layout=centered] .site-header .logo{width:35px;height:35px;border-radius:10px;background:linear-gradient(180deg,#348cff,#0962f5);border-color:#257bfd;box-shadow:inset 0 1px 0 #ffffff55}
