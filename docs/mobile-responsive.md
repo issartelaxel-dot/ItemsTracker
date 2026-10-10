@@ -15,6 +15,14 @@ Les maquettes du PDF « Mobile UX/UI Redesign » et les exigences des pages 7–
 
 Les données, les calculs, l’authentification, les routes API et les handlers de sauvegarde/révision restent les mêmes. Aucun compte ni service de production n’a été modifié pendant les tests.
 
+## Barre flottante et gestes
+
+La navigation mobile reprend la référence fournie : fond clair translucide arrondi, quatre entrées, icône de document conservée pour Items, et pilule bleue avec texte blanc pour l’entrée active. Le thème sombre dispose d’un fond adapté.
+
+La pilule se déplace en 380 ms au toucher. Un glissement horizontal **sur la barre** la fait suivre le doigt ; relâcher sélectionne l’entrée la plus proche, y compris Plus. Les petits mouvements gardent le fonctionnement d’un tap, et le défilement vertical reste natif. Une annulation du geste n’ouvre aucune page. La capture tactile implicite des boutons est prise en compte, et le déplacement est calculé en pixels pour éviter l’arrondi des pourcentages dans WebKit.
+
+La barre respecte les safe areas et les zones tactiles de 44 px. Les commandes clavier et la préférence de réduction des animations restent disponibles. Les styles sont limités au mobile ; la navigation desktop est conservée.
+
 ## Fichiers
 
 `src/styles/13-mobile.css` contient les règles dédiées au téléphone. `MobileNavigation` et `MobileSheet` fournissent les nouveaux accès mobiles ; `App.tsx` les relie aux actions et états existants. Le viewport inclut `viewport-fit=cover`.

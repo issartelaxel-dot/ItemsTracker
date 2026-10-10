@@ -48,10 +48,58 @@ async function targets(page){return page.locator('button:visible,input:visible,s
 for(const [name,engine] of [['chrome',chromium],['webkit',webkit]]){
  const browser=await engine.launch({headless:true,...(name === 'chrome' && process.platform === 'darwin' ? { executablePath: process.env.TEST_BROWSER_PATH || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' } : {})})
  try{
- for(const [width,height] of [[320,568],[360,780],[375,667],[390,844],[430,932],[667,375],[767,600]]){
+ for(const [width,height] of [[390,844],[320,568],[360,780],[375,667],[430,932],[667,375],[767,600]]){
  const t=await setup(browser,width,height),{page,context}=t;const row={browser:name,width,height,checks:[],smallTargets:[]}
  const nav=page.locator('.mobile-bottom-nav');await expect(nav).toBeVisible();await expect(page.locator('.dashboard-sidebar')).toBeHidden();assert.equal(await nav.locator('button').count(),4)
  for(const b of await nav.locator('button').all()){const box=await b.boundingBox();assert.ok(box.width>=44&&box.height>=44)}
+
+ // Floating pill: native taps, drag navigation, cancellation and motion preferences.
+ const indicator=nav.locator('.mobile-bottom-nav-indicator')
+ await expect(indicator).toHaveCount(1)
+ assert.equal(await nav.evaluate(el=>getComputedStyle(el).borderRadius),'999px')
+ await nav.getByRole('button',{name:'Items',exact:true}).tap()
+ await expect(page.locator('.items-list-row')).toHaveCount(367)
+ await expect(nav.getByRole('button',{name:'Items',exact:true})).toHaveAttribute('aria-current','page')
+ await page.waitForTimeout(420)
+ const activeBox=await nav.getByRole('button',{name:'Items',exact:true}).boundingBox(),pillBox=await indicator.boundingBox()
+ assert.ok(Math.abs(activeBox.x-pillBox.x)<1 && Math.abs(activeBox.width-pillBox.width)<1,'Indicator aligns with active tab')
+ await nav.getByRole('button',{name:'Flashcards',exact:true}).tap()
+ await expect(page.locator('.flashcards-page')).toBeVisible();await page.waitForTimeout(420)
+ const flashBox=await nav.getByRole('button',{name:'Flashcards',exact:true}).boundingBox()
+ assert.ok(Math.abs((await indicator.boundingBox()).x-flashBox.x)<0.75,'Indicator aligns precisely on third tab')
+ await nav.getByRole('button',{name:'Accueil',exact:true}).tap()
+ if(width===390){
+   const drag=async(from,to,cancel=false)=>{
+     const buttons=nav.locator('button'),a=await buttons.nth(from).boundingBox(),b=await buttons.nth(to).boundingBox()
+     await page.mouse.move(a.x+a.width/2,a.y+a.height/2);await page.mouse.down()
+     await page.mouse.move(b.x+b.width/2,b.y+b.height/2,{steps:8})
+     await expect(nav).toHaveClass(/is-dragging/)
+     const moving=await indicator.boundingBox();assert.ok(Math.abs(moving.x-b.x)<2,'Pill follows gesture')
+     if(cancel)await nav.dispatchEvent('pointercancel',{pointerId:1})
+     await page.mouse.up()
+   }
+   await drag(0,2);await expect(page.locator('.flashcards-page')).toBeVisible()
+   await page.waitForTimeout(60);await expect(nav.getByRole('button',{name:'Flashcards',exact:true})).toHaveAttribute('aria-current','page')
+   await drag(2,0);await expect(page.locator('.dashboard-home')).toBeVisible()
+   await drag(0,2,true);await expect(page.locator('.dashboard-home')).toBeVisible()
+   await drag(0,3);await expect(page.getByRole('dialog',{name:'Plus',exact:true})).toBeVisible();await page.keyboard.press('Escape')
+   await nav.getByRole('button',{name:'Accueil',exact:true}).focus();await page.keyboard.press('Enter');await expect(page.locator('.dashboard-home')).toBeVisible()
+   if(name==='chrome'){
+     const cdp=await context.newCDPSession(page),a=await nav.locator('button').nth(0).boundingBox(),b=await nav.locator('button').nth(1).boundingBox(),y=a.y+a.height/2
+     await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:a.x+a.width/2,y}]})
+     for(let i=1;i<=8;i++)await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:a.x+a.width/2+(b.x-a.x)*i/8,y}]})
+     await expect(nav).toHaveClass(/is-dragging/)
+     await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]})
+     await expect(page.locator('.items-list-row')).toHaveCount(367)
+     await nav.getByRole('button',{name:'Accueil',exact:true}).tap();await cdp.detach()
+   }
+   await page.emulateMedia({reducedMotion:'reduce'})
+   assert.equal(await indicator.evaluate(el=>getComputedStyle(el).transitionDuration),'0s')
+   await page.emulateMedia({reducedMotion:'no-preference'})
+   await page.waitForTimeout(420);await page.screenshot({path:out+'/captures/'+name+'-footer-light.png'})
+   await nav.screenshot({path:out+'/captures/'+name+'-footer-detail.png'})
+   row.checks.push('footer pill / tap / drag / cancel / keyboard / reduced motion')
+ }
  const streak=await page.locator('.dashboard-streak-card').boundingBox(),due=await page.locator('.dashboard-stat-card').nth(2).boundingBox();assert.ok(Math.abs(streak.y-due.y)<1,'Stats must share row')
  await check(page,'dashboard');row.checks.push('dashboard / barre / 2 colonnes');row.smallTargets.push(...await targets(page))
  await nav.getByRole('button',{name:'Plus',exact:true}).click();const sheet=page.getByRole('dialog',{name:'Plus',exact:true});await expect(sheet).toBeVisible();await page.waitForTimeout(250)
@@ -90,6 +138,10 @@ for(const [name,engine] of [['chrome',chromium],['webkit',webkit]]){
  if(width===390){await nav.getByRole('button',{name:'Plus',exact:true}).click();await page.waitForTimeout(250);await page.screenshot({path:out+'/captures/'+name+'-plus.png'});await page.keyboard.press('Escape')}
  assert.deepEqual(t.errors,[]);row.checks.push('aucune erreur JS');results.push(row);assert.deepEqual(row.smallTargets,[],'Small touch targets');console.log(name,width,'PASS');fs.writeFileSync(out+'/validation-mobile.json',JSON.stringify(results,null,2));await context.close()
  }
+ const desktop=await setup(browser,1440,900)
+ await expect(desktop.page.locator('.mobile-bottom-nav')).toBeHidden()
+ await expect(desktop.page.locator('.dashboard-sidebar')).toBeVisible()
+ assert.deepEqual(desktop.errors,[]);await desktop.context.close();console.log(name,'desktop navigation unchanged PASS')
  }finally{await browser.close()}
 }
 

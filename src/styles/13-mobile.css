@@ -44,13 +44,45 @@
   .dashboard-layout .global-search-panel { width: 100%; max-height: min(55dvh, 380px); }
   .dashboard-layout .global-search-result { min-height: 52px; }
   .mobile-bottom-nav {
-    position: fixed; z-index: 100; inset: auto 0 0; display: grid; grid-template-columns: repeat(4, minmax(0,1fr));
-    padding: 6px 8px calc(6px + env(safe-area-inset-bottom)); border-top: 1px solid var(--border);
-    background: var(--panel-bg); box-shadow: 0 -4px 18px #10223608;
+    position: fixed; z-index: 100;
+    left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right));
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    padding: 5px; border: 1px solid #d8e6fc; border-radius: 999px;
+    background: linear-gradient(135deg, #ffffffeb, #edf4ffed 60%, #e1edffe6);
+    backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+    box-shadow: 0 8px 26px #2453a31a, inset 0 1px 0 #ffffffd9;
+    isolation: isolate; touch-action: pan-y; user-select: none; -webkit-user-select: none;
   }
-  .mobile-bottom-nav button { display: grid; place-items: center; align-content: center; gap: 4px; min-height: 52px; min-width: 0; border: 0; border-radius: 12px; background: transparent; color: var(--muted); font: inherit; font-size: 11px; font-weight: 500; }
-  .mobile-bottom-nav button svg { width: 22px; height: 22px; }
-  .mobile-bottom-nav button.active { color: #1765ed; background: color-mix(in srgb, #1765ed 7%, transparent); font-weight: 700; }
+  .mobile-bottom-nav-indicator {
+    position: absolute; z-index: -1; top: 5px; bottom: 5px; left: 5px;
+    width: calc((100% - 10px) / 4); border-radius: 999px;
+    background: linear-gradient(135deg, #2471ed, #1765ed);
+    box-shadow: 0 3px 10px #1765ed30;
+    transform: translateX(var(--mobile-nav-offset, 0px));
+    transition: transform 380ms cubic-bezier(0.22, 1, 0.36, 1);
+    pointer-events: none;
+  }
+  .mobile-bottom-nav.is-dragging .mobile-bottom-nav-indicator { transition: none; }
+  .mobile-bottom-nav button {
+    display: grid; place-items: center; align-content: center; gap: 3px;
+    min-height: 46px; min-width: 0; padding: 3px 2px;
+    border: 0; border-radius: 999px; background: transparent; color: #526c94;
+    font: inherit; font-size: 10px; line-height: 1.2; font-weight: 500;
+    -webkit-tap-highlight-color: transparent;
+    transition: color 180ms ease;
+  }
+  .mobile-bottom-nav button svg { width: 21px; height: 21px; transition: transform 180ms ease; }
+  .mobile-bottom-nav button.active { color: #fff; font-weight: 600; }
+  .mobile-bottom-nav button:active svg { transform: scale(0.9); }
+  .mobile-bottom-nav.is-dragging button:active svg { transform: none; }
+  :root[data-theme='dark'] .mobile-bottom-nav {
+    border-color: #2b4671;
+    background: linear-gradient(135deg, #10274deb, #0a1b39ed);
+    box-shadow: 0 8px 26px #00000033, inset 0 1px 0 #ffffff08;
+  }
+  :root[data-theme='dark'] .mobile-bottom-nav button { color: #a9bfe0; }
+  :root[data-theme='dark'] .mobile-bottom-nav button.active { color: #fff; }
   .is-mobile-keyboard-open .mobile-bottom-nav { display: none; }
   .is-mobile-keyboard-open .dashboard-layout .dashboard-shell { padding-bottom: 16px; }
   .dashboard-layout:has(.quiz-modal-backdrop) .mobile-bottom-nav,
@@ -240,11 +272,9 @@
   .dashboard-layout .flash-generator-modal-overlay { padding: 0; }
   .dashboard-layout .flash-generator-modal { width: 100%; max-height: var(--mobile-viewport-height,100dvh); padding: calc(16px + env(safe-area-inset-top)) 16px calc(16px + env(safe-area-inset-bottom)); border-radius: 0; }
   .dashboard-layout .flash-generator-modal :is(input,select,textarea) { font-size: 16px; }
-  :root[data-theme='dark'] .mobile-bottom-nav button.active,
   :root[data-theme='dark'] .mobile-item-action,
   :root[data-theme='dark'] .mobile-item-back { color: #8cb9ff; }
   .dashboard-layout .dashboard-shell, .dashboard-layout .quiz-modal, .mobile-sheet { padding-inline: max(16px,env(safe-area-inset-left)) max(16px,env(safe-area-inset-right)); }
-  .mobile-bottom-nav { padding-inline: max(8px,env(safe-area-inset-left)) max(8px,env(safe-area-inset-right)); }
   .dashboard-layout :is(input:not([type='checkbox']):not([type='radio']),select) { min-height: 44px !important; font-size: 16px; }
   .dashboard-layout .avatar-gradient-grid { display: flex; flex-wrap: wrap; gap: 8px; }
   .dashboard-layout .flashcards-toolbar { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
