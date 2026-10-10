@@ -32,9 +32,8 @@
   link.addEventListener('blur',reset);
   return {logo,reset,greet};
  });
- const header=controllers.find(c=>c.logo.closest('.site-header'));
  let intro=0;
- if(header&&!reduced.matches)intro=setTimeout(()=>header.greet(),250);
+ // Keep the first frame stable; greetings remain available on touch and focus.
  reduced.addEventListener('change',()=>{clearTimeout(intro);controllers.forEach(c=>c.reset());});
  document.addEventListener('visibilitychange',()=>{if(document.hidden){clearTimeout(intro);controllers.forEach(c=>c.reset());}});
 })();
