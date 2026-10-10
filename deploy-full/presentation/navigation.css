@@ -4,6 +4,18 @@
 .site-header .login,
 .footer-navigation a { display: inline-flex; align-items: center; min-height: 44px; }
 .mobile-navigation { display: none; }
+.site-header .mobile-header-login {
+  display: none;
+  align-items: center;
+  min-height: 44px;
+  margin-left: auto;
+  color: #172646;
+  font-size: 12px;
+  white-space: nowrap;
+  text-decoration: none;
+}
+.mobile-header-login:hover { text-decoration: underline; text-underline-offset: 4px; }
+.mobile-header-login:focus-visible { outline: 3px solid #007fb5; outline-offset: 3px; }
 .mobile-navigation summary {
   display: flex;
   align-items: center;
@@ -63,8 +75,16 @@
   .site-header .header-actions,
   html[data-hero-layout=centered] .site-header .desktop-navigation { display: none; }
   .mobile-navigation { display: block; }
+  .site-header .mobile-header-login { display: inline-flex; }
 }
 @media (max-width: 760px) {
   .site-footer { align-items: flex-start; }
   .footer-navigation { width: 100%; justify-content: flex-start; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px 16px; font-size: 12px; }
+}
+
+@media (max-width: 620px) {
+  html[data-hero-layout=centered] .site-header { gap: 8px; }
+  .site-header .mobile-header-login { font-size: 11px; }
+  .mobile-navigation .menu-label { display: none; }
+  .mobile-navigation summary { width: 44px; padding: 10px; }
 }
