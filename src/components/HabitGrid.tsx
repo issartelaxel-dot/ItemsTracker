@@ -2,25 +2,29 @@ import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode }
 
 export function HabitGrid({ weeks, children }: { weeks: number; children: ReactNode }) {
   const ref = useRef<HTMLDivElement>(null)
-  const [cell, setCell] = useState(10)
+  const [layout, setLayout] = useState({ cell: 6, columns: weeks })
   useLayoutEffect(() => {
     const element = ref.current
     if (!element) return
     const fit = (width: number) => {
-      // Keep the annual calendar below 140px, instead of stretching every stat card.
-      for (let tenths = 100; tenths >= 40; tenths--) {
-        const size = tenths / 10
-        const gap = size * 0.35
-        const columns = Math.max(1, Math.floor((width + gap) / (size + gap)))
-        const rows = Math.ceil(weeks / columns)
-        const height = rows * (7 * size + 6 * gap) + Math.max(0, rows - 1) * 10
-        if (height <= 140 || tenths === 40) { setCell(size); break }
+      let best = { cell: 0, columns: weeks }
+      for (let rows = 1; rows <= weeks; rows++) {
+        // Choose fewer rows first; when wrapping, distribute weeks evenly.
+        const columns = Math.ceil(weeks / rows)
+        const cell = Math.max(1, Math.min(10, width / (columns * 1.35 - 0.35), (140 - (rows - 1) * 10) / (rows * 9.1)))
+        const candidate = { cell: Math.floor(cell * 100) / 100, columns }
+        if (candidate.cell > best.cell) best = candidate
+        if (candidate.cell >= 6) { best = candidate; break }
       }
+      setLayout(current => current.cell === best.cell && current.columns === best.columns ? current : best)
     }
     fit(element.clientWidth)
     const observer = new ResizeObserver(entries => fit(entries[0].contentRect.width))
     observer.observe(element)
     return () => observer.disconnect()
   }, [weeks])
-  return <div ref={ref} className="habit-tracker-wrap dashboard-habit-wrap" style={{ '--habit-cell-size': `${cell}px`, '--habit-gap': `${cell * 0.35}px` } as CSSProperties}>{children}</div>
+  return <div ref={ref} className="habit-tracker-wrap dashboard-habit-wrap" style={{
+    '--habit-cell-size': `${layout.cell}px`, '--habit-gap': `${layout.cell * 0.35}px`,
+    gridTemplateColumns: `repeat(${layout.columns}, var(--habit-cell-size))`,
+  } as CSSProperties}>{children}</div>
 }
