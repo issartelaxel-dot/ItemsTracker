@@ -1,3 +1,5 @@
+import { MobileSheet } from './components/MobileSheet'
+import { MobileNavigation } from './components/MobileNavigation'
 import { useMediaQuery } from './lib/use-responsive'
 import { HabitGrid } from './components/HabitGrid'
 import { withRequestTimeout } from './lib/request-timeout'
@@ -2652,6 +2654,10 @@ function App() {
   const [sortKey, setSortKey] = useState<SortKey>('reviews')
   const [activeView, setActiveView] = useState<NavView>('dashboard')
   const isMobile = useMediaQuery('(max-width: 767px)')
+  const [mobilePanel, setMobilePanel] = useState<'more' | 'filters' | null>(null)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
+  const mobileHistoryRef = useRef({ key: '', restoring: false })
+
   const [selectedCollegeDetail, setSelectedCollegeDetail] = useState<string | null>(null)
   const [collegeDetailFilter, setCollegeDetailFilter] = useState<CollegeDetailFilter>('all')
   const [collegeDetailPage, setCollegeDetailPage] = useState(1)
@@ -3023,6 +3029,96 @@ function App() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [flashGeneratorModalOpen])
+
+  useEffect(() => {
+    if (!isMobile) { setMobilePanel(null); setMobileSearchOpen(false) }
+  }, [isMobile])
+
+  useEffect(() => {
+    if (!isMobile) return
+    const viewport = window.visualViewport
+    const update = () => {
+      const focused = document.activeElement
+      const editing = focused instanceof HTMLElement && (focused.matches('input,textarea,select') || focused.isContentEditable)
+      document.documentElement.classList.toggle('is-mobile-keyboard-open', editing && Boolean(viewport && viewport.height < window.innerHeight * 0.78))
+      document.documentElement.style.setProperty('--mobile-viewport-height', `${viewport?.height ?? window.innerHeight}px`)
+    }
+    update(); viewport?.addEventListener('resize', update)
+    document.addEventListener('focusin', update); document.addEventListener('focusout', update)
+    return () => {
+      viewport?.removeEventListener('resize', update)
+      document.removeEventListener('focusin', update); document.removeEventListener('focusout', update)
+      document.documentElement.classList.remove('is-mobile-keyboard-open')
+      document.documentElement.style.removeProperty('--mobile-viewport-height')
+    }
+  }, [isMobile])
+
+  useEffect(() => {
+    if (!isMobile || authStatus !== 'authed') return
+    const onPop = (event: PopStateEvent) => {
+      const saved = event.state?.itemstrackerMobile
+      if (!saved) return
+      const key = `${saved.view}:${saved.item ?? ''}:${saved.panel ?? ''}`
+      mobileHistoryRef.current = { key, restoring: key !== mobileHistoryRef.current.key }
+      setActiveView(saved.view); setSelectedItemId(saved.item ?? null); setMobilePanel(saved.panel ?? null)
+      requestAnimationFrame(() => window.scrollTo(0, saved.scroll ?? 0))
+    }
+    window.addEventListener('popstate', onPop)
+    return () => window.removeEventListener('popstate', onPop)
+  }, [isMobile, authStatus])
+
+  useEffect(() => {
+    if (!isMobile || authStatus !== 'authed') { mobileHistoryRef.current.key = ''; return }
+    const key = `${activeView}:${selectedItemId ?? ''}:${mobilePanel ?? ''}`
+    const historyRef = mobileHistoryRef.current
+    if (historyRef.restoring) { historyRef.restoring = false; return }
+    if (key === historyRef.key) return
+    const saved = { view: activeView, item: selectedItemId, panel: mobilePanel, scroll: mobilePanel ? window.scrollY : 0 }
+    if (!historyRef.key) window.history.replaceState({ ...window.history.state, itemstrackerMobile: saved }, '')
+    else if (window.history.state?.itemstrackerMobile?.panel && !mobilePanel) {
+      const previous = window.history.state.itemstrackerMobile
+      window.history.replaceState({ ...window.history.state, itemstrackerMobile: saved }, '')
+      if (previous.view !== activeView || previous.item !== selectedItemId) window.scrollTo(0, 0)
+    } else {
+      const previous = window.history.state?.itemstrackerMobile
+      if (previous) window.history.replaceState({ ...window.history.state, itemstrackerMobile: { ...previous, scroll: window.scrollY } }, '')
+      window.history.pushState({ ...window.history.state, itemstrackerMobile: saved }, '')
+      if (!mobilePanel) window.scrollTo(0, 0)
+    }
+    historyRef.key = key
+  }, [isMobile, authStatus, activeView, selectedItemId, mobilePanel])
+
+  useEffect(() => {
+    if (!isMobile || mobilePanel !== null) return
+    const previous = document.activeElement as HTMLElement | null
+    const modal = document.querySelector<HTMLElement>('.image-lightbox-modal') ?? document.querySelector<HTMLElement>('.quiz-modal') ?? document.querySelector<HTMLElement>('.flash-generator-modal') ?? document.querySelector<HTMLElement>('.history-modal') ?? document.querySelector<HTMLElement>('.flashcards-list-modal')
+    if (!modal) return
+    const overflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    const focusable = () => [...modal.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),select:not(:disabled),textarea:not(:disabled),a[href],[tabindex="0"]')].filter(el => el.getClientRects().length)
+    focusable()[0]?.focus({ preventScroll: true })
+    const trap = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault(); event.stopPropagation()
+        if (isImageLightboxOpen) closeImageLightbox()
+        else if (quizItemId !== null) closeQuiz()
+        else if (flashCreateModalOpen) closeFlashcardCreator()
+        else if (flashGeneratorModalOpen) setFlashGeneratorModalOpen(false)
+        else if (historyItemId !== null) setHistoryItemId(null)
+        else closeCollegeFlashcardsList()
+        return
+      }
+      if (event.key !== 'Tab') return
+      const targets = focusable(), first = targets[0], last = targets.at(-1)
+      if (!first || !last) return
+      if (event.shiftKey && (document.activeElement === first || !modal.contains(document.activeElement))) { event.preventDefault(); last.focus() }
+      else if (!event.shiftKey && (document.activeElement === last || !modal.contains(document.activeElement))) { event.preventDefault(); first.focus() }
+    }
+    document.addEventListener('keydown', trap)
+    return () => { document.body.style.overflow = overflow; document.removeEventListener('keydown', trap); previous?.focus({ preventScroll: true }) }
+  // Modal controls use the existing close handlers; the trap is active only on phones.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile, quizItemId, historyItemId, isImageLightboxOpen, flashCreateModalOpen, flashGeneratorModalOpen, flashCardsListCollege, flashCardsListItem, mobilePanel])
 
   useEffect(() => {
     if (authStatus !== 'authed' || !authUser) {
@@ -5552,6 +5648,7 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   function openGlobalSearchResult(result: GlobalSearchResult) {
+    if (isMobile) setMobileSearchOpen(false)
     setGlobalSearchOpen(false)
     setGlobalSearch('')
 
@@ -7885,7 +7982,8 @@ function getPasswordStrengthMeta(password: string) {
           activeView === 'dashboard' ? 'dashboard-view-shell' : ''
         }`}
       >
-        <header className="topbar">
+        <header className={`topbar ${mobileSearchOpen ? 'mobile-search-expanded' : ''}`}>
+          <button type="button" className="mobile-global-search" aria-label="Recherche globale" aria-expanded={mobileSearchOpen} onClick={() => { setMobileSearchOpen(value => !value); setTimeout(() => document.querySelector<HTMLInputElement>('.topbar-search input')?.focus(), 0) }}><Search className="ui-icon" aria-hidden="true" /><span>Rechercher</span></button>
           <div className="topbar-meta" aria-live="polite">
             <button
               type="button"
@@ -7919,6 +8017,7 @@ function getPasswordStrengthMeta(password: string) {
               onBlur={(event) => {
                 const nextTarget = event.relatedTarget
                 if (!(nextTarget instanceof Node) || !event.currentTarget.contains(nextTarget)) {
+                  if (isMobile) setMobileSearchOpen(false)
                   setGlobalSearchOpen(false)
                 }
               }}
@@ -8207,10 +8306,13 @@ function getPasswordStrengthMeta(password: string) {
           <div className="filters-row">
             <input
               type="text"
+              aria-label="Rechercher un item"
               placeholder="Rechercher un item..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
+            <button type="button" className="mobile-filter-trigger" aria-haspopup="dialog" aria-label="Ouvrir les filtres des items" onClick={() => setMobilePanel('filters')}><List className="ui-icon" aria-hidden="true" />Filtres{collegeFilter !== 'ALL' || masteryFilter !== 'ALL' || sortKey !== 'reviews' ? <span className="mobile-filter-dot" aria-label="Filtres actifs" /> : null}</button>
+            <div className="desktop-item-filters">
             <select value={collegeFilter} onChange={(event) => setCollegeFilter(event.target.value)}>
               <option value="ALL">Tous collèges</option>
               {COLLEGES.map((college) => (
@@ -8248,9 +8350,10 @@ function getPasswordStrengthMeta(password: string) {
 	            >
 	              Réinitialiser
 	            </button>
-	          </div>
+	            </div>
+          </div>
 
-	          <div className="items-list-wrap" role="list" aria-label="Liste des items">
+	          <div className="items-list-wrap" role={isMobile ? undefined : "list"} aria-label="Liste des items">
 	            {itemTableList.length === 0 ? (
 	              <div className="items-empty-state" role="status">
 	                <strong>Aucun item trouvé</strong>
@@ -8278,7 +8381,7 @@ function getPasswordStrengthMeta(password: string) {
                 <button
                   type="button"
                   key={item.itemNumber}
-                  role="listitem"
+                  role={isMobile ? undefined : "listitem"}
                   className={`items-list-row ${item.itemNumber === effectiveSelectedItem?.itemNumber ? 'selected' : ''}`}
                   onClick={() => setSelectedItem(item.itemNumber)}
                 >
@@ -8328,6 +8431,8 @@ function getPasswordStrengthMeta(password: string) {
                         : getMasteryFeelingLabel(item.tracking.itemMastery)}
                     </span>
                   </span>
+                  <span className="mobile-item-progress" aria-hidden="true"><span style={{ width: `${progressPercent}%` }} /></span>
+                  <span className="mobile-item-action">Ouvrir l’item</span>
                   <span className="items-list-chevron" aria-hidden="true">
                     <NavArrowRight className="ui-icon" aria-hidden="true" />
                   </span>
@@ -8337,6 +8442,7 @@ function getPasswordStrengthMeta(password: string) {
           </div>
         </article>
 
+        {isMobile && effectiveSelectedItem ? <button type="button" className="mobile-item-back" onClick={() => setSelectedItemId(null)}><NavArrowLeft className="ui-icon" aria-hidden="true" />Retour aux items</button> : null}
         <article className={`panel detail-panel item-detail-panel ${effectiveSelectedItem ? 'is-open' : 'is-closed'}`}>
           {effectiveSelectedItem ? (
             <>
@@ -9382,7 +9488,7 @@ function getPasswordStrengthMeta(password: string) {
 
       {historyItem ? (
         <div className="history-modal-backdrop" onClick={() => setHistoryItemId(null)}>
-          <div className="history-modal" onClick={(event) => event.stopPropagation()}>
+          <div className="history-modal" role={isMobile ? "dialog" : undefined} aria-modal={isMobile ? true : undefined} aria-label="Historique des révisions" onClick={(event) => event.stopPropagation()}>
             <div className="history-modal-head">
               <h3>Historique Item #{historyItem.itemNumber}</h3>
               <button type="button" className="ghost-btn" onClick={() => setHistoryItemId(null)}>
@@ -10022,6 +10128,10 @@ function getPasswordStrengthMeta(password: string) {
 	                          />
 	                        ) : null}
 	                      </article>
+                      {isMobile ? <div className="mobile-review-navigation">
+                        <button type="button" className="ghost-btn" disabled={quizSessionActiveIndex <= 0 || quizFeedback !== null} onClick={() => moveToQuizSessionEntry(quizSessionActiveCards[quizSessionActiveIndex - 1] ?? null)}><NavArrowLeft className="ui-icon" aria-hidden="true" />Précédente</button>
+                        <button type="button" className="ghost-btn" disabled={quizSessionActiveIndex >= quizSessionActiveCards.length - 1 || quizFeedback !== null} onClick={() => moveToQuizSessionEntry(quizSessionActiveCards[quizSessionActiveIndex + 1] ?? null)}>Suivante<NavArrowRight className="ui-icon" aria-hidden="true" /></button>
+                      </div> : null}
 	                      {quizSessionStep === 'question' ? (
 	                        <button type="button" className="quiz-session-reveal" onClick={revealQuizAnswer}>
 	                          <Eye className="inline-btn-icon" aria-hidden="true" />
@@ -10875,7 +10985,7 @@ function getPasswordStrengthMeta(password: string) {
 
       {isImageLightboxOpen && imageLightboxSrc ? (
         <div className="image-lightbox-backdrop" onClick={closeImageLightbox}>
-          <div className="image-lightbox-modal" onClick={(event) => event.stopPropagation()}>
+          <div className="image-lightbox-modal" role={isMobile ? "dialog" : undefined} aria-modal={isMobile ? true : undefined} aria-label="Aperçu de l’image" onClick={(event) => event.stopPropagation()}>
             <button type="button" className="ghost-btn image-lightbox-close" onClick={closeImageLightbox}>
               Fermer
             </button>
@@ -11518,6 +11628,62 @@ function getPasswordStrengthMeta(password: string) {
       ) : null}
       </div>
       </div>
+      {isMobile ? <>
+        <MobileNavigation active={activeView} moreOpen={mobilePanel === 'more'} onMore={() => setMobilePanel('more')} onNavigate={view => { setMobilePanel(null); setActiveView(view); if (view === 'items') setSelectedItemId(null) }} />
+        {mobilePanel === 'more' ? <MobileSheet title="Plus" restoreFocusSelector=".mobile-bottom-nav button:last-child" onClose={() => setMobilePanel(null)}>
+          <button type="button" className="mobile-profile-entry" onClick={() => { setActiveView('settings'); setMobilePanel(null) }}><span className="mobile-profile-avatar" style={{ background: profile.avatarGradient }}>{profile.photoUrl ? <img src={profile.photoUrl} alt="" /> : getProfileInitials(profile)}</span><span><strong>{profile.firstName || authUser?.displayName || 'Mon profil'}</strong><small>Mon profil</small></span><NavArrowRight className="ui-icon" aria-hidden="true" /></button>
+          <p className="mobile-sheet-label">OUTILS</p>
+          <button type="button" className="mobile-sheet-row" onClick={() => { setActiveView('colleges'); setMobilePanel(null) }}><Learning className="ui-icon" aria-hidden="true" />Collèges<NavArrowRight className="ui-icon" aria-hidden="true" /></button>
+          <button type="button" className="mobile-sheet-row" disabled title="Insights bientôt disponible"><DatabaseStats className="ui-icon" aria-hidden="true" />Insights <small>Bientôt disponible</small></button>
+          <div className="mobile-sheet-row"><FireFlame className="ui-icon" aria-hidden="true" />Objectif quotidien<small>{dashboardStudyStats.weekDays.find(day => day.isToday)?.count ?? 0}/20</small></div>
+          <button type="button" className="mobile-sheet-row" onClick={() => setTheme(value => value === 'light' ? 'dark' : 'light')} aria-label={theme === 'light' ? 'Activer le thème sombre' : 'Activer le thème clair'}>{theme === 'light' ? <SunLight className="ui-icon" aria-hidden="true" /> : <HalfMoon className="ui-icon" aria-hidden="true" />}{theme === 'light' ? 'Thème clair' : 'Thème sombre'}<span className={`sidebar-theme-switch ${theme === 'light' ? 'is-light' : 'is-dark'}`} aria-hidden="true"><span /></span></button>
+          <p className="mobile-sheet-label">APPLICATION</p>
+          <button type="button" className="mobile-sheet-row" onClick={() => { setActiveView('settings'); setMobilePanel(null) }}><ProfileCircle className="ui-icon" aria-hidden="true" />Paramètres<NavArrowRight className="ui-icon" aria-hidden="true" /></button>
+          <a className="mobile-sheet-row" href={`mailto:${SUPPORT_EMAIL}?subject=Support ItemsTracker`}><HelpCircle className="ui-icon" aria-hidden="true" />Aide et support<NavArrowRight className="ui-icon" aria-hidden="true" /></a>
+          <button type="button" className="mobile-sheet-row mobile-logout" onClick={() => { setMobilePanel(null); void handleLogout() }}><LogOut className="ui-icon" aria-hidden="true" />Déconnexion</button>
+        </MobileSheet> : null}
+        {mobilePanel === 'filters' ? <MobileSheet title="Filtres" restoreFocusSelector=".mobile-filter-trigger" onClose={() => setMobilePanel(null)}><div className="mobile-filter-fields">
+            <label>Collèges<select aria-label="Filtrer par collège" value={collegeFilter} onChange={(event) => setCollegeFilter(event.target.value)}>
+              <option value="ALL">Tous collèges</option>
+              {COLLEGES.map((college) => (
+                <option value={college} key={college}>
+                  {college}
+                </option>
+              ))}
+            </select></label>
+            <label>Ressenti<select aria-label="Filtrer par ressenti" value={masteryFilter} onChange={(event) => setMasteryFilter(event.target.value)}>
+              <option value="ALL">Tous ressentis</option>
+              {MASTERY_LEVELS.map((level) => (
+                <option value={level} key={level}>
+                  {getMasteryFeelingLabel(level)}
+                </option>
+              ))}
+            </select>
+</label>
+	            <label>Trier par<select aria-label="Trier les items" value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}>
+	              <option value="itemAsc">Trier : Item croissant</option>
+	              <option value="itemDesc">Trier : Item décroissant</option>
+	              <option value="reviews">Trier : Révisions</option>
+	              <option value="progress">Trier : Progression</option>
+	              <option value="lastReviewAsc">Trier : Dernière révision croissante</option>
+	              <option value="lastReviewDesc">Trier : Dernière révision décroissante</option>
+	            </select>
+</label>
+	            <button
+	              type="button"
+	              className="ghost-btn items-filter-reset"
+	              onClick={() => {
+	                setSearch('')
+	                setCollegeFilter('ALL')
+	                setMasteryFilter('ALL')
+	                setSortKey('reviews')
+	              }}
+	              disabled={search === '' && collegeFilter === 'ALL' && masteryFilter === 'ALL' && sortKey === 'reviews'}
+	            >
+	              Réinitialiser
+	            </button>
+          </div><button type="button" className="mobile-sheet-apply" onClick={() => setMobilePanel(null)}>Voir les {itemTableList.length} items</button></MobileSheet> : null}
+      </> : null}
     </div>
   )
 }
