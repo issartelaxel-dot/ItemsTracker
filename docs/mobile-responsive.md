@@ -4,7 +4,7 @@ Les maquettes du PDF « Mobile UX/UI Redesign » et les exigences des pages 7–
 
 ## Changements
 
-- Barre inférieure Accueil / Items / Flashcards / Plus ; la sidebar est masquée sur téléphone.
+- Barre inférieure Dashboard / Items / Flashcards / Collèges / Plus ; la sidebar est masquée sur téléphone.
 - Panneau Plus : profil, Collèges, Insights (toujours indisponible), objectif quotidien existant, thème, paramètres, support et déconnexion.
 - Dashboard : actions compactes, progression sur toute la largeur, série et révisions dues côte à côte, calendrier et progression par collège conservés.
 - Items : cartes tactiles, titres complets, recherche accessible, progression et accès à la fiche. Filtres et tous les tris existants regroupés dans un bottom sheet.
@@ -17,7 +17,7 @@ Les données, les calculs, l’authentification, les routes API et les handlers 
 
 ## Barre flottante et gestes
 
-La navigation mobile reprend la référence fournie : fond clair translucide arrondi, quatre entrées, icône de document conservée pour Items, et pilule bleue avec texte blanc pour l’entrée active. Le thème sombre dispose d’un fond adapté.
+La navigation mobile reprend la référence fournie : fond clair translucide arrondi, cinq entrées, icône Dashboard à quatre cases identique à la sidebar, accès direct aux Collèges, icône de document conservée pour Items, et pilule bleue avec texte blanc pour l’entrée active. Le thème sombre dispose d’un fond adapté.
 
 La pilule se déplace en 380 ms au toucher. Un glissement horizontal **sur la barre** la fait suivre le doigt ; relâcher sélectionne l’entrée la plus proche, y compris Plus. Les petits mouvements gardent le fonctionnement d’un tap, et le défilement vertical reste natif. Une annulation du geste n’ouvre aucune page. La capture tactile implicite des boutons est prise en compte, et le déplacement est calculé en pixels pour éviter l’arrondi des pourcentages dans WebKit.
 

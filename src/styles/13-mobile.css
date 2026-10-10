@@ -47,7 +47,7 @@
     position: fixed; z-index: 100;
     left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right));
     bottom: calc(10px + env(safe-area-inset-bottom));
-    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+    display: grid; grid-template-columns: repeat(var(--mobile-nav-count, 5), minmax(0, 1fr));
     padding: 5px; border: 1px solid #d8e6fc; border-radius: 999px;
     background: linear-gradient(135deg, #ffffffeb, #edf4ffed 60%, #e1edffe6);
     backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
@@ -56,7 +56,7 @@
   }
   .mobile-bottom-nav-indicator {
     position: absolute; z-index: -1; top: 5px; bottom: 5px; left: 5px;
-    width: calc((100% - 10px) / 4); border-radius: 999px;
+    width: calc((100% - 10px) / var(--mobile-nav-count, 5)); border-radius: 999px;
     background: linear-gradient(135deg, #2471ed, #1765ed);
     box-shadow: 0 3px 10px #1765ed30;
     transform: translateX(var(--mobile-nav-offset, 0px));

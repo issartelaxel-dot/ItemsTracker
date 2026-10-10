@@ -1,19 +1,30 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent } from 'react'
-import { HomeSimple, Page, CreditCards, MoreHoriz } from 'iconoir-react'
+import { useLayoutEffect, useRef, useState, type CSSProperties, type PointerEvent, type SVGProps } from 'react'
+import { Page, CreditCards, Learning, MoreHoriz } from 'iconoir-react'
+
+function DashboardIcon(props: SVGProps<SVGSVGElement>) {
+  return <svg {...props} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+    <rect x="3" y="3" width="7" height="10" rx="1.5" />
+    <rect x="14" y="3" width="7" height="6" rx="1.5" />
+    <rect x="3" y="17" width="7" height="4" rx="1" />
+    <rect x="14" y="13" width="7" height="8" rx="1.5" />
+  </svg>
+}
 
 const tabs = [
-  { view: 'dashboard' as const, label: 'Accueil', Icon: HomeSimple },
+  { view: 'dashboard' as const, label: 'Dashboard', Icon: DashboardIcon },
   { view: 'items' as const, label: 'Items', Icon: Page },
   { view: 'flashcards' as const, label: 'Flashcards', Icon: CreditCards },
+  { view: 'colleges' as const, label: 'Collèges', Icon: Learning },
 ]
 
 type NavigationGesture = { pointerId: number; startX: number; startY: number; firstCenter: number; step: number; dragging: boolean }
 
 export function MobileNavigation({ active, moreOpen, onNavigate, onMore }: {
-  active: string; moreOpen: boolean; onNavigate: (view: 'dashboard' | 'items' | 'flashcards') => void; onMore: () => void
+  active: string; moreOpen: boolean; onNavigate: (view: (typeof tabs)[number]['view']) => void; onMore: () => void
 }) {
-  const activeIndex = moreOpen ? 3 : tabs.findIndex(tab => tab.view === active)
-  const selectedIndex = activeIndex < 0 ? 3 : activeIndex
+  const moreIndex = tabs.length
+  const activeIndex = moreOpen ? moreIndex : tabs.findIndex(tab => tab.view === active)
+  const selectedIndex = activeIndex < 0 ? moreIndex : activeIndex
   const navRef = useRef<HTMLElement | null>(null)
   const [tabStep, setTabStep] = useState(0)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
@@ -35,15 +46,15 @@ export function MobileNavigation({ active, moreOpen, onNavigate, onMore }: {
   }, [])
 
   const navigate = (index: number) => {
-    if (index === 3) onMore()
+    if (index === moreIndex) onMore()
     else onNavigate(tabs[index].view)
   }
   const indexAt = (event: PointerEvent<HTMLElement>, current: NavigationGesture) =>
-    Math.max(0, Math.min(3, (event.clientX - current.firstCenter) / current.step))
+    Math.max(0, Math.min(moreIndex, (event.clientX - current.firstCenter) / current.step))
   const cancelGesture = () => { gesture.current = null; setDragIndex(null) }
 
   return <nav ref={navRef} className={`mobile-bottom-nav${dragIndex === null ? '' : ' is-dragging'}`} aria-label="Navigation mobile"
-    style={{ '--mobile-nav-offset': `${(dragIndex ?? selectedIndex) * tabStep}px` } as CSSProperties}
+    style={{ '--mobile-nav-count': tabs.length + 1, '--mobile-nav-offset': `${(dragIndex ?? selectedIndex) * tabStep}px` } as CSSProperties}
     onPointerDown={event => {
       if (!event.isPrimary || event.button !== 0) return
       suppressClick.current = false
@@ -89,6 +100,6 @@ export function MobileNavigation({ active, moreOpen, onNavigate, onMore }: {
     }}>
     <span className="mobile-bottom-nav-indicator" aria-hidden="true" />
     {tabs.map(({ view, label, Icon }, index) => <button type="button" key={view} className={visualIndex === index ? 'active' : ''} aria-current={selectedIndex === index ? 'page' : undefined} onClick={() => onNavigate(view)}><Icon aria-hidden="true" /><span>{label}</span></button>)}
-    <button type="button" className={visualIndex === 3 ? 'active' : ''} aria-expanded={moreOpen} aria-haspopup="dialog" onClick={onMore}><MoreHoriz aria-hidden="true" /><span>Plus</span></button>
+    <button type="button" className={visualIndex === moreIndex ? 'active' : ''} aria-expanded={moreOpen} aria-haspopup="dialog" onClick={onMore}><MoreHoriz aria-hidden="true" /><span>Plus</span></button>
   </nav>
 }

@@ -206,7 +206,7 @@ try {
 
         if (width < 768) await page.keyboard.press('Escape')
         else await modal.getByRole('button', { name: 'Fermer', exact: true }).click()
-        await nav.getByRole('button', { name: width < 768 ? 'Accueil' : 'Dashboard', exact: true }).click()
+        await nav.getByRole('button', { name: 'Dashboard', exact: true }).click()
         await page.getByRole('button', { name: 'Créer des flashcards', exact: false }).click()
         const creator = page.locator('.flash-create-modal')
         await creator.getByPlaceholder('Rechercher un item par numéro, titre ou collège...').fill('relation médecin-malade')

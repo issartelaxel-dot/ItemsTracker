@@ -50,7 +50,7 @@ for(const [name,engine] of [['chrome',chromium],['webkit',webkit]]){
  try{
  for(const [width,height] of [[390,844],[320,568],[360,780],[375,667],[430,932],[667,375],[767,600]]){
  const t=await setup(browser,width,height),{page,context}=t;const row={browser:name,width,height,checks:[],smallTargets:[]}
- const nav=page.locator('.mobile-bottom-nav');await expect(nav).toBeVisible();await expect(page.locator('.dashboard-sidebar')).toBeHidden();assert.equal(await nav.locator('button').count(),4)
+ const nav=page.locator('.mobile-bottom-nav');await expect(nav).toBeVisible();await expect(page.locator('.dashboard-sidebar')).toBeHidden();assert.equal(await nav.locator('button').count(),5)
  for(const b of await nav.locator('button').all()){const box=await b.boundingBox();assert.ok(box.width>=44&&box.height>=44)}
 
  // Floating pill: native taps, drag navigation, cancellation and motion preferences.
@@ -67,7 +67,13 @@ for(const [name,engine] of [['chrome',chromium],['webkit',webkit]]){
  await expect(page.locator('.flashcards-page')).toBeVisible();await page.waitForTimeout(420)
  const flashBox=await nav.getByRole('button',{name:'Flashcards',exact:true}).boundingBox()
  assert.ok(Math.abs((await indicator.boundingBox()).x-flashBox.x)<0.75,'Indicator aligns precisely on third tab')
- await nav.getByRole('button',{name:'Accueil',exact:true}).tap()
+ await nav.getByRole('button',{name:'Collèges',exact:true}).tap()
+ await expect(page.locator('.colleges-page')).toBeVisible();await page.waitForTimeout(420)
+ const collegeBox=await nav.getByRole('button',{name:'Collèges',exact:true}).boundingBox()
+ assert.ok(Math.abs((await indicator.boundingBox()).x-collegeBox.x)<0.75,'Indicator aligns on Collèges')
+ await nav.getByRole('button',{name:'Dashboard',exact:true}).tap()
+ assert.equal(await nav.getByRole('button',{name:'Dashboard',exact:true}).locator('svg rect').count(),4)
+ for(const label of await nav.locator('button span').all())assert.ok(await label.evaluate(e=>e.scrollWidth<=e.clientWidth+1),'Footer labels must fit')
  if(width===390){
    const drag=async(from,to,cancel=false)=>{
      const buttons=nav.locator('button'),a=await buttons.nth(from).boundingBox(),b=await buttons.nth(to).boundingBox()
@@ -82,8 +88,10 @@ for(const [name,engine] of [['chrome',chromium],['webkit',webkit]]){
    await page.waitForTimeout(60);await expect(nav.getByRole('button',{name:'Flashcards',exact:true})).toHaveAttribute('aria-current','page')
    await drag(2,0);await expect(page.locator('.dashboard-home')).toBeVisible()
    await drag(0,2,true);await expect(page.locator('.dashboard-home')).toBeVisible()
-   await drag(0,3);await expect(page.getByRole('dialog',{name:'Plus',exact:true})).toBeVisible();await page.keyboard.press('Escape')
-   await nav.getByRole('button',{name:'Accueil',exact:true}).focus();await page.keyboard.press('Enter');await expect(page.locator('.dashboard-home')).toBeVisible()
+   await drag(0,3);await expect(page.locator('.colleges-page')).toBeVisible()
+   await expect(nav.getByRole('button',{name:'Collèges',exact:true})).toHaveAttribute('aria-current','page')
+   await drag(3,4);await expect(page.getByRole('dialog',{name:'Plus',exact:true})).toBeVisible();await page.keyboard.press('Escape')
+   await nav.getByRole('button',{name:'Dashboard',exact:true}).focus();await page.keyboard.press('Enter');await expect(page.locator('.dashboard-home')).toBeVisible()
    if(name==='chrome'){
      const cdp=await context.newCDPSession(page),a=await nav.locator('button').nth(0).boundingBox(),b=await nav.locator('button').nth(1).boundingBox(),y=a.y+a.height/2
      await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:a.x+a.width/2,y}]})
@@ -91,7 +99,7 @@ for(const [name,engine] of [['chrome',chromium],['webkit',webkit]]){
      await expect(nav).toHaveClass(/is-dragging/)
      await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]})
      await expect(page.locator('.items-list-row')).toHaveCount(367)
-     await nav.getByRole('button',{name:'Accueil',exact:true}).tap();await cdp.detach()
+     await nav.getByRole('button',{name:'Dashboard',exact:true}).tap();await cdp.detach()
    }
    await page.emulateMedia({reducedMotion:'reduce'})
    assert.equal(await indicator.evaluate(el=>getComputedStyle(el).transitionDuration),'0s')
@@ -124,7 +132,7 @@ for(const [name,engine] of [['chrome',chromium],['webkit',webkit]]){
  await nav.getByRole('button',{name:'Flashcards',exact:true}).click();await expect(page.locator('.flashcards-page')).toBeVisible();await check(page,'flashcards');row.smallTargets.push(...await targets(page))
  await page.evaluate(()=>scrollTo(0,600));await nav.getByRole('button',{name:'Plus',exact:true}).click();assert.equal(await page.evaluate(()=>scrollY),600);await sheet.getByRole('button',{name:'Collèges',exact:true}).click();await expect(page.locator('.colleges-page')).toBeVisible();await expect.poll(()=>page.evaluate(()=>scrollY)).toBe(0);await check(page,'colleges');row.smallTargets.push(...await targets(page));await page.goBack();await expect(page.locator('.flashcards-page')).toBeVisible();await expect.poll(()=>page.evaluate(()=>scrollY)).toBe(600)
  await nav.getByRole('button',{name:'Plus',exact:true}).click();await sheet.getByRole('button',{name:'Paramètres',exact:true}).click();await expect(page.locator('.settings-page')).toBeVisible();await check(page,'settings');row.smallTargets.push(...await targets(page))
- await nav.getByRole('button',{name:'Accueil',exact:true}).click();await page.getByRole('button',{name:'Créer des flashcards',exact:false}).click();await expect(page.locator('.flash-create-modal')).toBeVisible();await check(page,'creator');await page.keyboard.press('Escape');await expect(page.locator('.flash-create-modal')).toHaveCount(0)
+ await nav.getByRole('button',{name:'Dashboard',exact:true}).click();await page.getByRole('button',{name:'Créer des flashcards',exact:false}).click();await expect(page.locator('.flash-create-modal')).toBeVisible();await check(page,'creator');await page.keyboard.press('Escape');await expect(page.locator('.flash-create-modal')).toHaveCount(0)
  row.checks.push('Flashcards / Collèges / paramètres / création')
  await page.getByRole('button',{name:'Lancer une révision',exact:false}).click();const review=page.getByRole('dialog',{name:'Révision',exact:true});await expect(review).toBeVisible();await page.getByRole('button',{name:'Commencer',exact:true}).click();await page.waitForTimeout(500)
  await check(page,'revision question');const card=await page.locator('.quiz-study-card').boundingBox();assert.ok(card.height<=250,'Short card must stay compact: '+card.height)
