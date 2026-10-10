@@ -22,6 +22,10 @@
   box-shadow: none;
 }
 
+:root:not([data-theme='dark']) .topbar {
+  background: #fff;
+}
+
 .topbar-meta {
   min-width: 0;
   display: flex;
@@ -794,4 +798,9 @@ h3 {
   margin: 0.45rem 0 0;
   color: #536986;
   font-size: 0.95rem;
+}
+
+:root:not([data-theme='dark']) .topbar-search,
+:root:not([data-theme='dark']) .topbar-notification-btn {
+  box-shadow: none;
 }

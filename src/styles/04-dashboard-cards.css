@@ -600,3 +600,11 @@
 :root[data-theme='dark'] .dashboard-college-row:hover {
   background: rgba(44, 91, 172, 0.16);
 }
+
+:root:not([data-theme='dark']) .dashboard-home :is(
+  .dashboard-stat-card, .dashboard-habit-card, .dashboard-action-card,
+  .dashboard-resume-card, .dashboard-quote-card, .dashboard-college-card,
+  .dashboard-action-tile
+) {
+  box-shadow: none;
+}
