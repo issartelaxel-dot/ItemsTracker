@@ -6,7 +6,7 @@ Les maquettes du PDF « Mobile UX/UI Redesign » et les exigences des pages 7–
 
 - Barre inférieure Dashboard / Items / Flashcards / Collèges / Plus ; la sidebar est masquée sur téléphone.
 - Panneau Plus : profil, Collèges, Insights (toujours indisponible), objectif quotidien existant, thème, paramètres, support et déconnexion.
-- Dashboard : actions compactes, progression sur toute la largeur, série et révisions dues côte à côte, calendrier et progression par collège conservés.
+- Dashboard : proposition visuelle « Progression guidée », avec le logo existant, un bandeau montagne et le lancement de révision, une progression circulaire et les révisions dues dans un panneau compact, deux raccourcis, la série actuelle, le calendrier annuel repliable et la progression par collège. Toutes les valeurs proviennent des calculs existants ; les chiffres illustratifs de la maquette ne sont pas utilisés.
 - Items : cartes tactiles, titres complets, recherche accessible, progression et accès à la fiche. Filtres et tous les tris existants regroupés dans un bottom sheet.
 - Fiche : retour à la liste, action de révision visible, quatre onglets accessibles. Ressources, aperçu des liens et lecture YouTube conservés.
 - Révision : carte compacte dont la hauteur suit le contenu, progression visible, précédent/suivant, révélation de la réponse et les quatre évaluations existantes. Les contenus longs restent accessibles en faisant défiler la fenêtre.
@@ -25,13 +25,15 @@ La barre respecte les safe areas et les zones tactiles de 44 px. Les commandes c
 
 ## Fichiers
 
-`src/styles/13-mobile.css` contient les règles dédiées au téléphone. `MobileNavigation` et `MobileSheet` fournissent les nouveaux accès mobiles ; `App.tsx` les relie aux actions et états existants. Le viewport inclut `viewport-fit=cover`.
+`src/styles/13-mobile.css` contient les règles dédiées au téléphone. `MobileNavigation` et `MobileSheet` fournissent les nouveaux accès mobiles ; `App.tsx` les relie aux actions et états existants. `MobileDashboard` et `src/styles/15-mobile-dashboard.css` portent le visuel du dashboard sous 768 px ; le rendu desktop existant reste utilisé au-dessus. Le composant `HabitGrid` accepte une hauteur cible de 100 px pour le dashboard mobile, et des cases pouvant descendre à 3 px pour conserver les semaines sur une seule ligne à ces largeurs. Ses valeurs par défaut (140 px de hauteur, cases de 6 px minimum avant retour à la ligne) sont conservées ailleurs. Le viewport inclut `viewport-fit=cover`.
 
 ## Validation
 
 Chrome et WebKit sont testés aux formats 320×568, 360×780, 375×667, 390×844, 430×932, 667×375 et 767×600. Les vérifications couvrent recherche, filtres, tri, réinitialisation, retour, thèmes, onglets, ressources, création, révision et sauvegarde d’une évaluation. Des contrôles complémentaires couvrent QCM, réponses longues, éditeur, recherche globale, focus, fermeture par fond et clavier simulé.
 
 La comparaison à la version desktop de référence `d64466a` porte sur les dimensions et styles du dashboard, des Items, de la fiche et de l’éditeur à 1024 et 1440 px. Les captures et résultats sont conservés dans `exports/mobile-redesign-2026-10-10`.
+
+Pour le nouveau dashboard du 11 octobre 2026, les preuves sont dans `exports/dashboard-mobile-2026-10-11` : captures aux sept tailles mobiles dans Chrome et WebKit, thèmes clair/sombre, calendrier repliable, navigation vers le détail d’un collège, état vide, nom long et vérification de la progression avec des données simulées non nulles. Une comparaison des dimensions, couleurs, fonds, polices et icônes du dashboard avant/après à 768, 1024 et 1440 px est conservée dans `validation-desktop.json`. La sauvegarde du visuel précédent se trouve dans le sous-dossier `sauvegarde`.
 
 Les appareils iPhone physiques ne sont pas disponibles dans cette session : WebKit et une simulation du clavier ont été utilisés. Vérifier une dernière fois le clavier logiciel et les safe areas sur un iPhone réel après installation.
 

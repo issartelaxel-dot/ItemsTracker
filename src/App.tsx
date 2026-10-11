@@ -1,5 +1,6 @@
 import { MobileSheet } from './components/MobileSheet'
 import { MobileNavigation } from './components/MobileNavigation'
+import { MobileDashboard } from './components/MobileDashboard'
 import { useMediaQuery } from './lib/use-responsive'
 import { HabitGrid } from './components/HabitGrid'
 import { withRequestTimeout } from './lib/request-timeout'
@@ -8020,7 +8021,11 @@ function getPasswordStrengthMeta(password: string) {
           activeView === 'dashboard' ? 'dashboard-view-shell' : ''
         }`}
       >
-        <header className={`topbar ${mobileSearchOpen ? 'mobile-search-expanded' : ''}`}>
+        <header className={`topbar ${mobileSearchOpen ? 'mobile-search-expanded' : ''} ${isMobile && activeView === 'dashboard' ? 'mobile-dashboard-topbar' : ''}`}>
+          {isMobile && activeView === 'dashboard' ? <span className="mobile-dashboard-brand">
+            <span className="sidebar-logo" aria-hidden="true"><span className="sidebar-logo-bar" /></span>
+            <span>ItemsTracker</span>
+          </span> : null}
           <button type="button" className="mobile-global-search" aria-label="Recherche globale" aria-expanded={mobileSearchOpen} onClick={() => { setMobileSearchOpen(value => !value); setTimeout(() => document.querySelector<HTMLInputElement>('.topbar-search input')?.focus(), 0) }}><Search className="ui-icon" aria-hidden="true" /><span>Rechercher</span></button>
           <div className="topbar-meta" aria-live="polite">
             <button
@@ -8149,6 +8154,28 @@ function getPasswordStrengthMeta(password: string) {
 
         <div className="dashboard-content">
         {activeView === 'dashboard' ? (
+          isMobile ? <MobileDashboard
+            name={profile.firstName?.trim() || authUser?.displayName || 'Setup'}
+            progress={globalStats.overallProgress}
+            dueCount={dashboardDueCount}
+            dueMinutes={dashboardDueMinutes}
+            streak={dashboardStudyStats.currentStreak}
+            weekDays={dashboardStudyStats.weekDays}
+            year={HABIT_TRACKER_YEAR}
+            weeks={weeklyReviewSeries}
+            colleges={dashboardCollegeRows}
+            canReview={defaultFlashSessionItemNumber !== null}
+            onReview={() => openQuizSessionSetup({ type: 'global' })}
+            onItems={() => setActiveView('items')}
+            onCreateFlashcards={openFlashcardCreator}
+            onColleges={() => setActiveView('colleges')}
+            onCollege={(college) => {
+              setCollegeDetailFilter('all')
+              setSelectedCollegeDetail(college)
+              setActiveView('colleges')
+            }}
+            renderCollegeIcon={(college) => <CollegeHealthIcon college={college} showTitle={false} />}
+          /> :
           <section className="dashboard-home" aria-labelledby="dashboard-title">
             <div className="dashboard-hero-row">
               <div className="dashboard-title-block">

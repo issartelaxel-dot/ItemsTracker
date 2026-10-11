@@ -14,10 +14,11 @@ import { mergePatch } from '../server/state-model.mjs'
 
 const base = `http://127.0.0.1:${port}`, out = process.env.MOBILE_QA_OUTPUT || path.join(os.tmpdir(), 'itemstracker-mobile-qa')
 fs.mkdirSync(out + '/captures', { recursive: true })
-async function setup(browser,width=390,height=844){
+async function setup(browser,width=390,height=844,fixture={}){
  const context=await browser.newContext({viewport:{width,height},deviceScaleFactor:1,isMobile:width<768,hasTouch:width<768})
  const page=await context.newPage(),errors=[],saves=[];page.on('pageerror',e=>errors.push(e.message))
- let state={trackingState:{items:{1:{assignedColleges:['Médecine Interne'],youtubeUrl:'https://www.youtube.com/watch?v=dQw4w9WgXcQ',usefulLinkUrl:'https://example.com/article',quiz:{enabled:true,activeCardId:'test-card-1',cards:[1,2,3].map(i=>({id:'test-card-'+i,question:'<p>Question '+i+' : Comment conserver une révision lisible sur un téléphone ?</p>',answer:'<p>Réponse '+i+' : Le contenu reste accessible, avec des boutons tactiles et une navigation claire.</p>',quizCount:0,lastReviewedAt:null,lastResult:null}))}}}},theme:'light',focusMode:false,dateFormat:'fr-short',timeZone:'auto',youtubeDisplayMode:'embed',shuffleQuizCards:false,profile:{firstName:'Test',lastName:'Local',email:'test@example.test',photoUrl:'',password:'',avatarGradient:'red'}},version=1
+ let state={trackingState:{items:{1:{assignedColleges:['MÉDECINE INTERNE'],youtubeUrl:'https://www.youtube.com/watch?v=dQw4w9WgXcQ',usefulLinkUrl:'https://example.com/article',quiz:{enabled:true,activeCardId:'test-card-1',cards:[1,2,3].map(i=>({id:'test-card-'+i,question:'<p>Question '+i+' : Comment conserver une révision lisible sur un téléphone ?</p>',answer:'<p>Réponse '+i+' : Le contenu reste accessible, avec des boutons tactiles et une navigation claire.</p>',quizCount:0,lastReviewedAt:null,lastResult:null}))}}}},theme:'light',focusMode:false,dateFormat:'fr-short',timeZone:'auto',youtubeDisplayMode:'embed',shuffleQuizCards:false,profile:{firstName:'Test',lastName:'Local',email:'test@example.test',photoUrl:'',password:'',avatarGradient:'red'}},version=1
+ state={...state,...fixture}
  await context.route('**/api/**',async route=>{
  const req=route.request(),p=new URL(req.url()).pathname
  const headers={'content-type':'application/json','x-app-version':'0.1.0','access-control-allow-origin':base,'access-control-allow-credentials':'true','access-control-expose-headers':'x-app-version','access-control-allow-headers':'content-type,authorization,x-client-version','access-control-allow-methods':'GET,PUT,PATCH,POST'}
@@ -108,11 +109,38 @@ for(const [name,engine] of [['chrome',chromium],['webkit',webkit]]){
    await nav.screenshot({path:out+'/captures/'+name+'-footer-detail.png'})
    row.checks.push('footer pill / tap / drag / cancel / keyboard / reduced motion')
  }
- const streak=await page.locator('.dashboard-streak-card').boundingBox(),due=await page.locator('.dashboard-stat-card').nth(2).boundingBox();assert.ok(Math.abs(streak.y-due.y)<1,'Stats must share row')
- await check(page,'dashboard');row.checks.push('dashboard / barre / 2 colonnes');row.smallTargets.push(...await targets(page))
+ const dashboard=page.locator('.mobile-dashboard')
+ await expect(dashboard).toBeVisible()
+ await expect(page.locator('.mobile-dashboard-brand .sidebar-logo-bar')).toHaveCount(1)
+ await expect(dashboard.getByRole('progressbar',{name:'Progression globale'})).toHaveAttribute('aria-valuenow','0')
+ await expect(dashboard.locator('.mobile-dash-due strong')).toHaveText('1')
+ const ring=await dashboard.locator('.mobile-dash-progress').boundingBox(),due=await dashboard.locator('.mobile-dash-due').boundingBox()
+ assert.ok(ring.x+ring.width<due.x,'Progress and due reviews share the compact panel without overlap')
+ const calendar=dashboard.locator('.mobile-dash-calendar'),grid=calendar.locator('.habit-tracker-wrap')
+ await expect(calendar).toHaveAttribute('open','')
+ assert.equal(await grid.locator('.habit-week').count(),53)
+ assert.equal(await grid.locator('.habit-dot:not(.out-range)').count(),365)
+ assert.ok((await grid.boundingBox()).height<=114,'Annual activity must remain compact')
+ const firstWeek=await grid.locator('.habit-week').first().boundingBox(),lastWeek=await grid.locator('.habit-week').last().boundingBox(),gridBox=await grid.boundingBox()
+ assert.ok(Math.abs(firstWeek.y-lastWeek.y)<1,'Annual calendar must keep all weeks on the same row')
+ assert.ok(lastWeek.x+lastWeek.width-firstWeek.x>=gridBox.width*0.98,'Annual calendar must use the available width')
+ const summary=calendar.locator('summary');assert.ok((await summary.boundingBox()).height>=44)
+ await summary.tap();await expect(calendar).not.toHaveAttribute('open','');await expect(grid).toBeHidden()
+ await summary.tap();await expect(grid).toBeVisible()
+ await expect(dashboard.locator('.mobile-dash-college-row')).toHaveCount(1)
+ await dashboard.locator('.mobile-dash-college-row').click();await expect(page.getByRole('button',{name:'Retour aux collèges',exact:true})).toBeVisible()
+ await page.getByRole('button',{name:'Retour aux collèges',exact:true}).click();await expect(page.locator('.colleges-page')).toBeVisible()
+ await nav.getByRole('button',{name:'Dashboard',exact:true}).tap()
+ await page.waitForTimeout(420)
+ await page.screenshot({path:out+'/captures/'+name+'-dashboard-'+width+'.png',fullPage:true})
+ await check(page,'dashboard');row.checks.push('dashboard / identité / statistiques réelles / calendrier compact repliable');row.smallTargets.push(...await targets(page))
  await nav.getByRole('button',{name:'Plus',exact:true}).click();const sheet=page.getByRole('dialog',{name:'Plus',exact:true});await expect(sheet).toBeVisible();await page.waitForTimeout(250)
  await expect(sheet.getByRole('button',{name:'Insights',exact:false})).toBeDisabled();await expect(sheet.getByRole('button',{name:'Déconnexion',exact:true})).toBeVisible()
- await sheet.getByRole('button',{name:'Activer le thème sombre'}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','dark');await sheet.getByRole('button',{name:'Activer le thème clair'}).click()
+ await sheet.getByRole('button',{name:'Activer le thème sombre'}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','dark')
+ await page.keyboard.press('Escape');await page.waitForTimeout(500)
+ assert.equal(await dashboard.evaluate(e=>getComputedStyle(e).getPropertyValue('--mobile-dash-line').trim()),'#284770')
+ if(width===390)await page.screenshot({path:out+'/captures/'+name+'-dashboard-dark.png',fullPage:true})
+ await nav.getByRole('button',{name:'Plus',exact:true}).click();await sheet.getByRole('button',{name:'Activer le thème clair'}).click()
  await sheet.getByRole('button',{name:'Déconnexion',exact:true}).focus();await page.keyboard.press('Tab');assert.ok(await sheet.evaluate(e=>e.contains(document.activeElement)))
  await page.keyboard.press('Escape');await expect(sheet).toHaveCount(0);assert.ok(await nav.evaluate(e=>e.contains(document.activeElement)))
  await nav.getByRole('button',{name:'Items',exact:true}).click();await expect(page.locator('.items-list-row')).toHaveCount(367);await check(page,'items');row.smallTargets.push(...await targets(page))
@@ -146,9 +174,31 @@ for(const [name,engine] of [['chrome',chromium],['webkit',webkit]]){
  if(width===390){await nav.getByRole('button',{name:'Plus',exact:true}).click();await page.waitForTimeout(250);await page.screenshot({path:out+'/captures/'+name+'-plus.png'});await page.keyboard.press('Escape')}
  assert.deepEqual(t.errors,[]);row.checks.push('aucune erreur JS');results.push(row);assert.deepEqual(row.smallTargets,[],'Small touch targets');console.log(name,width,'PASS');fs.writeFileSync(out+'/validation-mobile.json',JSON.stringify(results,null,2));await context.close()
  }
+ const completedItems=Object.fromEntries(Array.from({length:154},(_,i)=>[String(i+1),{assignedColleges:['MÉDECINE INTERNE'],noLisaSheets:true,noPlatformSheets:true,itemMastery:'Parfait',byCollege:{'MÉDECINE INTERNE':{reviews:1,mastery:'Parfait',lastReviewedAt:'2026-01-15T12:00:00.000Z',reviewHistory:[{date:'2026-01-15T12:00:00.000Z',delta:1}]}}}]))
+ const progressCase=await setup(browser,390,844,{trackingState:{items:completedItems}})
+ await expect(progressCase.page.getByRole('progressbar',{name:'Progression globale'})).toHaveAttribute('aria-valuenow','42')
+ await expect(progressCase.page.locator('.mobile-dash-due strong')).toHaveText('0')
+ await expect(progressCase.page.locator('.mobile-dash-college-percent')).toHaveText('100%')
+ assert.ok(await progressCase.page.locator('.mobile-dash-calendar .intensity-4').count()>0,'Actual reading history supplies heatmap intensity')
+ await progressCase.page.setViewportSize({width:1440,height:900});await expect(progressCase.page.locator('.mobile-dashboard')).toHaveCount(0)
+ await expect(progressCase.page.locator('.dashboard-progress-card > strong')).toHaveText('42%')
+ await progressCase.page.setViewportSize({width:390,height:844});await expect(progressCase.page.getByRole('progressbar',{name:'Progression globale'})).toHaveAttribute('aria-valuenow','42')
+ await progressCase.page.getByRole('button',{name:'Recherche globale',exact:true}).click()
+ await progressCase.page.getByRole('searchbox',{name:'Recherche globale',exact:true}).fill('patient')
+ await expect(progressCase.page.locator('.global-search-result.result-item').first()).toBeVisible()
+ await progressCase.page.locator('.global-search-result.result-item').first().click();await expect(progressCase.page.locator('.detail-panel.is-open')).toBeVisible()
+ assert.deepEqual(progressCase.errors,[]);await progressCase.context.close();console.log(name,'real progress / activity / resize / global search PASS')
+ const empty=await setup(browser,320,568,{trackingState:{items:{}},profile:{firstName:'Alexandrine-Marie',lastName:'Test',email:'test@example.test'}})
+ await expect(empty.page.getByRole('button',{name:'Lancer une révision',exact:false})).toBeDisabled()
+ await expect(empty.page.locator('.mobile-dash-hero')).toContainText('Crée ta première flashcard')
+ await expect(empty.page.locator('.mobile-dash-empty')).toBeVisible()
+ await check(empty.page,'empty dashboard / long name')
+ await empty.page.getByRole('button',{name:'Créer des flashcards',exact:false}).click();await expect(empty.page.locator('.flash-create-modal')).toBeVisible()
+ assert.deepEqual(empty.errors,[]);await empty.context.close();console.log(name,'empty dashboard PASS')
  const desktop=await setup(browser,1440,900)
  await expect(desktop.page.locator('.mobile-bottom-nav')).toBeHidden()
  await expect(desktop.page.locator('.dashboard-sidebar')).toBeVisible()
+ await expect(desktop.page.locator('.mobile-dashboard')).toHaveCount(0)
  assert.deepEqual(desktop.errors,[]);await desktop.context.close();console.log(name,'desktop navigation unchanged PASS')
  }finally{await browser.close()}
 }
