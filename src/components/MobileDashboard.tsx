@@ -1,4 +1,4 @@
-import { Check, CreditCards, FireFlame, List, NavArrowDown, NavArrowRight, OpenBook, Play } from 'iconoir-react'
+import { Check, CreditCards, FireFlame, Group, List, NavArrowDown, NavArrowRight, OpenBook, Play } from 'iconoir-react'
 import type { CSSProperties, ReactNode } from 'react'
 import mountain from '../assets/dashboard-mountain-bg.png'
 import { HabitGrid } from './HabitGrid'
@@ -11,10 +11,10 @@ type ReadingWeek = {
 }
 type CollegeRow = { college: string; displayName: string; assigned: number; progress: number; accent: string }
 
-export function MobileDashboard({ name, progress, dueCount, dueMinutes, streak, weekDays, year, weeks, colleges,
+export function MobileDashboard({ isMobile, name, progress, dueCount, dueMinutes, streak, weekDays, year, weeks, colleges,
   canReview, onReview, onItems, onCreateFlashcards, onColleges, onCollege, renderCollegeIcon,
 }: {
-  name: string; progress: number; dueCount: number; dueMinutes: number; streak: number
+  isMobile: boolean; name: string; progress: number; dueCount: number; dueMinutes: number; streak: number
   weekDays: StudyDay[]; year: number; weeks: ReadingWeek[]; colleges: CollegeRow[]; canReview: boolean
   onReview: () => void; onItems: () => void; onCreateFlashcards: () => void
   onColleges: () => void; onCollege: (college: string) => void; renderCollegeIcon: (college: string) => ReactNode
@@ -22,7 +22,7 @@ export function MobileDashboard({ name, progress, dueCount, dueMinutes, streak, 
   const percent = Math.round(Math.max(0, Math.min(100, progress)))
   const streakLabel = `${streak} jour${streak > 1 ? 's' : ''} de régularité`
   return (
-    <section className="dashboard-home mobile-dashboard" aria-labelledby="dashboard-title">
+    <section className={`dashboard-home ${isMobile ? 'mobile-dashboard' : 'desktop-dashboard'}`} aria-labelledby="dashboard-title">
       <div className="mobile-dash-greeting">
         <h1 id="dashboard-title">Bonjour, {name} <span aria-hidden="true">👋</span></h1>
         <p>Avance à ton rythme.</p>
@@ -117,7 +117,11 @@ export function MobileDashboard({ name, progress, dueCount, dueMinutes, streak, 
             <span className="mobile-dash-college-percent">{Math.round(row.progress)}%</span>
             <NavArrowRight aria-hidden="true" />
           </button>)}
-        </div> : <p className="mobile-dash-empty">Aucun collège assigné pour le moment. Retrouve tes items pour commencer.</p>}
+        </div> : isMobile ? <p className="mobile-dash-empty">Aucun collège assigné pour le moment. Retrouve tes items pour commencer.</p> :
+          <div className="desktop-dash-empty-state">
+            <span aria-hidden="true"><Group /></span>
+            <p className="mobile-dash-empty"><strong>Aucun collège assigné pour le moment.</strong><br />Retrouve tes items pour commencer.</p>
+          </div>}
       </section>
     </section>
   )

@@ -181,7 +181,7 @@ for(const [name,engine] of [['chrome',chromium],['webkit',webkit]]){
  await expect(progressCase.page.locator('.mobile-dash-college-percent')).toHaveText('100%')
  assert.ok(await progressCase.page.locator('.mobile-dash-calendar .intensity-4').count()>0,'Actual reading history supplies heatmap intensity')
  await progressCase.page.setViewportSize({width:1440,height:900});await expect(progressCase.page.locator('.mobile-dashboard')).toHaveCount(0)
- await expect(progressCase.page.locator('.dashboard-progress-card > strong')).toHaveText('42%')
+ await expect(progressCase.page.locator('.desktop-dashboard .mobile-dash-progress > strong')).toHaveText('42%')
  await progressCase.page.setViewportSize({width:390,height:844});await expect(progressCase.page.getByRole('progressbar',{name:'Progression globale'})).toHaveAttribute('aria-valuenow','42')
  await progressCase.page.getByRole('button',{name:'Recherche globale',exact:true}).click()
  await progressCase.page.getByRole('searchbox',{name:'Recherche globale',exact:true}).fill('patient')

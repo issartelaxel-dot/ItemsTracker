@@ -1,6 +1,6 @@
 # ItemsTracker — refonte mobile
 
-Les maquettes du PDF « Mobile UX/UI Redesign » et les exigences des pages 7–8 servent de référence. Le périmètre demandé est limité aux téléphones : les nouveaux styles sont activés sous 768 px. La navigation et la présentation déjà présentes sur tablette et ordinateur sont conservées.
+Les maquettes du PDF « Mobile UX/UI Redesign » et les exigences des pages 7–8 servent de référence. Le périmètre demandé est limité aux téléphones : les nouveaux styles sont activés sous 768 px. La navigation déjà présente sur tablette et ordinateur est conservée. Le dashboard PC/tablette a ensuite été adapté à une nouvelle référence visuelle le 11 octobre 2026 (voir `dashboard-responsive.md`).
 
 ## Changements
 
@@ -25,7 +25,7 @@ La barre respecte les safe areas et les zones tactiles de 44 px. Les commandes c
 
 ## Fichiers
 
-`src/styles/13-mobile.css` contient les règles dédiées au téléphone. `MobileNavigation` et `MobileSheet` fournissent les nouveaux accès mobiles ; `App.tsx` les relie aux actions et états existants. `MobileDashboard` et `src/styles/15-mobile-dashboard.css` portent le visuel du dashboard sous 768 px ; le rendu desktop existant reste utilisé au-dessus. Le composant `HabitGrid` accepte une hauteur cible de 100 px pour le dashboard mobile, et des cases pouvant descendre à 3 px pour conserver les semaines sur une seule ligne à ces largeurs. Ses valeurs par défaut (140 px de hauteur, cases de 6 px minimum avant retour à la ligne) sont conservées ailleurs. Le viewport inclut `viewport-fit=cover`.
+`src/styles/13-mobile.css` contient les règles dédiées au téléphone. `MobileNavigation` et `MobileSheet` fournissent les nouveaux accès mobiles ; `App.tsx` les relie aux actions et états existants. `MobileDashboard` et `src/styles/15-mobile-dashboard.css` portent le visuel du dashboard sous 768 px ; le même composant fournit désormais le contenu desktop/tablette au-dessus, avec des styles séparés dans `16-desktop-dashboard.css`. Le composant `HabitGrid` accepte une hauteur cible de 100 px pour le dashboard mobile, et des cases pouvant descendre à 3 px pour conserver les semaines sur une seule ligne à ces largeurs. Ses valeurs par défaut (140 px de hauteur, cases de 6 px minimum avant retour à la ligne) sont conservées ailleurs. Le viewport inclut `viewport-fit=cover`.
 
 ## Validation
 

@@ -2,7 +2,6 @@ import { MobileSheet } from './components/MobileSheet'
 import { MobileNavigation } from './components/MobileNavigation'
 import { MobileDashboard } from './components/MobileDashboard'
 import { useMediaQuery } from './lib/use-responsive'
-import { HabitGrid } from './components/HabitGrid'
 import { withRequestTimeout } from './lib/request-timeout'
 import { ResourceTypeIcon, ResourceLinkPreview, useResourcePreview, getResourceFallback, formatResourceSize } from './components/ResourcePreview'
 import { getFreshApiUrl } from './lib/api-cache'
@@ -106,7 +105,6 @@ import {
   Xmark,
 } from 'iconoir-react'
 import itemsData from './data/items.json'
-import dashboardMountainBg from './assets/dashboard-mountain-bg.png'
 import anatomyIcon from 'healthicons/public/icons/svg/outline/devices/microscope.svg?raw'
 import anesthesiaIcon from 'healthicons/public/icons/svg/outline/ppe/ppe_face_mask.svg?raw'
 import cancerIcon from 'healthicons/public/icons/svg/outline/conditions/ribbon.svg?raw'
@@ -8154,7 +8152,8 @@ function getPasswordStrengthMeta(password: string) {
 
         <div className="dashboard-content">
         {activeView === 'dashboard' ? (
-          isMobile ? <MobileDashboard
+          <MobileDashboard
+            isMobile={isMobile}
             name={profile.firstName?.trim() || authUser?.displayName || 'Setup'}
             progress={globalStats.overallProgress}
             dueCount={dashboardDueCount}
@@ -8168,191 +8167,17 @@ function getPasswordStrengthMeta(password: string) {
             onReview={() => openQuizSessionSetup({ type: 'global' })}
             onItems={() => setActiveView('items')}
             onCreateFlashcards={openFlashcardCreator}
-            onColleges={() => setActiveView('colleges')}
+            onColleges={() => {
+              setSelectedCollegeDetail(null)
+              setActiveView('colleges')
+            }}
             onCollege={(college) => {
               setCollegeDetailFilter('all')
               setSelectedCollegeDetail(college)
               setActiveView('colleges')
             }}
             renderCollegeIcon={(college) => <CollegeHealthIcon college={college} showTitle={false} />}
-          /> :
-          <section className="dashboard-home" aria-labelledby="dashboard-title">
-            <div className="dashboard-hero-row">
-              <div className="dashboard-title-block">
-                <h1 id="dashboard-title">Bonjour, {profile.firstName?.trim() || authUser?.displayName || 'Setup'} 👋</h1>
-                <p>Chaque révision vous rapproche de votre objectif.</p>
-              </div>
-            </div>
-
-            <section className="dashboard-stat-grid" aria-label="Résumé">
-              <article className="dashboard-stat-card dashboard-progress-card">
-                <div className="dashboard-stat-head">
-                  <p>Progression globale</p>
-                </div>
-                <strong>{Math.round(globalStats.overallProgress)}%</strong>
-                <span className="dashboard-positive">+{Math.max(1, Math.round(globalStats.overallProgress * 0.12))}% depuis la semaine dernière</span>
-                <div className="dashboard-mini-progress" aria-hidden="true">
-                  <span style={{ width: `${globalStats.overallProgress}%` }} />
-                </div>
-              </article>
-
-              <article className="dashboard-stat-card dashboard-streak-card">
-                <p>Série actuelle</p>
-                <div className="dashboard-streak-main">
-                  <div className="dashboard-stat-icon dashboard-stat-fire" aria-hidden="true">
-                    <FireFlame className="ui-icon" aria-hidden="true" />
-                  </div>
-                  <div>
-                    <strong>{dashboardStudyStats.currentStreak}</strong>
-                    <span>jours consécutifs</span>
-                  </div>
-                </div>
-                <div className="dashboard-streak-week" aria-label="Activité de la semaine">
-                  {dashboardStudyStats.weekDays.map((day) => (
-                    <span
-                      key={day.dateKey}
-                      className={`dashboard-streak-day ${day.count > 0 ? 'is-active' : ''} ${day.isToday ? 'is-today' : ''}`}
-                      title={`${day.label} : ${day.count} révision${day.count > 1 ? 's' : ''}`}
-                    >
-                      <span>{day.label}</span>
-                      <i aria-hidden="true" />
-                    </span>
-                  ))}
-                </div>
-              </article>
-
-              <article className="dashboard-stat-card">
-                <div className="dashboard-stat-icon" aria-hidden="true">
-                  <OpenBook className="ui-icon" aria-hidden="true" />
-                </div>
-                <p>Révisions dues</p>
-                <strong>{dashboardDueCount}</strong>
-                <span>items à revoir</span>
-                <small>Estimation : {dashboardDueMinutes} min</small>
-              </article>
-
-              <article className="dashboard-habit-card">
-                <p>Habit tracking {HABIT_TRACKER_YEAR} (lectures)</p>
-                <HabitGrid weeks={weeklyReviewSeries.length}>
-                  {weeklyReviewSeries.map((week, weekIndex) => (
-                    <div className="habit-week" key={week.weekKey} title={`Semaine du ${week.weekLabel}`}>
-                      {week.days.map((day, dayIndex) => (
-                        <span
-                          key={day.dateKey}
-                          className={`habit-dot ${day.inRange ? `intensity-${day.intensity}` : 'out-range'}`}
-                          data-tip={`${day.dateKey} • ${day.count} lecture${day.count > 1 ? 's' : ''}`}
-                          style={{ animationDelay: `${Math.min((weekIndex * 7 + dayIndex) * 8, 900)}ms` }}
-                        />
-                      ))}
-                    </div>
-                  ))}
-                </HabitGrid>
-                <div className="habit-legend">
-                  <span>Faible</span>
-                  <div className="legend-scale">
-                    <span className="habit-dot intensity-0" />
-                    <span className="habit-dot intensity-1" />
-                    <span className="habit-dot intensity-2" />
-                    <span className="habit-dot intensity-3" />
-                    <span className="habit-dot intensity-4" />
-                  </div>
-                  <span>Intense</span>
-                </div>
-              </article>
-            </section>
-
-            <section className="dashboard-mid-grid">
-              <article className="dashboard-action-card">
-                <div>
-                  <h2>Que voulez-vous faire aujourd’hui ?</h2>
-                  <p>Choisissez une action pour rester régulier.</p>
-                </div>
-                <div className="dashboard-action-grid">
-	                  <button
-	                    type="button"
-	                    className="dashboard-action-tile dashboard-action-quiz"
-	                    onClick={() => {
-	                      openQuizSessionSetup({ type: 'global' })
-	                    }}
-	                    disabled={defaultFlashSessionItemNumber === null}
-	                    title={
-	                      defaultFlashSessionItemNumber === null
-	                        ? 'Ajoute une flashcard pour lancer une révision'
-	                        : 'Lancer une révision globale'
-	                    }
-	                  >
-	                    <Play className="dashboard-action-icon" aria-hidden="true" />
-	                    <strong>Lancer une révision</strong>
-	                    <small>Flashcards et quiz guidés</small>
-	                  </button>
-                  <button type="button" className="dashboard-action-tile dashboard-action-items" onClick={() => setActiveView('items')}>
-                    <List className="dashboard-action-icon" aria-hidden="true" />
-                    <strong>Réviser mes items</strong>
-                    <small>Reprenez là où vous en étiez</small>
-                  </button>
-                  <button
-                    type="button"
-                    className="dashboard-action-tile dashboard-action-flashcards"
-                    onClick={() => {
-                      openFlashcardCreator()
-                    }}
-                  >
-                    <CreditCards className="dashboard-action-icon" aria-hidden="true" />
-                    <strong>Créer des flashcards</strong>
-                    <small>Transformez vos notions</small>
-                  </button>
-                </div>
-              </article>
-
-              <article
-                className="dashboard-quote-card"
-                style={{ '--dashboard-quote-bg': `url(${dashboardMountainBg})` } as CSSProperties}
-              >
-                <div className="dashboard-quote-copy">
-                  <span aria-hidden="true">“</span>
-                  <p>La constance d’aujourd’hui est la réussite de demain.</p>
-                  <small>— Avance chaque jour</small>
-                </div>
-              </article>
-            </section>
-
-            <section className="dashboard-college-card">
-              <div className="dashboard-section-head">
-                <h2>Progression par collège</h2>
-                <button type="button" onClick={() => setActiveView('colleges')}>Voir tout</button>
-              </div>
-              <div className="dashboard-college-list">
-                {dashboardCollegeRows.length > 0 ? (
-                  dashboardCollegeRows.map((row) => (
-                    <button
-                      type="button"
-                      key={`dashboard-college-${row.college}`}
-                      className="dashboard-college-row"
-                      style={{ '--dashboard-college-accent': row.accent } as CSSProperties}
-                      onClick={() => {
-                        setCollegeDetailFilter('all')
-                        setSelectedCollegeDetail(row.college)
-                        setActiveView('colleges')
-                      }}
-                    >
-                      <CollegeHealthIcon college={row.college} className="dashboard-college-icon" showTitle={false} />
-                      <span className="dashboard-college-meta">
-                        <strong>{row.displayName}</strong>
-                        <small>{row.assigned} items</small>
-                      </span>
-                      <span className="dashboard-college-progress" aria-hidden="true">
-                        <span style={{ width: `${row.progress}%` }} />
-                      </span>
-                      <strong className="dashboard-college-percent">{Math.round(row.progress)}%</strong>
-                      <span className="dashboard-college-chevron" aria-hidden="true">›</span>
-                    </button>
-                  ))
-                ) : (
-                  <p className="dashboard-empty-state">Aucun collège assigné pour le moment.</p>
-                )}
-              </div>
-            </section>
-          </section>
+          />
         ) : null}
 
         {activeView === 'items' ? (
