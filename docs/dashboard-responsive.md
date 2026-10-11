@@ -2,6 +2,8 @@
 
 Cette évolution reprend la référence fournie : recherche large, salutation, bandeau montagne et lancement de révision, parcours et raccourcis, régularité compacte, puis collèges. La sidebar et ses icônes restent celles de l'application.
 
+Le bandeau de révision est compact : 168 px de hauteur minimale, avec un titre et des espacements réduits. Le bouton garde une hauteur de 44 px sur tablette. Le panneau peut grandir si un message supplémentaire ou un texte sur plusieurs lignes le nécessite.
+
 Le composant de dashboard existant est partagé entre les tailles d'écran. Les valeurs et actions utilisent les calculs et handlers déjà présents : progression réelle, révisions dues, durée estimée, série actuelle, historique annuel, progression par collège, création et révision. Aucune donnée de compte ni route API n'est modifiée.
 
 Les styles PC/tablette sont isolés dans `src/styles/16-desktop-dashboard.css`, à partir de 768 px. Les container queries tiennent compte de la largeur réellement disponible, avec la sidebar ouverte ou repliée. Au-dessus de 780 px de contenu, parcours et raccourcis se partagent une ligne et le calendrier accompagne la semaine. En dessous, les panneaux et le calendrier se placent verticalement. Les deux raccourcis restent côte à côte. Le contenu défile pour rendre les collèges accessibles sur les écrans bas ; les cartes ne sont pas étirées à la hauteur de la fenêtre.

@@ -60,6 +60,7 @@ for (const [name,engine] of [['chrome',chromium],['webkit',webkit]]) {
     return {root:el.getBoundingClientRect().toJSON(),hero:r('.mobile-dash-hero'),journey:r('.mobile-dash-journey'),shortcuts:r('.mobile-dash-shortcuts'),activity:r('.mobile-dash-activity'),colleges:r('.mobile-dash-colleges'),item:r('.mobile-dash-items'),flash:r('.mobile-dash-flashcards')}
    })
    assert.ok(Math.abs(geometry.hero.width-geometry.root.width)<2,'Hero spans the content width')
+   assert.ok(geometry.hero.height<=180,'Review hero stays compact on desktop and tablet')
    assert.ok(Math.abs(geometry.item.y-geometry.flash.y)<1,'Shortcut buttons share a row')
    assert.ok(geometry.item.x+geometry.item.width<=geometry.flash.x,'Shortcut buttons do not overlap')
    if(geometry.root.width>780){assert.ok(Math.abs(geometry.journey.y-geometry.shortcuts.y)<1);assert.ok(geometry.journey.x+geometry.journey.width<=geometry.shortcuts.x)}
