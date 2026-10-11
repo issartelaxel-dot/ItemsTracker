@@ -1,6 +1,8 @@
 import { MobileSheet } from './components/MobileSheet'
 import { MobileNavigation } from './components/MobileNavigation'
 import { MobileDashboard } from './components/MobileDashboard'
+import { FlashcardsWorkspace } from './components/FlashcardsWorkspace'
+import { countFlashcardCatalogStatuses, organizeFlashcardCatalog, type FlashcardCatalogStatus, type FlashcardOrganization } from './lib/flashcard-catalog'
 import { useMediaQuery } from './lib/use-responsive'
 import { withRequestTimeout } from './lib/request-timeout'
 import { ResourceTypeIcon, ResourceLinkPreview, useResourcePreview, getResourceFallback, formatResourceSize } from './components/ResourcePreview'
@@ -2706,6 +2708,10 @@ function App() {
   const [flashCollegeLevelFilter, setFlashCollegeLevelFilter] = useState<FlashCollegeLevelFilter>('ALL')
   const [flashCollegeSort, setFlashCollegeSort] = useState<FlashCollegeSort>('progress')
   const [flashDisplayMode, setFlashDisplayMode] = useState<FlashDisplayMode>('colleges')
+  const [flashCatalogOrganization, setFlashCatalogOrganization] = useState<FlashcardOrganization>('status')
+  const [flashCatalogLayout, setFlashCatalogLayout] = useState<'gallery' | 'list'>('gallery')
+  const [flashCatalogStatus, setFlashCatalogStatus] = useState<FlashcardCatalogStatus>('all')
+  const [flashCatalogItemSearch, setFlashCatalogItemSearch] = useState('')
   const [flashCardsListCollege, setFlashCardsListCollege] = useState<string | null>(null)
   const [flashCardsListItem, setFlashCardsListItem] = useState<number | null>(null)
   const [flashSelectedItems, setFlashSelectedItems] = useState<number[]>(() => rawItems.map((item) => item.itemNumber))
@@ -5585,6 +5591,24 @@ function getPasswordStrengthMeta(password: string) {
 
   const defaultFlashSessionItemNumber = flashItemCards[0]?.itemNumber ?? null
 
+  // Catalog presentation filters never change cards, tracking, or review scopes.
+  const flashCatalogItemQuery = normalizeText(flashCatalogItemSearch)
+  const flashCatalogColleges = flashCollegeCards.filter(row => !flashCatalogItemQuery || row.items.some(item =>
+    normalizeText(`${item.itemNumber} ${item.shortDescription}`).includes(flashCatalogItemQuery)))
+  const flashCatalogItems = flashItemCards.filter(row => !flashCatalogItemQuery ||
+    normalizeText(`${row.itemNumber} ${row.description}`).includes(flashCatalogItemQuery))
+  const flashVisibleCollegeCards = isMobile ? flashCollegeCards : organizeFlashcardCatalog(flashCatalogColleges, flashCatalogStatus, flashCatalogOrganization)
+  const flashVisibleItemCards = isMobile ? flashItemCards : organizeFlashcardCatalog(flashCatalogItems, flashCatalogStatus, 'items')
+  const flashCatalogCounts = countFlashcardCatalogStatuses(flashDisplayMode === 'items' ? flashCatalogItems : flashCatalogColleges)
+  const flashCatalogSummary = useMemo(() => {
+    const itemMastery = new Map<number, boolean>()
+    for (const card of allFlashcards) {
+      const mastered = card.lastResult === 'good' || card.lastResult === 'easy'
+      itemMastery.set(card.itemNumber, (itemMastery.get(card.itemNumber) ?? true) && mastered)
+    }
+    return { totalItems: itemMastery.size, masteredItems: [...itemMastery.values()].filter(Boolean).length }
+  }, [allFlashcards])
+
   const flashCardsListCollegeMeta = useMemo(() => {
     if (!flashCardsListCollege) {
       return null
@@ -8015,7 +8039,7 @@ function getPasswordStrengthMeta(password: string) {
       </aside>
 
       <div
-        className={`dashboard-shell ${activeView === 'items' ? 'items-view-shell' : ''} ${
+        className={`dashboard-shell ${activeView === 'flashcards' ? 'flashcards-view-shell' : ''} ${activeView === 'items' ? 'items-view-shell' : ''} ${
           activeView === 'dashboard' ? 'dashboard-view-shell' : ''
         }`}
       >
@@ -10176,8 +10200,24 @@ function getPasswordStrengthMeta(password: string) {
       ) : null}
 
       {activeView === 'flashcards' ? (
-        <section id="flashcards-section" className="flashcards-page">
-          <div className="flashcards-toolbar">
+        <section id="flashcards-section" className={`flashcards-page ${isMobile ? '' : `flashcards-workspace flash-layout-${flashCatalogLayout}`}`}>
+          {!isMobile ? <FlashcardsWorkspace
+            themes={collegesViewRows.length} {...flashCatalogSummary}
+            search={flashCollegeSearch} itemSearch={flashCatalogItemSearch} level={flashCollegeLevelFilter} sort={flashCollegeSort}
+            levels={(['none', 'hard', 'medium', 'good', 'easy'] as const).map(value => ({ value, label: FLASH_FEELING_LABELS[value] }))}
+            organization={flashDisplayMode === 'items' ? 'items' : flashCatalogOrganization === 'items' ? 'colleges' : flashCatalogOrganization}
+            layout={flashCatalogLayout} status={flashCatalogStatus} counts={flashCatalogCounts}
+            collegeFilterLabel={flashCollegeFilter === 'ALL' ? null : getFlashCollegeDisplayName(flashCollegeFilter)}
+            canReview={defaultFlashSessionItemNumber !== null}
+            onSearch={setFlashCollegeSearch} onItemSearch={setFlashCatalogItemSearch}
+            onLevel={value => setFlashCollegeLevelFilter(value as FlashCollegeLevelFilter)}
+            onSort={value => setFlashCollegeSort(value as FlashCollegeSort)}
+            onOrganization={value => { setFlashCatalogOrganization(value); setFlashDisplayMode(value === 'items' ? 'items' : 'colleges') }}
+            onLayout={setFlashCatalogLayout} onStatus={setFlashCatalogStatus}
+            onReset={() => { setFlashCollegeSearch(''); setFlashCatalogItemSearch(''); setFlashCollegeLevelFilter('ALL'); setFlashCollegeSort('progress'); setFlashCollegeFilter('ALL'); setFlashCatalogStatus('all') }}
+            onReview={() => { if (defaultFlashSessionItemNumber !== null) openQuizSessionSetup({ type: 'global' }) }}
+            onCreate={() => openFlashcardCreator()}
+          /> : <div className="flashcards-toolbar">
             <label className="flashcards-search">
               <span className="flashcards-search-icon" aria-hidden="true">
                 <Search className="ui-icon" aria-hidden="true" />
@@ -10244,7 +10284,7 @@ function getPasswordStrengthMeta(password: string) {
               <Plus className="inline-btn-icon" aria-hidden="true" />
               Créer une flashcard
             </button>
-          </div>
+          </div>}
           {flashCreateModalOpen ? (
             <div className="flash-generator-modal-overlay" role="presentation" onClick={closeFlashcardCreator}>
               <div
@@ -10689,9 +10729,9 @@ function getPasswordStrengthMeta(password: string) {
               </div>
             </div>
           ) : null}
-          {flashDisplayMode === 'colleges' && flashCollegeCards.length > 0 ? (
+          {flashDisplayMode === 'colleges' && flashVisibleCollegeCards.length > 0 ? (
             <div className="flashcards-college-grid">
-              {flashCollegeCards.map((row) => (
+              {flashVisibleCollegeCards.map((row) => (
                 <article
                   key={`flash-college-${row.college}`}
                   className="flashcards-college-card"
@@ -10701,7 +10741,7 @@ function getPasswordStrengthMeta(password: string) {
                     <CollegeHealthIcon college={row.college} className="flashcards-card-icon" showTitle={false} />
                     <div className="flashcards-card-title">
                       <h3>{row.displayName}</h3>
-                      <p>{row.itemCount} items</p>
+                      <p>{row.itemCount} item{row.itemCount === 1 ? '' : 's'}</p>
                     </div>
                     <button
                       type="button"
@@ -10742,9 +10782,9 @@ function getPasswordStrengthMeta(password: string) {
               ))}
             </div>
           ) : null}
-          {flashDisplayMode === 'items' && flashItemCards.length > 0 ? (
+          {flashDisplayMode === 'items' && flashVisibleItemCards.length > 0 ? (
             <div className="flashcards-college-grid">
-              {flashItemCards.map((row) => (
+              {flashVisibleItemCards.map((row) => (
                 <article
                   key={`flash-item-${row.itemNumber}`}
                   className="flashcards-college-card flashcards-item-card"
@@ -10756,7 +10796,7 @@ function getPasswordStrengthMeta(password: string) {
                     </span>
                     <div className="flashcards-card-title">
                       <h3>{row.displayName}</h3>
-                      <p>{row.cardCount} cartes</p>
+                      <p>{row.cardCount} carte{row.cardCount === 1 ? '' : 's'}</p>
                       <p className="flashcards-card-description">{row.description}</p>
                     </div>
                     <button
@@ -10800,8 +10840,8 @@ function getPasswordStrengthMeta(password: string) {
               ))}
             </div>
           ) : null}
-          {(flashDisplayMode === 'colleges' && flashCollegeCards.length === 0) ||
-          (flashDisplayMode === 'items' && flashItemCards.length === 0) ? (
+          {(flashDisplayMode === 'colleges' && flashVisibleCollegeCards.length === 0) ||
+          (flashDisplayMode === 'items' && flashVisibleItemCards.length === 0) ? (
             <div className="flashcards-empty-state">
               <p>Aucun {flashDisplayMode === 'colleges' ? 'collège' : 'item'} ne correspond aux filtres sélectionnés.</p>
             </div>
