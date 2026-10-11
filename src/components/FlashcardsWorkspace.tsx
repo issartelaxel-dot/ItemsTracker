@@ -1,5 +1,5 @@
-import { Bank, Circle, List, NavArrowDown, Notes, Page, Play, Plus, Refresh, Search, ViewGrid } from 'iconoir-react'
-import { useState } from 'react'
+import { Bank, Circle, List, NavArrowDown, Notes, Page, Play, Plus, Refresh, Search, ViewGrid, Filter, Xmark } from 'iconoir-react'
+import { useEffect, useRef, useState } from 'react'
 import { useMediaQuery } from '../lib/use-responsive'
 import type { FlashcardCatalogStatus, FlashcardOrganization } from '../lib/flashcard-catalog'
 
@@ -22,6 +22,19 @@ const statuses: { value: FlashcardCatalogStatus; label: string }[] = [
 ]
 
 export function FlashcardsWorkspace(p: Props) {
+  const mobile = useMediaQuery('(max-width: 767px)')
+  const sheet = useRef<HTMLDialogElement>(null)
+  const filterTrigger = useRef<HTMLButtonElement>(null)
+  const [sheetOpen, setSheetOpen] = useState(false)
+  useEffect(() => {
+    const dialog = sheet.current
+    if (!mobile || !sheetOpen || !dialog) return
+    const trigger = filterTrigger.current
+    const previous = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    dialog.showModal()
+    return () => { dialog.close(); document.body.style.overflow = previous; trigger?.focus() }
+  }, [mobile, sheetOpen])
   const compact = useMediaQuery('(max-width: 1150px)')
   const [filtersOpen, setFiltersOpen] = useState(!compact)
   const levelSelect = (label: string) => <select aria-label={label} value={p.level} onChange={e => p.onLevel(e.target.value)}>
@@ -33,20 +46,11 @@ export function FlashcardsWorkspace(p: Props) {
     <option value="name">{full ? 'Trier par : ' : ''}Nom</option>
     <option value="items">{full ? 'Trier par : ' : ''}Items</option>
   </select>
-  return <>
-    <header className="flash-workspace-head">
-      <div><h1>Flashcards</h1><p>{p.themes} thématique{p.themes > 1 ? 's' : ''}<span aria-hidden="true"> · </span>{p.masteredItems}/{p.totalItems} items maîtrisés</p></div>
-      <div className="flash-workspace-actions">
-        <button className="flashcards-create-btn" type="button" onClick={p.onCreate}><Plus aria-hidden="true" />Créer une flashcard</button>
-        <button className="flashcards-session-btn" type="button" onClick={p.onReview} disabled={!p.canReview}
-          title={p.canReview ? 'Lancer une révision globale' : 'Ajoute une flashcard pour lancer une révision'}><Play aria-hidden="true" />Lancer une révision</button>
-      </div>
-    </header>
-    <aside className="flash-workspace-filters" aria-label="Filtres des flashcards">
+  const filterPanel = (<aside className="flash-workspace-filters" aria-label="Filtres des flashcards">
       <div className="flash-workspace-filter-head"><h2>Filtres</h2><button type="button" aria-label={filtersOpen ? 'Masquer les filtres' : 'Afficher les filtres'}
         aria-expanded={filtersOpen} aria-controls="flash-workspace-filter-body" onClick={() => setFiltersOpen(value => !value)}>
         <NavArrowDown aria-hidden="true" style={{ transform: filtersOpen ? 'rotate(180deg)' : undefined }} /></button></div>
-      <div id="flash-workspace-filter-body" className="flash-workspace-filter-body" hidden={!filtersOpen}>
+      <div id="flash-workspace-filter-body" className="flash-workspace-filter-body" hidden={!mobile && !filtersOpen}>
         <label className="flash-workspace-search"><Search aria-hidden="true" /><input type="search" aria-label="Rechercher un item dans les flashcards" placeholder="Rechercher un item..." value={p.itemSearch} onChange={e => p.onItemSearch(e.target.value)} /></label>
         <label className="flash-workspace-field"><span><Notes aria-hidden="true" />Niveaux</span>{levelSelect('Niveau des flashcards')}</label>
         <label className="flash-workspace-field"><span><List aria-hidden="true" />Trier par</span>{sortSelect('Tri des flashcards')}</label>
@@ -59,8 +63,23 @@ export function FlashcardsWorkspace(p: Props) {
           <button type="button" onClick={p.onReset}><Refresh aria-hidden="true" />Réinitialiser les filtres</button>
         </div>
       </div>
-    </aside>
+    </aside>)
+  return <>
+    <header className="flash-workspace-head">
+      <div><h1>Flashcards</h1><p>{p.themes} thématique{p.themes > 1 ? 's' : ''}<span aria-hidden="true"> · </span>{p.masteredItems}/{p.totalItems} items maîtrisés</p></div>
+      <div className="flash-workspace-actions">
+        <button className="flashcards-create-btn" type="button" onClick={p.onCreate}><Plus aria-hidden="true" />{mobile ? 'Créer' : 'Créer une flashcard'}</button>
+        <button className="flashcards-session-btn" type="button" onClick={p.onReview} disabled={!p.canReview}
+          title={p.canReview ? 'Lancer une révision globale' : 'Ajoute une flashcard pour lancer une révision'}><Play aria-hidden="true" />{mobile ? 'Réviser' : 'Lancer une révision'}</button>
+      </div>
+    </header>
+    {mobile ? <dialog ref={sheet} className="flash-mobile-sheet" aria-label="Filtres des flashcards" onCancel={() => setSheetOpen(false)} onClick={e => { if(e.target === e.currentTarget) setSheetOpen(false) }}>
+      <div className="flash-mobile-sheet-head"><h2>Filtres des flashcards</h2><button type="button" aria-label="Fermer les filtres" onClick={() => setSheetOpen(false)}><Xmark aria-hidden="true" /></button></div>
+      {filterPanel}
+      <button type="button" className="flash-mobile-apply" onClick={() => setSheetOpen(false)}>Afficher les résultats</button>
+    </dialog> : filterPanel}
     <div className="flash-workspace-controls">
+      {mobile ? <div className="flash-mobile-search-row"><label className="flash-workspace-search"><Search aria-hidden="true" /><input type="search" aria-label="Rechercher une thématique ou un item" placeholder={p.organization === 'items' ? 'Rechercher un item…' : 'Rechercher une thématique…'} value={p.search} onChange={e => p.onSearch(e.target.value)} /></label><button ref={filterTrigger} type="button" className="flash-mobile-filter-trigger" aria-expanded={sheetOpen} onClick={() => setSheetOpen(true)}><Filter aria-hidden="true" />Filtres</button></div> : null}
       <div className="flash-workspace-organize"><span>Organiser par</span><div role="group" aria-label="Organisation des flashcards">
         {([{value:'status',label:'Statut',Icon:Circle},{value:'colleges',label:'Collège',Icon:Bank},{value:'items',label:'Item',Icon:Page}] as const).map(({value,label,Icon}) =>
           <button type="button" key={value} aria-pressed={p.organization === value} onClick={() => p.onOrganization(value)}><Icon aria-hidden="true" />{label}</button>)}
@@ -69,10 +88,10 @@ export function FlashcardsWorkspace(p: Props) {
         <button type="button" aria-pressed={p.layout === 'list'} onClick={() => p.onLayout('list')}><List aria-hidden="true" />Ligne</button>
         <button type="button" aria-pressed={p.layout === 'gallery'} onClick={() => p.onLayout('gallery')}><ViewGrid aria-hidden="true" />Galerie</button>
       </div>
-      <div className="flash-workspace-search-row">
+      {!mobile ? <div className="flash-workspace-search-row">
         <label className="flash-workspace-search"><Search aria-hidden="true" /><input type="search" aria-label="Rechercher une thématique ou un item" placeholder={p.organization === 'items' ? 'Rechercher un item...' : 'Rechercher une thématique...'} value={p.search} onChange={e => p.onSearch(e.target.value)} /></label>
         {levelSelect('Filtrer les flashcards par niveau')}{sortSelect('Trier les flashcards', true)}
-      </div>
+      </div> : <div className="flash-mobile-level">{levelSelect('Filtrer les flashcards par niveau')}</div>}
       {p.collegeFilterLabel ? <div className="flash-workspace-scope">Collège : {p.collegeFilterLabel}<button type="button" onClick={p.onReset}>Effacer les filtres</button></div> : null}
     </div>
   </>

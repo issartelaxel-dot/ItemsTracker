@@ -1,4 +1,4 @@
-/* Catalog composition on PC/tablet; phone controls and editor are unchanged. */
+/* Catalog presentation; desktop rules stay scoped to PC/tablet. */
 @media (min-width: 768px) {
   .flashcards-view-shell { container-type: inline-size; container-name: flashcards; }
   .flashcards-workspace {
@@ -133,3 +133,89 @@
 @media (min-width: 768px) and (prefers-reduced-motion: reduce) {
   .flashcards-workspace :is(button, svg) { transition: none; }
 }
+
+/* Phone catalog: same data and actions, compact controls and modal filters. */
+@media (max-width: 767px) {
+  .flashcards-workspace { --flash-line: #dce7f7; --flash-soft: #edf4ff; --flash-accent: #1765ed; display: grid; gap: 16px; min-width: 0; }
+  :root[data-theme='dark'] .flashcards-workspace { --flash-line: #284770; --flash-soft: #12305c; --flash-accent: #8bb5ff; }
+  .flashcards-workspace :is(h1,h2,h3,p) { margin: 0; }
+  .flashcards-workspace :is(button,input,select) { font: inherit; min-width: 0; }
+  .flashcards-workspace button { -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  .flashcards-workspace :is(button,input,select):focus-visible { outline: 2px solid var(--flash-accent); outline-offset: 2px; }
+  .flashcards-workspace svg { flex: none; width: 20px; height: 20px; }
+  .flash-workspace-head { display: grid; gap: 12px; }
+  .flash-workspace-head h1 { font-size: 25px; line-height: 1.2; letter-spacing: -.035em; }
+  .flash-workspace-head p { margin-top: 5px; font-size: 12px; color: var(--muted); }
+  .flash-workspace-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .flash-workspace-actions :is(.flashcards-create-btn,.flashcards-session-btn) { min-height: 44px; padding: 9px 12px; border-radius: 10px; font-size: 14px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .flash-workspace-actions .flashcards-create-btn { background: var(--panel-bg); color: var(--flash-accent); border: 1px solid #b9d1ff; box-shadow: none; }
+  .flash-workspace-actions .flashcards-session-btn { background: #1765ed; border: 1px solid #1765ed; color: #fff; }
+  .flash-workspace-controls { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; }
+  .flash-mobile-search-row { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
+  .flash-workspace-search { display: flex; align-items: center; gap: 8px; min-width: 0; min-height: 44px; border: 1px solid var(--flash-line); border-radius: 10px; padding: 10px; background: var(--panel-bg); color: var(--flash-accent); }
+  .flash-workspace-search input { width: 100%; min-width: 0; min-height: 0; height: auto; padding: 0; border: 0; outline: 0; box-shadow: none; background: transparent; color: var(--text); font-size: 12px; }
+  .flash-workspace-search input::placeholder { color: var(--muted); opacity: 1; }
+  .flash-workspace-search:focus-within { outline: 2px solid var(--flash-accent); outline-offset: 2px; }
+  .flash-mobile-filter-trigger { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; padding: 9px; border: 1px solid var(--flash-line); border-radius: 10px; background: var(--flash-soft); color: var(--text); font-size: 12px !important; }
+  .flash-workspace-organize { grid-column: 1 / -1; padding: 4px; background: var(--flash-soft); border: 1px solid var(--flash-line); border-radius: 10px; }
+  .flash-workspace-organize > span { display: none; }
+  .flash-workspace-organize > div { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; }
+  .flash-workspace-organize button { display: flex; align-items: center; justify-content: center; gap: 5px; min-height: 44px; border: 0; border-radius: 7px; background: transparent; color: var(--text); font-size: 13px; padding: 8px 4px; }
+  .flash-workspace-organize button[aria-pressed='true'] { background: #1765ed; color: #fff; }
+  .flash-workspace-layout { grid-column: 2; grid-row: 3; display: flex; gap: 4px; }
+  .flash-workspace-layout button { display: grid; place-items: center; width: 44px; height: 44px; font-size: 0; padding: 0; background: var(--panel-bg); color: var(--muted); border: 1px solid var(--flash-line); border-radius: 9px; }
+  .flash-workspace-layout button[aria-pressed='true'] { color: #fff; background: #1765ed; border-color: #1765ed; }
+  .flash-mobile-level { grid-column: 1; grid-row: 3; }
+  .flashcards-workspace select { width: 100%; min-height: 44px; padding: 9px; border: 1px solid var(--flash-line); border-radius: 9px; background: var(--panel-bg); color: var(--text); font-size: 13px; }
+  .flash-workspace-scope { grid-column: 1 / -1; display: flex; align-items: center; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--muted); }
+  .flash-workspace-scope button { min-height: 44px; padding: 8px; background: var(--panel-bg); border: 1px solid var(--flash-line); border-radius: 8px; color: var(--flash-accent); }
+  .flashcards-workspace .flashcards-college-grid { grid-template-columns: minmax(0,1fr); gap: 12px; }
+  .flashcards-workspace .flashcards-college-card { min-height: 0; grid-template-rows: auto auto auto auto; gap: 9px; padding: 14px; background: var(--panel-bg); border: 1px solid var(--flash-line); border-radius: 12px; box-shadow: none; }
+  .flashcards-workspace .flashcards-card-head { display: grid; grid-template-columns: 48px minmax(0,1fr) 36px; align-items: center; gap: 10px; padding: 0; }
+  .flashcards-workspace .flashcards-card-title h3 { margin: 0 0 5px; font-size: 15px; line-height: 1.25; color: var(--text); overflow-wrap: break-word; }
+  .flashcards-workspace .flashcards-card-title p { font-size: 12px; line-height: 1.4; font-weight: 400; color: var(--muted); }
+  .flashcards-workspace .flashcards-card-menu { position: static; display: grid; place-items: center; width: 44px; height: 44px; margin-left: -8px; padding: 0; color: var(--flash-accent); }
+  .flashcards-workspace .college-health-icon-glyph svg { width: 100%; height: 100%; }
+  .flashcards-workspace .flashcards-progress-track { height: 6px; background: var(--flash-soft); }
+  .flashcards-workspace .flashcards-card-progress { font-size: 12px; color: var(--muted); }
+  .flashcards-workspace .flashcards-card-progress strong { font-size: 16px; color: var(--flash-accent); }
+  .flashcards-workspace .flashcards-card-actions { grid-template-columns: minmax(0,1fr) 44px; gap: 8px; margin: 0; }
+  .flashcards-workspace :is(.flashcards-card-launch,.flashcards-card-view) { min-height: 44px; padding: 8px; border-radius: 8px; font-size: 13px; }
+  .flashcards-workspace .flashcards-card-view { border-color: var(--flash-line); background: var(--panel-bg); color: var(--flash-accent); }
+  .flashcards-workspace.flash-layout-list .flashcards-college-card { gap: 6px; padding: 10px 12px; }
+  .flashcards-workspace.flash-layout-list .flashcards-card-icon { width: 40px; height: 40px; }
+  .flashcards-workspace.flash-layout-list .flashcards-card-head { grid-template-columns: 40px minmax(0,1fr) 36px; }
+  .flashcards-workspace .flashcards-empty-state { padding: 20px; background: var(--panel-bg); border: 1px solid var(--flash-line); border-radius: 12px; color: var(--muted); }
+  .flash-mobile-sheet { position: fixed; inset: auto 0 0; margin: 0 auto; width: 100%; max-width: 767px; max-height: 88dvh; overflow-y: auto; overscroll-behavior: contain; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); border: 1px solid var(--flash-line); border-radius: 22px 22px 0 0; background: var(--panel-bg); color: var(--text); box-sizing: border-box; }
+  .flash-mobile-sheet[open] { display: flex; flex-direction: column; overflow: hidden; padding: 0 0 env(safe-area-inset-bottom); animation: flash-sheet-in 220ms ease-out; }
+  .flash-mobile-sheet::backdrop { background: #06194566; }
+  .flash-mobile-sheet-head { flex: none; padding: 16px; display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .flash-mobile-sheet-head h2 { font-size: 18px; }
+  .flash-mobile-sheet-head button { display: grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 10px; background: var(--flash-soft); color: var(--text); }
+  .flash-mobile-sheet .flash-workspace-filters { min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 0 16px; }
+  .flash-mobile-sheet .flash-workspace-filter-head { display: none; }
+  .flash-mobile-sheet .flash-workspace-filter-body { display: grid; gap: 16px; padding: 16px 0; }
+  .flash-workspace-field { display: grid; gap: 8px; }
+  .flash-workspace-field > span { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
+  .flash-workspace-status { border: 0; padding: 0; margin: 0; min-width: 0; display: grid; gap: 8px; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .flash-workspace-status legend { font-weight: 600; font-size: 13px; padding-bottom: 8px; }
+  .flash-workspace-status legend svg { vertical-align: middle; margin-right: 6px; }
+  .flash-workspace-status button { display: flex; align-items: center; gap: 6px; min-height: 44px; border: 1px solid var(--flash-line); border-radius: 8px; padding: 8px; background: var(--panel-bg); color: var(--text); font-size: 12px; }
+  .flash-workspace-status button { --status-color: var(--flash-accent); --status-soft: var(--flash-soft); }
+  .flash-workspace-status button i { width: 9px; height: 9px; border-radius: 50%; background: var(--status-color); flex: none; }
+  .flash-workspace-status button span { min-width: 0; overflow-wrap: break-word; text-align: left; }
+  .flash-workspace-status .flash-status-unmastered { --status-color: #7386a4; --status-soft: #edf1f7; }
+  .flash-workspace-status .flash-status-learning { --status-color: #b76b00; --status-soft: #fff3df; }
+  .flash-workspace-status .flash-status-mastered { --status-color: #087e52; --status-soft: #e4f7ee; }
+  .flash-workspace-status button small { margin-left: auto; flex: none; padding: 3px 5px; border-radius: 999px; background: var(--status-soft); color: var(--status-color); font-size: 11px; }
+  :root[data-theme='dark'] .flash-workspace-status .flash-status-unmastered { --status-color: #a3b4cc; --status-soft: #24334a; }
+  :root[data-theme='dark'] .flash-workspace-status .flash-status-learning { --status-color: #ffbd5a; --status-soft: #382c20; }
+  :root[data-theme='dark'] .flash-workspace-status .flash-status-mastered { --status-color: #71dcb1; --status-soft: #163d34; }
+  .flash-workspace-status button[aria-pressed='true'] { background: var(--status-soft); border-color: var(--status-color); color: var(--status-color); }
+  .flash-workspace-quick { display: grid; gap: 8px; }
+  .flash-workspace-quick h3 { font-size: 13px; }
+  .flash-workspace-quick button { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 8px; border: 1px solid var(--flash-line); border-radius: 8px; background: var(--panel-bg); color: var(--flash-accent); font-size: 13px; }
+  .flash-mobile-apply { flex: none; width: calc(100% - 32px); margin: 12px 16px 16px; min-height: 44px; border: 0; border-radius: 10px; background: #1765ed; color: white; font-weight: 600 !important; }
+  @keyframes flash-sheet-in { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+}
+@media (max-width: 767px) and (prefers-reduced-motion: reduce) { .flash-mobile-sheet[open] { display: flex; flex-direction: column; overflow: hidden; padding: 0 0 env(safe-area-inset-bottom); animation: none; } }

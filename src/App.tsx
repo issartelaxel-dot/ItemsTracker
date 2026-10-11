@@ -5597,8 +5597,8 @@ function getPasswordStrengthMeta(password: string) {
     normalizeText(`${item.itemNumber} ${item.shortDescription}`).includes(flashCatalogItemQuery)))
   const flashCatalogItems = flashItemCards.filter(row => !flashCatalogItemQuery ||
     normalizeText(`${row.itemNumber} ${row.description}`).includes(flashCatalogItemQuery))
-  const flashVisibleCollegeCards = isMobile ? flashCollegeCards : organizeFlashcardCatalog(flashCatalogColleges, flashCatalogStatus, flashCatalogOrganization)
-  const flashVisibleItemCards = isMobile ? flashItemCards : organizeFlashcardCatalog(flashCatalogItems, flashCatalogStatus, 'items')
+  const flashVisibleCollegeCards = organizeFlashcardCatalog(flashCatalogColleges, flashCatalogStatus, flashCatalogOrganization)
+  const flashVisibleItemCards = organizeFlashcardCatalog(flashCatalogItems, flashCatalogStatus, 'items')
   const flashCatalogCounts = countFlashcardCatalogStatuses(flashDisplayMode === 'items' ? flashCatalogItems : flashCatalogColleges)
   const flashCatalogSummary = useMemo(() => {
     const itemMastery = new Map<number, boolean>()
@@ -10200,8 +10200,8 @@ function getPasswordStrengthMeta(password: string) {
       ) : null}
 
       {activeView === 'flashcards' ? (
-        <section id="flashcards-section" className={`flashcards-page ${isMobile ? '' : `flashcards-workspace flash-layout-${flashCatalogLayout}`}`}>
-          {!isMobile ? <FlashcardsWorkspace
+        <section id="flashcards-section" className={`flashcards-page flashcards-workspace flash-layout-${flashCatalogLayout}`}>
+          {<FlashcardsWorkspace
             themes={collegesViewRows.length} {...flashCatalogSummary}
             search={flashCollegeSearch} itemSearch={flashCatalogItemSearch} level={flashCollegeLevelFilter} sort={flashCollegeSort}
             levels={(['none', 'hard', 'medium', 'good', 'easy'] as const).map(value => ({ value, label: FLASH_FEELING_LABELS[value] }))}
@@ -10217,74 +10217,7 @@ function getPasswordStrengthMeta(password: string) {
             onReset={() => { setFlashCollegeSearch(''); setFlashCatalogItemSearch(''); setFlashCollegeLevelFilter('ALL'); setFlashCollegeSort('progress'); setFlashCollegeFilter('ALL'); setFlashCatalogStatus('all') }}
             onReview={() => { if (defaultFlashSessionItemNumber !== null) openQuizSessionSetup({ type: 'global' }) }}
             onCreate={() => openFlashcardCreator()}
-          /> : <div className="flashcards-toolbar">
-            <label className="flashcards-search">
-              <span className="flashcards-search-icon" aria-hidden="true">
-                <Search className="ui-icon" aria-hidden="true" />
-              </span>
-              <input
-                type="search"
-                placeholder="Rechercher un item..."
-                value={flashCollegeSearch}
-                onChange={(event) => setFlashCollegeSearch(event.target.value)}
-              />
-            </label>
-            <select
-              className="flashcards-toolbar-select"
-              value={flashCollegeLevelFilter}
-              onChange={(event) => setFlashCollegeLevelFilter(event.target.value as FlashCollegeLevelFilter)}
-            >
-              <option value="ALL">Tous les niveaux</option>
-              <option value="none">{FLASH_FEELING_LABELS.none}</option>
-              <option value="hard">{FLASH_FEELING_LABELS.hard}</option>
-              <option value="medium">{FLASH_FEELING_LABELS.medium}</option>
-              <option value="good">{FLASH_FEELING_LABELS.good}</option>
-              <option value="easy">{FLASH_FEELING_LABELS.easy}</option>
-            </select>
-            <select
-              className="flashcards-toolbar-select"
-              value={flashCollegeSort}
-              onChange={(event) => setFlashCollegeSort(event.target.value as FlashCollegeSort)}
-            >
-              <option value="progress">Trier par : Progression</option>
-              <option value="name">Trier par : Nom</option>
-              <option value="items">Trier par : Items</option>
-            </select>
-            <button
-              type="button"
-              className="flashcards-view-switch"
-              onClick={() => setFlashDisplayMode((current) => (current === 'colleges' ? 'items' : 'colleges'))}
-            >
-              {flashDisplayMode === 'colleges' ? (
-                <List className="inline-btn-icon" aria-hidden="true" />
-              ) : (
-                <Learning className="inline-btn-icon" aria-hidden="true" />
-              )}
-              {flashDisplayMode === 'colleges' ? 'Afficher par items' : 'Afficher par collèges'}
-            </button>
-            <button
-              type="button"
-              className="flashcards-session-btn"
-              onClick={() => {
-                if (defaultFlashSessionItemNumber !== null) {
-                  openQuizSessionSetup({ type: 'global' })
-                }
-              }}
-              disabled={defaultFlashSessionItemNumber === null}
-              title={
-	                defaultFlashSessionItemNumber === null
-	                  ? 'Ajoute une flashcard pour lancer une révision'
-	                  : 'Lancer une révision globale'
-              }
-            >
-              <Play className="inline-btn-icon" aria-hidden="true" />
-	              Lancer une révision
-            </button>
-            <button type="button" className="flashcards-create-btn" onClick={() => openFlashcardCreator()}>
-              <Plus className="inline-btn-icon" aria-hidden="true" />
-              Créer une flashcard
-            </button>
-          </div>}
+          />}
           {flashCreateModalOpen ? (
             <div className="flash-generator-modal-overlay" role="presentation" onClick={closeFlashcardCreator}>
               <div
@@ -10741,7 +10674,7 @@ function getPasswordStrengthMeta(password: string) {
                     <CollegeHealthIcon college={row.college} className="flashcards-card-icon" showTitle={false} />
                     <div className="flashcards-card-title">
                       <h3>{row.displayName}</h3>
-                      <p>{row.itemCount} item{row.itemCount === 1 ? '' : 's'}</p>
+                      <p>{row.itemCount} item{row.itemCount === 1 ? '' : 's'}{isMobile ? ` · ${row.flashcardCount} carte${row.flashcardCount === 1 ? '' : 's'}` : ''}</p>
                     </div>
                     <button
                       type="button"
