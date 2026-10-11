@@ -84,10 +84,10 @@ export function FlashcardsWorkspace(p: Props) {
         {([{value:'status',label:'Statut',Icon:Circle},{value:'colleges',label:'Collège',Icon:Bank},{value:'items',label:'Item',Icon:Page}] as const).map(({value,label,Icon}) =>
           <button type="button" key={value} aria-pressed={p.organization === value} onClick={() => p.onOrganization(value)}><Icon aria-hidden="true" />{label}</button>)}
       </div></div>
-      <div className="flash-workspace-layout" role="group" aria-label="Présentation des flashcards">
+      {p.organization !== 'status' ? <div className="flash-workspace-layout" role="group" aria-label="Présentation des flashcards">
         <button type="button" aria-pressed={p.layout === 'list'} onClick={() => p.onLayout('list')}><List aria-hidden="true" />Ligne</button>
         <button type="button" aria-pressed={p.layout === 'gallery'} onClick={() => p.onLayout('gallery')}><ViewGrid aria-hidden="true" />Galerie</button>
-      </div>
+      </div> : null}
       {!mobile ? <div className="flash-workspace-search-row">
         <label className="flash-workspace-search"><Search aria-hidden="true" /><input type="search" aria-label="Rechercher une thématique ou un item" placeholder={p.organization === 'items' ? 'Rechercher un item...' : 'Rechercher une thématique...'} value={p.search} onChange={e => p.onSearch(e.target.value)} /></label>
         {levelSelect('Filtrer les flashcards par niveau')}{sortSelect('Trier les flashcards', true)}

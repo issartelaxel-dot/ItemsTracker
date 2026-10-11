@@ -1,6 +1,7 @@
 import { MobileSheet } from './components/MobileSheet'
 import { MobileNavigation } from './components/MobileNavigation'
 import { MobileDashboard } from './components/MobileDashboard'
+import { FlashcardStatusGroups } from './components/FlashcardStatusGroups'
 import { FlashcardsWorkspace } from './components/FlashcardsWorkspace'
 import { countFlashcardCatalogStatuses, organizeFlashcardCatalog, type FlashcardCatalogStatus, type FlashcardOrganization } from './lib/flashcard-catalog'
 import { useMediaQuery } from './lib/use-responsive'
@@ -167,6 +168,7 @@ type QuizSessionMode = 'flashcards' | 'quiz'
 type QuizSessionObjective = 'learning' | 'evaluation'
 type QuizSessionScope =
   | { type: 'global' }
+  | { type: 'cards'; keys: string[]; label: string }
   | { type: 'college'; college: string }
   | { type: 'item'; itemNumber: number }
 type QuizSessionSummarySnapshot = {
@@ -4517,6 +4519,7 @@ function getPasswordStrengthMeta(password: string) {
 
   const quizSessionBaseEntries = useMemo(() => {
     const entries = quizSessionAllEntries.filter((entry) => {
+      if (quizSessionScope.type === 'cards') return quizSessionScope.keys.includes(entry.sessionKey)
       if (quizSessionScope.type === 'item') {
         return entry.itemNumber === quizSessionScope.itemNumber
       }
@@ -4550,6 +4553,7 @@ function getPasswordStrengthMeta(password: string) {
 
   const quizSessionScopeEntries = useMemo(() => {
     return quizSessionAllEntries.filter((entry) => {
+      if (quizSessionScope.type === 'cards') return quizSessionScope.keys.includes(entry.sessionKey)
       if (quizSessionScope.type === 'item') {
         return entry.itemNumber === quizSessionScope.itemNumber
       }
@@ -4702,6 +4706,7 @@ function getPasswordStrengthMeta(password: string) {
   }, [quizSessionMetrics.cards, quizSessionMode])
 
   const quizSessionScopeLabel = useMemo(() => {
+    if (quizSessionScope.type === 'cards') return `Révision ${quizSessionScope.label}`
     if (quizSessionScope.type === 'item') {
       return `Révision item #${quizSessionScope.itemNumber}`
     }
@@ -5599,6 +5604,27 @@ function getPasswordStrengthMeta(password: string) {
     normalizeText(`${row.itemNumber} ${row.description}`).includes(flashCatalogItemQuery))
   const flashVisibleCollegeCards = organizeFlashcardCatalog(flashCatalogColleges, flashCatalogStatus, flashCatalogOrganization)
   const flashVisibleItemCards = organizeFlashcardCatalog(flashCatalogItems, flashCatalogStatus, 'items')
+  const flashShowingStatusGroups = flashDisplayMode === 'colleges' && flashCatalogOrganization === 'status'
+  const flashStatusCards = allFlashcards.filter(card => {
+    const item = items.find(item => item.itemNumber === card.itemNumber)
+    if (flashCollegeFilter !== 'ALL' && !card.colleges.includes(flashCollegeFilter)) return false
+    if (flashCollegeLevelFilter !== 'ALL' && (card.lastResult ?? 'none') !== flashCollegeLevelFilter) return false
+    const query = normalizeText(flashCollegeSearch)
+    if (query && !normalizeText(`${getQuizRichTextPlainText(card.question)} ${item?.shortDescription ?? ''} ${card.itemNumber} ${card.colleges.map(getFlashCollegeDisplayName).join(' ')}`).includes(query)) return false
+    if (flashCatalogItemQuery && !normalizeText(`${card.itemNumber} ${item?.shortDescription ?? ''}`).includes(flashCatalogItemQuery)) return false
+    return true
+  }).sort((a,b) => flashCollegeSort === 'name'
+    ? getQuizRichTextPlainText(a.question).localeCompare(getQuizRichTextPlainText(b.question), 'fr')
+    : a.itemNumber - b.itemNumber)
+  const flashStatusCounts = { all: flashStatusCards.length, unmastered: 0, learning: 0, mastered: 0 }
+  for (const card of flashStatusCards) {
+    flashStatusCounts[card.lastResult === 'good' || card.lastResult === 'easy' ? 'mastered' : card.lastResult ? 'learning' : 'unmastered']++
+  }
+  const flashStatusGroups = (['none', 'hard', 'medium', 'good', 'easy'] as const).map(value => ({
+    value, label: FLASH_FEELING_LABELS[value],
+    cards: flashStatusCards.filter(card => (card.lastResult ?? 'none') === value && (flashCatalogStatus === 'all' ||
+      flashCatalogStatus === (value === 'good' || value === 'easy' ? 'mastered' : value === 'none' ? 'unmastered' : 'learning'))),
+  }))
   const flashCatalogCounts = countFlashcardCatalogStatuses(flashDisplayMode === 'items' ? flashCatalogItems : flashCatalogColleges)
   const flashCatalogSummary = useMemo(() => {
     const itemMastery = new Map<number, boolean>()
@@ -5781,6 +5807,7 @@ function getPasswordStrengthMeta(password: string) {
 
   function openQuizSessionSetup(scope: QuizSessionScope) {
     const entries = quizSessionAllEntries.filter((entry) => {
+      if (scope.type === 'cards') return scope.keys.includes(entry.sessionKey)
       if (scope.type === 'item') {
         return entry.itemNumber === scope.itemNumber
       }
@@ -5807,7 +5834,7 @@ function getPasswordStrengthMeta(password: string) {
     setQuizSessionStep('setup')
     setQuizSessionPreset('today')
     setQuizSessionMode('flashcards')
-    setQuizSessionCardLimit(20)
+    setQuizSessionCardLimit(scope.type === 'cards' ? 0 : 20)
     setQuizSessionObjective('learning')
     setQuizSessionResults({})
     setQuizSessionErrorReviewIds([])
@@ -10206,7 +10233,7 @@ function getPasswordStrengthMeta(password: string) {
             search={flashCollegeSearch} itemSearch={flashCatalogItemSearch} level={flashCollegeLevelFilter} sort={flashCollegeSort}
             levels={(['none', 'hard', 'medium', 'good', 'easy'] as const).map(value => ({ value, label: FLASH_FEELING_LABELS[value] }))}
             organization={flashDisplayMode === 'items' ? 'items' : flashCatalogOrganization === 'items' ? 'colleges' : flashCatalogOrganization}
-            layout={flashCatalogLayout} status={flashCatalogStatus} counts={flashCatalogCounts}
+            layout={flashCatalogLayout} status={flashCatalogStatus} counts={flashShowingStatusGroups ? flashStatusCounts : flashCatalogCounts}
             collegeFilterLabel={flashCollegeFilter === 'ALL' ? null : getFlashCollegeDisplayName(flashCollegeFilter)}
             canReview={defaultFlashSessionItemNumber !== null}
             onSearch={setFlashCollegeSearch} onItemSearch={setFlashCatalogItemSearch}
@@ -10662,7 +10689,12 @@ function getPasswordStrengthMeta(password: string) {
               </div>
             </div>
           ) : null}
-          {flashDisplayMode === 'colleges' && flashVisibleCollegeCards.length > 0 ? (
+          {flashShowingStatusGroups ? <FlashcardStatusGroups
+            key={`${flashCollegeSearch}|${flashCatalogItemSearch}|${flashCollegeLevelFilter}|${flashCatalogStatus}|${flashCollegeFilter}`}
+            groups={flashStatusGroups.map(group => ({ ...group, cards: group.cards.map(card => ({ key: `${card.itemNumber}:${card.cardId}`, itemNumber: card.itemNumber, question: getQuizRichTextPlainText(card.question), colleges: card.colleges.map(getFlashCollegeDisplayName).join(' · ') })) }))}
+            onReview={(keys, label) => openQuizSessionSetup({ type: 'cards', keys, label })}
+          /> : null}
+          {!flashShowingStatusGroups && flashDisplayMode === 'colleges' && flashVisibleCollegeCards.length > 0 ? (
             <div className="flashcards-college-grid">
               {flashVisibleCollegeCards.map((row) => (
                 <article
@@ -10773,8 +10805,8 @@ function getPasswordStrengthMeta(password: string) {
               ))}
             </div>
           ) : null}
-          {(flashDisplayMode === 'colleges' && flashVisibleCollegeCards.length === 0) ||
-          (flashDisplayMode === 'items' && flashVisibleItemCards.length === 0) ? (
+          {!flashShowingStatusGroups && ((flashDisplayMode === 'colleges' && flashVisibleCollegeCards.length === 0) ||
+          (flashDisplayMode === 'items' && flashVisibleItemCards.length === 0)) ? (
             <div className="flashcards-empty-state">
               <p>Aucun {flashDisplayMode === 'colleges' ? 'collège' : 'item'} ne correspond aux filtres sélectionnés.</p>
             </div>
