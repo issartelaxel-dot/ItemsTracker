@@ -8066,7 +8066,7 @@ function getPasswordStrengthMeta(password: string) {
       </aside>
 
       <div
-        className={`dashboard-shell ${activeView === 'flashcards' ? 'flashcards-view-shell' : ''} ${activeView === 'items' ? 'items-view-shell' : ''} ${
+        className={`dashboard-shell ${activeView === 'flashcards' ? 'flashcards-view-shell' : ''} ${activeView === 'items' ? 'items-view-shell' : ''} ${isMobile && activeView === 'items' && !effectiveSelectedItem ? 'items-compact-list' : ''} ${
           activeView === 'dashboard' ? 'dashboard-view-shell' : ''
         }`}
       >
@@ -8241,7 +8241,8 @@ function getPasswordStrengthMeta(password: string) {
         <article className={`panel table-panel ${effectiveSelectedItem ? '' : 'full-width'}`}>
           <div className="panel-head">
             <h2>Items</h2>
-            <p>{itemTableList.length} lignes</p>
+            <p>{itemTableList.length} {isMobile ? 'items' : 'lignes'}</p>
+            {isMobile ? <button type="button" className="mobile-items-notification" aria-label="Notifications non configurées" title="Notifications non configurées"><Bell aria-hidden="true" /></button> : null}
           </div>
 
           <div className="filters-row">
@@ -8326,6 +8327,7 @@ function getPasswordStrengthMeta(password: string) {
                   className={`items-list-row ${item.itemNumber === effectiveSelectedItem?.itemNumber ? 'selected' : ''}`}
                   onClick={() => setSelectedItem(item.itemNumber)}
                 >
+                  <span className="items-list-id">
                   <span
                     className={`items-list-marker ${hasVisualMarker ? '' : 'empty'}`}
                     style={{ backgroundColor: item.tracking.itemColor || undefined }}
@@ -8334,6 +8336,7 @@ function getPasswordStrengthMeta(password: string) {
                     {item.tracking.itemIcon || ''}
                   </span>
                   <span className="items-list-number">#{item.itemNumber}</span>
+                  </span>
                   <span className="items-list-main">
                     <strong>{item.shortDescription}</strong>
                     <small>{item.tagLabels.join(' • ') || item.tagCodes.join(' • ') || 'Aucun collège'}</small>
@@ -8343,15 +8346,15 @@ function getPasswordStrengthMeta(password: string) {
                       </span>
                     ) : null}
                     <span className="items-list-metrics" aria-label="Métriques item">
-                      <span title="Collèges assignés">
+                      <span title="Collèges assignés" hidden={isMobile && item.tracking.assignedColleges.length === 0}>
                         <Learning className="items-list-metric-icon" aria-hidden="true" />
                         {item.tracking.assignedColleges.length}
                       </span>
-                      <span title="Flashcards">
+                      <span title="Flashcards" hidden={isMobile && item.tracking.quiz.cards.length === 0}>
                         <CreditCards className="items-list-metric-icon" aria-hidden="true" />
                         {item.tracking.quiz.cards.length}
                       </span>
-                      <span title="Révisions">
+                      <span title="Révisions" hidden={isMobile && item.totalReviews === 0}>
                         <OpenBook className="items-list-metric-icon" aria-hidden="true" />
                         {item.totalReviews}
                       </span>
@@ -8371,8 +8374,8 @@ function getPasswordStrengthMeta(password: string) {
                         ? UNRATED_FEELING_LABEL
                         : getMasteryFeelingLabel(item.tracking.itemMastery)}
                     </span>
+                    {isMobile ? <span className="mobile-item-progress" aria-hidden="true"><span style={{ width: `${progressPercent}%` }} /></span> : null}
                   </span>
-                  <span className="mobile-item-progress" aria-hidden="true"><span style={{ width: `${progressPercent}%` }} /></span>
                   <span className="mobile-item-action">Ouvrir l’item</span>
                   <span className="items-list-chevron" aria-hidden="true">
                     <NavArrowRight className="ui-icon" aria-hidden="true" />
