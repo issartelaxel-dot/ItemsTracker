@@ -1,11 +1,9 @@
-# ItemsTracker v0.1.0 — 8 octobre 2026
+# ItemsTracker v0.1.1 — 12 octobre 2026
 
-Dossier de travail : **ItemsTracker v0.1.0 - 2026-10-08**.
+Dossier de travail : **ItemsTracker v0.1.1 - 2026-10-12**.
 
-Source : copie du dossier « ItemsTracker sauvegarde 20 avril », commit `d52149a`. Le code du dossier d’avril est préservé.
+Source : copie intégrale de `ItemsTracker v0.1.0 - 2026-10-08`. Ce dossier est conservé séparément pour permettre le retour à la version précédente.
 
-Changements : stockage PostgreSQL par item/carte ; écritures transactionnelles avec version et identifiant stable ; reprise locale via IndexedDB ; médias immuables dédupliqués ; rétention des historiques ; archives chiffrées avec test de restauration ; commande d’activation du PITR Neon.
+Changements principaux : interface administrateur harmonisée avec l’application, navigation adaptée au téléphone, thème clair par défaut avec mode sombre et écran de connexion dédié. L’aperçu local de l’administration lit les statistiques réelles du serveur de production après connexion au compte administrateur ; il n’injecte pas de chiffres fictifs et reste en lecture seule. Les routes d’administration du serveur continuent à vérifier l’identité et les droits du compte sur chaque requête.
 
-État : version préparée pour publication sur GitHub ; déploiement chez Neon, Render ou Hetzner non confirmé. Les secrets et les paramètres de ces comptes ne sont pas disponibles dans ce dossier.
-
-Installation : `npm ci`. Instructions : [MISE_EN_SERVICE.md](MISE_EN_SERVICE.md).
+Pour l’aperçu local et le déploiement, suivre [ADMIN_ANALYTICS.md](ADMIN_ANALYTICS.md). La publication du frontend et celle du backend restent distinctes.

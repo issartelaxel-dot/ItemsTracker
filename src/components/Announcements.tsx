@@ -8,12 +8,12 @@ const blank = {title:'',summary:'',details:'',version:''}
 async function adminRequest(url:string,init?:RequestInit) {
  const base=(import.meta.env.VITE_API_BASE_URL??'').trim().replace(/\/+$/,'')
  const token=localStorage.getItem('med_auth_token')
- const response=await fetch(base+url,{...init,signal:AbortSignal.timeout(20000),credentials:'include',headers:{'Content-Type':'application/json','X-Client-Version':'0.1.0',...(token?{Authorization:'Bearer '+token} : {}),...init?.headers}})
+ const response=await fetch(base+url,{...init,signal:AbortSignal.timeout(20000),credentials:'include',headers:{'Content-Type':'application/json','X-Client-Version':import.meta.env.VITE_APP_VERSION??'0.1.1',...(token?{Authorization:'Bearer '+token} : {}),...init?.headers}})
  const payload=await response.json()
  if(!response.ok)throw new Error(payload.error||'Impossible de joindre le service.')
  return payload
 }
-export function AdminAnnouncements({embedded=false}:{embedded?:boolean}){
+export function AdminAnnouncements({embedded=false,readOnly=false}:{embedded?:boolean;readOnly?:boolean}){
  const [rows,setRows]=useState<Announcement[]>([]),[form,setForm]=useState(blank),[id,setId]=useState<number|null>(null),[preview,setPreview]=useState(false),[ready,setReady]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('')
  const load=useCallback(async()=>{const data=await adminRequest('/api/admin/announcements');setRows(data.announcements);setReady(true)},[])
  useEffect(()=>{const timer=setTimeout(()=>void load().catch(e=>setError(e.message)),0);return()=>clearTimeout(timer)},[load])
@@ -21,14 +21,14 @@ export function AdminAnnouncements({embedded=false}:{embedded?:boolean}){
  const action=async(row:Announcement,action:'publish'|'withdraw')=>{setBusy(true);setError('');try{await adminRequest('/api/admin/announcements/'+row.id+'/'+action,{method:'POST'});await load();if(row.id===id){setId(null);setForm(blank);setPreview(false)}setMessage(action==='publish'?'Annonce publiée dans la cloche.':'Annonce retirée.')}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
  return <section className={`ann-admin${embedded?' ann-admin-embedded':''}`}>{!embedded&&<header><h1>ItemsTracker · Annonces</h1><p>Préparer et publier les nouveautés de l’application.</p></header>}
  {error?<p role="alert" className="ann-error">{error}</p>:null}{message?<p role="status">{message}</p>:null}
- {!ready?<p>Connecte-toi avec le compte administrateur dans <a href="./app.html">l’application</a>, puis recharge cette page.</p>:<div className="ann-admin-grid"><section className="ann-card"><h2>{id?'Modifier le brouillon':'Nouvelle annonce'}</h2><form onSubmit={e=>{e.preventDefault();void save()}}>
+ {!ready?<p>Connecte-toi avec le compte administrateur dans <a href="./app.html">l’application</a>, puis recharge cette page.</p>:<div className="ann-admin-grid">{!readOnly&&<section className="ann-card"><h2>{id?'Modifier le brouillon':'Nouvelle annonce'}</h2><form onSubmit={e=>{e.preventDefault();void save()}}>
  <label>Titre<input required maxLength={140} value={form.title} onChange={e=>setForm({...form,title:e.target.value})} /></label>
  <label>Version (facultative)<input maxLength={40} value={form.version} onChange={e=>setForm({...form,version:e.target.value})} /></label>
  <label>Résumé dans la cloche<textarea required maxLength={400} rows={3} value={form.summary} onChange={e=>setForm({...form,summary:e.target.value})} /></label>
  <label>Patchnotes détaillées<textarea required maxLength={20000} rows={10} value={form.details} onChange={e=>setForm({...form,details:e.target.value})} /><small>Texte simple ; les retours à la ligne sont conservés.</small></label>
  <div className="ann-actions"><button disabled={busy} type="submit">Enregistrer le brouillon</button><button type="button" onClick={()=>setPreview(v=>!v)}>Aperçu</button><button type="button" onClick={()=>{setId(null);setForm(blank);setPreview(false)}}>Nouveau</button></div></form>
- {preview?<article className="ann-preview"><small>{form.version}</small><h3>{form.title||'Titre'}</h3><p>{form.summary}</p><div className="ann-details">{form.details}</div></article>:null}</section>
- <section className="ann-card"><h2>Historique et brouillons</h2>{rows.length===0?<p>Aucune annonce.</p>:rows.map(row=><article className="ann-record" key={row.id}><small>{row.status==='draft'?'Brouillon':row.status==='published'?'Publiée':'Retirée'} {row.version}</small><h3>{row.title}</h3><p>{row.summary}</p><div className="ann-actions">{row.status==='draft'?<><button disabled={busy} onClick={()=>{setId(row.id);setForm({title:row.title,summary:row.summary,details:row.details,version:row.version});setPreview(true);setMessage('')}}>Modifier / aperçu</button><button disabled={busy} onClick={()=>{if(window.confirm('Publier cette annonce dans la cloche de tous les utilisateurs ?'))void action(row,'publish')}}>Publier</button></>:null}{row.status==='published'?<button disabled={busy} onClick={()=>{if(window.confirm('Retirer cette annonce de la cloche des utilisateurs ?'))void action(row,'withdraw')}}>Retirer</button>:null}</div></article>)}</section></div>}
+ {preview?<article className="ann-preview"><small>{form.version}</small><h3>{form.title||'Titre'}</h3><p>{form.summary}</p><div className="ann-details">{form.details}</div></article>:null}</section>}
+ <section className="ann-card"><h2>Historique et brouillons</h2>{rows.length===0?<p>Aucune annonce.</p>:rows.map(row=><article className="ann-record" key={row.id}><small>{row.status==='draft'?'Brouillon':row.status==='published'?'Publiée':'Retirée'} {row.version}</small><h3>{row.title}</h3><p>{row.summary}</p>{!readOnly&&<div className="ann-actions">{row.status==='draft'?<><button disabled={busy} onClick={()=>{setId(row.id);setForm({title:row.title,summary:row.summary,details:row.details,version:row.version});setPreview(true);setMessage('')}}>Modifier / aperçu</button><button disabled={busy} onClick={()=>{if(window.confirm('Publier cette annonce dans la cloche de tous les utilisateurs ?'))void action(row,'publish')}}>Publier</button></>:null}{row.status==='published'?<button disabled={busy} onClick={()=>{if(window.confirm('Retirer cette annonce de la cloche des utilisateurs ?'))void action(row,'withdraw')}}>Retirer</button>:null}</div>}</article>)}</section></div>}
  </section>
 }
 export function AnnouncementBell({request,mobile=false,onCalendar}:{request:Request;mobile?:boolean;onCalendar?:(id:string)=>void}){

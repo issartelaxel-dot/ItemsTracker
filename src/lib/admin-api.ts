@@ -19,7 +19,7 @@ export async function adminApi<T>(
     credentials: "include",
     headers: {
       "Content-Type": "application/json",
-      "X-Client-Version": "0.1.0",
+      "X-Client-Version": import.meta.env.VITE_APP_VERSION ?? "0.1.1",
       ...(token ? { Authorization: "Bearer " + token } : {}),
       ...init.headers,
     },

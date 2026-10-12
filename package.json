@@ -1,7 +1,7 @@
 {
   "name": "items-trackers-tom",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.1.1",
   "type": "module",
   "engines": {
     "node": ">=22.12.0 <23"
@@ -19,6 +19,8 @@
     "dev:restore-index": "node scripts/restore-dev-index.mjs",
     "lint": "eslint .",
     "preview": "vite preview",
+    "build:admin-live": "npm run dev:restore-index && tsc -b && VITE_API_BASE_URL='' VITE_ADMIN_READ_ONLY_PREVIEW=true vite build --outDir .admin-live-dist",
+    "preview:admin-live": "npm run build:admin-live && node scripts/admin-live-preview.mjs",
     "import:items": "node scripts/import-items.mjs",
     "test:backup": "node --import tsx --test tests/*.test.mjs tests/*.test.ts",
     "test:auth": "node --test tests/email.test.mjs tests/registration.integration.test.mjs",

@@ -9,6 +9,7 @@ lerna-debug.log*
 
 node_modules
 dist
+.admin-live-dist
 deploy
 dist-ssr
 Archive.zip

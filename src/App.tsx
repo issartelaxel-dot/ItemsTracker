@@ -414,7 +414,7 @@ type LocalShadowNotice = {
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '')
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
-const CLIENT_APP_VERSION = (import.meta.env.VITE_APP_VERSION ?? '0.1.0').trim()
+const CLIENT_APP_VERSION = (import.meta.env.VITE_APP_VERSION ?? '0.1.1').trim()
 const AUTH_TOKEN_STORAGE_KEY = 'med_auth_token'
 const LOCAL_CLOUD_SHADOW_PREFIX = 'med_cloud_shadow_v1'
 const IDLE_LOGOUT_PENDING_STORAGE_KEY = 'med_idle_logout_pending_v1'

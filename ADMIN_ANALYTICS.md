@@ -2,6 +2,12 @@
 
 Accès direct : https://itemstracker.setup-hub.com/itemstracker/admin-app.html
 
+## Aperçu local avec les vraies données (v0.1.1)
+
+Dans le dossier `ItemsTracker v0.1.1 - 2026-10-12`, lancer `npm run preview:admin-live`, puis ouvrir `http://localhost:4174/itemstracker/admin-app.html`. Le formulaire de connexion demande le compte administrateur autorisé. Aucune statistique de démonstration n’est injectée : les chiffres proviennent de l’API de production, et une erreur de connexion ou d’autorisation reste visible.
+
+Cet aperçu n’écoute que sur `127.0.0.1` et est **en lecture seule** pour les données d’administration : les annonces peuvent être consultées, mais leur modification et leur publication doivent être effectuées sur l’URL publique. Le relais local ne transmet à l’API que les routes de connexion, les statistiques et la lecture des annonces ; il ne transmet ni les visites de la page de vente ni les signaux d’activité de l’aperçu. Aucun mot de passe ou jeton n’est placé dans les fichiers du dossier.
+
 Le serveur vérifie le compte autorisé sur chaque requête admin. Par défaut : `hello@setup-hub.com`, configurable avec `ANNOUNCEMENT_ADMIN_EMAILS`. Aucun lien admin n'est ajouté à l'application ou à la page de vente. Le nouvel onglet Annonces réutilise les brouillons, l'aperçu, la publication, le retrait et l'historique existants.
 
 ## Déploiement
