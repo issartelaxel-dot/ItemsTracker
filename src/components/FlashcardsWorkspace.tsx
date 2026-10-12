@@ -50,7 +50,8 @@ export function FlashcardsWorkspace(p: Props) {
         aria-expanded={filtersOpen} aria-controls="flash-workspace-filter-body" onClick={() => setFiltersOpen(value => !value)}>
         <NavArrowDown aria-hidden="true" style={{ transform: filtersOpen ? 'rotate(180deg)' : undefined }} /></button></div>
       <div id="flash-workspace-filter-body" className="flash-workspace-filter-body" hidden={!mobile && !filtersOpen}>
-        <label className="flash-workspace-search"><Search aria-hidden="true" /><input type="search" aria-label="Rechercher un item dans les flashcards" placeholder="Rechercher un item..." value={p.itemSearch} onChange={e => p.onItemSearch(e.target.value)} /></label>
+        {!mobile && filtersOpen ? <label className="flash-workspace-search"><Search aria-hidden="true" /><input type="search" aria-label="Rechercher une thématique ou un item" placeholder={p.organization === 'items' ? 'Rechercher un item...' : 'Rechercher une thématique...'} value={p.search} onChange={e => p.onSearch(e.target.value)} /></label> : null}
+        {mobile ? <label className="flash-workspace-search"><Search aria-hidden="true" /><input type="search" aria-label="Rechercher un item dans les flashcards" placeholder="Rechercher un item..." value={p.itemSearch} onChange={e => p.onItemSearch(e.target.value)} /></label> : <details className="flash-workspace-associated-search" open={p.itemSearch ? true : undefined}><summary>Limiter aux items associés</summary><label className="flash-workspace-search"><Search aria-hidden="true" /><input type="search" aria-label="Rechercher un item dans les flashcards" placeholder="Numéro ou titre de l’item..." value={p.itemSearch} onChange={e => p.onItemSearch(e.target.value)} /></label></details>}
         <label className="flash-workspace-field"><span><Notes aria-hidden="true" />Niveaux</span>{levelSelect('Niveau des flashcards')}</label>
         <label className="flash-workspace-field"><span><List aria-hidden="true" />Trier par</span>{sortSelect('Tri des flashcards')}</label>
         <fieldset className="flash-workspace-status"><legend><Circle aria-hidden="true" />Statut</legend>
@@ -83,14 +84,14 @@ export function FlashcardsWorkspace(p: Props) {
         {([{value:'status',label:'Statut',Icon:Circle},{value:'colleges',label:'Collège',Icon:Bank},{value:'items',label:'Item',Icon:Page}] as const).map(({value,label,Icon}) =>
           <button type="button" key={value} aria-pressed={p.organization === value} onClick={() => p.onOrganization(value)}><Icon aria-hidden="true" />{label}</button>)}
       </div></div>
-      {p.organization !== 'status' ? <div className="flash-workspace-layout" role="group" aria-label="Présentation des flashcards">
+      <div className={`flash-workspace-layout${p.organization === 'status' ? ' flash-layout-unavailable' : ''}`}  role="group" aria-label="Présentation des flashcards">
         <button type="button" aria-pressed={p.layout === 'list'} onClick={() => p.onLayout('list')}><List aria-hidden="true" />Ligne</button>
         <button type="button" aria-pressed={p.layout === 'gallery'} onClick={() => p.onLayout('gallery')}><ViewGrid aria-hidden="true" />Galerie</button>
-      </div> : null}
-      {!mobile ? <div className="flash-workspace-search-row">
+      </div>
+      {!mobile && !filtersOpen ? <div className="flash-workspace-search-row">
         <label className="flash-workspace-search"><Search aria-hidden="true" /><input type="search" aria-label="Rechercher une thématique ou un item" placeholder={p.organization === 'items' ? 'Rechercher un item...' : 'Rechercher une thématique...'} value={p.search} onChange={e => p.onSearch(e.target.value)} /></label>
         {levelSelect('Filtrer les flashcards par niveau')}{sortSelect('Trier les flashcards', true)}
-      </div> : <div className="flash-mobile-level">{levelSelect('Filtrer les flashcards par niveau')}</div>}
+      </div> : mobile ? <div className="flash-mobile-level">{levelSelect('Filtrer les flashcards par niveau')}</div> : null}
       {p.collegeFilterLabel ? <div className="flash-workspace-scope">Collège : {p.collegeFilterLabel}<button type="button" onClick={p.onReset}>Effacer les filtres</button></div> : null}
     </div>
   </>

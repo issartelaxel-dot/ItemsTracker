@@ -242,7 +242,8 @@
 @media (min-width: 768px) { @container flashcards (max-width: 820px) { .flash-status-groups { grid-column: 1; grid-row: 4; } } }
 @media (max-width: 767px) { .flash-status-group { padding: 12px; } .flash-status-group h2 { font-size: 14px; } .flash-status-review { width: 44px; padding: 8px; } .flash-status-review span { display: none; } }
 
-.flashcards-workspace:has(.flash-status-groups) .flash-workspace-organize { grid-column: 1 / -1; }
+/* Keep the layout switch space reserved across organization changes. */
+.flash-layout-unavailable { visibility: hidden; pointer-events: none; }
 @media (max-width: 767px) { .flashcards-workspace:has(.flash-status-groups) .flash-mobile-level { grid-column: 1 / -1; } }
 
 /* Keep desktop filters in the left column, including narrower PC windows. */
@@ -272,3 +273,14 @@
   .flashcards-workspace.flash-layout-gallery .flashcards-card-progress strong { font-size: 15px; }
   .flashcards-workspace.flash-layout-list .flashcards-college-grid { grid-template-columns: minmax(0,1fr); }
 }
+
+@media (min-width: 768px) {
+  .flash-workspace-organize > div { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .flash-workspace-organize button { height: 44px; white-space: nowrap; }
+  .flashcards-workspace { grid-template-rows: auto min-content minmax(0,1fr); }
+  .flash-workspace-controls { align-self: start; }
+  .flash-status-groups { align-self: start; }
+}
+
+.flash-workspace-associated-search summary { cursor: pointer; color: var(--muted); font-size: 12px; }
+.flash-workspace-associated-search[open] summary { margin-bottom: 10px; }
