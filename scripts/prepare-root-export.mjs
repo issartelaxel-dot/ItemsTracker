@@ -29,6 +29,7 @@ const cacheBustedRootIndex = rootIndexContent
   .replace(/assets\/main\.js(\?v=[^"']*)?/g, `assets/main.js?v=${cacheVersion}`)
   .replace(/assets\/main\.css(\?v=[^"']*)?/g, `assets/main.css?v=${cacheVersion}`)
 writeFileSync(appIndex, cacheBustedRootIndex, 'utf8')
+writeFileSync(resolve(root, 'admin-app.html'), cacheBustedRootIndex, 'utf8')
 
 rmSync(resolve(root, 'assets'), { recursive: true, force: true })
 cpSync(resolve(distDir, 'assets'), resolve(root, 'assets'), { recursive: true })

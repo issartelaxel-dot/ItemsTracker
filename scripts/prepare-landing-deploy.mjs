@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto'
-import { cpSync, existsSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, cpSync, existsSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { loadEnv, transformWithEsbuild } from 'vite'
 
@@ -129,3 +129,6 @@ for (const destination of media.values()) {
 // There is only one public landing entrypoint; CSS/assets remain relative here.
 rmSync(resolve(presentation, 'index.html'))
 console.log(`Sales page: ${base} — Application: ${appUrl} — 1 CSS + 1 deferred JS, local fonts and fingerprinted media`)
+
+// Direct-only administration entry; no navigation link is added.
+copyFileSync(resolve(dist, 'app.html'), resolve(dist, 'admin-app.html'))

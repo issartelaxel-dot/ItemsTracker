@@ -1,3 +1,4 @@
+import { AnnouncementBell } from './components/Announcements'
 import { MobileSheet } from './components/MobileSheet'
 import { MobileNavigation } from './components/MobileNavigation'
 import { MobileDashboard } from './components/MobileDashboard'
@@ -8178,17 +8179,7 @@ function getPasswordStrengthMeta(password: string) {
                 </div>
               ) : null}
             </div>
-            <button
-              type="button"
-              className="topbar-notification-btn"
-              aria-label="Notifications non configurées"
-              title="Notifications non configurées"
-            >
-              <span aria-hidden="true">
-                <Bell className="ui-icon" aria-hidden="true" />
-              </span>
-              <span className="topbar-notification-tooltip">Notifications non configurées</span>
-            </button>
+            <AnnouncementBell request={apiRequest} />
           </div>
         </header>
         {saveStatus !== 'idle' ? (
@@ -8242,7 +8233,7 @@ function getPasswordStrengthMeta(password: string) {
           <div className="panel-head">
             <h2>Items</h2>
             <p>{itemTableList.length} {isMobile ? 'items' : 'lignes'}</p>
-            {isMobile ? <button type="button" className="mobile-items-notification" aria-label="Notifications non configurées" title="Notifications non configurées"><Bell aria-hidden="true" /></button> : null}
+            {isMobile ? <AnnouncementBell request={apiRequest} mobile /> : null}
           </div>
 
           <div className="filters-row">
@@ -11396,13 +11387,13 @@ function getPasswordStrengthMeta(password: string) {
                 </span>
                 <div>
                   <h2>Notifications</h2>
-                  <p>Rappels de révision.</p>
+                  <p>Nouveautés et informations du service.</p>
                 </div>
 	              </div>
 	              <div className="settings-coming-soon">
 	                <Bell className="ui-icon" aria-hidden="true" />
-	                <strong>Notifications bientôt disponibles</strong>
-	                <p>Les rappels de révision seront configurables ici quand la fonction sera prête.</p>
+	                <strong>Les nouveautés sont disponibles dans la cloche</strong>
+	                <p>Consulte les annonces depuis la cloche. Les alertes automatiques de révision seront ajoutées séparément.</p>
 	              </div>
             </article>
 

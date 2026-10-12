@@ -5,7 +5,7 @@ import { prepareMailRelay } from './prepare-mail-relay.mjs'
 
 const root = process.cwd()
 const outDir = resolve(root, 'deploy-full')
-const includedTopLevel = ['index.html', 'app.html', 'presentation', 'assets', 'favicon.svg', 'icons.svg', '.htaccess']
+const includedTopLevel = ['index.html', 'app.html', 'admin-app.html', 'presentation', 'assets', 'favicon.svg', 'icons.svg', '.htaccess']
 
 if (['index.html', 'app.html', 'assets/main.js', 'presentation/styles.css'].some(entry => !existsSync(resolve(root, entry)))) {
   console.error('Missing production root export. Run "npm run export:ready" first.')
