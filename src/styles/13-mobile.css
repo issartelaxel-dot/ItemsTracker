@@ -1,5 +1,5 @@
 /* Phone-only presentation. Desktop selectors and business state stay unchanged. */
-.mobile-bottom-nav, .mobile-filter-trigger, .mobile-global-search,
+.mobile-bottom-nav, .mobile-bottom-nav-fade, .mobile-filter-trigger, .mobile-global-search,
 .mobile-item-back, .mobile-item-progress, .mobile-item-action { display: none; }
 .desktop-item-filters { display: contents; }
 
@@ -43,6 +43,14 @@
   .dashboard-layout .topbar-search { padding: 0 10px; min-height: 44px; }
   .dashboard-layout .global-search-panel { width: 100%; max-height: min(55dvh, 380px); }
   .dashboard-layout .global-search-result { min-height: 52px; }
+  .mobile-bottom-nav-fade {
+    /* Start in the lower quarter of the pill; cover the home-indicator area. */
+    position: fixed; z-index: 99; inset: auto 0 0; display: block;
+    height: calc(var(--mobile-nav-fade-rise, 15px) + 10px + env(safe-area-inset-bottom));
+    background: linear-gradient(to bottom, transparent, var(--mobile-nav-fade-color, var(--panel-bg)) min(100%, calc(var(--mobile-nav-fade-rise, 15px) + 20px)));
+    pointer-events: none;
+  }
+  :root[data-theme='dark'] .mobile-bottom-nav-fade { --mobile-nav-fade-color: var(--surface); }
   .mobile-bottom-nav {
     position: fixed; z-index: 100;
     left: max(12px, env(safe-area-inset-left)); right: max(12px, env(safe-area-inset-right));
@@ -83,10 +91,9 @@
   }
   :root[data-theme='dark'] .mobile-bottom-nav button { color: #a9bfe0; }
   :root[data-theme='dark'] .mobile-bottom-nav button.active { color: #fff; }
-  .is-mobile-keyboard-open .mobile-bottom-nav { display: none; }
+  .is-mobile-keyboard-open :is(.mobile-bottom-nav, .mobile-bottom-nav-fade) { display: none; }
   .is-mobile-keyboard-open .dashboard-layout .dashboard-shell { padding-bottom: 16px; }
-  .dashboard-layout:has(.quiz-modal-backdrop) .mobile-bottom-nav,
-  .dashboard-layout:has(.flash-generator-modal-overlay) .mobile-bottom-nav { visibility: hidden; }
+  .dashboard-layout:has(.quiz-modal-backdrop, .flash-generator-modal-overlay) :is(.mobile-bottom-nav, .mobile-bottom-nav-fade) { visibility: hidden; }
   .dashboard-layout .dashboard-home,
   .dashboard-layout .dashboard-shell.dashboard-view-shell .dashboard-home { display: flex; flex-direction: column; height: auto; gap: 16px; }
   .dashboard-layout .dashboard-hero-row { margin: 0; display: block; }
@@ -286,7 +293,7 @@
   /* Touch target minimums apply even to inherited compact icon/toolbar rules. */
   .dashboard-layout button, .mobile-sheet button { min-width: 44px !important; min-height: 44px !important; }
   .dashboard-layout label:has(input[type='checkbox']), .dashboard-layout label:has(input[type='radio']) { min-height: 44px; }
-  .dashboard-layout:has(.history-modal, .image-lightbox-modal, .flashcards-list-modal) .mobile-bottom-nav { visibility: hidden; }
+  .dashboard-layout:has(.history-modal, .image-lightbox-modal, .flashcards-list-modal) :is(.mobile-bottom-nav, .mobile-bottom-nav-fade) { visibility: hidden; }
   :root[data-theme='light'] .dashboard-layout .quiz-session-rates .quiz-rate-btn.hard { color: #ac2031; }
   :root[data-theme='light'] .dashboard-layout .quiz-session-rates .quiz-rate-btn.medium { color: #855000; }
   :root[data-theme='light'] .dashboard-layout .quiz-session-rates .quiz-rate-btn.good { color: #126638; }

@@ -27,6 +27,7 @@ export function MobileNavigation({ active, onNavigate }: {
   const activeIndex = tabs.findIndex(tab => tab.view === active)
   const selectedIndex = activeIndex
   const navRef = useRef<HTMLElement | null>(null)
+  const fadeRef = useRef<HTMLDivElement | null>(null)
   const [tabStep, setTabStep] = useState(0)
   const [dragIndex, setDragIndex] = useState<number | null>(null)
   const gesture = useRef<NavigationGesture | null>(null)
@@ -39,6 +40,7 @@ export function MobileNavigation({ active, onNavigate }: {
     const measure = () => {
       const buttons = nav.querySelectorAll('button')
       setTabStep(buttons[1].getBoundingClientRect().left - buttons[0].getBoundingClientRect().left)
+      fadeRef.current?.style.setProperty('--mobile-nav-fade-rise', `${nav.getBoundingClientRect().height / 4}px`)
     }
     measure()
     const observer = new ResizeObserver(measure)
@@ -53,7 +55,7 @@ export function MobileNavigation({ active, onNavigate }: {
     Math.max(0, Math.min(lastIndex, (event.clientX - current.firstCenter) / current.step))
   const cancelGesture = () => { gesture.current = null; setDragIndex(null) }
 
-  return <nav ref={navRef} className={`mobile-bottom-nav${dragIndex === null ? '' : ' is-dragging'}`} aria-label="Navigation mobile"
+  return <><div ref={fadeRef} className="mobile-bottom-nav-fade" aria-hidden="true" /><nav ref={navRef} className={`mobile-bottom-nav${dragIndex === null ? '' : ' is-dragging'}`} aria-label="Navigation mobile"
     style={{ '--mobile-nav-visible': selectedIndex < 0 ? '0' : '1', '--mobile-nav-count': tabs.length, '--mobile-nav-offset': `${(dragIndex ?? selectedIndex) * tabStep}px` } as CSSProperties}
     onPointerDown={event => {
       if (!event.isPrimary || event.button !== 0) return
@@ -100,5 +102,5 @@ export function MobileNavigation({ active, onNavigate }: {
     }}>
     <span className="mobile-bottom-nav-indicator" aria-hidden="true" />
     {tabs.map(({ view, label, Icon }, index) => <button type="button" key={view} className={visualIndex === index ? 'active' : ''} aria-current={selectedIndex === index ? 'page' : undefined} onClick={() => onNavigate(view)}><Icon aria-hidden="true" /><span>{label}</span></button>)}
-  </nav>
+  </nav></>
 }
