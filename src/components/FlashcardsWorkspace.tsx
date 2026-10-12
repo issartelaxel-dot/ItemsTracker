@@ -35,8 +35,7 @@ export function FlashcardsWorkspace(p: Props) {
     dialog.showModal()
     return () => { dialog.close(); document.body.style.overflow = previous; trigger?.focus() }
   }, [mobile, sheetOpen])
-  const compact = useMediaQuery('(max-width: 1150px)')
-  const [filtersOpen, setFiltersOpen] = useState(!compact)
+  const [filtersOpen, setFiltersOpen] = useState(true)
   const levelSelect = (label: string) => <select aria-label={label} value={p.level} onChange={e => p.onLevel(e.target.value)}>
     <option value="ALL">Tous les niveaux</option>
     {p.levels.map(level => <option key={level.value} value={level.value}>{level.label}</option>)}
