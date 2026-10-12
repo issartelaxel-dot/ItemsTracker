@@ -20,6 +20,9 @@ import { mountRegistration } from './registration.mjs'
 import { createEmailSender } from './email.mjs'
 import { initAnnouncements, mountAnnouncements } from './announcements.mjs'
 import { mountResourcePreview } from './resource-preview.mjs'
+import { createAnalyticsStore } from './analytics-store.mjs'
+import { createGeoLookup } from './analytics-geo.mjs'
+import { mountAnalytics } from './analytics.mjs'
 
 const { Pool } = pg
 
@@ -68,6 +71,8 @@ const pool = new Pool({
 })
 
 const calendarStore = createCalendarStore(pool)
+const analyticsStore = createAnalyticsStore(pool)
+const analyticsGeo = createGeoLookup()
 const stateStore = createStateStore(pool, { mediaStore: createMediaStore() })
 
 async function initDb() {
@@ -192,6 +197,7 @@ const browserCors = cors({
   })
 app.use((req,res,next) => req.path === '/dav' || req.path.startsWith('/dav/') || req.path === '/.well-known/caldav' ? next() : browserCors(req,res,next))
 app.use(compression({ threshold: 1024 }))
+app.use('/api/analytics/pulse', express.json({ limit: '8kb' }))
 app.use(express.json({ limit: JSON_BODY_LIMIT }))
 app.use(cookieParser())
 
@@ -683,6 +689,7 @@ app.get('/api/state', enforceClientVersion, async (req, res) => {
 mountCalendar(app, { store: calendarStore, authenticate: authFromRequest, limiter: rateLimit({windowMs: 60_000, limit: 300, standardHeaders: true, legacyHeaders: false}) })
 
 mountAnnouncements(app, { pool, authenticate: authFromRequest, adminEmails: (process.env.ANNOUNCEMENT_ADMIN_EMAILS || 'hello@setup-hub.com').split(',').map(email => email.trim().toLowerCase()).filter(Boolean), limiter: rateLimit({windowMs: 60_000, limit: 30, standardHeaders: true, legacyHeaders: false}) })
+mountAnalytics(app, { store: analyticsStore, pool, authenticate: authFromRequest, geo: analyticsGeo, allowedOrigins, adminEmails: (process.env.ANNOUNCEMENT_ADMIN_EMAILS || 'hello@setup-hub.com').split(',').map(email => email.trim().toLowerCase()).filter(Boolean), limiter: rateLimit({windowMs: 60_000, limit: 120, standardHeaders: true, legacyHeaders: false}) })
 
 mountResourcePreview(app, {
   authenticate: authFromRequest,
@@ -1008,6 +1015,11 @@ async function startServer() {
   await initAnnouncements(pool)
   await calendarStore.init()
   await ensureBootstrapUser()
+  await analyticsStore.init()
+  await analyticsStore.purge()
+  const analyticsCleanup = setInterval(() => void analyticsStore.purge().catch(() => console.error('Analytics retention cleanup failed.')), 24 * 60 * 60 * 1000)
+  analyticsCleanup.unref()
+  void analyticsGeo.start()
   app.listen(PORT, () => {
     console.log(`Auth server listening on http://localhost:${PORT}`)
   })

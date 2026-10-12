@@ -13,13 +13,13 @@ async function adminRequest(url:string,init?:RequestInit) {
  if(!response.ok)throw new Error(payload.error||'Impossible de joindre le service.')
  return payload
 }
-export function AdminAnnouncements(){
+export function AdminAnnouncements({embedded=false}:{embedded?:boolean}){
  const [rows,setRows]=useState<Announcement[]>([]),[form,setForm]=useState(blank),[id,setId]=useState<number|null>(null),[preview,setPreview]=useState(false),[ready,setReady]=useState(false),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('')
  const load=useCallback(async()=>{const data=await adminRequest('/api/admin/announcements');setRows(data.announcements);setReady(true)},[])
  useEffect(()=>{const timer=setTimeout(()=>void load().catch(e=>setError(e.message)),0);return()=>clearTimeout(timer)},[load])
  const save=async()=>{setBusy(true);setError('');try{const data=await adminRequest('/api/admin/announcements'+(id?'/'+id:''),{method:id?'PUT':'POST',body:JSON.stringify(form)});setId(data.announcement.id);await load();setMessage('Brouillon enregistré.')}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
  const action=async(row:Announcement,action:'publish'|'withdraw')=>{setBusy(true);setError('');try{await adminRequest('/api/admin/announcements/'+row.id+'/'+action,{method:'POST'});await load();if(row.id===id){setId(null);setForm(blank);setPreview(false)}setMessage(action==='publish'?'Annonce publiée dans la cloche.':'Annonce retirée.')}catch(e){setError((e as Error).message)}finally{setBusy(false)}}
- return <main className="ann-admin"><header><h1>ItemsTracker · Annonces</h1><p>Préparer et publier les nouveautés de l’application.</p></header>
+ return <section className={`ann-admin${embedded?' ann-admin-embedded':''}`}>{!embedded&&<header><h1>ItemsTracker · Annonces</h1><p>Préparer et publier les nouveautés de l’application.</p></header>}
  {error?<p role="alert" className="ann-error">{error}</p>:null}{message?<p role="status">{message}</p>:null}
  {!ready?<p>Connecte-toi avec le compte administrateur dans <a href="./app.html">l’application</a>, puis recharge cette page.</p>:<div className="ann-admin-grid"><section className="ann-card"><h2>{id?'Modifier le brouillon':'Nouvelle annonce'}</h2><form onSubmit={e=>{e.preventDefault();void save()}}>
  <label>Titre<input required maxLength={140} value={form.title} onChange={e=>setForm({...form,title:e.target.value})} /></label>
@@ -29,7 +29,7 @@ export function AdminAnnouncements(){
  <div className="ann-actions"><button disabled={busy} type="submit">Enregistrer le brouillon</button><button type="button" onClick={()=>setPreview(v=>!v)}>Aperçu</button><button type="button" onClick={()=>{setId(null);setForm(blank);setPreview(false)}}>Nouveau</button></div></form>
  {preview?<article className="ann-preview"><small>{form.version}</small><h3>{form.title||'Titre'}</h3><p>{form.summary}</p><div className="ann-details">{form.details}</div></article>:null}</section>
  <section className="ann-card"><h2>Historique et brouillons</h2>{rows.length===0?<p>Aucune annonce.</p>:rows.map(row=><article className="ann-record" key={row.id}><small>{row.status==='draft'?'Brouillon':row.status==='published'?'Publiée':'Retirée'} {row.version}</small><h3>{row.title}</h3><p>{row.summary}</p><div className="ann-actions">{row.status==='draft'?<><button disabled={busy} onClick={()=>{setId(row.id);setForm({title:row.title,summary:row.summary,details:row.details,version:row.version});setPreview(true);setMessage('')}}>Modifier / aperçu</button><button disabled={busy} onClick={()=>{if(window.confirm('Publier cette annonce dans la cloche de tous les utilisateurs ?'))void action(row,'publish')}}>Publier</button></>:null}{row.status==='published'?<button disabled={busy} onClick={()=>{if(window.confirm('Retirer cette annonce de la cloche des utilisateurs ?'))void action(row,'withdraw')}}>Retirer</button>:null}</div></article>)}</section></div>}
- </main>
+ </section>
 }
 export function AnnouncementBell({request,mobile=false,onCalendar}:{request:Request;mobile?:boolean;onCalendar?:(id:string)=>void}){
  const [rows,setRows]=useState<Announcement[]>([]),[open,setOpen]=useState(false),[selected,setSelected]=useState<Announcement|null>(null),[error,setError]=useState(''),[loaded,setLoaded]=useState(false),[panelTop,setPanelTop]=useState(80)

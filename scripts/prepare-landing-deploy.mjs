@@ -57,6 +57,12 @@ const js = (await transformWithEsbuild(`(() => {\n${scriptFiles.map(file => read
 })).code
 const stylesheet = `landing.${contentKey(css)}.css`
 const javascript = `landing.${contentKey(js)}.js`
+// The landing uses the same collector as React, with a separate visitor identity.
+const analyticsSource = readFileSync(resolve(root, 'src/lib/usage-tracker.ts'), 'utf8').replace('export function startUsageTracker', 'function startUsageTracker')
+const analyticsBase = process.env.VITE_API_BASE_URL ?? loadEnv('production', root, 'VITE_').VITE_API_BASE_URL ?? ''
+const analyticsScript = (await transformWithEsbuild(`(() => {\n${analyticsSource}\nstartUsageTracker({kind:'visitor',apiBase:${JSON.stringify(analyticsBase)},getSection:()=> 'sales'});\n})();`, 'analytics.ts', {loader:'ts', minify:true, target:'es2020'})).code
+const analyticsAsset = `analytics.${contentKey(analyticsScript)}.js`
+writeFileSync(resolve(presentation, analyticsAsset), analyticsScript)
 writeFileSync(resolve(presentation, stylesheet), css)
 writeFileSync(resolve(presentation, javascript), js)
 
@@ -117,6 +123,7 @@ html = html.replace(/\b(src|href)="([^"]+)"/g, (attribute, name, value) => {
   const hash = createHash('sha256').update(readFileSync(resolve(marketing, asset))).digest('hex').slice(0, 16)
   return `${name}="${value}?v=${hash}"`
 })
+html = html.replace('</body>', `<script src="${base}presentation/${analyticsAsset}" defer></script>\n</body>`)
 writeFileSync(resolve(dist, 'index.html'), html.replace(/^[ \t]+$/gm, '').replace(/\n{3,}/g, '\n\n'))
 // Keep original images in marketing/, but ship only the media referenced by the
 // page and all hero variants. Video/captions retain their existing dynamic URLs.

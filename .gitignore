@@ -38,3 +38,9 @@ Archive.zip
 *.itbackup.ok.json
 playwright-report/
 test-results/
+
+# Downloaded, regenerable IP geolocation data (never web assets).
+/server/data/*.mmdb
+/server/data/*.download
+
+/server/data/*.previous

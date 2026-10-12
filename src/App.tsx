@@ -1,4 +1,5 @@
 import { CalendarWorkspace } from './components/CalendarWorkspace'
+import { useUsageAnalytics } from './lib/use-usage-analytics'
 import type { CalendarEvent } from './lib/calendar'
 import { AnnouncementBell } from './components/Announcements'
 import { MobileSheet } from './components/MobileSheet'
@@ -2811,6 +2812,7 @@ function App() {
   const [quizSessionObjective, setQuizSessionObjective] = useState<QuizSessionObjective>('learning')
   const [quizSessionStartedAt, setQuizSessionStartedAt] = useState<number | null>(null)
   const [quizSessionResults, setQuizSessionResults] = useState<Record<string, QuizResult>>({})
+  useUsageAnalytics(authStatus === 'authed' ? authUser?.id : undefined, quizItemId !== null || flashGeneratorModalOpen ? 'revision' : activeView)
   const [quizSessionErrorReviewIds, setQuizSessionErrorReviewIds] = useState<string[]>([])
   const [quizSessionSummarySnapshot, setQuizSessionSummarySnapshot] = useState<QuizSessionSummarySnapshot | null>(null)
   const [quizMcqSelectedChoiceId, setQuizMcqSelectedChoiceId] = useState<string | null>(null)
@@ -6236,6 +6238,7 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   function applyQuizResultToCard(itemNumber: number, targetCardId: string | null, result: QuizResult) {
+    window.dispatchEvent(new Event('itemstracker-review'))
     const meta = QUIZ_RESULT_META[result]
     const reviewedAt = new Date().toISOString()
 
