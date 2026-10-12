@@ -11,6 +11,8 @@ import helmet from 'helmet'
 import jwt from 'jsonwebtoken'
 import pg from 'pg'
 import { z } from 'zod'
+import { createCalendarStore } from './calendar-store.mjs'
+import { mountCalendar } from './calendar.mjs'
 import { createStateStore } from './state-store.mjs'
 import { createMediaStore } from './media-store.mjs'
 import { persistSchema, StateError } from './state-model.mjs'
@@ -65,6 +67,7 @@ const pool = new Pool({
   ssl: useSsl ? { rejectUnauthorized: DB_SSL_REJECT_UNAUTHORIZED } : false,
 })
 
+const calendarStore = createCalendarStore(pool)
 const stateStore = createStateStore(pool, { mediaStore: createMediaStore() })
 
 async function initDb() {
@@ -174,8 +177,7 @@ const allowedOrigins = new Set(
 
 app.set('trust proxy', 1)
 app.use(helmet())
-app.use(
-  cors({
+const browserCors = cors({
     origin(origin, callback) {
       if (!origin || allowedOrigins.has(origin)) {
         callback(null, true)
@@ -185,10 +187,10 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Client-Version'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Client-Version', 'If-Match', 'If-None-Match'],
     exposedHeaders: ['x-app-version', 'x-min-client-version'],
-  }),
-)
+  })
+app.use((req,res,next) => req.path === '/dav' || req.path.startsWith('/dav/') || req.path === '/.well-known/caldav' ? next() : browserCors(req,res,next))
 app.use(compression({ threshold: 1024 }))
 app.use(express.json({ limit: JSON_BODY_LIMIT }))
 app.use(cookieParser())
@@ -678,6 +680,8 @@ app.get('/api/state', enforceClientVersion, async (req, res) => {
   res.json({ state, version, imageVersions: Object.fromEntries((images || []).map(row => [`${row.item_number}:${row.card_id}:${row.image_slot}`, row.content_hash || row.updated_at || 'legacy'])), ...(token ? { token } : {}) })
 })
 
+mountCalendar(app, { store: calendarStore, authenticate: authFromRequest, limiter: rateLimit({windowMs: 60_000, limit: 300, standardHeaders: true, legacyHeaders: false}) })
+
 mountAnnouncements(app, { pool, authenticate: authFromRequest, adminEmails: (process.env.ANNOUNCEMENT_ADMIN_EMAILS || 'hello@setup-hub.com').split(',').map(email => email.trim().toLowerCase()).filter(Boolean), limiter: rateLimit({windowMs: 60_000, limit: 30, standardHeaders: true, legacyHeaders: false}) })
 
 mountResourcePreview(app, {
@@ -1002,6 +1006,7 @@ app.use((error, _req, res, next) => {
 async function startServer() {
   await initDb()
   await initAnnouncements(pool)
+  await calendarStore.init()
   await ensureBootstrapUser()
   app.listen(PORT, () => {
     console.log(`Auth server listening on http://localhost:${PORT}`)

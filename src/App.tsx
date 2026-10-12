@@ -1,3 +1,5 @@
+import { CalendarWorkspace } from './components/CalendarWorkspace'
+import type { CalendarEvent } from './lib/calendar'
 import { AnnouncementBell } from './components/Announcements'
 import { MobileSheet } from './components/MobileSheet'
 import { MobileNavigation } from './components/MobileNavigation'
@@ -180,7 +182,7 @@ type QuizSessionSummarySnapshot = {
   reviewColleges: { college: string; count: number }[]
   context: string
 }
-type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'settings' | 'stats'
+type NavView = 'dashboard' | 'items' | 'flashcards' | 'colleges' | 'calendar' | 'settings' | 'stats'
 type ItemDetailTab = 'tracking' | 'resources' | 'flashcards' | 'assignments'
 type FlashGeneratorScope = 'items' | 'colleges'
 type FlashDisplayMode = 'colleges' | 'items'
@@ -2694,6 +2696,8 @@ function App() {
   const [collegeFilter, setCollegeFilter] = useState<string>('ALL')
   const [masteryFilter, setMasteryFilter] = useState<string>('ALL')
   const [sortKey, setSortKey] = useState<SortKey>('reviews')
+  const [calendarFocusId, setCalendarFocusId] = useState<string | null>(null)
+  const [calendarItemSelection, setCalendarItemSelection] = useState<number[] | null>(null)
   const [activeView, setActiveView] = useState<NavView>('dashboard')
   const isMobile = useMediaQuery('(max-width: 767px)')
   const [mobilePanel, setMobilePanel] = useState<'more' | 'filters' | null>(null)
@@ -3788,6 +3792,8 @@ function App() {
   }
 
   function resetSessionToGuest(authMessage?: string) {
+    setCalendarFocusId(null)
+    setCalendarItemSelection(null)
     storeAuthToken('')
     setHasLoadedRemoteState(false)
     setAuthUser(null)
@@ -4490,7 +4496,7 @@ function getPasswordStrengthMeta(password: string) {
     apiRequestWithSignal('/api/resources/preview', { method: 'POST', body: JSON.stringify({ url }), signal }, { requireServerAppHeader: true }))
   const resourceIsPdf = resourceFallback?.kind === 'pdf' || resourcePreview?.kind === 'pdf'
 
-  const itemTableList = filteredAndSortedItems
+  const itemTableList = calendarItemSelection ? filteredAndSortedItems.filter(item=>calendarItemSelection.includes(item.itemNumber)) : filteredAndSortedItems
 
   const historyItem = useMemo(() => {
     if (historyItemId === null) {
@@ -5806,6 +5812,13 @@ function getPasswordStrengthMeta(password: string) {
     resetQuizMcqAnswerState()
   }
 
+  function calendarEntries(event: CalendarEvent) {
+    return quizSessionAllEntries.filter(entry=>event.cardKeys.includes(entry.sessionKey)||event.itemNumbers.includes(entry.itemNumber)||entry.colleges.some(college=>event.colleges.includes(college)))
+  }
+  function calendarItemNumbers(event: CalendarEvent) {
+    const associated = new Set(calendarEntries(event).map(entry=>entry.itemNumber))
+    return items.filter(item=>event.itemNumbers.includes(item.itemNumber)||item.tracking.assignedColleges.some(college=>event.colleges.includes(college))||associated.has(item.itemNumber)).map(item=>item.itemNumber)
+  }
   function openQuizSessionSetup(scope: QuizSessionScope) {
     const entries = quizSessionAllEntries.filter((entry) => {
       if (scope.type === 'cards') return scope.keys.includes(entry.sessionKey)
@@ -7963,7 +7976,7 @@ function getPasswordStrengthMeta(password: string) {
               sidebarNavButtonRefs.current.items = node
             }}
             className={`sidebar-nav-item ${activeView === 'items' ? 'active' : ''}`}
-            onClick={() => setActiveView('items')}
+            onClick={() => {setCalendarItemSelection(null);setActiveView('items')}}
           >
             <span className="sidebar-nav-icon" aria-hidden="true">
               <Page className="sidebar-nav-icon-img" aria-hidden="true" />
@@ -7996,6 +8009,7 @@ function getPasswordStrengthMeta(password: string) {
             </span>
             <span className="sidebar-nav-label">Collèges</span>
           </button>
+          <button type="button" ref={node=>{sidebarNavButtonRefs.current.calendar=node}} className={`sidebar-nav-item ${activeView==='calendar'?'active':''}`} onClick={()=>{setCalendarFocusId(null);setActiveView('calendar')}}><span className="sidebar-nav-icon"><Calendar className="sidebar-nav-icon-img" aria-hidden="true" /></span><span className="sidebar-nav-label">Calendrier</span></button>
           <button
             type="button"
             className="sidebar-nav-item is-disabled"
@@ -8179,7 +8193,8 @@ function getPasswordStrengthMeta(password: string) {
                 </div>
               ) : null}
             </div>
-            <AnnouncementBell request={apiRequest} />
+            {isMobile ? <button type="button" className="mobile-profile-shortcut" aria-label="Mon profil et réglages" onClick={()=>setMobilePanel('more')}>{profile.photoUrl?<img src={profile.photoUrl} alt="" />:<ProfileCircle aria-hidden="true" />}</button>:null}
+            <AnnouncementBell request={apiRequest} onCalendar={id=>{setCalendarFocusId(id);setActiveView('calendar')}} />
           </div>
         </header>
         {saveStatus !== 'idle' ? (
@@ -8222,6 +8237,7 @@ function getPasswordStrengthMeta(password: string) {
           />
         ) : null}
 
+        {activeView === 'items' && calendarItemSelection ? <div className="calendar-items-scope">Séance · {calendarItemSelection.length} items associés<button type="button" onClick={()=>setCalendarItemSelection(null)}>Voir tous les items</button></div>:null}
         {activeView === 'items' ? (
         <section
           id="items-section"
@@ -8233,7 +8249,7 @@ function getPasswordStrengthMeta(password: string) {
           <div className="panel-head">
             <h2>Items</h2>
             <p>{itemTableList.length} {isMobile ? 'items' : 'lignes'}</p>
-            {isMobile ? <AnnouncementBell request={apiRequest} mobile /> : null}
+            {isMobile ? <button type="button" className="mobile-profile-shortcut" aria-label="Mon profil et réglages" onClick={()=>setMobilePanel('more')}>{profile.photoUrl?<img src={profile.photoUrl} alt="" />:<ProfileCircle aria-hidden="true" />}</button>:null}{isMobile ? <AnnouncementBell request={apiRequest} onCalendar={id=>{setCalendarFocusId(id);setActiveView('calendar')}} mobile /> : null}
           </div>
 
           <div className="filters-row">
@@ -11511,6 +11527,13 @@ function getPasswordStrengthMeta(password: string) {
         </section>
       ) : null}
 
+      {activeView === 'calendar' ? <CalendarWorkspace focusEventId={calendarFocusId} request={apiRequest} timeZone={timeZone==='auto'?Intl.DateTimeFormat().resolvedOptions().timeZone:timeZone}
+        items={items.map(item=>({value:String(item.itemNumber),label:'#'+item.itemNumber+' · '+item.shortDescription}))}
+        colleges={COLLEGES.map(college=>({value:college,label:getFlashCollegeDisplayName(college)}))}
+        cards={quizSessionAllEntries.map(entry=>({value:entry.sessionKey,label:'#'+entry.itemNumber+' · '+getQuizRichTextPlainText(entry.card.question)}))}
+        canStart={event=>event.activity==='items'?calendarItemNumbers(event).length>0:calendarEntries(event).length>0}
+        onStart={event=>{if(event.activity==='items'){const numbers=calendarItemNumbers(event);setCalendarItemSelection(numbers);setSearch('');setCollegeFilter('ALL');setMasteryFilter('ALL');setActiveView('items');setSelectedItemId(null)}else openQuizSessionSetup({type:'cards',keys:calendarEntries(event).map(entry=>entry.sessionKey),label:event.title})}}
+      /> : null}
       {activeView === 'stats' ? (
         <section className="panel stats-placeholder">
           <h2>Insights</h2>
@@ -11520,8 +11543,8 @@ function getPasswordStrengthMeta(password: string) {
       </div>
       </div>
       {isMobile ? <>
-        <MobileNavigation active={activeView} moreOpen={mobilePanel === 'more'} onMore={() => setMobilePanel('more')} onNavigate={view => { setMobilePanel(null); setActiveView(view); if (view === 'items') setSelectedItemId(null) }} />
-        {mobilePanel === 'more' ? <MobileSheet title="Plus" restoreFocusSelector=".mobile-bottom-nav button:last-child" onClose={() => setMobilePanel(null)}>
+        <MobileNavigation active={activeView} onNavigate={view => { setMobilePanel(null); setActiveView(view); if(view==='calendar')setCalendarFocusId(null); if (view === 'items') {setSelectedItemId(null);setCalendarItemSelection(null)} }} />
+        {mobilePanel === 'more' ? <MobileSheet title="Mon profil" restoreFocusSelector=".mobile-profile-shortcut" onClose={() => setMobilePanel(null)}>
           <button type="button" className="mobile-profile-entry" onClick={() => { setActiveView('settings'); setMobilePanel(null) }}><span className="mobile-profile-avatar" style={{ background: profile.avatarGradient }}>{profile.photoUrl ? <img src={profile.photoUrl} alt="" /> : getProfileInitials(profile)}</span><span><strong>{profile.firstName || authUser?.displayName || 'Mon profil'}</strong><small>Mon profil</small></span><NavArrowRight className="ui-icon" aria-hidden="true" /></button>
           <p className="mobile-sheet-label">OUTILS</p>
           <button type="button" className="mobile-sheet-row" onClick={() => { setActiveView('colleges'); setMobilePanel(null) }}><Learning className="ui-icon" aria-hidden="true" />Collèges<NavArrowRight className="ui-icon" aria-hidden="true" /></button>

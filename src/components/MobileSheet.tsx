@@ -6,7 +6,7 @@ export function MobileSheet({ title, onClose, children, restoreFocusSelector }: 
   useLayoutEffect(() => {
     const dialog = ref.current
     if (!dialog) return
-    const previous = document.querySelector<HTMLElement>(restoreFocusSelector) ?? document.activeElement as HTMLElement | null
+    const previous = [...document.querySelectorAll<HTMLElement>(restoreFocusSelector)].find(element => element.getClientRects().length) ?? document.activeElement as HTMLElement | null
     const overflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     dialog.showModal()
