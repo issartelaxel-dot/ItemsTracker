@@ -255,3 +255,20 @@
     .flashcards-workspace :is(.flashcards-college-grid,.flashcards-empty-state), .flash-status-groups { grid-column: 2; grid-row: 3; }
   }
 }
+
+/* Phone gallery uses tiles; the list keeps full-width horizontal cards. */
+@media (max-width: 767px) {
+  .flashcards-workspace.flash-layout-gallery .flashcards-college-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+  .flashcards-workspace.flash-layout-gallery .flashcards-college-card { padding: 10px; min-height: 230px; grid-template-rows: 1fr auto auto auto; gap: 8px; }
+  .flashcards-workspace.flash-layout-gallery .flashcards-card-head { grid-template-columns: minmax(0,1fr) 44px; gap: 6px; align-items: start; }
+  .flashcards-workspace.flash-layout-gallery :is(.flashcards-card-icon,.flashcards-item-icon) { width: 40px; height: 40px; grid-column: 1; grid-row: 1; }
+  .flashcards-workspace.flash-layout-gallery .flashcards-card-menu { grid-column: 2; grid-row: 1; margin-left: 0; }
+  .flashcards-workspace.flash-layout-gallery .flashcards-card-title { grid-column: 1 / -1; grid-row: 2; }
+  .flashcards-workspace.flash-layout-gallery .flashcards-card-title h3 { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; font-size: 13px; line-height: 1.3; min-height: 3.9em; }
+  .flashcards-workspace.flash-layout-gallery .flashcards-card-title p { font-size: 11px; }
+  .flashcards-workspace.flash-layout-gallery .flashcards-card-actions { gap: 6px; }
+  .flashcards-workspace.flash-layout-gallery .flashcards-card-launch { font-size: 0; gap: 4px; padding: 6px; }
+  .flashcards-workspace.flash-layout-gallery .flashcards-card-launch::after { content: 'Quiz'; font-size: 12px; }
+  .flashcards-workspace.flash-layout-gallery .flashcards-card-progress strong { font-size: 15px; }
+  .flashcards-workspace.flash-layout-list .flashcards-college-grid { grid-template-columns: minmax(0,1fr); }
+}
