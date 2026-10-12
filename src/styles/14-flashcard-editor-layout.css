@@ -596,3 +596,15 @@
 
   .flashcard-editor-rates .inline-btn-icon { width: 15px; height: 15px; }
 }
+
+/* Creation shares the corrected Lexical editor and its editing layout. */
+.flash-create-modal { --editor-border: color-mix(in oklab,var(--border) 80%,#d7e5fc); width: min(900px,100%); max-height: calc(100dvh - 32px); overflow-y: auto; }
+.flash-create-editor.flashcard-editor-main { min-width: 0; padding: 14px; border: 1px solid var(--editor-border); border-radius: 12px; background: var(--surface-soft); }
+.flash-create-editor > span { font-size: 13px; color: var(--text); }
+.flash-create-modal .flash-create-editor .quiz-rich-editable { min-height: 140px; font-size: 16px; }
+.flash-create-modal .flash-create-editor .quiz-rich-placeholder { font-size: 16px; }
+.flash-create-editor .flashcard-editor-char-count { text-align: right; color: var(--muted); font-size: 11px; margin: 2px 0 0; }
+@media (max-width: 767px) {
+  .flash-create-modal .flash-create-editor { padding: 10px; }
+  .flash-create-modal .flash-create-editor .quiz-rich-editable { min-height: 120px; }
+}

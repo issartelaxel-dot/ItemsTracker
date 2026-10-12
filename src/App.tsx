@@ -10326,7 +10326,7 @@ function getPasswordStrengthMeta(password: string) {
                       <p>Aucun collège associé à cet item pour le moment.</p>
                     )}
                   </div>
-                  <div className="flash-create-editor">
+                  <div className="flash-create-editor flashcard-editor-main">
                     <span>Question</span>
                     <QuizRichTextEditor
                       value={flashCreateQuestion}
@@ -10337,8 +10337,9 @@ function getPasswordStrengthMeta(password: string) {
                         setFlashCreateError('')
                       }}
                     />
+                    <p className="flashcard-editor-char-count">{getQuizRichTextPlainText(flashCreateQuestion).length} / {QUIZ_RICH_TEXT_MAX_CHARS}</p>
                   </div>
-                  <div className="flash-create-editor">
+                  <div className="flash-create-editor flashcard-editor-main">
                     <span>Réponse</span>
                     <QuizRichTextEditor
                       value={flashCreateAnswer}
@@ -10349,6 +10350,7 @@ function getPasswordStrengthMeta(password: string) {
                         setFlashCreateError('')
                       }}
                     />
+                    <p className="flashcard-editor-char-count">{getQuizRichTextPlainText(flashCreateAnswer).length} / {QUIZ_RICH_TEXT_MAX_CHARS}</p>
                   </div>
                   {flashCreateError ? <p className="flash-create-error">{flashCreateError}</p> : null}
                 </div>
