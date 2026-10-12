@@ -21,7 +21,7 @@ Le backend doit être mis à jour : le ZIP web seul ne crée pas le suivi ni les
 
 ## Géolocalisation
 
-Les consultations utilisent une base **DB-IP City Lite** locale. Aucune adresse IP brute n'est enregistrée dans les tables analytics ou renvoyée au dashboard, et aucune requête de géolocalisation d'utilisateur n'est envoyée à un service tiers. Pays, ville et coordonnées arrondies à 0,1 degré sont conservés. Une position indisponible reste inconnue ; aucune demande GPS.
+Les consultations utilisent une base **DB-IP City Lite** locale. Derrière Render, le premier élément de `X-Forwarded-For` sert uniquement à la localisation approximative ; l’adresse IP n’est jamais utilisée pour autoriser une requête. Aucune adresse IP brute n'est enregistrée dans les tables analytics ou renvoyée au dashboard, et aucune requête de géolocalisation d'utilisateur n'est envoyée à un service tiers. Pays, ville et coordonnées arrondies à 0,1 degré sont conservés. Une position indisponible reste inconnue ; aucune demande GPS. Les sessions enregistrées avant que la base soit prête ou avec une IP non exploitable ne peuvent pas être localisées rétroactivement.
 
 Au premier démarrage, la base est téléchargée en arrière-plan depuis `download.db-ip.com`. Le serveur peut fonctionner pendant sa préparation. Aucun compte ou clé externe n'est requis. Le téléchargement vérifie la base avant remplacement ; en cas d'échec, le dashboard signale l'indisponibilité et le suivi continue sans position.
 

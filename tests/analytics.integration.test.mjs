@@ -16,6 +16,7 @@ let cluster,
   server,
   base,
   dir,
+  geoLookupIp,
   stamp = new Date();
 const ids = {
   user: randomUUID(),
@@ -85,12 +86,15 @@ test.before(async () => {
     adminEmails: ["hello@setup-hub.com"],
     limiter: (_req, _res, next) => next(),
     geo: {
-      lookup: () => ({
-        country: "FR",
-        city: "Paris",
-        latitude: 48.9,
-        longitude: 2.3,
-      }),
+      lookup: (ip) => {
+        geoLookupIp = ip;
+        return {
+          country: "FR",
+          city: "Paris",
+          latitude: 48.9,
+          longitude: 2.3,
+        };
+      },
       status: () => ({ ready: true }),
     },
   });
@@ -239,4 +243,20 @@ test("country and live filters, complete pseudonymous account list, validation a
     ).rows[0].count,
     0,
   );
+});
+test("analytics use the visitor address before Render proxy addresses", async () => {
+  const response = await fetch(base + "/api/analytics/pulse", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-forwarded-for": "203.0.113.42, 172.70.10.2, 10.0.0.1",
+    },
+    body: JSON.stringify({
+      ...pulse("visitor"),
+      sessionId: randomUUID(),
+      visitorId: randomUUID(),
+    }),
+  });
+  assert.equal(response.status, 200);
+  assert.equal(geoLookupIp, "203.0.113.42");
 });

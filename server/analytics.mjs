@@ -65,7 +65,10 @@ export function mountAnalytics(
         if (adminEmails.includes(rows[0].email.toLowerCase()))
           return res.json({ ok: true, disabled: true });
       }
-      await store.pulse(data, uid, geo.lookup(req.ip));
+      // Render forwards the visitor IP before its proxy IPs. Use it only for
+      // approximate geography; never for authentication or rate limiting.
+      const visitorIp = req.get("x-forwarded-for")?.split(",")[0]?.trim() || req.ip;
+      await store.pulse(data, uid, geo.lookup(visitorIp));
       res.json({ ok: true });
     } catch (e) {
       if (e instanceof AnalyticsError)
