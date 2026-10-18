@@ -1,0 +1,1774 @@
+[
+  {
+    "yearCode": "Y4",
+    "sourceUrl": "https://sante.u-bordeaux.fr/download_file/view/98316a97-72d8-422a-9031-4becd4b03223/535",
+    "modules": [
+      {
+        "code": "ME ALDVG",
+        "label": "Appareil locomoteur, Dépendance, Vieillissement, Gériatrie",
+        "page": 26,
+        "itemReferences": [
+          {
+            "number": 9,
+            "page": 27
+          },
+          {
+            "number": 60,
+            "page": 28
+          },
+          {
+            "number": 70,
+            "page": 28
+          },
+          {
+            "number": 93,
+            "page": 27
+          },
+          {
+            "number": 94,
+            "page": 26
+          },
+          {
+            "number": 95,
+            "page": 26
+          },
+          {
+            "number": 118,
+            "page": 27
+          },
+          {
+            "number": 120,
+            "page": 27
+          },
+          {
+            "number": 122,
+            "page": 27
+          },
+          {
+            "number": 123,
+            "page": 28
+          },
+          {
+            "number": 128,
+            "page": 26
+          },
+          {
+            "number": 129,
+            "page": 26
+          },
+          {
+            "number": 130,
+            "page": 28
+          },
+          {
+            "number": 131,
+            "page": 28
+          },
+          {
+            "number": 132,
+            "page": 28
+          },
+          {
+            "number": 133,
+            "page": 28
+          },
+          {
+            "number": 185,
+            "page": 26
+          },
+          {
+            "number": 192,
+            "page": 26
+          },
+          {
+            "number": 195,
+            "page": 26
+          },
+          {
+            "number": 196,
+            "page": 26
+          },
+          {
+            "number": 197,
+            "page": 26
+          },
+          {
+            "number": 198,
+            "page": 26
+          },
+          {
+            "number": 199,
+            "page": 26
+          },
+          {
+            "number": 200,
+            "page": 26
+          },
+          {
+            "number": 202,
+            "page": 26
+          },
+          {
+            "number": 251,
+            "page": 28
+          },
+          {
+            "number": 252,
+            "page": 28
+          },
+          {
+            "number": 268,
+            "page": 26
+          },
+          {
+            "number": 270,
+            "page": 26
+          },
+          {
+            "number": 307,
+            "page": 27
+          },
+          {
+            "number": 328,
+            "page": 27
+          },
+          {
+            "number": 330,
+            "page": 26
+          },
+          {
+            "number": 334,
+            "page": 27
+          },
+          {
+            "number": 361,
+            "page": 27
+          },
+          {
+            "number": 362,
+            "page": 27
+          },
+          {
+            "number": 363,
+            "page": 27
+          },
+          {
+            "number": 365,
+            "page": 27
+          }
+        ]
+      },
+      {
+        "code": "ME NPSD",
+        "label": "Neuro-Sensoriel, Douleur",
+        "page": 29,
+        "itemReferences": [
+          {
+            "number": 47,
+            "page": 29
+          },
+          {
+            "number": 52,
+            "page": 30
+          },
+          {
+            "number": 56,
+            "page": 30
+          },
+          {
+            "number": 81,
+            "page": 30
+          },
+          {
+            "number": 82,
+            "page": 30
+          },
+          {
+            "number": 83,
+            "page": 30
+          },
+          {
+            "number": 84,
+            "page": 30
+          },
+          {
+            "number": 85,
+            "page": 30
+          },
+          {
+            "number": 86,
+            "page": 30
+          },
+          {
+            "number": 87,
+            "page": 30
+          },
+          {
+            "number": 88,
+            "page": 30
+          },
+          {
+            "number": 89,
+            "page": 30
+          },
+          {
+            "number": 90,
+            "page": 29
+          },
+          {
+            "number": 93,
+            "page": 31
+          },
+          {
+            "number": 95,
+            "page": 32
+          },
+          {
+            "number": 96,
+            "page": 32
+          },
+          {
+            "number": 97,
+            "page": 32
+          },
+          {
+            "number": 98,
+            "page": 32
+          },
+          {
+            "number": 99,
+            "page": 29
+          },
+          {
+            "number": 100,
+            "page": 31
+          },
+          {
+            "number": 101,
+            "page": 30
+          },
+          {
+            "number": 102,
+            "page": 30
+          },
+          {
+            "number": 103,
+            "page": 30
+          },
+          {
+            "number": 104,
+            "page": 30
+          },
+          {
+            "number": 105,
+            "page": 31
+          },
+          {
+            "number": 106,
+            "page": 31
+          },
+          {
+            "number": 107,
+            "page": 31
+          },
+          {
+            "number": 108,
+            "page": 32
+          },
+          {
+            "number": 109,
+            "page": 30
+          },
+          {
+            "number": 110,
+            "page": 32
+          },
+          {
+            "number": 118,
+            "page": 30
+          },
+          {
+            "number": 131,
+            "page": 30
+          },
+          {
+            "number": 132,
+            "page": 32
+          },
+          {
+            "number": 134,
+            "page": 32
+          },
+          {
+            "number": 135,
+            "page": 32
+          },
+          {
+            "number": 136,
+            "page": 32
+          },
+          {
+            "number": 138,
+            "page": 32
+          },
+          {
+            "number": 148,
+            "page": 30
+          },
+          {
+            "number": 149,
+            "page": 30
+          },
+          {
+            "number": 150,
+            "page": 29
+          },
+          {
+            "number": 155,
+            "page": 29
+          },
+          {
+            "number": 201,
+            "page": 30
+          },
+          {
+            "number": 203,
+            "page": 30
+          },
+          {
+            "number": 220,
+            "page": 31
+          },
+          {
+            "number": 224,
+            "page": 30
+          },
+          {
+            "number": 242,
+            "page": 30
+          },
+          {
+            "number": 247,
+            "page": 30
+          },
+          {
+            "number": 297,
+            "page": 31
+          },
+          {
+            "number": 298,
+            "page": 29
+          },
+          {
+            "number": 299,
+            "page": 31
+          },
+          {
+            "number": 334,
+            "page": 30
+          },
+          {
+            "number": 335,
+            "page": 29
+          },
+          {
+            "number": 340,
+            "page": 32
+          },
+          {
+            "number": 341,
+            "page": 31
+          },
+          {
+            "number": 342,
+            "page": 31
+          },
+          {
+            "number": 359,
+            "page": 30
+          }
+        ]
+      },
+      {
+        "code": "ME CVT",
+        "label": "Cardiovasculaire et Thoracique",
+        "page": 33,
+        "itemReferences": [
+          {
+            "number": 75,
+            "page": 34
+          },
+          {
+            "number": 110,
+            "page": 34
+          },
+          {
+            "number": 152,
+            "page": 33
+          },
+          {
+            "number": 153,
+            "page": 33
+          },
+          {
+            "number": 154,
+            "page": 34
+          },
+          {
+            "number": 159,
+            "page": 34
+          },
+          {
+            "number": 186,
+            "page": 34
+          },
+          {
+            "number": 188,
+            "page": 34
+          },
+          {
+            "number": 192,
+            "page": 34
+          },
+          {
+            "number": 203,
+            "page": 33
+          },
+          {
+            "number": 204,
+            "page": 34
+          },
+          {
+            "number": 205,
+            "page": 34
+          },
+          {
+            "number": 206,
+            "page": 34
+          },
+          {
+            "number": 207,
+            "page": 34
+          },
+          {
+            "number": 208,
+            "page": 34
+          },
+          {
+            "number": 209,
+            "page": 34
+          },
+          {
+            "number": 210,
+            "page": 34
+          },
+          {
+            "number": 211,
+            "page": 34
+          },
+          {
+            "number": 221,
+            "page": 33
+          },
+          {
+            "number": 222,
+            "page": 33
+          },
+          {
+            "number": 223,
+            "page": 33
+          },
+          {
+            "number": 224,
+            "page": 33
+          },
+          {
+            "number": 225,
+            "page": 33
+          },
+          {
+            "number": 226,
+            "page": 33
+          },
+          {
+            "number": 227,
+            "page": 33
+          },
+          {
+            "number": 230,
+            "page": 33
+          },
+          {
+            "number": 231,
+            "page": 33
+          },
+          {
+            "number": 232,
+            "page": 33
+          },
+          {
+            "number": 233,
+            "page": 33
+          },
+          {
+            "number": 234,
+            "page": 33
+          },
+          {
+            "number": 235,
+            "page": 33
+          },
+          {
+            "number": 236,
+            "page": 33
+          },
+          {
+            "number": 237,
+            "page": 33
+          },
+          {
+            "number": 238,
+            "page": 33
+          },
+          {
+            "number": 309,
+            "page": 34
+          },
+          {
+            "number": 330,
+            "page": 34
+          },
+          {
+            "number": 331,
+            "page": 34
+          },
+          {
+            "number": 338,
+            "page": 34
+          },
+          {
+            "number": 339,
+            "page": 34
+          },
+          {
+            "number": 342,
+            "page": 34
+          },
+          {
+            "number": 359,
+            "page": 34
+          },
+          {
+            "number": 360,
+            "page": 34
+          }
+        ]
+      },
+      {
+        "code": "ME HGEM",
+        "label": "Hépato-gastro-entérologie, Endocrinologie, Métabolisme",
+        "page": 36,
+        "itemReferences": [
+          {
+            "number": 167,
+            "page": 36
+          },
+          {
+            "number": 219,
+            "page": 36
+          },
+          {
+            "number": 224,
+            "page": 37
+          },
+          {
+            "number": 240,
+            "page": 37
+          },
+          {
+            "number": 241,
+            "page": 37
+          },
+          {
+            "number": 242,
+            "page": 37
+          },
+          {
+            "number": 243,
+            "page": 37
+          },
+          {
+            "number": 244,
+            "page": 37
+          },
+          {
+            "number": 245,
+            "page": 37
+          },
+          {
+            "number": 246,
+            "page": 37
+          },
+          {
+            "number": 247,
+            "page": 37
+          },
+          {
+            "number": 248,
+            "page": 37
+          },
+          {
+            "number": 249,
+            "page": 37
+          },
+          {
+            "number": 250,
+            "page": 37
+          },
+          {
+            "number": 251,
+            "page": 37
+          },
+          {
+            "number": 253,
+            "page": 37
+          },
+          {
+            "number": 255,
+            "page": 37
+          },
+          {
+            "number": 268,
+            "page": 37
+          },
+          {
+            "number": 269,
+            "page": 36
+          },
+          {
+            "number": 271,
+            "page": 37
+          },
+          {
+            "number": 272,
+            "page": 37
+          },
+          {
+            "number": 273,
+            "page": 37
+          },
+          {
+            "number": 274,
+            "page": 37
+          },
+          {
+            "number": 275,
+            "page": 36
+          },
+          {
+            "number": 276,
+            "page": 36
+          },
+          {
+            "number": 277,
+            "page": 36
+          },
+          {
+            "number": 278,
+            "page": 36
+          },
+          {
+            "number": 279,
+            "page": 36
+          },
+          {
+            "number": 280,
+            "page": 36
+          },
+          {
+            "number": 281,
+            "page": 36
+          },
+          {
+            "number": 282,
+            "page": 37
+          },
+          {
+            "number": 283,
+            "page": 36
+          },
+          {
+            "number": 284,
+            "page": 36
+          },
+          {
+            "number": 285,
+            "page": 37
+          },
+          {
+            "number": 286,
+            "page": 36
+          },
+          {
+            "number": 287,
+            "page": 36
+          },
+          {
+            "number": 288,
+            "page": 36
+          },
+          {
+            "number": 289,
+            "page": 37
+          },
+          {
+            "number": 301,
+            "page": 36
+          },
+          {
+            "number": 303,
+            "page": 36
+          },
+          {
+            "number": 304,
+            "page": 36
+          },
+          {
+            "number": 305,
+            "page": 36
+          },
+          {
+            "number": 308,
+            "page": 36
+          },
+          {
+            "number": 354,
+            "page": 36
+          },
+          {
+            "number": 355,
+            "page": 36
+          },
+          {
+            "number": 356,
+            "page": 36
+          },
+          {
+            "number": 357,
+            "page": 36
+          },
+          {
+            "number": 358,
+            "page": 36
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "yearCode": "Y5",
+    "sourceUrl": "https://sante.u-bordeaux.fr/download_file/view/f504504f-ed78-43ef-96ca-5ddd0f6a5f00/535",
+    "modules": [
+      {
+        "code": "ME HCMP",
+        "label": "Hématologie, Cancérologie, Médecine Palliative",
+        "page": 27,
+        "itemReferences": [
+          {
+            "number": 134,
+            "page": 28
+          },
+          {
+            "number": 135,
+            "page": 28
+          },
+          {
+            "number": 139,
+            "page": 28
+          },
+          {
+            "number": 140,
+            "page": 28
+          },
+          {
+            "number": 141,
+            "page": 28
+          },
+          {
+            "number": 182,
+            "page": 27
+          },
+          {
+            "number": 208,
+            "page": 27
+          },
+          {
+            "number": 213,
+            "page": 27
+          },
+          {
+            "number": 214,
+            "page": 27
+          },
+          {
+            "number": 215,
+            "page": 27
+          },
+          {
+            "number": 216,
+            "page": 27
+          },
+          {
+            "number": 217,
+            "page": 27
+          },
+          {
+            "number": 219,
+            "page": 27
+          },
+          {
+            "number": 220,
+            "page": 27
+          },
+          {
+            "number": 226,
+            "page": 27
+          },
+          {
+            "number": 275,
+            "page": 27
+          },
+          {
+            "number": 290,
+            "page": 28
+          },
+          {
+            "number": 291,
+            "page": 28
+          },
+          {
+            "number": 292,
+            "page": 28
+          },
+          {
+            "number": 293,
+            "page": 28
+          },
+          {
+            "number": 294,
+            "page": 28
+          },
+          {
+            "number": 295,
+            "page": 28
+          },
+          {
+            "number": 296,
+            "page": 27
+          },
+          {
+            "number": 300,
+            "page": 28
+          },
+          {
+            "number": 302,
+            "page": 28
+          },
+          {
+            "number": 306,
+            "page": 28
+          },
+          {
+            "number": 310,
+            "page": 28
+          },
+          {
+            "number": 311,
+            "page": 28
+          },
+          {
+            "number": 312,
+            "page": 28
+          },
+          {
+            "number": 313,
+            "page": 28
+          },
+          {
+            "number": 314,
+            "page": 28
+          },
+          {
+            "number": 315,
+            "page": 27
+          },
+          {
+            "number": 316,
+            "page": 27
+          },
+          {
+            "number": 317,
+            "page": 27
+          },
+          {
+            "number": 318,
+            "page": 27
+          },
+          {
+            "number": 319,
+            "page": 27
+          },
+          {
+            "number": 320,
+            "page": 27
+          },
+          {
+            "number": 330,
+            "page": 27
+          }
+        ]
+      },
+      {
+        "code": "ME MIDI",
+        "label": "Maladies Infectieuses, Dermatologie, Immunopathologie",
+        "page": 30,
+        "itemReferences": [
+          {
+            "number": 4,
+            "page": 32
+          },
+          {
+            "number": 28,
+            "page": 31
+          },
+          {
+            "number": 111,
+            "page": 31
+          },
+          {
+            "number": 112,
+            "page": 31
+          },
+          {
+            "number": 113,
+            "page": 31
+          },
+          {
+            "number": 114,
+            "page": 31
+          },
+          {
+            "number": 115,
+            "page": 30
+          },
+          {
+            "number": 116,
+            "page": 31
+          },
+          {
+            "number": 117,
+            "page": 31
+          },
+          {
+            "number": 145,
+            "page": 32
+          },
+          {
+            "number": 146,
+            "page": 32
+          },
+          {
+            "number": 147,
+            "page": 32
+          },
+          {
+            "number": 148,
+            "page": 32
+          },
+          {
+            "number": 149,
+            "page": 32
+          },
+          {
+            "number": 151,
+            "page": 31
+          },
+          {
+            "number": 152,
+            "page": 32
+          },
+          {
+            "number": 153,
+            "page": 32
+          },
+          {
+            "number": 154,
+            "page": 31
+          },
+          {
+            "number": 155,
+            "page": 31
+          },
+          {
+            "number": 156,
+            "page": 32
+          },
+          {
+            "number": 157,
+            "page": 32
+          },
+          {
+            "number": 159,
+            "page": 31
+          },
+          {
+            "number": 160,
+            "page": 31
+          },
+          {
+            "number": 161,
+            "page": 31
+          },
+          {
+            "number": 162,
+            "page": 32
+          },
+          {
+            "number": 164,
+            "page": 31
+          },
+          {
+            "number": 166,
+            "page": 31
+          },
+          {
+            "number": 167,
+            "page": 31
+          },
+          {
+            "number": 168,
+            "page": 30
+          },
+          {
+            "number": 169,
+            "page": 32
+          },
+          {
+            "number": 170,
+            "page": 32
+          },
+          {
+            "number": 171,
+            "page": 31
+          },
+          {
+            "number": 172,
+            "page": 32
+          },
+          {
+            "number": 173,
+            "page": 31
+          },
+          {
+            "number": 174,
+            "page": 32
+          },
+          {
+            "number": 175,
+            "page": 32
+          },
+          {
+            "number": 176,
+            "page": 32
+          },
+          {
+            "number": 177,
+            "page": 31
+          },
+          {
+            "number": 178,
+            "page": 32
+          },
+          {
+            "number": 185,
+            "page": 30
+          },
+          {
+            "number": 187,
+            "page": 30
+          },
+          {
+            "number": 189,
+            "page": 30
+          },
+          {
+            "number": 190,
+            "page": 30
+          },
+          {
+            "number": 191,
+            "page": 32
+          },
+          {
+            "number": 192,
+            "page": 30
+          },
+          {
+            "number": 193,
+            "page": 30
+          },
+          {
+            "number": 194,
+            "page": 30
+          },
+          {
+            "number": 195,
+            "page": 30
+          },
+          {
+            "number": 211,
+            "page": 30
+          },
+          {
+            "number": 215,
+            "page": 30
+          },
+          {
+            "number": 217,
+            "page": 32
+          },
+          {
+            "number": 218,
+            "page": 30
+          },
+          {
+            "number": 228,
+            "page": 31
+          },
+          {
+            "number": 239,
+            "page": 30
+          },
+          {
+            "number": 330,
+            "page": 31
+          },
+          {
+            "number": 350,
+            "page": 31
+          },
+          {
+            "number": 366,
+            "page": 31
+          }
+        ]
+      },
+      {
+        "code": "ME Mère-Enfant",
+        "label": "Mère-Enfant",
+        "page": 34,
+        "itemReferences": [
+          {
+            "number": 22,
+            "page": 34
+          },
+          {
+            "number": 23,
+            "page": 37
+          },
+          {
+            "number": 24,
+            "page": 37
+          },
+          {
+            "number": 25,
+            "page": 37
+          },
+          {
+            "number": 26,
+            "page": 37
+          },
+          {
+            "number": 27,
+            "page": 37
+          },
+          {
+            "number": 28,
+            "page": 37
+          },
+          {
+            "number": 30,
+            "page": 37
+          },
+          {
+            "number": 31,
+            "page": 37
+          },
+          {
+            "number": 32,
+            "page": 34
+          },
+          {
+            "number": 33,
+            "page": 37
+          },
+          {
+            "number": 34,
+            "page": 37
+          },
+          {
+            "number": 35,
+            "page": 37
+          },
+          {
+            "number": 36,
+            "page": 37
+          },
+          {
+            "number": 37,
+            "page": 37
+          },
+          {
+            "number": 38,
+            "page": 37
+          },
+          {
+            "number": 39,
+            "page": 37
+          },
+          {
+            "number": 40,
+            "page": 37
+          },
+          {
+            "number": 41,
+            "page": 37
+          },
+          {
+            "number": 42,
+            "page": 37
+          },
+          {
+            "number": 43,
+            "page": 37
+          },
+          {
+            "number": 44,
+            "page": 37
+          },
+          {
+            "number": 45,
+            "page": 34
+          },
+          {
+            "number": 46,
+            "page": 34
+          },
+          {
+            "number": 47,
+            "page": 34
+          },
+          {
+            "number": 48,
+            "page": 34
+          },
+          {
+            "number": 49,
+            "page": 34
+          },
+          {
+            "number": 50,
+            "page": 34
+          },
+          {
+            "number": 51,
+            "page": 34
+          },
+          {
+            "number": 52,
+            "page": 34
+          },
+          {
+            "number": 53,
+            "page": 34
+          },
+          {
+            "number": 54,
+            "page": 34
+          },
+          {
+            "number": 55,
+            "page": 34
+          },
+          {
+            "number": 56,
+            "page": 34
+          },
+          {
+            "number": 57,
+            "page": 34
+          },
+          {
+            "number": 58,
+            "page": 37
+          },
+          {
+            "number": 69,
+            "page": 37
+          },
+          {
+            "number": 100,
+            "page": 34
+          },
+          {
+            "number": 105,
+            "page": 34
+          },
+          {
+            "number": 124,
+            "page": 37
+          },
+          {
+            "number": 137,
+            "page": 35
+          },
+          {
+            "number": 142,
+            "page": 35
+          },
+          {
+            "number": 146,
+            "page": 35
+          },
+          {
+            "number": 147,
+            "page": 35
+          },
+          {
+            "number": 148,
+            "page": 35
+          },
+          {
+            "number": 149,
+            "page": 35
+          },
+          {
+            "number": 150,
+            "page": 35
+          },
+          {
+            "number": 151,
+            "page": 35
+          },
+          {
+            "number": 154,
+            "page": 35
+          },
+          {
+            "number": 155,
+            "page": 35
+          },
+          {
+            "number": 156,
+            "page": 35
+          },
+          {
+            "number": 158,
+            "page": 35
+          },
+          {
+            "number": 159,
+            "page": 35
+          },
+          {
+            "number": 161,
+            "page": 35
+          },
+          {
+            "number": 162,
+            "page": 37
+          },
+          {
+            "number": 163,
+            "page": 35
+          },
+          {
+            "number": 164,
+            "page": 35
+          },
+          {
+            "number": 165,
+            "page": 35
+          },
+          {
+            "number": 166,
+            "page": 35
+          },
+          {
+            "number": 168,
+            "page": 35
+          },
+          {
+            "number": 171,
+            "page": 35
+          },
+          {
+            "number": 176,
+            "page": 35
+          },
+          {
+            "number": 186,
+            "page": 35
+          },
+          {
+            "number": 187,
+            "page": 35
+          },
+          {
+            "number": 188,
+            "page": 35
+          },
+          {
+            "number": 203,
+            "page": 35
+          },
+          {
+            "number": 204,
+            "page": 35
+          },
+          {
+            "number": 212,
+            "page": 35
+          },
+          {
+            "number": 213,
+            "page": 35
+          },
+          {
+            "number": 214,
+            "page": 35
+          },
+          {
+            "number": 215,
+            "page": 35
+          },
+          {
+            "number": 216,
+            "page": 35
+          },
+          {
+            "number": 217,
+            "page": 35
+          },
+          {
+            "number": 219,
+            "page": 35
+          },
+          {
+            "number": 220,
+            "page": 35
+          },
+          {
+            "number": 224,
+            "page": 36
+          },
+          {
+            "number": 238,
+            "page": 36
+          },
+          {
+            "number": 240,
+            "page": 36
+          },
+          {
+            "number": 245,
+            "page": 36
+          },
+          {
+            "number": 247,
+            "page": 36
+          },
+          {
+            "number": 249,
+            "page": 36
+          },
+          {
+            "number": 250,
+            "page": 36
+          },
+          {
+            "number": 253,
+            "page": 36
+          },
+          {
+            "number": 254,
+            "page": 37
+          },
+          {
+            "number": 255,
+            "page": 37
+          },
+          {
+            "number": 258,
+            "page": 36
+          },
+          {
+            "number": 259,
+            "page": 36
+          },
+          {
+            "number": 260,
+            "page": 36
+          },
+          {
+            "number": 269,
+            "page": 36
+          },
+          {
+            "number": 271,
+            "page": 36
+          },
+          {
+            "number": 274,
+            "page": 36
+          },
+          {
+            "number": 278,
+            "page": 36
+          },
+          {
+            "number": 283,
+            "page": 36
+          },
+          {
+            "number": 285,
+            "page": 36
+          },
+          {
+            "number": 286,
+            "page": 36
+          },
+          {
+            "number": 289,
+            "page": 36
+          },
+          {
+            "number": 294,
+            "page": 36
+          },
+          {
+            "number": 296,
+            "page": 36
+          },
+          {
+            "number": 315,
+            "page": 36
+          },
+          {
+            "number": 343,
+            "page": 36
+          },
+          {
+            "number": 344,
+            "page": 37
+          },
+          {
+            "number": 345,
+            "page": 36
+          },
+          {
+            "number": 346,
+            "page": 36
+          },
+          {
+            "number": 354,
+            "page": 36
+          },
+          {
+            "number": 356,
+            "page": 36
+          },
+          {
+            "number": 357,
+            "page": 36
+          },
+          {
+            "number": 359,
+            "page": 36
+          },
+          {
+            "number": 364,
+            "page": 36
+          }
+        ]
+      },
+      {
+        "code": "ME U-TURN",
+        "label": "Urgences, Thérapeutique, Urologie, Réanimation, Néphrologie",
+        "page": 39,
+        "itemReferences": [
+          {
+            "number": 36,
+            "page": 39
+          },
+          {
+            "number": 44,
+            "page": 39
+          },
+          {
+            "number": 50,
+            "page": 39
+          },
+          {
+            "number": 58,
+            "page": 39
+          },
+          {
+            "number": 125,
+            "page": 39
+          },
+          {
+            "number": 126,
+            "page": 39
+          },
+          {
+            "number": 127,
+            "page": 39
+          },
+          {
+            "number": 135,
+            "page": 40
+          },
+          {
+            "number": 161,
+            "page": 39
+          },
+          {
+            "number": 162,
+            "page": 39
+          },
+          {
+            "number": 193,
+            "page": 39
+          },
+          {
+            "number": 201,
+            "page": 39
+          },
+          {
+            "number": 247,
+            "page": 39
+          },
+          {
+            "number": 257,
+            "page": 39
+          },
+          {
+            "number": 258,
+            "page": 39
+          },
+          {
+            "number": 259,
+            "page": 40
+          },
+          {
+            "number": 260,
+            "page": 39
+          },
+          {
+            "number": 261,
+            "page": 40
+          },
+          {
+            "number": 262,
+            "page": 40
+          },
+          {
+            "number": 263,
+            "page": 40
+          },
+          {
+            "number": 264,
+            "page": 40
+          },
+          {
+            "number": 265,
+            "page": 39
+          },
+          {
+            "number": 266,
+            "page": 40
+          },
+          {
+            "number": 267,
+            "page": 40
+          },
+          {
+            "number": 268,
+            "page": 40
+          },
+          {
+            "number": 270,
+            "page": 39
+          },
+          {
+            "number": 320,
+            "page": 40
+          },
+          {
+            "number": 323,
+            "page": 40
+          },
+          {
+            "number": 325,
+            "page": 40
+          },
+          {
+            "number": 326,
+            "page": 40
+          },
+          {
+            "number": 327,
+            "page": 40
+          },
+          {
+            "number": 328,
+            "page": 40
+          },
+          {
+            "number": 330,
+            "page": 40
+          },
+          {
+            "number": 331,
+            "page": 40
+          },
+          {
+            "number": 332,
+            "page": 40
+          },
+          {
+            "number": 333,
+            "page": 40
+          },
+          {
+            "number": 336,
+            "page": 40
+          },
+          {
+            "number": 337,
+            "page": 40
+          },
+          {
+            "number": 348,
+            "page": 40
+          },
+          {
+            "number": 359,
+            "page": 40
+          }
+        ]
+      }
+    ]
+  }
+]

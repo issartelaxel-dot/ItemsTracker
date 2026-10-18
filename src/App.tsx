@@ -1,3 +1,16 @@
+import { EmptyReferenceSheets } from './components/EmptyReferenceSheets'
+import { normalizeLocalUnitTracking, normalizeLocalUnitTrackingMap, type LocalUnitTracking } from './lib/local-unit-tracking'
+import { ProfileAvatarEditor, type AvatarPreferences } from './components/ProfileAvatarEditor'
+import { AVATAR_SMILEYS } from './lib/profile-avatar'
+import { LockedProfileField } from './components/LockedProfileField'
+import { normalizeTimeZonePreference } from './lib/time-zones'
+import { TimeZonePicker } from './components/TimeZonePicker'
+import { AcademicSettingsCard } from './components/AcademicSettingsCard'
+import { isCollegeItemCompleted } from './lib/college-progress'
+import { calculateItemProgress } from './lib/item-progress'
+import { reviewCollegeKeys, type ReferenceTransition } from './lib/reference-transition'
+import { ItemsMatrix } from './components/ItemsMatrix'
+import { CollegesWorkspace } from './components/CollegesWorkspace'
 import { CalendarWorkspace } from './components/CalendarWorkspace'
 import { useUsageAnalytics } from './lib/use-usage-analytics'
 import type { CalendarEvent } from './lib/calendar'
@@ -7,11 +20,17 @@ import { MobileNavigation } from './components/MobileNavigation'
 import { MobileDashboard } from './components/MobileDashboard'
 import { FlashcardStatusGroups } from './components/FlashcardStatusGroups'
 import { FlashcardsWorkspace } from './components/FlashcardsWorkspace'
+import { ItemsWorkspace } from './components/ItemsWorkspace'
+import { countItemCatalogStatuses, itemCatalogStatus, type ItemCatalogStatus, type ItemCatalogScope } from './lib/item-catalog'
+import { AcademicFacultyResources, AcademicItemLocalResources, type FacultyProgram, type FacultySource } from './components/AcademicFacultyResources'
+import { AcademicLocalResources, OnboardingFlow, type AcademicCoverage, type AcademicProfile, type AcademicUnit, type AcademicYear, type OnboardingPreparationStage } from './components/OnboardingFlow'
 import { countFlashcardCatalogStatuses, organizeFlashcardCatalog, type FlashcardCatalogStatus, type FlashcardOrganization } from './lib/flashcard-catalog'
 import { useMediaQuery } from './lib/use-responsive'
 import { withRequestTimeout } from './lib/request-timeout'
 import { ResourceTypeIcon, ResourceLinkPreview, useResourcePreview, getResourceFallback, formatResourceSize } from './components/ResourcePreview'
 import { getFreshApiUrl } from './lib/api-cache'
+import { hydrateReferenceDefaults, referenceAssignments, referenceCollegeNames, referenceProvenance, usesReferenceDefaults } from './lib/academic-college-defaults'
+import { transitionFromOnboarding } from './lib/onboarding-transition'
 import { isClientBelowMinimum, refreshObsoleteClient } from './lib/client-refresh'
 import { saveDraft, findDraft, removeDraft, mergeStates, type SaveOperation } from './lib/save-outbox'
 import {
@@ -63,7 +82,6 @@ import {
   type PointerEvent,
 } from 'react'
 import {
-  Bell,
   Book,
   Calendar,
   Check,
@@ -153,12 +171,13 @@ import publicHealthIcon from 'healthicons/public/icons/svg/outline/people/people
 import therapeuticIcon from 'healthicons/public/icons/svg/outline/medications/pills_3.svg?raw'
 import urologyIcon from 'healthicons/public/icons/svg/outline/body/bladder.svg?raw'
 import './App.css'
+import './styles/items-catalog-grid.css'
 
 type Mastery = 'Mauvais' | 'Moyen' | 'Bon' | 'Très bon' | 'Parfait'
 type Theme = 'light' | 'dark'
 type YouTubeDisplayMode = 'embed' | 'external'
 type DateFormatPreference = 'fr-short' | 'fr-long' | 'iso'
-type TimeZonePreference = 'auto' | 'Europe/Paris' | 'Asia/Ho_Chi_Minh'
+type TimeZonePreference = string
 type SortKey = 'itemAsc' | 'itemDesc' | 'reviews' | 'progress' | 'lastReviewAsc' | 'lastReviewDesc'
 type SheetColor = 'jaune' | 'rouge' | 'vert' | 'vertfonce'
 type SheetKind = 'lisaSheets' | 'platformSheets'
@@ -279,10 +298,12 @@ type QuizConfig = {
 }
 
 type ItemTracking = {
+  referenceTransition?: ReferenceTransition
   assignedColleges: string[]
   byCollege: Record<string, CollegeTracking>
   lisaSheets: ReferenceSheet[]
   platformSheets: ReferenceSheet[]
+  localUnits: Record<string, LocalUnitTracking>
   noLisaSheets: boolean
   noPlatformSheets: boolean
   itemComment: string
@@ -309,7 +330,7 @@ type TrackerState = {
   items: Record<number, ItemTracking>
 }
 
-type ProfileState = {
+type ProfileState = AvatarPreferences & {
   firstName: string
   lastName: string
   email: string
@@ -1541,7 +1562,21 @@ const COLLEGE_ICON_META: Record<CollegeName, { svg: string; label: string }> = {
 }
 
 function CollegeHealthIcon({ college, className = '', showTitle = true }: { college: string; className?: string; showTitle?: boolean }) {
-  const iconMeta = COLLEGE_ICON_META[college as CollegeName]
+  const nationalIconNames: Record<string, CollegeName> = {
+    CoPath: 'ANATOMIE ET CYTOLOGIE PATHOLOGIQUES', CNEAR: 'ANESTHÉSIE - RÉANIMATION', CNECancer: 'CANCÉROLOGIE',
+    CCVD: 'CHIRURGIE DIGESTIVE', CNECMF: 'CHIRURGIE MAXILLO-FACIALE', CEDEF: 'DERMATOLOGIE',
+    CEMD: 'DOULEUR - SOINS PALLIATIFS', CNEFUSP: 'DOULEUR - SOINS PALLIATIFS', CEEDMM: 'ENDOCRINOLOGIE',
+    CNEPGM: 'GÉNÉTIQUE', CNEG: 'GÉRIATRIE', CNEGM: 'GYNÉCOLOGIE MÉDICALE', CEGO: 'GYNÉCOLOGIE OBSTÉTRIQUE',
+    CEH: 'HÉMATOLOGIE', CDUHGE: 'HÉPATO-GASTRO-ENTÉROLOGIE', CERF: 'IMAGERIE MÉDICALE', ASSIM: 'IMMUNOPATHOLOGIE',
+    CMIT: 'INFECTIOLOGIE', CNECardio: 'MÉDECINE CARDIOVASCULAIRE', CNGE: 'MÉDECINE GÉNÉRALE', CEMIR: 'MÉDECINE INTENSIVE - RÉANIMATION - URGENCES',
+    CNUMU: 'MÉDECINE INTENSIVE - RÉANIMATION - URGENCES', CEMI: 'MÉDECINE INTERNE', CEHUMT: 'MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL', CNEML: 'MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL',
+    COFEMER: 'MÉDECINE PHYSIQUE ET RÉADAPTATION', CEMV: 'MÉDECINE VASCULAIRE', CUEN: 'NÉPHROLOGIE', CENC: 'NEUROCHIRURGIE', CENeuro: 'NEUROLOGIE',
+    CENutri: 'NUTRITION', COUF: 'OPHTALMOLOGIE', 'ORL&CCF': 'ORL', CFCOT: 'ORTHOPÉDIE - TRAUMATOLOGIE', ANOFEL: 'PARASITOLOGIE',
+    CNPU: 'PÉDIATRIE', CEP: 'PNEUMOLOGIE', CNUP: 'PSYCHIATRIE - ADDICTOLOGIE', CUNEA: 'PSYCHIATRIE - ADDICTOLOGIE', COFER: 'RHUMATOLOGIE', CUESP: 'SANTÉ PUBLIQUE',
+    CNET: 'THÉRAPEUTIQUE', CNPM: 'THÉRAPEUTIQUE', CFEU: 'UROLOGIE',
+  }
+  const acronym = college.match(/\(([^)]+)\)$/)?.[1] || ''
+  const iconMeta = COLLEGE_ICON_META[(nationalIconNames[acronym] || college) as CollegeName] || { svg: publicHealthIcon, label: 'Collège' }
 
   if (!iconMeta) {
     return null
@@ -1597,7 +1632,7 @@ function toReadableCollegeName(college: string) {
 }
 
 function getFlashCollegeDisplayName(college: string) {
-  return FLASH_COLLEGE_DISPLAY_NAMES[college as CollegeName] ?? toReadableCollegeName(college)
+  return FLASH_COLLEGE_DISPLAY_NAMES[college as CollegeName] ?? (/\([^)]+\)$/.test(college) ? college : toReadableCollegeName(college))
 }
 
 const rawItems = itemsData as ItemBase[]
@@ -1798,6 +1833,7 @@ function getDefaultItemTracking(): ItemTracking {
     byCollege: {},
     lisaSheets: [],
     platformSheets: [],
+    localUnits: {},
     noLisaSheets: false,
     noPlatformSheets: false,
     itemComment: '',
@@ -1930,11 +1966,13 @@ function normalizeItemTracking(tracking?: Partial<ItemTracking>): ItemTracking {
 
   return {
     assignedColleges: tracking?.assignedColleges ?? [],
+    referenceTransition: tracking?.referenceTransition,
     byCollege: Object.fromEntries(
       Object.entries(tracking?.byCollege ?? {}).map(([college, entry]) => [college, normalizeCollegeTracking(entry)]),
     ),
     lisaSheets: (tracking?.lisaSheets ?? []).map((sheet) => normalizeSheet(sheet)),
     platformSheets: (tracking?.platformSheets ?? []).map((sheet) => normalizeSheet(sheet)),
+    localUnits: normalizeLocalUnitTrackingMap(tracking?.localUnits),
     noLisaSheets: tracking?.noLisaSheets ?? false,
     noPlatformSheets: tracking?.noPlatformSheets ?? false,
     itemComment: tracking?.itemComment ?? '',
@@ -1990,6 +2028,8 @@ function getNextSheetColor(current: SheetColor): SheetColor {
 }
 
 function getProfileInitials(profile: ProfileState): string {
+  if (profile.avatarInitialsMode === 'emoji') return profile.avatarEmoji || '🙂'
+  if (profile.avatarInitialsMode === 'custom' && profile.avatarCustomInitials) return profile.avatarCustomInitials
   const first = (profile.firstName ?? '').trim()
   const last = (profile.lastName ?? '').trim()
   if (first || last) {
@@ -2007,53 +2047,7 @@ function getProfileInitials(profile: ProfileState): string {
 }
 
 function computeItemProgress(itemTracking: ItemTracking): number {
-  const excludeLisaAxis = itemTracking.noLisaSheets && itemTracking.lisaSheets.length === 0
-  const excludePlatformAxis = itemTracking.noPlatformSheets && itemTracking.platformSheets.length === 0
-
-  const hasPerfectCollege = itemTracking.assignedColleges.some((college) => {
-    const tracking = itemTracking.byCollege[college]
-    return tracking?.mastery === 'Parfait'
-  })
-  const hasPerfectLisa =
-    excludeLisaAxis || itemTracking.lisaSheets.some((sheet) => sheet.tracking.mastery === 'Parfait')
-  const hasPerfectPlatform =
-    excludePlatformAxis || itemTracking.platformSheets.some((sheet) => sheet.tracking.mastery === 'Parfait')
-
-  // If all required axes have at least one "Parfait", item is fully completed.
-  if (hasPerfectCollege && hasPerfectLisa && hasPerfectPlatform) {
-    return 1
-  }
-
-  const normalizeMastery = (mastery: Mastery) => MASTERY_SCORE[mastery] / MASTERY_SCORE.Parfait
-
-  const collegeValues = itemTracking.assignedColleges
-    .map((college) => itemTracking.byCollege[college])
-    .filter(Boolean)
-    .map((tracking) => normalizeMastery(tracking.mastery))
-
-  const lisaValues = itemTracking.lisaSheets.map((sheet) => normalizeMastery(sheet.tracking.mastery))
-  const platformValues = itemTracking.platformSheets.map((sheet) => normalizeMastery(sheet.tracking.mastery))
-
-  const average = (values: number[]) => {
-    if (values.length === 0) {
-      return 0
-    }
-    return values.reduce((sum, value) => sum + value, 0) / values.length
-  }
-
-  const collegeProgress = average(collegeValues)
-  const lisaProgress = average(lisaValues)
-  const platformProgress = average(platformValues)
-
-  const axes = [collegeProgress]
-  if (!excludeLisaAxis) {
-    axes.push(lisaProgress)
-  }
-  if (!excludePlatformAxis) {
-    axes.push(platformProgress)
-  }
-
-  return average(axes)
+  return calculateItemProgress(itemTracking, MASTERY_SCORE)
 }
 
 function getLatestIsoDate(...values: Array<string | null | undefined>) {
@@ -2114,22 +2108,11 @@ function toWeekKey(date: Date) {
   return `${year}-${month}-${day}`
 }
 
-function getInitialTrackingState(): TrackerState {
-  const normalizedCollegeMap = new Map(COLLEGES.map((college) => [normalizeText(college), college]))
-
+function getInitialTrackingState(yearCode?: AcademicYear | null): TrackerState {
   const items: Record<number, ItemTracking> = {}
 
-  for (const item of rawItems) {
-    const inferred = new Set<string>()
-    for (const label of item.tagLabels) {
-      const normalized = normalizeText(label)
-      const college = normalizedCollegeMap.get(normalized)
-      if (college) {
-        inferred.add(college)
-      }
-    }
-
-    const assignedColleges = Array.from(inferred)
+  for (const item of yearCode === 'Y2' || yearCode === 'Y3' || yearCode === null ? [] : rawItems) {
+    const assignedColleges = [...(referenceAssignments[item.itemNumber] || [])]
     const byCollege = assignedColleges.reduce<Record<string, CollegeTracking>>((acc, college) => {
       acc[college] = getDefaultCollegeTracking()
       return acc
@@ -2140,6 +2123,7 @@ function getInitialTrackingState(): TrackerState {
       byCollege,
       lisaSheets: [],
       platformSheets: [],
+      localUnits: {},
       noLisaSheets: false,
       noPlatformSheets: false,
       itemComment: '',
@@ -2168,6 +2152,9 @@ function getDefaultProfile(): ProfileState {
     photoUrl: '',
     password: '',
     avatarGradient: AVATAR_GRADIENTS[0],
+    avatarInitialsMode: 'auto',
+    avatarCustomInitials: '',
+    avatarEmoji: '🙂',
   }
 }
 
@@ -2207,6 +2194,9 @@ function normalizeProfileInput(rawProfile: unknown, authUser: AuthUser | null): 
         ? profile.photoUrl
         : '',
     password: '',
+    avatarInitialsMode: profile.avatarInitialsMode === 'custom' || profile.avatarInitialsMode === 'emoji' ? profile.avatarInitialsMode : 'auto',
+    avatarCustomInitials: typeof profile.avatarCustomInitials === 'string' ? Array.from(profile.avatarCustomInitials.toUpperCase().replace(/\s/g, '')).slice(0, 3).join('') : '',
+    avatarEmoji: AVATAR_SMILEYS.includes(profile.avatarEmoji ?? '') ? profile.avatarEmoji! : '🙂',
     avatarGradient:
       typeof profile.avatarGradient === 'string' && profile.avatarGradient ? profile.avatarGradient : base.avatarGradient,
   }
@@ -2250,10 +2240,6 @@ function formatByteSize(bytes: number) {
 
 function normalizeDateFormatPreference(value: unknown): DateFormatPreference {
   return value === 'fr-long' || value === 'iso' || value === 'fr-short' ? value : DEFAULT_DATE_FORMAT
-}
-
-function normalizeTimeZonePreference(value: unknown): TimeZonePreference {
-  return value === 'Europe/Paris' || value === 'Asia/Ho_Chi_Minh' || value === 'auto' ? value : DEFAULT_TIME_ZONE
 }
 
 function getIntlTimeZone(timeZone: TimeZonePreference) {
@@ -2691,7 +2677,10 @@ function App() {
   const [dateFormat, setDateFormat] = useState<DateFormatPreference>(DEFAULT_DATE_FORMAT)
   const [timeZone, setTimeZone] = useState<TimeZonePreference>(DEFAULT_TIME_ZONE)
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
+  const [collegeAssignmentsUnlockedFor, setCollegeAssignmentsUnlockedFor] = useState<number | null>(null)
   const [search, setSearch] = useState('')
+  const [itemCatalogueScope, setItemCatalogueScope] = useState<ItemCatalogScope>('national')
+  const [itemCatalogueStatus, setItemCatalogueStatus] = useState<ItemCatalogStatus>('all')
   const [globalSearch, setGlobalSearch] = useState('')
   const [globalSearchOpen, setGlobalSearchOpen] = useState(false)
   const [collegeFilter, setCollegeFilter] = useState<string>('ALL')
@@ -2701,6 +2690,7 @@ function App() {
   const [calendarItemSelection, setCalendarItemSelection] = useState<number[] | null>(null)
   const [activeView, setActiveView] = useState<NavView>('dashboard')
   const isMobile = useMediaQuery('(max-width: 767px)')
+  const isItemSinglePane = useMediaQuery('(max-width: 1220px)')
   const [mobilePanel, setMobilePanel] = useState<'more' | 'filters' | null>(null)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const mobileHistoryRef = useRef({ key: '', restoring: false })
@@ -2749,12 +2739,28 @@ function App() {
   const [draggedQuizCardId, setDraggedQuizCardId] = useState<string | null>(null)
   const [dragOverQuizCardId, setDragOverQuizCardId] = useState<string | null>(null)
   const [dragOverQuizImageSlot, setDragOverQuizImageSlot] = useState<QuizImageSlot | null>(null)
-  const avatarInputRef = useRef<HTMLInputElement | null>(null)
   const [avatarUploadError, setAvatarUploadError] = useState('')
   const [hasLoadedRemoteState, setHasLoadedRemoteState] = useState(false)
   const [authStatus, setAuthStatus] = useState<AuthStatus>('loading')
   const [authView, setAuthView] = useState<AuthView>(() => new URLSearchParams(window.location.search).get('auth') === 'register' ? 'register' : 'login')
   const [authUser, setAuthUser] = useState<AuthUser | null>(null)
+  const [academicProfile, setAcademicProfile] = useState<AcademicProfile | null>(null)
+  const availableColleges: readonly string[] = useMemo(() =>
+    [...new Set([...referenceCollegeNames, ...Object.values(trackingState.items).flatMap(item => item.assignedColleges || [])])]
+      .sort((a, b) => a.localeCompare(b, 'fr')), [trackingState.items])
+  const [academicCoverage, setAcademicCoverage] = useState<AcademicCoverage | null>(null)
+  const [academicUnits, setAcademicUnits] = useState<AcademicUnit[]>([])
+  const [facultyResourceResponse, setFacultyResourceResponse] = useState<{ key: string; program: FacultyProgram | null; sources: FacultySource[] } | null>(null)
+  const [facultyResourceError, setFacultyResourceError] = useState<{ key: string; message: string } | null>(null)
+  const [facultyResourceRetry, setFacultyResourceRetry] = useState(0)
+  const facultyResourceKey = `${authUser?.id}:${academicProfile?.facultyId}:${academicProfile?.yearCode}`
+  const facultyProgram = facultyResourceResponse?.key === facultyResourceKey ? facultyResourceResponse.program : null
+  const facultySources = facultyResourceResponse?.key === facultyResourceKey ? facultyResourceResponse.sources : []
+  const facultyError = facultyResourceError?.key === facultyResourceKey ? facultyResourceError.message : ''
+  const facultyLoading = facultyResourceResponse?.key !== facultyResourceKey && !facultyError
+
+  const [onboardingSuccess, setOnboardingSuccess] = useState(false)
+  const [onboardingPreparing, setOnboardingPreparing] = useState(false)
   const [authMessage, setAuthMessage] = useState('')
   const [authError, setAuthError] = useState('')
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
@@ -3035,6 +3041,22 @@ function App() {
   }, [])
 
   useEffect(() => {
+    if (authStatus !== 'authed' || !academicProfile?.yearCode) return
+    let cancelled = false
+    void apiRequest('/api/onboarding/resources').then(result => {
+      if (cancelled) return
+      setAcademicCoverage((result.coverage as AcademicCoverage) || null)
+      setAcademicUnits((result.units as AcademicUnit[]) || [])
+      setFacultyResourceResponse({ key: facultyResourceKey, program: (result.facultyProgram as FacultyProgram) || null, sources: (result.facultySources as FacultySource[]) || [] })
+      setFacultyResourceError(null)
+    }).catch(cause => { if (!cancelled) {
+      setAcademicUnits([])
+      setFacultyResourceError({ key: facultyResourceKey, message: cause instanceof Error ? cause.message : 'Impossible de charger ton programme local.' })
+    } })
+    return () => { cancelled = true }
+  }, [authStatus, academicProfile?.yearCode, academicProfile?.facultyId, facultyResourceKey, facultyResourceRetry])
+
+  useEffect(() => {
     setIdleLogoutPending(readIdleLogoutPending())
     const storedActivityAt = readLastUserActivityAt()
     if (storedActivityAt > 0) {
@@ -3224,7 +3246,7 @@ function App() {
           | null
           | undefined
 
-        let nextTrackingState = getInitialTrackingState()
+        let nextTrackingState = getInitialTrackingState(academicProfile?.yearCode ?? null)
 	        let nextTheme: Theme = 'light'
 	        let nextFocusMode = false
 	        let nextDateFormat = DEFAULT_DATE_FORMAT
@@ -3264,7 +3286,9 @@ function App() {
         const cloudState: PersistStatePayload = { trackingState: nextTrackingState, theme: nextTheme,
           focusMode: Boolean(remoteState?.focusMode), dateFormat: nextDateFormat, timeZone: nextTimeZone,
           youtubeDisplayMode: nextYoutubeDisplayMode, shuffleQuizCards: nextShuffleQuizCards, profile: nextProfile }
-        const baseline = buildRemotePersistPayload(cloudState)?.body || ''
+        // Generated defaults are not a server snapshot. The first write must
+        // include them in full, rather than patch only the first edited field.
+        const baseline = remoteState ? buildRemotePersistPayload(cloudState)?.body || '' : ''
         lastSavedStatePayloadRef.current = baseline
         lastSavedStateVersionRef.current = remoteVersion
         lastSyncedQuizImagesRef.current = collectQuizImagePresenceMap(nextTrackingState)
@@ -3301,7 +3325,7 @@ function App() {
           }
         }
 
-	        setTrackingState(nextTrackingState)
+	        setTrackingState(hydrateReferenceDefaults(nextTrackingState, usesReferenceDefaults(academicProfile), getDefaultCollegeTracking, getDefaultItemTracking))
 	        setTheme(nextTheme)
 	        setFocusMode(nextFocusMode)
 	        setDateFormat(nextDateFormat)
@@ -3794,11 +3818,28 @@ function App() {
   }
 
   function resetSessionToGuest(authMessage?: string) {
+    setSearch('')
+    setCollegeFilter('ALL')
+    setMasteryFilter('ALL')
+    setSortKey('reviews')
+    setItemCatalogueScope('national')
+    setItemCatalogueStatus('all')
+    setSelectedItemId(null)
+    setSelectedCollegeDetail(null)
+    setCollegeDetailFilter('all')
+    setGlobalSearch('')
+    setGlobalSearchOpen(false)
+    setActiveView('dashboard')
+    setMobilePanel(null)
     setCalendarFocusId(null)
     setCalendarItemSelection(null)
     storeAuthToken('')
     setHasLoadedRemoteState(false)
     setAuthUser(null)
+    setAcademicProfile(null)
+    setAcademicCoverage(null)
+    setAcademicUnits([])
+    setOnboardingSuccess(false)
     setAuthStatus('guest')
     setSaveLockReason(null)
     setSaveStatus('idle')
@@ -3836,6 +3877,7 @@ function App() {
         throw new Error('Session utilisateur invalide.')
       }
       setAuthUser(user)
+      setAcademicProfile((payload.onboarding as AcademicProfile | null) ?? null)
       setAuthStatus('authed')
       clearSaveProtection()
     } catch (error) {
@@ -3845,6 +3887,9 @@ function App() {
         storeAuthToken('')
       }
       setAuthUser(null)
+      setAcademicProfile(null)
+      setAcademicCoverage(null)
+      setOnboardingSuccess(false)
       setAuthStatus('guest')
       setHasLoadedRemoteState(false)
       if (hadActiveSession) {
@@ -3970,6 +4015,7 @@ function App() {
         throw new Error('Session utilisateur introuvable après connexion.')
       }
       setAuthUser(resolvedUser)
+      setAcademicProfile((payload.onboarding as AcademicProfile | null) ?? null)
       setAuthStatus('authed')
       clearSaveProtection()
       return true
@@ -3979,6 +4025,7 @@ function App() {
         storeAuthToken('')
       }
       setAuthUser(null)
+      setAcademicProfile(null)
       setAuthStatus('guest')
       setHasLoadedRemoteState(false)
       clearSaveProtection()
@@ -4300,9 +4347,10 @@ function getPasswordStrengthMeta(password: string) {
   }, [authStatus, authUser?.id, isSaveLocked])
 
   const items = useMemo<ItemComputed[]>(() => {
-    return rawItems.map((item) => {
+    const availableItems = academicProfile?.yearCode === 'Y2' || academicProfile?.yearCode === 'Y3' ? [] : rawItems
+    return availableItems.map((item) => {
       const tracking = normalizeItemTracking(trackingState.items[item.itemNumber] ?? getDefaultItemTracking())
-      const selectedCollegeTrackers = tracking.assignedColleges.map(
+      const selectedCollegeTrackers = reviewCollegeKeys(tracking).map(
         (college) => tracking.byCollege[college] ?? getDefaultCollegeTracking(),
       )
 
@@ -4333,7 +4381,7 @@ function getPasswordStrengthMeta(password: string) {
         lastReviewDate: mergedLastReviewDate,
       }
     })
-  }, [trackingState])
+  }, [trackingState, academicProfile?.yearCode])
 
   const flashCreateSelectedItem = useMemo(() => {
     return items.find((item) => item.itemNumber === flashCreateItemNumber) ?? null
@@ -4460,6 +4508,7 @@ function getPasswordStrengthMeta(password: string) {
   const effectiveSelectedItem = selectedItem ?? null
 
   useEffect(() => {
+    setCollegeAssignmentsUnlockedFor(null)
     if (!effectiveSelectedItem) {
       setItemDetailTab('tracking')
       setItemVisualSectionOpen(false)
@@ -4498,7 +4547,47 @@ function getPasswordStrengthMeta(password: string) {
     apiRequestWithSignal('/api/resources/preview', { method: 'POST', body: JSON.stringify({ url }), signal }, { requireServerAppHeader: true }))
   const resourceIsPdf = resourceFallback?.kind === 'pdf' || resourcePreview?.kind === 'pdf'
 
-  const itemTableList = calendarItemSelection ? filteredAndSortedItems.filter(item=>calendarItemSelection.includes(item.itemNumber)) : filteredAndSortedItems
+  const itemCatalogueBase = calendarItemSelection ? filteredAndSortedItems.filter(item => calendarItemSelection.includes(item.itemNumber)) : filteredAndSortedItems
+  const itemTableList = itemCatalogueBase.filter(item => itemCatalogueStatus === 'all' || itemCatalogStatus(item) === itemCatalogueStatus)
+  const localProgrammeSelection = useMemo(() => {
+    const emptyCounts = countItemCatalogStatuses([])
+    if (!facultyProgram) return { program: null, counts: emptyCounts }
+    const query = normalizeText(search)
+    const queryMatches = new Set(filteredAndSortedItems.map(item => item.itemNumber))
+    const itemByNumber = new Map(items.map(item => [item.itemNumber, item]))
+    const filtersActive = collegeFilter !== 'ALL' || masteryFilter !== 'ALL' || Boolean(calendarItemSelection)
+    const matchesTrackingFilters = (number: number) => {
+      const item = itemByNumber.get(number)
+      return item && (!calendarItemSelection || calendarItemSelection.includes(number)) &&
+        (collegeFilter === 'ALL' || item.tracking.assignedColleges.includes(collegeFilter)) &&
+        (masteryFilter === 'ALL' || item.tracking.assignedColleges.some(college => item.tracking.byCollege[college]?.mastery === masteryFilter))
+    }
+    const countedNumbers = new Set<number>()
+    const units = facultyProgram.units.flatMap(unit => {
+      const programmeRefs = unit.itemReferences.filter(ref => ref.evidenceKind !== 'reference')
+      const labelMatch = Boolean(query && normalizeText(`${unit.code} ${unit.label} ${unit.site || ''} ${unit.slot || ''}`).includes(query))
+      const refs = programmeRefs.filter(ref => matchesTrackingFilters(ref.number) && (!query || labelMatch || queryMatches.has(ref.number)))
+      if ((query && !labelMatch && !refs.length) || (filtersActive && !refs.length)) return []
+      refs.forEach(ref => countedNumbers.add(ref.number))
+      const statusRefs = refs.filter(ref => itemCatalogueStatus === 'all' || itemCatalogStatus(itemByNumber.get(ref.number)!) === itemCatalogueStatus)
+      if (itemCatalogueStatus !== 'all' && !statusRefs.length) return []
+      return [{ ...unit, itemReferences: unit.itemReferences.filter(ref => ref.evidenceKind === 'reference' || statusRefs.some(match => match.number === ref.number)) }]
+    })
+    const numbers = (unit: typeof units[number]) => unit.itemReferences.filter(ref => ref.evidenceKind !== 'reference').map(ref => ref.number)
+    const measure = (unit: typeof units[number]) => {
+      const linked = numbers(unit).map(number => itemByNumber.get(number)).filter((item): item is ItemComputed => Boolean(item))
+      if (sortKey === 'progress') return linked.length ? linked.reduce((sum, item) => sum + item.progress, 0) / linked.length : 0
+      if (sortKey === 'reviews') return linked.reduce((sum, item) => sum + item.totalReviews, 0)
+      return linked.reduce((latest, item) => Math.max(latest, item.lastReviewDate ? new Date(item.lastReviewDate).getTime() : 0), 0)
+    }
+    units.sort((a, b) => sortKey === 'itemAsc' || sortKey === 'itemDesc'
+      ? (sortKey === 'itemAsc' ? 1 : -1) * a.code.localeCompare(b.code, 'fr', { numeric: true })
+      : sortKey === 'lastReviewAsc' ? measure(a) - measure(b) : measure(b) - measure(a))
+    return { program: { ...facultyProgram, units }, counts: countItemCatalogStatuses([...countedNumbers].map(number => itemByNumber.get(number)!)) }
+  }, [facultyProgram, search, filteredAndSortedItems, items, collegeFilter, masteryFilter, calendarItemSelection, itemCatalogueStatus, sortKey])
+  const filteredFacultyProgram = localProgrammeSelection.program
+  const itemCatalogueCounts = itemCatalogueScope === 'local' ? localProgrammeSelection.counts : countItemCatalogStatuses(itemCatalogueBase)
+
 
   const historyItem = useMemo(() => {
     if (historyItemId === null) {
@@ -4713,7 +4802,6 @@ function getPasswordStrengthMeta(password: string) {
       ? quizSessionMetrics.cards.filter((entry) => hasQuizEntryCustomAnswer(entry))
       : quizSessionMetrics.cards
   }, [quizSessionMetrics.cards, quizSessionMode])
-
   const quizSessionScopeLabel = useMemo(() => {
     if (quizSessionScope.type === 'cards') return `Révision ${quizSessionScope.label}`
     if (quizSessionScope.type === 'item') {
@@ -4820,14 +4908,14 @@ function getPasswordStrengthMeta(password: string) {
   const quizSessionCollegeOptions = useMemo(() => {
     const scopedColleges = new Set<string>()
     quizSessionScopeEntries.forEach((entry) => entry.colleges.forEach((college) => scopedColleges.add(college)))
-    const orderedColleges = quizSessionScope.type === 'college' ? [quizSessionScope.college] : [...COLLEGES]
+    const orderedColleges = quizSessionScope.type === 'college' ? [quizSessionScope.college] : [...availableColleges]
     scopedColleges.forEach((college) => {
       if (!orderedColleges.includes(college as CollegeName)) {
         orderedColleges.push(college as CollegeName)
       }
     })
     return orderedColleges.sort((a, b) => getFlashCollegeDisplayName(a).localeCompare(getFlashCollegeDisplayName(b), 'fr'))
-  }, [quizSessionScope, quizSessionScopeEntries])
+  }, [quizSessionScope, quizSessionScopeEntries, availableColleges])
 
   const quizSessionItemOptions = useMemo(() => {
     const itemNumbers = new Set(quizSessionScopeEntries.map((entry) => entry.itemNumber))
@@ -4996,7 +5084,7 @@ function getPasswordStrengthMeta(password: string) {
       }
     }
 
-    for (const college of COLLEGES) {
+    for (const college of availableColleges) {
       const displayName = getFlashCollegeDisplayName(college)
       if (matches(['college', 'collège', 'specialite medicale', 'spécialité médicale', college, displayName])) {
         const collegeItems = items.filter((item) => item.tracking.assignedColleges.includes(college))
@@ -5033,7 +5121,7 @@ function getPasswordStrengthMeta(password: string) {
       .sort((a, b) => a.rank - b.rank || a.kind.localeCompare(b.kind, 'fr') || a.label.localeCompare(b.label, 'fr'))
       .slice(0, 12)
       .map(({ rank: _rank, ...result }) => result)
-  }, [allFlashcards, globalSearch, items])
+  }, [allFlashcards, globalSearch, items, availableColleges])
 
   const flashcardsByKey = useMemo(() => {
     return new Map(allFlashcards.map((card) => [`${card.itemNumber}:${card.cardId}`, card]))
@@ -5134,7 +5222,7 @@ function getPasswordStrengthMeta(password: string) {
     ).length
     const remainingCount = rawItems.length - completedCount
 
-    const byCollege = COLLEGES.map((college) => {
+    const byCollege = availableColleges.map((college) => {
       let assigned = 0
       let completed = 0
       let reviews = 0
@@ -5146,7 +5234,7 @@ function getPasswordStrengthMeta(password: string) {
         const entry = item.tracking.byCollege[college]
         if (entry) {
           reviews += entry.reviews
-          const isCompleted = entry.reviews > 0 && MASTERY_SCORE[entry.mastery] >= MASTERY_SCORE.Bon
+          const isCompleted = isCollegeItemCompleted(entry)
           if (isCompleted) {
             completed += 1
           }
@@ -5167,10 +5255,10 @@ function getPasswordStrengthMeta(password: string) {
       overallProgress: (completedCount / rawItems.length) * 100,
       byCollege,
     }
-  }, [items])
+  }, [items, availableColleges])
 
   const collegesViewRows = useMemo<CollegeViewRow[]>(() => {
-    return COLLEGES.map((college) => {
+    return availableColleges.map((college) => {
       const collegeItems = items
         .filter((item) => item.tracking.assignedColleges.includes(college))
         .map((item) => {
@@ -5186,7 +5274,7 @@ function getPasswordStrengthMeta(password: string) {
         })
 
       const completed = collegeItems.filter(
-        (entry) => entry.reviews > 0 && MASTERY_SCORE[entry.mastery] >= MASTERY_SCORE.Bon,
+        (entry) => isCollegeItemCompleted(entry),
       ).length
 	      const completion = collegeItems.length === 0 ? 0 : Math.round((completed / collegeItems.length) * 100)
 	      const totalReviews = collegeItems.reduce((sum, entry) => sum + entry.reviews, 0)
@@ -5204,7 +5292,7 @@ function getPasswordStrengthMeta(password: string) {
 	        lastReviewedAt,
       }
     })
-  }, [items])
+  }, [items, availableColleges])
 
   const sortedCollegesViewRows = useMemo(() => {
     return [...collegesViewRows].sort((a, b) => {
@@ -5337,7 +5425,7 @@ function getPasswordStrengthMeta(password: string) {
     }
 
     for (const item of items) {
-      for (const college of item.tracking.assignedColleges) {
+      for (const college of reviewCollegeKeys(item.tracking)) {
         const entry = item.tracking.byCollege[college]
         if (!entry) {
           continue
@@ -5549,7 +5637,7 @@ function getPasswordStrengthMeta(password: string) {
           (card) => card.lastResult === 'good' || card.lastResult === 'easy',
         ).length
         const masteryPercent =
-          itemFlashcards.length === 0 ? Math.round(item.progress * 100) : Math.round((masteredFlashcards / itemFlashcards.length) * 100)
+          itemFlashcards.length === 0 ? 0 : Math.round((masteredFlashcards / itemFlashcards.length) * 100)
         const collegeNames = item.tracking.assignedColleges.map(getFlashCollegeDisplayName)
         const accent = item.tracking.itemColor || FLASH_COLLEGE_ACCENTS[index % FLASH_COLLEGE_ACCENTS.length]
 
@@ -5567,9 +5655,6 @@ function getPasswordStrengthMeta(password: string) {
         }
       })
       .filter((row) => {
-        if (row.cardCount === 0) {
-          return false
-        }
         if (flashCollegeFilter !== 'ALL' && !row.colleges.includes(flashCollegeFilter)) {
           return false
         }
@@ -5603,7 +5688,7 @@ function getPasswordStrengthMeta(password: string) {
       })
   }, [allFlashcards, flashCollegeFilter, flashCollegeLevelFilter, flashCollegeSearch, flashCollegeSort, items])
 
-  const defaultFlashSessionItemNumber = flashItemCards[0]?.itemNumber ?? null
+  const defaultFlashSessionItemNumber = flashItemCards.find(row => row.cardCount > 0)?.itemNumber ?? null
 
   // Catalog presentation filters never change cards, tracking, or review scopes.
   const flashCatalogItemQuery = normalizeText(flashCatalogItemSearch)
@@ -5641,8 +5726,8 @@ function getPasswordStrengthMeta(password: string) {
       const mastered = card.lastResult === 'good' || card.lastResult === 'easy'
       itemMastery.set(card.itemNumber, (itemMastery.get(card.itemNumber) ?? true) && mastered)
     }
-    return { totalItems: itemMastery.size, masteredItems: [...itemMastery.values()].filter(Boolean).length }
-  }, [allFlashcards])
+    return { totalItems: items.length, masteredItems: [...itemMastery.values()].filter(Boolean).length }
+  }, [allFlashcards, items.length])
 
   const flashCardsListCollegeMeta = useMemo(() => {
     if (!flashCardsListCollege) {
@@ -5759,6 +5844,7 @@ function getPasswordStrengthMeta(password: string) {
       return
     }
 
+    setItemCatalogueScope('national')
     setActiveView('items')
     setSelectedItemId(result.itemNumber)
     setSearch('')
@@ -5948,7 +6034,7 @@ function getPasswordStrengthMeta(password: string) {
     if (!card) {
       return null
     }
-    const selectedCollegeTrackers = tracking.assignedColleges.map(
+    const selectedCollegeTrackers = reviewCollegeKeys(tracking).map(
       (college) => tracking.byCollege[college] ?? getDefaultCollegeTracking(),
     )
     const totalReviews = selectedCollegeTrackers.reduce((sum, collegeTracking) => sum + collegeTracking.reviews, 0)
@@ -6300,20 +6386,24 @@ function getPasswordStrengthMeta(password: string) {
     }, 420)
   }
 
-  function jumpToQuizGeneratorSetup() {
-    setFlashGeneratorModalOpen(true)
-    setFlashGeneratorStep(1)
-  }
-
   function openFlashcardCreator(itemNumber?: number) {
     const preselectedItem = typeof itemNumber === 'number' ? items.find((item) => item.itemNumber === itemNumber) : null
-    setActiveView('flashcards')
+    if (activeView !== 'items' || !preselectedItem) setActiveView('flashcards')
     setFlashCreateItemNumber(preselectedItem?.itemNumber ?? null)
     setFlashCreateItemSearch(preselectedItem ? getFlashCreateItemLabel(preselectedItem) : '')
     setFlashCreateQuestion('')
     setFlashCreateAnswer('')
     setFlashCreateError('')
     setFlashCreateModalOpen(true)
+  }
+
+  function resetFlashCatalogFilters() {
+    setFlashCollegeSearch('')
+    setFlashCatalogItemSearch('')
+    setFlashCollegeLevelFilter('ALL')
+    setFlashCollegeSort('progress')
+    setFlashCollegeFilter('ALL')
+    setFlashCatalogStatus('all')
   }
 
   function closeFlashcardCreator() {
@@ -6367,7 +6457,8 @@ function getPasswordStrengthMeta(password: string) {
 
     setFlashDisplayMode('items')
     setFlashCardsListCollege(null)
-    setFlashCardsListItem(targetItem.itemNumber)
+    setFlashCardsListItem(activeView === 'items' ? null : targetItem.itemNumber)
+    if (activeView === 'items') setItemDetailTab('flashcards')
     setFlashCreateQuestion('')
     setFlashCreateAnswer('')
     setFlashCreateError('')
@@ -6465,7 +6556,6 @@ function getPasswordStrengthMeta(password: string) {
 
   function openItemQuizGenerator(itemNumber: number) {
     triggerQuizButtonPulse(itemNumber)
-    setActiveView('flashcards')
     openQuizSessionSetup({ type: 'item', itemNumber })
   }
 
@@ -6649,10 +6739,12 @@ function getPasswordStrengthMeta(password: string) {
 
       const nextTracking = appendActionLogs(
         {
+          ...currentItemTracking,
           assignedColleges: Array.from(assignedSet),
           byCollege,
           lisaSheets: currentItemTracking.lisaSheets,
           platformSheets: currentItemTracking.platformSheets,
+          localUnits: currentItemTracking.localUnits,
           noLisaSheets: currentItemTracking.noLisaSheets,
           noPlatformSheets: currentItemTracking.noPlatformSheets,
           itemComment: currentItemTracking.itemComment,
@@ -6681,15 +6773,34 @@ function getPasswordStrengthMeta(password: string) {
     })
   }
 
+  function updateLocalUnitTracking(itemNumber: number, key: string, updater: (entry: LocalUnitTracking) => LocalUnitTracking) {
+    setTrackingState(current => {
+      const tracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
+      const entry = normalizeLocalUnitTracking(updater(normalizeLocalUnitTracking(tracking.localUnits[key])))
+      return {
+        ...current,
+        items: {
+          ...current.items,
+          [itemNumber]: { ...tracking, localUnits: { ...tracking.localUnits, [key]: entry } },
+        },
+      }
+    })
+  }
+
   function updateCollegeTracking(
     itemNumber: number,
     college: string,
     updater: (currentTracking: CollegeTracking) => CollegeTracking,
+    markStarted = false,
   ) {
     setTrackingState((current) => {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
       const prevCollegeTracking = itemTracking.byCollege[college] ?? getDefaultCollegeTracking()
       const nextCollegeTracking = updater(prevCollegeTracking)
+      const started = markStarted || nextCollegeTracking.reviews !== prevCollegeTracking.reviews || nextCollegeTracking.mastery !== prevCollegeTracking.mastery
+      const referenceTransition = itemTracking.referenceTransition && started
+        ? { ...itemTracking.referenceTransition, pendingColleges: itemTracking.referenceTransition.pendingColleges.filter(name => name !== college) }
+        : itemTracking.referenceTransition
       const actions: string[] = []
       if (nextCollegeTracking.reviews !== prevCollegeTracking.reviews) {
         const diff = nextCollegeTracking.reviews - prevCollegeTracking.reviews
@@ -6705,13 +6816,16 @@ function getPasswordStrengthMeta(password: string) {
 
       const nextTracking = appendActionLogs(
         {
+          ...itemTracking,
           assignedColleges: itemTracking.assignedColleges,
+          referenceTransition,
           byCollege: {
             ...itemTracking.byCollege,
             [college]: nextCollegeTracking,
           },
           lisaSheets: itemTracking.lisaSheets,
           platformSheets: itemTracking.platformSheets,
+          localUnits: itemTracking.localUnits,
           noLisaSheets: itemTracking.noLisaSheets,
           noPlatformSheets: itemTracking.noPlatformSheets,
           itemComment: itemTracking.itemComment,
@@ -6788,10 +6902,12 @@ function getPasswordStrengthMeta(password: string) {
 
       const nextTracking = appendActionLogs(
         {
+          ...itemTracking,
           assignedColleges: itemTracking.assignedColleges,
           byCollege: itemTracking.byCollege,
           lisaSheets: nextLisaSheets,
           platformSheets: nextPlatformSheets,
+          localUnits: itemTracking.localUnits,
           noLisaSheets: nextLisaSheets.length > 0 ? false : itemTracking.noLisaSheets,
           noPlatformSheets: nextPlatformSheets.length > 0 ? false : itemTracking.noPlatformSheets,
           itemComment: itemTracking.itemComment,
@@ -6824,10 +6940,12 @@ function getPasswordStrengthMeta(password: string) {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
       const nextTracking = appendActionLogs(
         {
+          ...itemTracking,
           assignedColleges: itemTracking.assignedColleges,
           byCollege: itemTracking.byCollege,
           lisaSheets: itemTracking.lisaSheets,
           platformSheets: itemTracking.platformSheets,
+          localUnits: itemTracking.localUnits,
           noLisaSheets: key === 'noLisaSheets' ? value : itemTracking.noLisaSheets,
           noPlatformSheets: key === 'noPlatformSheets' ? value : itemTracking.noPlatformSheets,
           itemComment: itemTracking.itemComment,
@@ -6867,10 +6985,12 @@ function getPasswordStrengthMeta(password: string) {
         items: {
           ...current.items,
           [itemNumber]: {
+            ...itemTracking,
             assignedColleges: itemTracking.assignedColleges,
             byCollege: itemTracking.byCollege,
             lisaSheets: itemTracking.lisaSheets,
             platformSheets: itemTracking.platformSheets,
+            localUnits: itemTracking.localUnits,
             noLisaSheets: itemTracking.noLisaSheets,
             noPlatformSheets: itemTracking.noPlatformSheets,
             itemComment: value,
@@ -6935,10 +7055,12 @@ function getPasswordStrengthMeta(password: string) {
         items: {
           ...current.items,
           [itemNumber]: {
+            ...itemTracking,
             assignedColleges: itemTracking.assignedColleges,
             byCollege: itemTracking.byCollege,
             lisaSheets: itemTracking.lisaSheets,
             platformSheets: itemTracking.platformSheets,
+            localUnits: itemTracking.localUnits,
             noLisaSheets: itemTracking.noLisaSheets,
             noPlatformSheets: itemTracking.noPlatformSheets,
             itemComment: itemTracking.itemComment,
@@ -6967,10 +7089,12 @@ function getPasswordStrengthMeta(password: string) {
         items: {
           ...current.items,
           [itemNumber]: {
+            ...itemTracking,
             assignedColleges: itemTracking.assignedColleges,
             byCollege: itemTracking.byCollege,
             lisaSheets: itemTracking.lisaSheets,
             platformSheets: itemTracking.platformSheets,
+            localUnits: itemTracking.localUnits,
             noLisaSheets: itemTracking.noLisaSheets,
             noPlatformSheets: itemTracking.noPlatformSheets,
             itemComment: itemTracking.itemComment,
@@ -7343,7 +7467,7 @@ function getPasswordStrengthMeta(password: string) {
     if (!file) {
       return
     }
-    if (!file.type.startsWith('image/')) {
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
       setAvatarUploadError('Fichier invalide: choisis une image.')
       return
     }
@@ -7362,12 +7486,6 @@ function getPasswordStrengthMeta(password: string) {
     } catch {
       setAvatarUploadError("Impossible d'importer l'avatar.")
     }
-  }
-
-  function handleAvatarDrop(event: ReactDragEvent<HTMLButtonElement>) {
-    event.preventDefault()
-    event.currentTarget.classList.remove('is-drag-over')
-    void handleAvatarUploadFile(event.dataTransfer.files?.[0] ?? null)
   }
 
   function handleQuizCardImageDragOver(event: ReactDragEvent<HTMLElement>, slot: QuizImageSlot) {
@@ -7436,10 +7554,12 @@ function getPasswordStrengthMeta(password: string) {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
       const nextTracking = appendActionLogs(
         {
+          ...itemTracking,
           assignedColleges: itemTracking.assignedColleges,
           byCollege: itemTracking.byCollege,
           lisaSheets: itemTracking.lisaSheets,
           platformSheets: itemTracking.platformSheets,
+          localUnits: itemTracking.localUnits,
           noLisaSheets: itemTracking.noLisaSheets,
           noPlatformSheets: itemTracking.noPlatformSheets,
           itemComment: itemTracking.itemComment,
@@ -7554,15 +7674,6 @@ function getPasswordStrengthMeta(password: string) {
     downloadBackup(state, 'local-recovery')
   }
 
-  async function exportBackup() {
-    try {
-      if (!(await persistUserState({ force: true }))) throw new Error('Synchronisation requise. Utilise « Exporter les changements locaux » pour la récupération hors ligne.')
-      const response = await apiRequest('/api/state', undefined, { requireServerAppHeader: true })
-      if (!response.state) throw new Error('Aucune donnée cloud à exporter.')
-      downloadBackup(response.state as PersistStatePayload, 'backup-complet')
-    } catch (error) { setSaveErrorMessage(toSaveWarningMessage(error)); setSaveStatus('error') }
-  }
-
   function downloadBackup(state: PersistStatePayload, kind: string) {
     const payload: BackupPayload = {
       app: 'med-learning-tracker',
@@ -7584,6 +7695,50 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   const isAuthBootstrapping = authStatus === 'authed' && !hasLoadedRemoteState
+
+  async function saveAcademicProfile(yearCode: AcademicYear, facultyId: string | null, firstTime = false, betaAcknowledged = false, onProgress?: (stage: OnboardingPreparationStage) => void) {
+    const startedAt = performance.now()
+    // Presentation pacing requested for the local onboarding preview.
+    // Milestones never advance before the corresponding operation succeeds.
+    async function paceUntil(milliseconds: number) {
+      if (!firstTime) return
+      const remaining = milliseconds - (performance.now() - startedAt)
+      if (remaining > 0) await new Promise(resolve => window.setTimeout(resolve, remaining))
+    }
+    if (firstTime) setOnboardingPreparing(true)
+    try {
+      const result = await apiRequest(firstTime ? '/api/onboarding/complete' : '/api/onboarding/profile', {
+        method: firstTime ? 'POST' : 'PATCH',
+        body: JSON.stringify({ yearCode, facultyId, betaAcknowledged }),
+      })
+      await paceUntil(1200)
+      onProgress?.(1)
+      const resources = firstTime ? await apiRequest('/api/onboarding/resources') : null
+      await paceUntil(2400)
+      onProgress?.(2)
+      const next = result.onboarding as AcademicProfile
+      if (resources) setAcademicUnits((resources.units as AcademicUnit[]) || [])
+      setAcademicProfile(next)
+      setAcademicCoverage(((resources?.coverage ?? result.coverage) as AcademicCoverage | undefined) ?? null)
+      if (yearCode === 'Y4' || yearCode === 'Y5' || yearCode === 'Y6') {
+        const defaults = getInitialTrackingState(yearCode)
+        setTrackingState(current => hydrateReferenceDefaults({ ...current, items: { ...defaults.items, ...current.items } }, usesReferenceDefaults(next), getDefaultCollegeTracking, getDefaultItemTracking))
+      }
+      if (firstTime) {
+        await paceUntil(3600)
+        onProgress?.(3)
+        await paceUntil(4000)
+        setOnboardingSuccess(true)
+      }
+    } finally { if (firstTime) setOnboardingPreparing(false) }
+  }
+
+  if (authStatus === 'authed' && !isAuthBootstrapping && (academicProfile?.required || onboardingSuccess || onboardingPreparing)) {
+    return <OnboardingFlow profile={academicProfile} coverage={academicCoverage} request={apiRequest}
+      onSave={(year, facultyId, beta, onProgress) => saveAcademicProfile(year, facultyId, true, beta, onProgress)}
+      onContinue={() => transitionFromOnboarding(() => { setOnboardingSuccess(false); setActiveView('dashboard') })}
+      mode={onboardingSuccess ? 'success' : 'choose'} />
+  }
 
   if (authStatus !== 'authed' || isAuthBootstrapping) {
     return (
@@ -7900,7 +8055,6 @@ function getPasswordStrengthMeta(password: string) {
         { label: 'Sauvegardes', value: fallbackStorageBackupBytes },
       ]
 	  const settingsEmail = profile.email || authUser?.email || ''
-	  const settingsDisplayName = [profile.firstName, profile.lastName].filter(Boolean).join(' ') || authUser?.displayName || 'Setup'
 	  const formatPreferredDate = (dateString: string | null) => formatDateWithPreferences(dateString, dateFormat, timeZone)
 	  const formatPreferredDateTime = (dateString: string) => formatDateTimeWithPreferences(dateString, dateFormat, timeZone)
 
@@ -7944,7 +8098,7 @@ function getPasswordStrengthMeta(password: string) {
               <span className="sidebar-logo-bar" />
             </span>
             <div className="sidebar-head-titles">
-              <p className="sidebar-grade">IVeme annee</p>
+              <p className="sidebar-grade">{academicProfile?.yearCode ? `${academicProfile.yearCode.slice(1)}e année` : 'ItemsTracker'}</p>
               <p className="sidebar-title">ItemsTracker</p>
             </div>
           </div>
@@ -8211,6 +8365,9 @@ function getPasswordStrengthMeta(password: string) {
         ) : null}
 
         <div className="dashboard-content">
+        {activeView === 'dashboard' && (academicProfile?.yearCode === 'Y2' || academicProfile?.yearCode === 'Y3') ? (
+          <div className="academic-coverage-banner" role="status"><strong>{academicUnits.length ? `${academicUnits.length} UE locale(s) publiée(s)` : 'Ressources locales en préparation'}</strong><span>{academicUnits.length ? 'Consulte les UE disponibles dans Items. La couverture peut être partielle.' : 'Aucune UE de ton cursus n’est encore publiée. Tes données et tes réglages restent disponibles.'}</span></div>
+        ) : null}
         {activeView === 'dashboard' ? (
           <MobileDashboard
             isMobile={isMobile}
@@ -8241,71 +8398,36 @@ function getPasswordStrengthMeta(password: string) {
         ) : null}
 
         {activeView === 'items' && calendarItemSelection ? <div className="calendar-items-scope">Séance · {calendarItemSelection.length} items associés<button type="button" onClick={()=>setCalendarItemSelection(null)}>Voir tous les items</button></div>:null}
-        {activeView === 'items' ? (
+        {activeView === 'items' && (academicProfile?.yearCode === 'Y2' || academicProfile?.yearCode === 'Y3') ? <AcademicLocalResources title="Items et UE de mon cursus" coverage={academicCoverage} units={academicUnits} /> : null}
+        {activeView === 'items' && academicProfile?.yearCode !== 'Y2' && academicProfile?.yearCode !== 'Y3' ? (
         <section
           id="items-section"
-          className={`main-grid ${effectiveSelectedItem ? 'has-detail' : 'full-table'} ${
+          className={`main-grid items-grid-preview ${effectiveSelectedItem ? 'has-detail' : 'full-table'} ${
             activeView === 'items' ? 'items-only-view' : ''
           }`}
         >
         <article className={`panel table-panel ${effectiveSelectedItem ? '' : 'full-width'}`}>
           <div className="panel-head">
             <h2>Items</h2>
-            <p>{itemTableList.length} {isMobile ? 'items' : 'lignes'}</p>
-            {isMobile ? <button type="button" className="mobile-profile-shortcut" aria-label="Mon profil et réglages" onClick={()=>setMobilePanel('more')}>{profile.photoUrl?<img src={profile.photoUrl} alt="" />:<ProfileCircle aria-hidden="true" />}</button>:null}{isMobile ? <AnnouncementBell request={apiRequest} onCalendar={id=>{setCalendarFocusId(id);setActiveView('calendar')}} mobile /> : null}
+            <p>{itemCatalogueScope === 'local' ? `${filteredFacultyProgram?.units.length || 0} enseignements` : `${itemTableList.length} items`}</p>
+            {isMobile ? <div className="mobile-items-header-actions">
+              <AnnouncementBell request={apiRequest} onCalendar={id=>{setCalendarFocusId(id);setActiveView('calendar')}} mobile />
+              <button type="button" className="mobile-profile-shortcut" aria-label="Mon profil et réglages" onClick={()=>setMobilePanel('more')}>{profile.photoUrl?<img src={profile.photoUrl} alt="" />:<ProfileCircle aria-hidden="true" />}</button>
+            </div> : null}
           </div>
 
-          <div className="filters-row">
-            <input
-              type="text"
-              aria-label="Rechercher un item"
-              placeholder="Rechercher un item..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-            />
-            <button type="button" className="mobile-filter-trigger" aria-haspopup="dialog" aria-label="Ouvrir les filtres des items" onClick={() => setMobilePanel('filters')}><List className="ui-icon" aria-hidden="true" />Filtres{collegeFilter !== 'ALL' || masteryFilter !== 'ALL' || sortKey !== 'reviews' ? <span className="mobile-filter-dot" aria-label="Filtres actifs" /> : null}</button>
-            <div className="desktop-item-filters">
-            <select value={collegeFilter} onChange={(event) => setCollegeFilter(event.target.value)}>
-              <option value="ALL">Tous collèges</option>
-              {COLLEGES.map((college) => (
-                <option value={college} key={college}>
-                  {college}
-                </option>
-              ))}
-            </select>
-            <select value={masteryFilter} onChange={(event) => setMasteryFilter(event.target.value)}>
-              <option value="ALL">Tous ressentis</option>
-              {MASTERY_LEVELS.map((level) => (
-                <option value={level} key={level}>
-                  {getMasteryFeelingLabel(level)}
-                </option>
-              ))}
-            </select>
-	            <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}>
-	              <option value="itemAsc">Trier : Item croissant</option>
-	              <option value="itemDesc">Trier : Item décroissant</option>
-	              <option value="reviews">Trier : Révisions</option>
-	              <option value="progress">Trier : Progression</option>
-	              <option value="lastReviewAsc">Trier : Dernière révision croissante</option>
-	              <option value="lastReviewDesc">Trier : Dernière révision décroissante</option>
-	            </select>
-	            <button
-	              type="button"
-	              className="ghost-btn items-filter-reset"
-	              onClick={() => {
-	                setSearch('')
-	                setCollegeFilter('ALL')
-	                setMasteryFilter('ALL')
-	                setSortKey('reviews')
-	              }}
-	              disabled={search === '' && collegeFilter === 'ALL' && masteryFilter === 'ALL' && sortKey === 'reviews'}
-	            >
-	              Réinitialiser
-	            </button>
-	            </div>
-          </div>
+          <ItemsWorkspace
+            scope={itemCatalogueScope} onScope={scope => { setItemCatalogueScope(scope); setSelectedItemId(null) }}
+            query={search} onQuery={setSearch} college={collegeFilter} colleges={availableColleges.map(college => ({ value: college, label: getFlashCollegeDisplayName(college) }))} onCollege={setCollegeFilter}
+            level={masteryFilter} levels={MASTERY_LEVELS.map(level => ({ value: level, label: getMasteryFeelingLabel(level) }))} onLevel={setMasteryFilter}
+            sort={sortKey} onSort={value => setSortKey(value as SortKey)} status={itemCatalogueStatus} onStatus={setItemCatalogueStatus} counts={itemCatalogueCounts}
+            onReset={() => { setSearch(''); setCollegeFilter('ALL'); setMasteryFilter('ALL'); setSortKey('reviews'); setItemCatalogueStatus('all') }}
+            compact={Boolean(effectiveSelectedItem)}
+            matrix={<ItemsMatrix selectedCollege={collegeFilter} onFilterCollege={setCollegeFilter} items={itemTableList} colleges={availableColleges.map(college => ({ value: college, label: getFlashCollegeDisplayName(college), progress: collegesViewRows.find(row => row.college === college)?.completion ?? 0 }))} masteryProgress={mastery => Math.round((MASTERY_SCORE[mastery as Mastery] ?? 0) / MASTERY_SCORE.Parfait * 100)} onOpenItem={setSelectedItem} />}
+            local={academicProfile ? <AcademicFacultyResources key={facultyResourceKey} expanded profile={academicProfile} program={filteredFacultyProgram} sources={facultySources} loading={facultyLoading} error={facultyError} onRetry={() => setFacultyResourceRetry(count => count + 1)} onSettings={() => setActiveView('settings')} onOpenItem={number => { setItemDetailTab('tracking'); setSearch(''); setItemCatalogueScope('national'); setSelectedItemId(number) }} /> : <p>Renseigne ta faculté dans ton profil pour consulter le programme local.</p>}
+            national={
 
-	          <div className="items-list-wrap" role={isMobile ? undefined : "list"} aria-label="Liste des items">
+	          <div className="items-list-wrap items-catalog-grid" role={isMobile ? undefined : "list"} aria-label="Liste des items">
 	            {itemTableList.length === 0 ? (
 	              <div className="items-empty-state" role="status">
 	                <strong>Aucun item trouvé</strong>
@@ -8334,24 +8456,21 @@ function getPasswordStrengthMeta(password: string) {
                   type="button"
                   key={item.itemNumber}
                   role={isMobile ? undefined : "listitem"}
-                  className={`items-list-row ${item.itemNumber === effectiveSelectedItem?.itemNumber ? 'selected' : ''}`}
+                  className={`items-list-row ${hasVisualMarker ? 'has-visual-marker' : ''} ${item.itemNumber === effectiveSelectedItem?.itemNumber ? 'selected' : ''}`}
+                  style={hasVisualMarker ? { '--item-marker-color': item.tracking.itemColor || '#facc15' } as CSSProperties : undefined}
+                  aria-label={`Ouvrir l’item ${item.itemNumber} : ${item.shortDescription}`}
+                  title={item.shortDescription}
                   onClick={() => setSelectedItem(item.itemNumber)}
                 >
+                  {item.tracking.itemIcon ? <span className="items-list-marker" aria-hidden="true">{item.tracking.itemIcon}</span> : null}
                   <span className="items-list-id">
-                  <span
-                    className={`items-list-marker ${hasVisualMarker ? '' : 'empty'}`}
-                    style={{ backgroundColor: item.tracking.itemColor || undefined }}
-                    aria-hidden="true"
-                  >
-                    {item.tracking.itemIcon || ''}
-                  </span>
                   <span className="items-list-number">#{item.itemNumber}</span>
                   </span>
                   <span className="items-list-main">
                     <strong>{item.shortDescription}</strong>
-                    <small>{item.tagLabels.join(' • ') || item.tagCodes.join(' • ') || 'Aucun collège'}</small>
+                    <small>{item.tracking.assignedColleges.map(getFlashCollegeDisplayName).join(' • ') || 'Aucun collège assigné'}</small>
                     {item.tracking.itemLabel ? (
-                      <span className="item-label-chip" style={{ borderColor: item.tracking.itemColor || undefined }}>
+                      <span className="item-label-chip">
                         {item.tracking.itemLabel}
                       </span>
                     ) : null}
@@ -8384,7 +8503,7 @@ function getPasswordStrengthMeta(password: string) {
                         ? UNRATED_FEELING_LABEL
                         : getMasteryFeelingLabel(item.tracking.itemMastery)}
                     </span>
-                    {isMobile ? <span className="mobile-item-progress" aria-hidden="true"><span style={{ width: `${progressPercent}%` }} /></span> : null}
+                    <span className="mobile-item-progress" aria-hidden="true"><span style={{ width: `${progressPercent}%` }} /></span>
                   </span>
                   <span className="mobile-item-action">Ouvrir l’item</span>
                   <span className="items-list-chevron" aria-hidden="true">
@@ -8394,9 +8513,11 @@ function getPasswordStrengthMeta(password: string) {
               )
             })}
           </div>
+            }
+          />
         </article>
 
-        {isMobile && effectiveSelectedItem ? <button type="button" className="mobile-item-back" onClick={() => setSelectedItemId(null)}><NavArrowLeft className="ui-icon" aria-hidden="true" />Retour aux items</button> : null}
+        {isItemSinglePane && effectiveSelectedItem ? <button type="button" className="mobile-item-back item-catalog-back" onClick={() => setSelectedItemId(null)}><NavArrowLeft className="ui-icon" aria-hidden="true" />Retour aux items</button> : null}
         <article className={`panel detail-panel item-detail-panel ${effectiveSelectedItem ? 'is-open' : 'is-closed'}`}>
           {effectiveSelectedItem ? (
             <>
@@ -8405,8 +8526,8 @@ function getPasswordStrengthMeta(password: string) {
                   <h2>{effectiveSelectedItem.tracking.itemIcon ? `${effectiveSelectedItem.tracking.itemIcon} ` : ''}Item #{effectiveSelectedItem.itemNumber}</h2>
                   <p>{effectiveSelectedItem.shortDescription}</p>
                   <div className="item-detail-tag-row">
-                    {effectiveSelectedItem.tagLabels.map((tag) => (
-                      <span key={tag}>{tag}</span>
+                    {effectiveSelectedItem.tracking.assignedColleges.map((college) => (
+                      <span key={college}>{getFlashCollegeDisplayName(college)}</span>
                     ))}
                   </div>
                 </div>
@@ -8529,16 +8650,16 @@ function getPasswordStrengthMeta(password: string) {
                   </div>
                   <button
                     type="button"
-                    className={`quiz-trigger-btn ${quizPulseByItem[effectiveSelectedItem.itemNumber] ? 'pulse' : ''}`}
-                    onClick={() => openItemQuizGenerator(effectiveSelectedItem.itemNumber)}
-                    disabled={effectiveSelectedItem.tracking.quiz.cards.length === 0}
+                    aria-label={effectiveSelectedItem.tracking.quiz.cards.length ? 'Lancer une révision' : `Créer une flashcard pour l’item ${effectiveSelectedItem.itemNumber}`}
+                    className={`quiz-trigger-btn ${effectiveSelectedItem.tracking.quiz.cards.length === 0 ? 'is-empty' : ''} ${quizPulseByItem[effectiveSelectedItem.itemNumber] ? 'pulse' : ''}`}
+                    onClick={() => effectiveSelectedItem.tracking.quiz.cards.length ? openItemQuizGenerator(effectiveSelectedItem.itemNumber) : openFlashcardCreator(effectiveSelectedItem.itemNumber)}
 	                    title={
 	                      effectiveSelectedItem.tracking.quiz.cards.length > 0
 	                        ? "Lancer une révision avec les flashcards de cet item"
-	                        : 'Ajoute une flashcard pour lancer une révision'
+	                        : 'Créer la première flashcard de cet item'
 	                    }
 	                  >
-	                    Lancer une révision
+	                    <span className="item-review-label-full">{effectiveSelectedItem.tracking.quiz.cards.length ? 'Lancer une révision' : 'Créer une flashcard'}</span><span className="item-review-label-compact">{effectiveSelectedItem.tracking.quiz.cards.length ? 'Réviser' : 'Créer une carte'}</span>
 	                  </button>
                   <button
                     type="button"
@@ -8551,7 +8672,7 @@ function getPasswordStrengthMeta(password: string) {
                   </button>
                   <button
                     type="button"
-                    className="ghost-btn item-detail-icon-btn"
+                    className="ghost-btn item-detail-icon-btn item-detail-dismiss"
                     title="Masquer le panneau item"
                     aria-label="Masquer le panneau item"
                     onClick={() => setSelectedItemId(null)}
@@ -8636,23 +8757,26 @@ function getPasswordStrengthMeta(password: string) {
                 </div>
               </div>
 
-                <div className="item-detail-tabs" aria-label="Navigation détail item">
-                  <button type="button" className={itemDetailTab === 'tracking' ? 'active' : ''} onClick={() => setItemDetailTab('tracking')}>Suivi des révisions</button>
-                  <button type="button" className={itemDetailTab === 'resources' ? 'active' : ''} onClick={() => setItemDetailTab('resources')}>Ressources</button>
-	                  <button type="button" className={itemDetailTab === 'flashcards' ? 'active' : ''} onClick={() => setItemDetailTab('flashcards')}>Flashcards</button>
-                  <button type="button" className={itemDetailTab === 'assignments' ? 'active' : ''} onClick={() => setItemDetailTab('assignments')}>Assignations</button>
-                </div>
-
-                <div id="item-detail-overview" className={`item-detail-content-grid item-detail-tab-${itemDetailTab}`}>
-                <div className="item-detail-main-column">
-                    <label className="block-label item-detail-card item-detail-upcoming-card item-detail-tab-panel item-detail-tab-panel-tracking">
+                    <label className="block-label item-detail-card item-detail-upcoming-card">
                     Prochaine(s) lecture(s)
                     <textarea
+                      aria-label="Notes pour les prochaines lectures"
                       value={effectiveSelectedItem.tracking.itemComment}
                       placeholder="Notes pour les prochaines lectures..."
                       onChange={(event) => updateItemComment(effectiveSelectedItem.itemNumber, event.target.value)}
                     />
                   </label>
+
+                <div className="item-detail-tabs" role="group" aria-label="Navigation détail item">
+                  <button type="button" aria-label="Suivi des révisions" aria-pressed={itemDetailTab === 'tracking'} className={itemDetailTab === 'tracking' ? 'active' : ''} onClick={() => setItemDetailTab('tracking')}><span className="item-tracking-label-full">Suivi des révisions</span><span className="item-tracking-label-compact">Suivi</span></button>
+                  <button type="button" aria-pressed={itemDetailTab === 'resources'} className={itemDetailTab === 'resources' ? 'active' : ''} onClick={() => setItemDetailTab('resources')}>Ressources</button>
+	                  <button type="button" aria-pressed={itemDetailTab === 'flashcards'} className={itemDetailTab === 'flashcards' ? 'active' : ''} onClick={() => setItemDetailTab('flashcards')}>Flashcards</button>
+                  <button type="button" aria-pressed={itemDetailTab === 'assignments'} className={itemDetailTab === 'assignments' ? 'active' : ''} onClick={() => setItemDetailTab('assignments')}>Assignations</button>
+                </div>
+
+                <div id="item-detail-overview" className={`item-detail-content-grid item-detail-tab-${itemDetailTab}`}>
+                <div className="item-detail-main-column">
+
 
                     <div id="item-detail-resources" className="inline-accordion item-detail-card item-detail-video-card resource-card resource-video-card item-detail-tab-panel item-detail-tab-panel-resources">
                     <button
@@ -8860,15 +8984,17 @@ function getPasswordStrengthMeta(password: string) {
                           <button
                             type="button"
                             className="quiz-card-edit"
+                            title={`Modifier ${cardLabel}`}
                             aria-label={`Modifier ${cardLabel}`}
                             onClick={() => openQuizCardEditor(effectiveSelectedItem.itemNumber, card.id)}
                           >
                             <EditPencil className="inline-btn-icon" aria-hidden="true" />
-                            Modifier
+                            <span className="quiz-card-edit-label">Modifier</span>
                           </button>
                           <button
                             type="button"
                             className="quiz-card-remove"
+                            title={`Supprimer ${cardLabel}`}
                             aria-label={`Supprimer ${cardLabel}`}
                             onClick={() => {
                               const ok = window.confirm('Supprimer cette flashcard ? Cette action est irréversible.')
@@ -8885,12 +9011,20 @@ function getPasswordStrengthMeta(password: string) {
                   </div>
               </div>
 
-                <h3 className="item-detail-tab-panel item-detail-tab-panel-assignments">Assignation collèges</h3>
-                <div id="item-detail-assignments" className="college-picker item-detail-tab-panel item-detail-tab-panel-assignments">
-                {COLLEGES.map((college) => (
+                <div className="item-assignment-heading item-detail-tab-panel item-detail-tab-panel-assignments">
+                  <h3>Assignation collèges</h3>
+                  <button type="button" className="item-assignment-unlock" aria-pressed={collegeAssignmentsUnlockedFor === effectiveSelectedItem.itemNumber} onClick={() => setCollegeAssignmentsUnlockedFor(current => current === effectiveSelectedItem.itemNumber ? null : effectiveSelectedItem.itemNumber)}>
+                    {collegeAssignmentsUnlockedFor === effectiveSelectedItem.itemNumber ? <Key className="ui-icon" aria-hidden="true" /> : <Lock className="ui-icon" aria-hidden="true" />}
+                    {collegeAssignmentsUnlockedFor === effectiveSelectedItem.itemNumber ? 'Verrouiller les modifications' : 'Déverrouiller les modifications'}
+                  </button>
+                </div>
+                <p className="item-detail-tab-panel item-detail-tab-panel-assignments academic-assignment-provenance">Référentiels issus de <a href={referenceProvenance.pageUrl} target="_blank" rel="noopener noreferrer">Nexternat</a>. {effectiveSelectedItem.tracking.referenceTransition ? 'Tes collèges déjà cochés et leur suivi sont conservés.' : 'Tes assignations personnelles sont conservées.'}</p>
+                <div id="item-detail-assignments" className={`college-picker item-detail-tab-panel item-detail-tab-panel-assignments${collegeAssignmentsUnlockedFor === effectiveSelectedItem.itemNumber ? ' is-editable' : ' is-locked'}`} aria-disabled={collegeAssignmentsUnlockedFor !== effectiveSelectedItem.itemNumber}>
+                {availableColleges.map((college) => (
                   <label key={college}>
                     <input
                       type="checkbox"
+                      disabled={collegeAssignmentsUnlockedFor !== effectiveSelectedItem.itemNumber}
                       checked={effectiveSelectedItem.tracking.assignedColleges.includes(college)}
                       onChange={(event) =>
                         updateCollegeAssignment(effectiveSelectedItem.itemNumber, college, event.target.checked)
@@ -8916,6 +9050,7 @@ function getPasswordStrengthMeta(password: string) {
 
                 {effectiveSelectedItem.tracking.assignedColleges.map((college) => {
                   const data = effectiveSelectedItem.tracking.byCollege[college] ?? getDefaultCollegeTracking()
+                  const pending = effectiveSelectedItem.tracking.referenceTransition?.pendingColleges.includes(college)
                   const collegeFxKey = getCollegeKey(effectiveSelectedItem.itemNumber, college)
                   const activeReviewFx = reviewFx[collegeFxKey]
                   return (
@@ -8968,16 +9103,17 @@ function getPasswordStrengthMeta(password: string) {
                       <label className="block-label">
                         Ressenti
                         <select
-                          value={data.mastery}
+                          value={pending ? '' : data.mastery}
                           className={getMasteryClass(data.mastery, collegeFxKey)}
                           onChange={(event) => {
                             triggerPulseFx(setMasteryFx, collegeFxKey)
                             updateCollegeTracking(effectiveSelectedItem.itemNumber, college, (current) => ({
                               ...current,
                               mastery: event.target.value as Mastery,
-                            }))
+                            }), true)
                           }}
                         >
+                          {pending ? <option value="" disabled>À commencer</option> : null}
                           {MASTERY_LEVELS.map((level) => (
                             <option value={level} key={level}>
                               {getMasteryFeelingLabel(level)}
@@ -9004,19 +9140,15 @@ function getPasswordStrengthMeta(password: string) {
                 })}
               </div>
 
+                    {academicProfile && ['Y4', 'Y5', 'Y6'].includes(academicProfile.yearCode || '') ? <AcademicItemLocalResources tracking={effectiveSelectedItem.tracking.localUnits} onChange={(key, updater) => updateLocalUnitTracking(effectiveSelectedItem.itemNumber, key, updater)} itemNumber={effectiveSelectedItem.itemNumber} profile={academicProfile} program={facultyProgram} loading={facultyLoading} error={facultyError} onRetry={() => setFacultyResourceRetry(count => count + 1)} /> : null}
+
+                {effectiveSelectedItem.tracking.lisaSheets.length === 0 ? <EmptyReferenceSheets
+                  kind="lisa" excluded={effectiveSelectedItem.tracking.noLisaSheets}
+                  onExclude={value => updateSheetExclusion(effectiveSelectedItem.itemNumber, 'noLisaSheets', value)}
+                  onAdd={() => updateReferenceSheets(effectiveSelectedItem.itemNumber, 'lisaSheets', sheets => [...sheets, makeReferenceSheet()])}
+                /> : null}
+                {effectiveSelectedItem.tracking.lisaSheets.length > 0 ? <>
                 <h3 className="item-detail-section-title item-detail-section-title-lisa item-detail-tab-panel item-detail-tab-panel-tracking">Fiches LISA</h3>
-                {effectiveSelectedItem.tracking.lisaSheets.length === 0 ? (
-                  <label className="checkline item-detail-tab-panel item-detail-tab-panel-tracking">
-                  <input
-                    type="checkbox"
-                    checked={effectiveSelectedItem.tracking.noLisaSheets}
-                    onChange={(event) =>
-                      updateSheetExclusion(effectiveSelectedItem.itemNumber, 'noLisaSheets', event.target.checked)
-                    }
-                  />
-                  PAS de fiche lisa
-                </label>
-              ) : null}
                 <div className="reference-grid item-detail-tab-panel item-detail-tab-panel-tracking">
                 <div className="item-detail-reference-table-head" aria-hidden="true">
                   <span>Fiche</span>
@@ -9024,9 +9156,6 @@ function getPasswordStrengthMeta(password: string) {
                   <span>Ressenti</span>
                   <span>Commentaires</span>
                 </div>
-                {effectiveSelectedItem.tracking.lisaSheets.length === 0 ? (
-                  <p className="muted">Aucune fiche LISA.</p>
-                ) : null}
                 {effectiveSelectedItem.tracking.lisaSheets.map((sheet) => (
                   <div key={sheet.id} className={`reference-card ${sheet.tracking.favorite ? 'is-favorite' : ''}`}>
                     <div className="reference-row">
@@ -9214,20 +9343,15 @@ function getPasswordStrengthMeta(password: string) {
                   + Ajouter fiche LISA
                 </button>
               </div>
+                </> : null}
 
+                {effectiveSelectedItem.tracking.platformSheets.length === 0 ? <EmptyReferenceSheets
+                  kind="platform" excluded={effectiveSelectedItem.tracking.noPlatformSheets}
+                  onExclude={value => updateSheetExclusion(effectiveSelectedItem.itemNumber, 'noPlatformSheets', value)}
+                  onAdd={() => updateReferenceSheets(effectiveSelectedItem.itemNumber, 'platformSheets', sheets => [...sheets, makeReferenceSheet()])}
+                /> : null}
+                {effectiveSelectedItem.tracking.platformSheets.length > 0 ? <>
                 <h3 className="item-detail-section-title item-detail-section-title-platform item-detail-tab-panel item-detail-tab-panel-tracking">Fiches Plateformes</h3>
-                {effectiveSelectedItem.tracking.platformSheets.length === 0 ? (
-                  <label className="checkline item-detail-tab-panel item-detail-tab-panel-tracking">
-                  <input
-                    type="checkbox"
-                    checked={effectiveSelectedItem.tracking.noPlatformSheets}
-                    onChange={(event) =>
-                      updateSheetExclusion(effectiveSelectedItem.itemNumber, 'noPlatformSheets', event.target.checked)
-                    }
-                  />
-                  PAS de fiche plateformes
-                </label>
-              ) : null}
                 <div className="reference-grid item-detail-tab-panel item-detail-tab-panel-tracking">
                 <div className="item-detail-reference-table-head" aria-hidden="true">
                   <span>Fiche</span>
@@ -9235,9 +9359,6 @@ function getPasswordStrengthMeta(password: string) {
                   <span>Ressenti</span>
                   <span>Commentaires</span>
                 </div>
-                {effectiveSelectedItem.tracking.platformSheets.length === 0 ? (
-                  <p className="muted">Aucune fiche plateforme.</p>
-                ) : null}
                 {effectiveSelectedItem.tracking.platformSheets.map((sheet) => (
                   <div key={sheet.id} className={`reference-card ${sheet.tracking.favorite ? 'is-favorite' : ''}`}>
                     <div className="reference-row">
@@ -9432,6 +9553,7 @@ function getPasswordStrengthMeta(password: string) {
                   + Ajouter fiche plateforme
                 </button>
               </div>
+                </> : null}
                 </aside>
                 </div>
             </>
@@ -9641,8 +9763,8 @@ function getPasswordStrengthMeta(password: string) {
                         className="ghost-btn"
                         onClick={() => openQuizCardImagePicker(quizItem.itemNumber, activeQuizCard.id, quizSide)}
                       >
-                        <Refresh className="inline-btn-icon" aria-hidden="true" />
-                        {(quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl) ? 'Remplacer' : 'Ajouter'}
+                        <MediaImage className="inline-btn-icon" aria-hidden="true" />
+                        {(quizSide === 'front' ? activeQuizCard.frontImageDataUrl : activeQuizCard.backImageDataUrl) ? 'Remplacer l’image' : 'Ajouter une image'}
                       </button>
                       <button
                         type="button"
@@ -9658,7 +9780,7 @@ function getPasswordStrengthMeta(password: string) {
                         }
                       >
                         <Trash className="inline-btn-icon" aria-hidden="true" />
-                        Retirer
+                        Retirer l’image
                       </button>
                     </div>
                     </div>
@@ -9715,17 +9837,17 @@ function getPasswordStrengthMeta(password: string) {
                 {quizSessionStep === 'setup' ? (
 	                  <>
 	                    <div className="quiz-session-kicker">
-		                      <span>1. Choisissez votre révision</span>
+		                      <span>Préparer la révision</span>
 	                      <button type="button" className="ghost-btn quiz-session-close" onClick={closeQuiz}>
 	                        Quitter
 	                      </button>
 	                    </div>
 	                    <p className="quiz-session-scope-label">{quizSessionScopeLabel}</p>
-		                    <p className="quiz-session-subtitle">Adaptez votre révision à vos objectifs et au temps dont vous disposez.</p>
+		                    <p className="quiz-session-subtitle">Adapte ta révision à tes objectifs et au temps dont tu disposes.</p>
 	                    <div className="quiz-session-setup-panel">
 		                      <div className="quiz-session-presets" aria-label="Nouvelle révision">
 			                        {[
-			                          { id: 'today', icon: Learning, title: 'À réviser aujourd’hui', detail: `${quizSessionRunnableCards.length} cartes`, badge: 'Recommandé' },
+			                          { id: 'today', icon: Learning, title: 'À réviser aujourd’hui', detail: `${quizSessionRunnableCards.length} carte${quizSessionRunnableCards.length !== 1 ? 's' : ''}`, badge: 'Recommandé' },
 			                          { id: 'difficulty', icon: WarningTriangle, title: 'Par difficulté', detail: quizSessionDifficultyDetail },
 			                          { id: 'college', icon: Page, title: 'Par collège', detail: quizSessionCollegeDetail },
 			                          { id: 'random', icon: Refresh, title: 'Cartes aléatoires', detail: quizSessionScope.type === 'global' ? 'Toutes les flashcards' : quizSessionScopeLabel },
@@ -9827,12 +9949,13 @@ function getPasswordStrengthMeta(password: string) {
 		                        ) : null}
 	                      </div>
                       <div className="quiz-session-options">
-                        <label>
-                          Mode
+                        <div className="quiz-session-option" role="group" aria-label="Mode de révision">
+                          <span>Mode</span>
                           <span className="quiz-session-segment">
                             <button
                               type="button"
                               className={quizSessionMode === 'flashcards' ? 'active' : ''}
+                              aria-pressed={quizSessionMode === 'flashcards'}
                               onClick={() => setQuizSessionMode('flashcards')}
                             >
                               Flashcards
@@ -9840,19 +9963,21 @@ function getPasswordStrengthMeta(password: string) {
                             <button
                               type="button"
                               className={quizSessionMode === 'quiz' ? 'active' : ''}
+                              aria-pressed={quizSessionMode === 'quiz'}
                               title="Generer un QCM depuis les flashcards"
                               onClick={() => setQuizSessionMode('quiz')}
                             >
                               QCM
                             </button>
                           </span>
-                        </label>
-	                        <label>
-	                          Nombre de cartes
+                        </div>
+	                        <div className="quiz-session-option" role="group" aria-label="Nombre de cartes">
+	                          <span>Nombre de cartes</span>
 	                          <span className="quiz-session-chips">
 	                            <button
 	                              type="button"
 	                              className={quizSessionCardLimit === 0 ? 'active' : ''}
+	                              aria-pressed={quizSessionCardLimit === 0}
 	                              onClick={() => setQuizSessionCardLimit(0)}
 	                            >
 	                              Toutes
@@ -9862,15 +9987,16 @@ function getPasswordStrengthMeta(password: string) {
 	                                key={cardCount}
 	                                type="button"
 	                                className={quizSessionCardLimit === cardCount ? 'active' : ''}
+	                                aria-pressed={quizSessionCardLimit === cardCount}
 	                                onClick={() => setQuizSessionCardLimit(cardCount)}
 	                              >
 	                                {cardCount}
 	                              </button>
 	                            ))}
 	                          </span>
-	                        </label>
-                        <label>
-                          Objectif
+	                        </div>
+                        <div className="quiz-session-option" role="group" aria-label="Objectif">
+                          <span>Objectif</span>
                           <span className="quiz-session-segment">
                             <button
                               type="button"
@@ -9889,7 +10015,9 @@ function getPasswordStrengthMeta(password: string) {
 	                              Évaluation
 	                            </button>
                           </span>
-                        </label>
+                        </div>
+                      </div>
+                          <div className="quiz-session-start-actions">
                         <button
                           type="button"
                           className="quiz-session-primary"
@@ -10130,7 +10258,7 @@ function getPasswordStrengthMeta(password: string) {
                         </h3>
                         <p>
                           {quizSessionSummaryData.score >= 90
-                            ? 'Tu maîtrises parfaitement ce quiz.'
+                            ? 'Bon rappel sur cette séance.'
                             : quizSessionSummaryData.score >= 70
                               ? 'Tu progresses, garde ce rythme.'
                               : 'Reprends les erreurs pour solidifier les bases.'}
@@ -10140,7 +10268,7 @@ function getPasswordStrengthMeta(password: string) {
                       <section className="quiz-summary-metric-grid">
                         <article>
                           <HelpCircle className="quiz-summary-metric-icon accuracy" aria-hidden="true" />
-                          <span>Accuracy</span>
+                          <span>{quizSessionMode === 'flashcards' ? 'Auto-évaluation' : 'Bonnes réponses'}</span>
                           <strong>{quizSessionSummaryData.score}%</strong>
                           <small aria-hidden="true" />
                         </article>
@@ -10239,25 +10367,6 @@ function getPasswordStrengthMeta(password: string) {
         </div>
       ) : null}
 
-      {activeView === 'flashcards' ? (
-        <section id="flashcards-section" className={`flashcards-page flashcards-workspace flash-layout-${flashCatalogLayout}`}>
-          {<FlashcardsWorkspace
-            themes={collegesViewRows.length} {...flashCatalogSummary}
-            search={flashCollegeSearch} itemSearch={flashCatalogItemSearch} level={flashCollegeLevelFilter} sort={flashCollegeSort}
-            levels={(['none', 'hard', 'medium', 'good', 'easy'] as const).map(value => ({ value, label: FLASH_FEELING_LABELS[value] }))}
-            organization={flashDisplayMode === 'items' ? 'items' : flashCatalogOrganization === 'items' ? 'colleges' : flashCatalogOrganization}
-            layout={flashCatalogLayout} status={flashCatalogStatus} counts={flashShowingStatusGroups ? flashStatusCounts : flashCatalogCounts}
-            collegeFilterLabel={flashCollegeFilter === 'ALL' ? null : getFlashCollegeDisplayName(flashCollegeFilter)}
-            canReview={defaultFlashSessionItemNumber !== null}
-            onSearch={setFlashCollegeSearch} onItemSearch={setFlashCatalogItemSearch}
-            onLevel={value => setFlashCollegeLevelFilter(value as FlashCollegeLevelFilter)}
-            onSort={value => setFlashCollegeSort(value as FlashCollegeSort)}
-            onOrganization={value => { setFlashCatalogOrganization(value); setFlashDisplayMode(value === 'items' ? 'items' : 'colleges') }}
-            onLayout={setFlashCatalogLayout} onStatus={setFlashCatalogStatus}
-            onReset={() => { setFlashCollegeSearch(''); setFlashCatalogItemSearch(''); setFlashCollegeLevelFilter('ALL'); setFlashCollegeSort('progress'); setFlashCollegeFilter('ALL'); setFlashCatalogStatus('all') }}
-            onReview={() => { if (defaultFlashSessionItemNumber !== null) openQuizSessionSetup({ type: 'global' }) }}
-            onCreate={() => openFlashcardCreator()}
-          />}
           {flashCreateModalOpen ? (
             <div className="flash-generator-modal-overlay" role="presentation" onClick={closeFlashcardCreator}>
               <div
@@ -10269,16 +10378,20 @@ function getPasswordStrengthMeta(password: string) {
               >
                 <div className="flash-generator-modal-head">
                   <h3>Créer une flashcard</h3>
-                  <p>Associez obligatoirement la carte à un item.</p>
+                  <p>{flashCreateSelectedItem ? `Item #${flashCreateSelectedItem.itemNumber} · Rédige ta question et sa réponse.` : 'Choisis un item, puis rédige ta question et sa réponse.'}</p>
                   <button type="button" className="ghost-btn" onClick={closeFlashcardCreator}>
                     Fermer
                   </button>
                 </div>
                 <div className="flash-create-form">
+                  {activeView === 'items' && flashCreateSelectedItem ? (
+                    <p className="flash-create-fixed-item">{flashCreateSelectedItem.shortDescription}</p>
+                  ) : <>
                   <div className="flashcards-field flash-create-item-picker">
                     <span>Item associé</span>
                     <input
                       type="search"
+                      aria-label="Rechercher l’item associé"
                       value={flashCreateItemSearch}
                       placeholder="Rechercher un item par numéro, titre ou collège..."
                       onChange={(event) => {
@@ -10336,6 +10449,7 @@ function getPasswordStrengthMeta(password: string) {
                       <p>Aucun collège associé à cet item pour le moment.</p>
                     )}
                   </div>
+                  </>}
                   <div className="flash-create-editor flashcard-editor-main">
                     <span>Question</span>
                     <QuizRichTextEditor
@@ -10379,6 +10493,27 @@ function getPasswordStrengthMeta(password: string) {
               </div>
             </div>
           ) : null}
+
+      {activeView === 'flashcards' && (academicProfile?.yearCode === 'Y2' || academicProfile?.yearCode === 'Y3') ? <AcademicLocalResources title="Flashcards de mon cursus" coverage={academicCoverage} units={academicUnits} /> : null}
+      {activeView === 'flashcards' && academicProfile?.yearCode !== 'Y2' && academicProfile?.yearCode !== 'Y3' ? (
+        <section id="flashcards-section" className={`flashcards-page flashcards-workspace flash-layout-${flashCatalogLayout}`}>
+          {<FlashcardsWorkspace
+            themes={collegesViewRows.length} {...flashCatalogSummary}
+            search={flashCollegeSearch} itemSearch={flashCatalogItemSearch} level={flashCollegeLevelFilter} sort={flashCollegeSort}
+            levels={(['none', 'hard', 'medium', 'good', 'easy'] as const).map(value => ({ value, label: FLASH_FEELING_LABELS[value] }))}
+            organization={flashDisplayMode === 'items' ? 'items' : flashCatalogOrganization === 'items' ? 'colleges' : flashCatalogOrganization}
+            layout={flashCatalogLayout} status={flashCatalogStatus} counts={flashShowingStatusGroups ? flashStatusCounts : flashCatalogCounts}
+            collegeFilterLabel={flashCollegeFilter === 'ALL' ? null : getFlashCollegeDisplayName(flashCollegeFilter)}
+            canReview={defaultFlashSessionItemNumber !== null}
+            onSearch={setFlashCollegeSearch} onItemSearch={setFlashCatalogItemSearch}
+            onLevel={value => setFlashCollegeLevelFilter(value as FlashCollegeLevelFilter)}
+            onSort={value => setFlashCollegeSort(value as FlashCollegeSort)}
+            onOrganization={value => { setFlashCatalogOrganization(value); setFlashDisplayMode(value === 'items' ? 'items' : 'colleges') }}
+            onLayout={setFlashCatalogLayout} onStatus={setFlashCatalogStatus}
+            onReset={resetFlashCatalogFilters}
+            onReview={() => { if (defaultFlashSessionItemNumber !== null) openQuizSessionSetup({ type: 'global' }) }}
+            onCreate={() => openFlashcardCreator()}
+          />}
           {flashGeneratorModalOpen ? (
             <div className="flash-generator-modal-overlay" role="presentation" onClick={() => setFlashGeneratorModalOpen(false)}>
               <div className="flash-generator-modal" role="dialog" aria-modal="true" aria-label="Générateur de quiz" onClick={(event) => event.stopPropagation()}>
@@ -10408,7 +10543,7 @@ function getPasswordStrengthMeta(password: string) {
                         onClick={() =>
                           flashGeneratorScope === 'items'
                             ? setFlashSelectedItems(items.map((item) => item.itemNumber))
-                            : setFlashSelectedColleges([...COLLEGES])
+                            : setFlashSelectedColleges([...availableColleges])
                         }
                       >
                         Tout sélectionner
@@ -10444,7 +10579,7 @@ function getPasswordStrengthMeta(password: string) {
                               </button>
                             )
                           })
-                        : COLLEGES.map((college) => {
+                        : availableColleges.map((college) => {
                             const active = flashSelectedColleges.includes(college)
                             return (
                               <button
@@ -10704,7 +10839,17 @@ function getPasswordStrengthMeta(password: string) {
               </div>
             </div>
           ) : null}
-          {flashShowingStatusGroups ? <FlashcardStatusGroups
+          {flashShowingStatusGroups && flashStatusGroups.every(group => group.cards.length === 0) ? (
+            <div className="flashcards-empty-state flashcards-guided-empty">
+              <CreditCards aria-hidden="true" />
+              <h2>{quizSessionAllEntries.length ? 'Aucune carte dans cette sélection' : 'Crée ta première flashcard'}</h2>
+              <p>{quizSessionAllEntries.length ? 'Les filtres masquent tes cartes. Réinitialise-les pour les retrouver.' : 'Associe une question et sa réponse à un item, puis lance une révision.'}</p>
+              <button type="button" className="ghost-btn" onClick={() => quizSessionAllEntries.length ? resetFlashCatalogFilters() : openFlashcardCreator()}>
+                {quizSessionAllEntries.length ? <Refresh aria-hidden="true" /> : <Plus aria-hidden="true" />}
+                {quizSessionAllEntries.length ? 'Réinitialiser les filtres' : 'Créer une flashcard'}
+              </button>
+            </div>
+          ) : flashShowingStatusGroups ? <FlashcardStatusGroups
             key={`${flashCollegeSearch}|${flashCatalogItemSearch}|${flashCollegeLevelFilter}|${flashCatalogStatus}|${flashCollegeFilter}`}
             groups={flashStatusGroups.map(group => ({ ...group, cards: group.cards.map(card => ({ key: `${card.itemNumber}:${card.cardId}`, itemNumber: card.itemNumber, question: getQuizRichTextPlainText(card.question), colleges: card.colleges.map(getFlashCollegeDisplayName).join(' · ') })) }))}
             onReview={(keys, label) => openQuizSessionSetup({ type: 'cards', keys, label })}
@@ -10723,18 +10868,6 @@ function getPasswordStrengthMeta(password: string) {
                       <h3>{row.displayName}</h3>
                       <p>{row.itemCount} item{row.itemCount === 1 ? '' : 's'}{isMobile ? ` · ${row.flashcardCount} carte${row.flashcardCount === 1 ? '' : 's'}` : ''}</p>
                     </div>
-                    <button
-                      type="button"
-                      className="flashcards-card-menu"
-                      title={`Options ${row.displayName}`}
-                      aria-label={`Options ${row.displayName}`}
-                      onClick={() => {
-                        setFlashCollegeFilter(row.college)
-                        jumpToQuizGeneratorSetup()
-                      }}
-                    >
-                      <MoreHoriz className="ui-icon" aria-hidden="true" />
-                    </button>
                   </div>
                   <div className="flashcards-progress-track" aria-hidden="true">
                     <span style={{ width: `${row.masteryPercent}%` }} />
@@ -10744,9 +10877,9 @@ function getPasswordStrengthMeta(password: string) {
                     <span> maîtrisés</span>
                   </p>
                   <div className="flashcards-card-actions">
-                    <button type="button" className="flashcards-card-launch" onClick={() => openQuizSessionSetup({ type: 'college', college: row.college })}>
-                      <Play className="inline-btn-icon" aria-hidden="true" />
-                      Lancer le quiz
+                    <button type="button" className="flashcards-card-launch" data-short-label={row.flashcardCount ? 'Réviser' : 'Créer'} onClick={() => row.flashcardCount ? openQuizSessionSetup({ type: 'college', college: row.college }) : openFlashcardCreator()}>
+                      {row.flashcardCount ? <Play className="inline-btn-icon" aria-hidden="true" /> : <Plus className="inline-btn-icon" aria-hidden="true" />}
+                      {row.flashcardCount ? 'Réviser' : 'Créer une carte'}
                     </button>
                     <button
                       type="button"
@@ -10755,7 +10888,7 @@ function getPasswordStrengthMeta(password: string) {
                       aria-label={`Voir les cartes ${row.displayName}`}
                       onClick={() => openCollegeFlashcardsList(row.college)}
                     >
-                      <DotsGrid3x3 className="flashcards-grid-icon" aria-hidden="true" />
+                      <CreditCards className="flashcards-grid-icon" aria-hidden="true" />
                     </button>
                   </div>
                 </article>
@@ -10779,20 +10912,6 @@ function getPasswordStrengthMeta(password: string) {
                       <p>{row.cardCount} carte{row.cardCount === 1 ? '' : 's'}</p>
                       <p className="flashcards-card-description">{row.description}</p>
                     </div>
-                    <button
-                      type="button"
-                      className="flashcards-card-menu"
-                      title={`Options item ${row.itemNumber}`}
-                      aria-label={`Options item ${row.itemNumber}`}
-                      onClick={() => {
-                        setFlashGeneratorScope('items')
-                        setFlashSelectedItems([row.itemNumber])
-                        setFlashGeneratorModalOpen(true)
-                        setFlashGeneratorStep(1)
-                      }}
-                    >
-                      <MoreHoriz className="ui-icon" aria-hidden="true" />
-                    </button>
                   </div>
                   <div className="flashcards-progress-track" aria-hidden="true">
                     <span style={{ width: `${row.masteryPercent}%` }} />
@@ -10802,9 +10921,9 @@ function getPasswordStrengthMeta(password: string) {
                     <span> maîtrisés</span>
                   </p>
                   <div className="flashcards-card-actions">
-                    <button type="button" className="flashcards-card-launch" onClick={() => openQuizSessionSetup({ type: 'item', itemNumber: row.itemNumber })}>
-                      <Play className="inline-btn-icon" aria-hidden="true" />
-                      Lancer le quiz
+                    <button type="button" className="flashcards-card-launch" data-short-label={row.cardCount ? 'Réviser' : 'Créer'} onClick={() => row.cardCount ? openQuizSessionSetup({ type: 'item', itemNumber: row.itemNumber }) : openFlashcardCreator(row.itemNumber)}>
+                      {row.cardCount ? <Play className="inline-btn-icon" aria-hidden="true" /> : <Plus className="inline-btn-icon" aria-hidden="true" />}
+                      {row.cardCount ? 'Réviser' : 'Créer une carte'}
                     </button>
                     <button
                       type="button"
@@ -10813,7 +10932,7 @@ function getPasswordStrengthMeta(password: string) {
                       aria-label={`Voir les cartes item ${row.itemNumber}`}
                       onClick={() => openItemFlashcardsList(row.itemNumber)}
                     >
-                      <DotsGrid3x3 className="flashcards-grid-icon" aria-hidden="true" />
+                      <CreditCards className="flashcards-grid-icon" aria-hidden="true" />
                     </button>
                   </div>
                 </article>
@@ -10904,7 +11023,8 @@ function getPasswordStrengthMeta(password: string) {
         </div>
       ) : null}
 
-      {activeView === 'colleges' ? (
+      {activeView === 'colleges' && (academicProfile?.yearCode === 'Y2' || academicProfile?.yearCode === 'Y3') ? <AcademicLocalResources title="Collèges de mon cursus" coverage={academicCoverage} units={academicUnits} /> : null}
+      {activeView === 'colleges' && academicProfile?.yearCode !== 'Y2' && academicProfile?.yearCode !== 'Y3' ? (
         selectedCollegeDetailData ? (
           <section className="college-detail-page">
             <button
@@ -10930,7 +11050,7 @@ function getPasswordStrengthMeta(password: string) {
 	                type="button"
 	                className="college-detail-secondary"
 	                onClick={() => {
-	                  setCollegeFilter(selectedCollegeDetailData.college)
+	                  setCollegeFilter(selectedCollegeDetailData.college); setItemCatalogueScope('national'); setItemCatalogueStatus('all')
 	                  setActiveView('items')
 	                  setSelectedCollegeDetail(null)
 	                }}
@@ -10993,7 +11113,7 @@ function getPasswordStrengthMeta(password: string) {
 	                    type="button"
 	                    className="college-detail-view-button"
 	                    onClick={() => {
-	                      setCollegeFilter(selectedCollegeDetailData.college)
+	                      setCollegeFilter(selectedCollegeDetailData.college); setItemCatalogueScope('national'); setItemCatalogueStatus('all')
 	                      setActiveView('items')
 	                      setSelectedCollegeDetail(null)
 	                    }}
@@ -11028,7 +11148,7 @@ function getPasswordStrengthMeta(password: string) {
 	                        <tr
                           key={`college-detail-item-${item.itemNumber}`}
                           onClick={() => {
-                            setCollegeFilter(selectedCollegeDetailData.college)
+                            setCollegeFilter(selectedCollegeDetailData.college); setItemCatalogueScope('national'); setItemCatalogueStatus('all')
                             setSelectedItemId(item.itemNumber)
                             setActiveView('items')
                             setSelectedCollegeDetail(null)
@@ -11138,7 +11258,7 @@ function getPasswordStrengthMeta(password: string) {
 		                    }}
 	                  >
 	                    <Play className="inline-btn-icon" aria-hidden="true" />
-	                    Lancer une révision
+	                    <span className="item-review-label-full">Lancer une révision</span><span className="item-review-label-compact">Réviser</span>
 	                  </button>
                 </article>
                 <article className="college-detail-side-card college-detail-action-card">
@@ -11166,19 +11286,9 @@ function getPasswordStrengthMeta(password: string) {
 	              <h2>Collèges</h2>
 	            </div>
 	            <article className="colleges-heatmap">
-	              <div className="colleges-heatmap-head">
-	                <h3>Progression par collège</h3>
-	                <label>
-	                  Trier
-	                  <select value={collegesPageSort} onChange={(event) => setCollegesPageSort(event.target.value as CollegesPageSort)}>
-	                    <option value="name">Nom</option>
-	                    <option value="progress">Progression</option>
-	                    <option value="recentReviews">Révisions récentes</option>
-	                  </select>
-	                </label>
-	              </div>
+              <CollegesWorkspace rows={sortedCollegesViewRows} levels={MASTERY_LEVELS.map(level => ({ value: level, label: getMasteryFeelingLabel(level) }))} sort={collegesPageSort} onSort={value => setCollegesPageSort(value as CollegesPageSort)}>{visibleRows => <>
 	              <div className="colleges-heatmap-grid">
-	                {sortedCollegesViewRows.map((row) => {
+	                {visibleRows.map((row) => {
                   const tone =
                     row.completion >= 75
                       ? 'high'
@@ -11216,6 +11326,7 @@ function getPasswordStrengthMeta(password: string) {
 	                <span className="mid-high">50-74%</span>
 	                <span className="high">75%+</span>
 	              </div>
+              </>}</CollegesWorkspace>
             </article>
           </section>
         )
@@ -11242,119 +11353,33 @@ function getPasswordStrengthMeta(password: string) {
                   <p>Profil, sécurité et données personnelles.</p>
                 </div>
               </div>
-              <div className="settings-profile-row">
-                {profile.photoUrl ? (
-                  <img className="settings-avatar" src={profile.photoUrl} alt="Avatar" />
-                ) : (
-                  <span className="settings-avatar profile-avatar-fallback" style={{ background: profile.avatarGradient }}>
-                    {getProfileInitials(profile)}
-                  </span>
-                )}
-                <div>
-                  <strong>{settingsDisplayName}</strong>
-                  <small>{settingsEmail || 'Aucun e-mail renseigné'}</small>
+              <div className="settings-profile-editor">
+                <ProfileAvatarEditor profile={profile} initials={getProfileInitials(profile)} automaticInitials={getProfileInitials({ ...profile, avatarInitialsMode: 'auto' })} gradients={AVATAR_GRADIENTS} error={avatarUploadError} onChange={patch => setProfile(current => ({ ...current, ...patch }))} onUpload={handleAvatarUploadFile} />
+                <div className="settings-profile-fields">
+                  <LockedProfileField label="Nom" value={profile.lastName} autoComplete="family-name" onChange={value => setProfile(current => ({ ...current, lastName: value }))} />
+                  <LockedProfileField label="Prénom" value={profile.firstName} autoComplete="given-name" onChange={value => setProfile(current => ({ ...current, firstName: value }))} />
+                  <label className="settings-field settings-profile-email">E-mail de connexion<span className="settings-profile-input is-readonly"><Mail aria-hidden="true" /><input type="email" autoComplete="email" value={settingsEmail} placeholder={authUser?.email ?? 'email@example.com'} disabled readOnly /></span><small className="settings-muted">L’adresse e-mail de connexion ne peut pas être modifiée ici.</small></label>
                 </div>
               </div>
-              <div className="settings-form-grid">
-                <label className="settings-field">
-                  Nom
-                  <div className="settings-name-grid">
-                    <input
-                      type="text"
-                      value={profile.firstName}
-                      placeholder="Prénom"
-                      onChange={(event) => setProfile((current) => ({ ...current, firstName: event.target.value }))}
-                    />
-                    <input
-                      type="text"
-                      value={profile.lastName}
-                      placeholder="Nom"
-                      onChange={(event) => setProfile((current) => ({ ...current, lastName: event.target.value }))}
-                    />
-                  </div>
-                </label>
-	                <label className="settings-field">
-	                  E-mail de connexion
-	                  <input
-	                    type="email"
-	                    value={settingsEmail}
-	                    placeholder={authUser?.email ?? 'email@example.com'}
-	                    disabled
-	                    readOnly
-	                  />
-	                  <small className="settings-muted">Modification du compte prévue plus tard.</small>
-	                </label>
-	                <div className="settings-field">
-	                  Avatar
-	                  <button
-	                    type="button"
-	                    className="settings-avatar-upload"
-	                    onClick={() => avatarInputRef.current?.click()}
-	                    onDragOver={(event) => {
-	                      event.preventDefault()
-	                      event.currentTarget.classList.add('is-drag-over')
-	                    }}
-	                    onDragLeave={(event) => event.currentTarget.classList.remove('is-drag-over')}
-	                    onDrop={handleAvatarDrop}
-	                  >
-	                    <Plus className="ui-icon" aria-hidden="true" />
-	                    <span>Glisser une image ou cliquer</span>
-	                    <small>PNG, JPG, WebP - 1 Mo max</small>
-	                  </button>
-	                  <input
-	                    ref={avatarInputRef}
-	                    type="file"
-	                    accept="image/*"
-	                    className="hidden-file-input"
-	                    onChange={(event) => {
-	                      void handleAvatarUploadFile(event.target.files?.[0] ?? null)
-	                      event.target.value = ''
-	                    }}
-	                  />
-	                  {avatarUploadError ? <small className="settings-error">{avatarUploadError}</small> : null}
-	                </div>
-                <div className="settings-field">
-                  Couleur d'avatar
-                  <div className="avatar-gradient-grid">
-                    {AVATAR_GRADIENTS.map((gradient) => (
-                      <button
-                        key={gradient}
-                        type="button"
-                        className={`avatar-gradient-dot ${profile.avatarGradient === gradient ? 'active' : ''}`}
-                        style={{ background: gradient }}
-                        onClick={() => setProfile((current) => ({ ...current, avatarGradient: gradient }))}
-                        aria-label="Choisir cette couleur d'avatar"
-                        title="Choisir cette couleur d'avatar"
-                      />
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div className="settings-subsection">
-                <h3>Sécurité</h3>
-                <div className="settings-action-row">
-                  <button type="button" className="ghost-btn" disabled>
-                    Modifier le mot de passe
+              <div className="settings-subsection settings-security" role="group" aria-labelledby="settings-security-title">
+                <h3 id="settings-security-title"><Lock aria-hidden="true" />Sécurité</h3>
+                <div className="settings-security-grid">
+                  <button type="button" className="settings-security-card" disabled>
+                    <span className="settings-security-icon"><Lock aria-hidden="true" /></span>
+                    <span className="settings-security-copy"><strong>Modifier le mot de passe</strong></span>
+                    <span className="settings-badge">Bientôt disponible</span>
+                    <NavArrowRight className="settings-security-chevron" aria-hidden="true" />
                   </button>
-                  <span className="settings-badge">Bientôt disponible</span>
+                  <label className="settings-security-card" title="Bientôt disponible">
+                    <span className="settings-security-icon"><Key aria-hidden="true" /></span>
+                    <span className="settings-security-copy"><strong>Authentification à deux facteurs</strong><small>Sécuriser davantage ton compte.</small><span className="settings-security-sr">Bientôt disponible</span></span>
+                    <input className="settings-security-switch" type="checkbox" role="switch" aria-label="Authentification à deux facteurs — bientôt disponible" checked={false} disabled />
+                  </label>
                 </div>
-                <label className="settings-toggle-row is-disabled">
-                  <span>Authentification à deux facteurs</span>
-                  <input type="checkbox" disabled />
-                </label>
               </div>
-              <div className="settings-subsection">
-                <h3>Données</h3>
-	                <div className="settings-action-row">
-	                  <button type="button" className="ghost-btn" onClick={() => void exportBackup()}>
-	                    Exporter toutes mes données
-	                  </button>
-                  <button type="button" className="ghost-btn" onClick={exportLocalRecovery}>Exporter les changements locaux</button>
-	                </div>
-	              </div>
             </article>
 
-            <article className="settings-card">
+            <article className="settings-card settings-card-wide">
               <div className="settings-card-head">
                 <span aria-hidden="true">
                   <Globe className="settings-card-icon" aria-hidden="true" />
@@ -11381,14 +11406,7 @@ function getPasswordStrengthMeta(password: string) {
 	                  <option value="iso">2026-07-17</option>
                 </select>
               </label>
-	              <label className="settings-field">
-	                Fuseau horaire
-	                <select value={timeZone} onChange={(event) => setTimeZone(normalizeTimeZonePreference(event.target.value))}>
-	                  <option value="auto">Automatique</option>
-	                  <option value="Europe/Paris">Europe/Paris</option>
-	                  <option value="Asia/Ho_Chi_Minh">Asia/Ho Chi Minh</option>
-	                </select>
-	              </label>
+                <div className="settings-field"><span>Fuseau horaire</span><TimeZonePicker value={timeZone} onChange={value => setTimeZone(normalizeTimeZonePreference(value))} /></div>
 	              <label className="settings-toggle-row">
 	                <span>Thème sombre</span>
                 <input
@@ -11399,42 +11417,9 @@ function getPasswordStrengthMeta(password: string) {
               </label>
             </article>
 
-            <article className="settings-card">
-              <div className="settings-card-head">
-                <span aria-hidden="true">
-                  <Bell className="settings-card-icon" aria-hidden="true" />
-                </span>
-                <div>
-                  <h2>Notifications</h2>
-                  <p>Nouveautés et informations du service.</p>
-                </div>
-	              </div>
-	              <div className="settings-coming-soon">
-	                <Bell className="ui-icon" aria-hidden="true" />
-	                <strong>Les nouveautés sont disponibles dans la cloche</strong>
-	                <p>Consulte les annonces depuis la cloche. Les alertes automatiques de révision seront ajoutées séparément.</p>
-	              </div>
-            </article>
 
-            <article className="settings-card">
-              <div className="settings-card-head">
-                <span aria-hidden="true">
-                  <Notes className="settings-card-icon" aria-hidden="true" />
-                </span>
-                <div>
-                  <h2>Quiz</h2>
-                  <p>Comportement des sessions d'évaluation.</p>
-                </div>
-              </div>
-              <label className="settings-toggle-row">
-                <span>Mélanger les flashcards des quiz</span>
-                <input
-                  type="checkbox"
-                  checked={shuffleQuizCards}
-                  onChange={(event) => setShuffleQuizCards(event.target.checked)}
-                />
-              </label>
-            </article>
+
+
 
             <article className="settings-card settings-card-wide">
               <div className="settings-card-head">
@@ -11497,6 +11482,8 @@ function getPasswordStrengthMeta(password: string) {
               </div>
             </article>
 
+            <AcademicSettingsCard key={`${authUser?.id}:${academicProfile?.yearCode}:${academicProfile?.facultyId}`} profile={academicProfile} request={apiRequest} onSave={(year, facultyId, beta) => saveAcademicProfile(year, facultyId, false, beta)} onRefresh={async () => { const result = await apiRequest('/api/auth/me'); setAcademicProfile(result.onboarding as AcademicProfile) }} />
+
             <article className="settings-card settings-card-wide">
               <div className="settings-card-head">
                 <span aria-hidden="true">
@@ -11532,10 +11519,10 @@ function getPasswordStrengthMeta(password: string) {
 
       {activeView === 'calendar' ? <CalendarWorkspace focusEventId={calendarFocusId} request={apiRequest} timeZone={timeZone==='auto'?Intl.DateTimeFormat().resolvedOptions().timeZone:timeZone}
         items={items.map(item=>({value:String(item.itemNumber),label:'#'+item.itemNumber+' · '+item.shortDescription}))}
-        colleges={COLLEGES.map(college=>({value:college,label:getFlashCollegeDisplayName(college)}))}
+        colleges={availableColleges.map(college=>({value:college,label:getFlashCollegeDisplayName(college)}))}
         cards={quizSessionAllEntries.map(entry=>({value:entry.sessionKey,label:'#'+entry.itemNumber+' · '+getQuizRichTextPlainText(entry.card.question)}))}
         canStart={event=>event.activity==='items'?calendarItemNumbers(event).length>0:calendarEntries(event).length>0}
-        onStart={event=>{if(event.activity==='items'){const numbers=calendarItemNumbers(event);setCalendarItemSelection(numbers);setSearch('');setCollegeFilter('ALL');setMasteryFilter('ALL');setActiveView('items');setSelectedItemId(null)}else openQuizSessionSetup({type:'cards',keys:calendarEntries(event).map(entry=>entry.sessionKey),label:event.title})}}
+        onStart={event=>{if(event.activity==='items'){const numbers=calendarItemNumbers(event);setCalendarItemSelection(numbers);setItemCatalogueScope('national');setItemCatalogueStatus('all');setSearch('');setCollegeFilter('ALL');setMasteryFilter('ALL');setActiveView('items');setSelectedItemId(null)}else openQuizSessionSetup({type:'cards',keys:calendarEntries(event).map(entry=>entry.sessionKey),label:event.title})}}
       /> : null}
       {activeView === 'stats' ? (
         <section className="panel stats-placeholder">
@@ -11562,7 +11549,7 @@ function getPasswordStrengthMeta(password: string) {
         {mobilePanel === 'filters' ? <MobileSheet title="Filtres" restoreFocusSelector=".mobile-filter-trigger" onClose={() => setMobilePanel(null)}><div className="mobile-filter-fields">
             <label>Collèges<select aria-label="Filtrer par collège" value={collegeFilter} onChange={(event) => setCollegeFilter(event.target.value)}>
               <option value="ALL">Tous collèges</option>
-              {COLLEGES.map((college) => (
+              {availableColleges.map((college) => (
                 <option value={college} key={college}>
                   {college}
                 </option>

@@ -4,7 +4,8 @@ import net from 'node:net'
 import os from 'node:os'
 import path from 'node:path'
 import { mkdtemp, rm } from 'node:fs/promises'
-import { spawn } from 'node:child_process'
+import { spawn, execFile } from 'node:child_process'
+import { promisify } from 'node:util'
 import { setTimeout as delay } from 'node:timers/promises'
 import EmbeddedPostgres from 'embedded-postgres'
 import pg from 'pg'
@@ -14,6 +15,8 @@ import { makeBackup, inspectBackup, restoreBackup } from '../scripts/backup.mjs'
 import { collectMediaGarbage } from '../scripts/backup/media-gc.mjs'
 import { access } from 'node:fs/promises'
 import { defaultState } from '../server/state-model.mjs'
+import { readFileSync } from 'node:fs'
+import { buildReferenceAliases } from '../server/reference-transition.mjs'
 
 export async function freePort() {
   const server = net.createServer()
@@ -29,6 +32,8 @@ const user = async () => Number((await pool.query("INSERT INTO users(email,displ
 const state = () => ({ ...defaultState(), dateFormat: 'iso', timeZone: 'Europe/Paris', shuffleQuizCards: true,
   trackingState: { items: { 1: { label: 'One', quiz: { cards: [{ id: 'a', answer: 'old' }, { id: 'b', answer: 'B' }] } },
     2: { label: 'Two', quiz: { cards: [{ id: 'c', answer: 'C' }] } } } } })
+const referenceSource = JSON.parse(readFileSync(new URL('../src/data/item-reference-assignments.json',import.meta.url)))
+const referenceAliases = buildReferenceAliases(referenceSource,JSON.parse(readFileSync(new URL('../src/data/items.json',import.meta.url))),JSON.parse(readFileSync(new URL('../src/data/college-tag-aliases.json',import.meta.url))))
 async function request(uid, method, suffix, body, version = '0.1.0') {
   const response = await fetch(`${api}${suffix}`, { method,
     headers: { Authorization: `Bearer ${jwt.sign({ uid, email: 'test@example.test' }, secret, { expiresIn: '45m' })}`, 'Content-Type': 'application/json', 'x-client-version': version },
@@ -269,4 +274,63 @@ test('object GC starts retention at retirement and preserves current/snapshot re
   const currentKey = (await pool.query('SELECT object_key FROM user_quiz_images WHERE user_id=$1', [uid])).rows[0].object_key
   await pool.query("INSERT INTO media_gc_candidates(object_key,retired_at) VALUES($1,NOW()-interval '50 days')", [currentKey])
   assert.equal((await collectMediaGarbage(pool, env, { mediaStore })).removed, 0, 'current reference always protects media')
+})
+
+test('reference migration is atomic, versioned and preserves all cards/media/preferences and previous tracking', async () => {
+  const uid=await user()
+  await pool.query('CREATE TABLE IF NOT EXISTS academic_profiles(user_id BIGINT PRIMARY KEY REFERENCES users(id),year_code TEXT,faculty_id TEXT,legacy_exempt BOOLEAN,completed_at TIMESTAMPTZ)')
+  const kept={favorite:true,reviews:3,mastery:'Très bon',comments:'Historical review note',lastReviewedAt:'2026-10-01T10:00:00Z',reviewHistory:[{date:'2026-10-01T10:00:00Z',delta:3}]}
+  await full(uid,{...state(),profile:{firstName:'Preserved'},trackingState:{items:{154:{assignedColleges:['MÉDECINE INTENSIVE - RÉANIMATION - URGENCES'],byCollege:{'MÉDECINE INTENSIVE - RÉANIMATION - URGENCES':kept},quiz:{cards:[{id:'a',answer:'Preserve',frontImageDataUrl:image}]},itemComment:'Preserved item note',itemMastery:'Bon'}}}})
+  await pool.query("INSERT INTO academic_profiles(user_id,year_code,faculty_id,legacy_exempt,completed_at) VALUES($1,'Y5','dijon',TRUE,NOW())",[uid])
+  const profileBefore=(await pool.query('SELECT * FROM academic_profiles WHERE user_id=$1',[uid])).rows
+  const cardsBefore=(await pool.query('SELECT *,xmin::text FROM user_quiz_cards WHERE user_id=$1',[uid])).rows
+  const mediaBefore=(await pool.query('SELECT *,xmin::text FROM user_quiz_images WHERE user_id=$1',[uid])).rows
+  const snapshot=await store.read(uid)
+  let backup
+  const result=await store.transitionReferences(uid,{baseVersion:snapshot.version,source:referenceSource,resolveAlias:referenceAliases,backupBeforeWrite:async value=>{backup=structuredClone(value)}})
+  assert.equal(result.version,snapshot.version+1);assert.equal(result.changed,true)
+  const after=await store.read(uid)
+  assert.deepEqual(after.state.trackingState.items[154].assignedColleges,[...referenceSource.items[154],'MÉDECINE INTENSIVE - RÉANIMATION - URGENCES'])
+  assert.deepEqual(after.state.trackingState.items[154].byCollege['MÉDECINE INTENSIVE - RÉANIMATION - URGENCES'],kept)
+  assert.deepEqual(after.state.trackingState.items[154].referenceTransition.preservedColleges,['MÉDECINE INTENSIVE - RÉANIMATION - URGENCES'])
+  assert.deepEqual(backup.state,snapshot.state && (({updatedAt,...rest})=>rest)(snapshot.state))
+  assert.deepEqual((await pool.query('SELECT *,xmin::text FROM user_quiz_cards WHERE user_id=$1',[uid])).rows,cardsBefore)
+  assert.deepEqual((await pool.query('SELECT *,xmin::text FROM user_quiz_images WHERE user_id=$1',[uid])).rows,mediaBefore)
+  assert.deepEqual((await pool.query('SELECT * FROM academic_profiles WHERE user_id=$1',[uid])).rows,profileBefore)
+  assert.equal(after.state.profile.firstName,'Preserved');assert.equal(after.state.timeZone,'Europe/Paris')
+  assert.equal((await store.transitionReferences(uid,{baseVersion:after.version,source:referenceSource,resolveAlias:referenceAliases,backupBeforeWrite:async()=>assert.fail('No second backup/write')})).changed,false)
+  const stale=structuredClone(after.state);delete stale.trackingState.items[154].referenceTransition
+  await assert.rejects(store.write(uid,'state-full',{...stale,baseVersion:after.version,requestId:crypto.randomUUID()}),error=>error.code==='CLIENT_STALE')
+  assert.equal((await store.read(uid)).version,after.version)
+  await store.write(uid,'state-patch',{baseVersion:after.version,requestId:crypto.randomUUID(),patch:{trackingState:{items:{154:{itemComment:'Edit after migration'}}}}})
+  assert.equal((await store.read(uid)).state.trackingState.items[154].itemComment,'Edit after migration')
+})
+
+test('failed reference backup or stale account version abort before any migration data is written', async () => {
+  const uid=await user()
+  await full(uid,{...defaultState(),trackingState:{items:{7:{assignedColleges:[],byCollege:{},quiz:{cards:[]}}}}})
+  const before=await store.read(uid)
+  await assert.rejects(store.transitionReferences(uid,{baseVersion:before.version,source:referenceSource,resolveAlias:referenceAliases,backupBeforeWrite:async()=>{throw new Error('Backup unavailable')}}),/Backup unavailable/)
+  assert.deepEqual(await store.read(uid),before)
+  await assert.rejects(store.transitionReferences(uid,{baseVersion:before.version-1,source:referenceSource,resolveAlias:referenceAliases,backupBeforeWrite:async()=>assert.fail('Stale request never backs up or writes')}),error=>error.code==='STATE_CONFLICT')
+  assert.deepEqual(await store.read(uid),before)
+})
+
+test('operator command prepares a read-only plan and applies only that database/user/version with a durable backup',async()=>{
+ const uid=await user()
+ await full(uid,{...defaultState(),trackingState:{items:{154:{assignedColleges:['MÉDECINE INTENSIVE - RÉANIMATION - URGENCES'],byCollege:{'MÉDECINE INTENSIVE - RÉANIMATION - URGENCES':{reviews:1,comments:'Keep',mastery:'Bon'}},quiz:{cards:[]}}}}})
+ const planPath=path.join(directory,'reference-plan.json'),backupDirectory=path.join(directory,'reference-backups')
+ const run=promisify(execFile),env={...process.env,DATABASE_URL:connectionString}
+ const before=await store.read(uid)
+ await run(process.execPath,['scripts/migrate-reference-assignments.mjs','plan',String(uid),planPath],{env})
+ assert.deepEqual(await store.read(uid),before,'Planning is read-only')
+ const applied=await run(process.execPath,['scripts/migrate-reference-assignments.mjs','apply',String(uid),planPath,backupDirectory],{env})
+ const result=JSON.parse(applied.stdout)
+ assert.equal(result.changed,true);await access(result.backup)
+ const after=await store.read(uid)
+ assert.equal(after.version,before.version+1)
+ assert.ok(after.state.trackingState.items[154].assignedColleges.includes('MÉDECINE INTENSIVE - RÉANIMATION - URGENCES'))
+ assert.ok(referenceSource.items[154].every(name=>after.state.trackingState.items[154].assignedColleges.includes(name)))
+ await assert.rejects(run(process.execPath,['scripts/migrate-reference-assignments.mjs','apply',String(uid),planPath,backupDirectory],{env}),/Compte modifié depuis la préparation/)
+ assert.equal((await store.read(uid)).version,after.version)
 })

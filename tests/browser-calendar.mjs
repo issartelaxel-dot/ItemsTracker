@@ -444,25 +444,18 @@ try {
             .poll(() => events[first.id].start.slice(0, 10))
             .toBe(date.split(",")[0]);
         }
-        await workspace.locator(".cal-apple summary").click();
-        await workspace
-          .getByRole("button", {
-            name: "Créer les identifiants de cet appareil",
-          })
-          .click();
-        await expect(workspace.getByLabel("Mot de passe dédié")).toHaveValue(
-          "device-test-only",
-        );
-        await workspace
-          .getByRole("button", { name: "J’ai enregistré les identifiants" })
-          .click();
-        await expect(workspace.locator(".cal-credentials")).toHaveCount(0);
-        page.once("dialog", (d) => d.accept());
-        await workspace
-          .getByRole("button", { name: "Révoquer", exact: true })
-          .click();
-        await expect(workspace.locator(".cal-device")).toHaveCount(0);
-        await workspace.locator(".cal-apple summary").click();
+        await workspace.getByRole('button', { name: 'Connecter Apple Calendrier', exact: true }).click();
+        const appleDialog = page.getByRole('dialog', { name: 'Sur quel appareil veux-tu te connecter ?' });
+        await appleDialog.getByRole('button', { name: 'Créer ma connexion', exact: true }).click();
+        const setupDialog = page.locator('.apple-setup-dialog');
+        await expect(setupDialog.getByLabel('Mot de passe dédié', {exact:true})).toHaveValue('device-test-only');
+        await setupDialog.getByRole('button', { name: 'J’ai ajouté le compte dans Apple Calendrier', exact: true }).click();
+        await expect(setupDialog.getByLabel('Mot de passe dédié', {exact:true})).toHaveCount(0);
+        await setupDialog.getByRole('button', { name: 'Voir mes appareils', exact: true }).click();
+        await setupDialog.getByRole('button', { name: 'Retirer', exact: true }).click();
+        await setupDialog.getByRole('button', { name: 'Confirmer le retrait', exact: true }).click();
+        await expect(setupDialog.locator('.apple-setup-devices > li')).toHaveCount(0);
+        await setupDialog.getByRole('button', { name: 'Fermer la connexion Apple Calendrier', exact: true }).click();
         await page
           .locator(".dashboard-content")
           .evaluate((el) => (el.scrollTop = 0));

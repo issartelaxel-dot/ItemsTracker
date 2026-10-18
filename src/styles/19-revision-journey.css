@@ -1,0 +1,17 @@
+/* Keep the full session menu visible, with the primary action easy to reach. */
+.quiz-session-setup .quiz-session-setup-panel { grid-template-columns: minmax(0, 1fr) minmax(220px, .82fr); gap: 16px; }
+.quiz-session-option { display: grid; gap: .35rem; min-width: 0; color: var(--muted); font-size: .72rem; font-weight: 800; }
+.item-detail-panel .quiz-trigger-btn.is-empty::after { content: '+'; }
+.quiz-session-start-actions { grid-column: 1 / -1; position: sticky; bottom: 0; z-index: 2; display: grid; padding: 8px 0 0; background: var(--panel-bg); }
+.quiz-session-start-actions .quiz-session-primary { min-height: 48px; }
+.flash-create-fixed-item { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.5; }
+.quiz-session-setup :is(.quiz-session-preset, .quiz-session-options button) { min-height: 44px; }
+.flashcards-workspace .flashcards-guided-empty { display: grid; justify-items: start; gap: 12px; padding: 20px; text-align: left; }
+.flashcards-workspace .flashcards-guided-empty > svg { width: 28px; height: 28px; color: var(--flash-accent); }
+.flashcards-workspace .flashcards-guided-empty h2 { font-size: 18px; line-height: 1.4; color: var(--text); }
+.flashcards-workspace .flashcards-guided-empty p { max-width: 560px; margin: 0; line-height: 1.5; }
+.flashcards-workspace .flashcards-guided-empty button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 8px 12px; color: var(--flash-accent); }
+@media (max-width: 760px) {
+  .quiz-session-setup .quiz-session-setup-panel { grid-template-columns: minmax(0, 1fr); gap: 12px; padding: 12px; }
+  .quiz-session-start-actions { grid-column: auto; }
+}

@@ -1,0 +1,137 @@
+.item-review-label-compact, .item-tracking-label-compact { display: none; }
+
+/* Single-panel item view: keep the primary actions and tracking controls together. */
+@media (max-width: 1220px) {
+  .dashboard-layout .item-detail-panel .item-detail-hero {
+    position: relative; display: grid; grid-template-columns: minmax(0, 1fr);
+    gap: 12px; margin-bottom: 0; padding: 12px;
+  }
+  .dashboard-layout .item-detail-panel .item-detail-hero h2 { padding-right: 48px; min-height: 32px; margin: 0 0 6px; }
+  .dashboard-layout .item-detail-panel .item-detail-hero p { font-size: 14px; line-height: 1.4; }
+  .dashboard-layout .item-detail-panel .item-detail-tag-row { margin-top: 8px; gap: 6px; }
+  .dashboard-layout .item-detail-panel .detail-head-actions {
+    position: static; display: grid; grid-template-columns: minmax(0, 1fr) auto 44px;
+    gap: 6px; width: 100%; margin: 0; padding: 0; align-items: center;
+  }
+  .dashboard-layout .item-detail-panel .detail-head-actions .quiz-trigger-btn {
+    order: -1; width: 100%; min-width: 0; height: 44px; min-height: 44px;
+    padding: 8px 10px 8px 30px; font-size: 13px; white-space: nowrap;
+    box-shadow: 0 4px 10px rgba(81, 67, 194, .12);
+  }
+  .item-detail-panel .item-review-label-full, .item-detail-panel .item-tracking-label-full { display: none; }
+  .item-detail-panel .item-review-label-compact, .item-detail-panel .item-tracking-label-compact { display: inline; }
+  .dashboard-layout .item-detail-panel .item-detail-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin-bottom: 0; }
+  .dashboard-layout .item-detail-panel .item-detail-tabs button { min-width: 0; min-height: 44px; padding: 6px 4px; font-size: 12px; white-space: nowrap; }
+  .dashboard-layout .item-detail-panel .item-detail-edit-menu { min-width: 0; width: auto; position: static; }
+  .dashboard-layout .item-detail-panel .item-detail-action-btn {
+    width: auto; min-width: 0; height: 44px; min-height: 44px; padding: 8px; font-size: 12px; white-space: nowrap;
+  }
+  .dashboard-layout .item-detail-panel .item-detail-icon-btn { width: 44px; min-width: 44px; height: 44px; min-height: 44px; padding: 10px; }
+  .dashboard-layout .item-detail-panel .item-detail-dismiss { position: absolute; top: 6px; right: 6px; }
+  .dashboard-layout .item-detail-panel .item-detail-edit-popover {
+    position: absolute; top: calc(100% + 6px); right: 0; z-index: 30;
+    width: min(340px, 100%); max-width: 100%; max-height: 65dvh; overflow-y: auto; box-sizing: border-box;
+  }
+  .dashboard-layout .item-detail-panel .item-detail-tracking-table-head,
+  .dashboard-layout .item-detail-panel .item-detail-reference-table-head { display: none; }
+  .dashboard-layout .item-detail-tab-tracking :is(.college-card, .reference-card) {
+    position: relative; display: grid; grid-template-columns: 116px minmax(0, 1fr);
+    gap: 8px 10px; padding: 10px; align-items: center;
+  }
+  .dashboard-layout .item-detail-tab-tracking .college-card-head { grid-column: 1 / -1; grid-row: 1; }
+  .dashboard-layout .item-detail-tab-tracking .college-card-head p { font-size: 12px; line-height: 1.4; }
+  .dashboard-layout .item-detail-tab-tracking :is(.college-card, .reference-card) > .control-row {
+    grid-column: 1; grid-row: 2; display: flex; flex-direction: row; gap: 0; margin: 0; justify-content: flex-start;
+  }
+  .dashboard-layout .item-detail-tab-tracking .control-row > p { display: none; }
+  .dashboard-layout .item-detail-tab-tracking .counter-wrap { display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 4px; }
+  .dashboard-layout .item-detail-tab-tracking .counter-wrap button { flex: none; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 0; font-size: 18px; }
+  .dashboard-layout .item-detail-tab-tracking .counter-wrap .review-count { min-width: 20px; text-align: center; font-size: 13px; }
+  .dashboard-layout .item-detail-tab-tracking :is(.college-card, .reference-card) > .block-label:first-of-type { grid-column: 2; grid-row: 2; margin: 0; gap: 0; min-width: 0; }
+  .dashboard-layout .item-detail-tab-tracking :is(.college-card, .reference-card) > .block-label:nth-of-type(2) { grid-column: 1 / -1; grid-row: 3; margin: 0; gap: 0; }
+  .dashboard-layout .item-detail-tab-tracking .block-label select { height: 44px; min-height: 44px; font-size: 13px; padding: 6px; }
+  .dashboard-layout .item-detail-tab-tracking :is(.college-card, .reference-card) .block-label textarea { min-height: 52px; font-size: 13px; padding: 8px; }
+  .dashboard-layout .item-detail-tab-tracking .reference-row { display: contents; }
+  .dashboard-layout .item-detail-tab-tracking .reference-row .reference-name-cell { grid-column: 1 / -1; grid-row: 1; padding-right: 44px; }
+  .dashboard-layout .item-detail-tab-tracking .reference-row .reference-name-cell input { min-height: 44px; font-size: 13px; }
+  .dashboard-layout .item-detail-tab-tracking .reference-row .remove-ref-btn { position: absolute; top: 10px; right: 8px; width: 44px; height: 44px; min-height: 44px; padding: 10px; }
+  .dashboard-layout .item-detail-panel .faculty-item-unit-controls { display: grid; grid-template-columns: 116px minmax(0, 1fr); align-items: end; gap: 10px; }
+  .dashboard-layout .item-detail-panel .faculty-item-unit-feeling { min-width: 0; }
+  .dashboard-layout .item-detail-panel .faculty-item-unit-reviews > div { gap: 4px; }
+  .dashboard-layout .item-detail-panel .faculty-item-unit-reviews button { width: 44px; height: 44px; min-height: 44px; }
+  .dashboard-layout .item-detail-panel .faculty-item-unit-feeling select { height: 44px; min-height: 44px; padding: 6px; }
+  .dashboard-layout .item-detail-panel .faculty-item-unit-notes textarea { min-height: 52px; }
+  .dashboard-layout .item-detail-panel .faculty-item-unit-tracking { gap: 8px; }
+}
+
+@media (max-width: 767px) {
+  .dashboard-layout .item-detail-panel .item-detail-stat-grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+  .dashboard-layout .item-detail-panel .item-detail-stat-grid > div { grid-column: span 2; min-width: 0; min-height: 60px; padding: 6px; column-gap: 4px; grid-template-columns: minmax(0, 1fr); grid-template-areas: 'value' 'label'; }
+  .dashboard-layout .item-detail-panel .item-detail-stat-grid > div:nth-child(n+4) { grid-column: span 3; }
+  .dashboard-layout .item-detail-panel .item-detail-stat-icon { display: none; }
+  .dashboard-layout .item-detail-panel .item-detail-stat-value { font-size: 13px; overflow-wrap: anywhere; }
+  .dashboard-layout .item-detail-panel .item-detail-stat-grid .meta-label { font-size: 10px; line-height: 1.3; }
+  .dashboard-layout .item-detail-panel .item-detail-stat-select { font-size: 12px; width: 100%; min-width: 0; padding: 0; }
+  .dashboard-layout .item-detail-panel .item-detail-upcoming-card textarea { min-height: 52px; }
+  .dashboard-layout .item-detail-panel .item-detail-tabs { margin-top: 4px; gap: 4px; }
+  .dashboard-layout .item-detail-panel .item-detail-tabs button { padding: 6px 4px; font-size: clamp(10px, 3vw, 12px); }
+  .dashboard-layout .item-detail-panel .item-detail-content-grid { margin-top: 8px; }
+}
+
+/* Match the catalogue's Nationales / Locales segmented toggle. */
+.dashboard-layout .item-detail-panel .item-detail-tabs {
+  display: grid; grid-template-columns: repeat(4, minmax(0, 1fr));
+  box-sizing: border-box; width: 100%; margin-inline: 0; padding: 4px; gap: 4px;
+  border: 1px solid var(--border); border-radius: 11px; background: var(--surface-soft);
+  overflow: visible;
+}
+.dashboard-layout .item-detail-panel .item-detail-tabs > button {
+  min-width: 0; min-height: 44px; border: 1px solid var(--border); border-radius: 8px;
+  background: var(--panel-bg); color: var(--text); box-shadow: none;
+}
+.dashboard-layout .item-detail-panel .item-detail-tabs > button[aria-pressed='true'] {
+  background: #1765ed; border-color: #1765ed; color: #fff; box-shadow: none;
+}
+.dashboard-layout .item-detail-panel .item-detail-tabs > button:focus-visible {
+  outline: 2px solid var(--accent); outline-offset: 2px;
+}
+.dashboard-layout .item-detail-panel .item-detail-content-grid { margin-top: 0; border-radius: 12px; }
+
+.dashboard-layout .item-detail-panel > .item-detail-upcoming-card { font-size: 0; gap: 0; margin: 0; }
+.dashboard-layout .item-detail-panel > .item-detail-upcoming-card textarea { font-size: 13px; }
+
+/* Empty resource groups keep their actions without a full tracking panel. */
+.dashboard-layout .item-detail-panel .item-empty-sheets {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center; gap: 4px 12px; padding: 10px 12px; margin: 0;
+}
+.dashboard-layout .item-detail-panel .item-empty-sheets h3 { grid-column: 1 / -1; margin: 0; font-size: 13px; }
+.dashboard-layout .item-detail-panel .item-empty-sheets h3::before { content: ''; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 50%; background: #facc15; }
+.dashboard-layout .item-detail-panel .item-empty-sheets-platform h3::before { background: #a855f7; }
+.dashboard-layout .item-detail-panel .item-empty-sheets label { display: flex; align-items: center; gap: 8px; min-height: 44px; min-width: 0; color: var(--muted); font-size: 13px; cursor: pointer; }
+.dashboard-layout .item-detail-panel .item-empty-sheets input { flex: none; width: 16px; height: 16px; margin: 0; }
+.dashboard-layout .item-detail-panel .item-empty-sheets .add-ref-btn { margin: 0; min-height: 44px; padding: 6px 10px; font-size: 13px; white-space: nowrap; }
+.dashboard-layout .item-detail-panel .faculty-item-resources.is-empty { padding: 10px 12px; gap: 4px; }
+.dashboard-layout .item-detail-panel .faculty-item-resources.is-empty h3 { margin: 0; font-size: 13px; }
+.dashboard-layout .item-detail-panel .faculty-item-resources.is-empty > p { margin: 0; font-size: 12px; line-height: 1.4; }
+
+/* Compact flashcards inside an item: actions remain in the upper-right corner. */
+.dashboard-layout .item-detail-panel .quiz-card-list-head { display: flex; flex-direction: row; align-items: center; justify-content: space-between; gap: 8px; }
+.dashboard-layout .item-detail-panel .quiz-card-list-head h3 { margin: 0; }
+.dashboard-layout .item-detail-panel .quiz-card-add { width: auto; min-height: 44px; padding: 8px; font-size: 12px; white-space: nowrap; }
+.dashboard-layout .item-detail-panel .quiz-card-row { display: grid; grid-template-columns: 24px minmax(0, 1fr) 44px 44px; align-items: start; gap: 4px 6px; padding: 8px; min-height: 0; }
+.dashboard-layout .item-detail-panel .quiz-card-drag-handle { grid-column: 1; grid-row: 1; width: 24px; height: 44px; }
+.dashboard-layout .item-detail-panel .quiz-card-select { grid-column: 2; grid-row: 1; min-width: 0; min-height: 44px; padding: 4px 0; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; line-height: 1.4; font-size: 13px; }
+.dashboard-layout .item-detail-panel .quiz-card-level-pill { grid-column: 2 / -1; grid-row: 2; justify-self: start; margin: 0; font-size: 11px; }
+.dashboard-layout .item-detail-panel :is(.quiz-card-edit, .quiz-card-remove) { grid-row: 1; display: grid; place-items: center; width: 44px; min-width: 44px; height: 44px; min-height: 44px; padding: 10px; }
+.dashboard-layout .item-detail-panel .quiz-card-edit { grid-column: 3; }
+.dashboard-layout .item-detail-panel .quiz-card-remove { grid-column: 4; }
+.dashboard-layout .item-detail-panel .quiz-card-edit-label { display: none; }
+.item-assignment-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.item-assignment-heading h3 { margin: 0; }
+.item-assignment-unlock { display: inline-flex; align-items: center; justify-content: center; gap: 7px; min-height: 40px; padding: 7px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--panel-bg); color: var(--text); font: inherit; font-size: 13px; cursor: pointer; }
+.item-assignment-unlock[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.college-picker.is-locked { background: color-mix(in srgb, var(--panel-bg) 78%, #e5eaf1); }
+.college-picker.is-locked label { color: var(--muted); cursor: not-allowed; }
+.college-picker.is-locked input:disabled { opacity: .45; }
+@media (max-width: 600px) { .item-assignment-heading { align-items: flex-start; flex-direction: column; } }

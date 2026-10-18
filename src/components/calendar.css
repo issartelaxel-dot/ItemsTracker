@@ -529,68 +529,6 @@
   margin-left: 8px;
   padding: 8px;
 }
-.cal-apple {
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 16px;
-  margin-top: 20px;
-  background: var(--panel-bg);
-  font-size: 13px;
-  line-height: 1.6;
-  overflow-wrap: anywhere;
-}
-.cal-apple summary {
-  cursor: pointer;
-  font-weight: 600;
-  color: var(--text);
-}
-.cal-apple label {
-  display: grid;
-  gap: 6px;
-  margin: 12px 0;
-}
-.cal-apple input {
-  min-width: 0;
-  width: 100%;
-  font: inherit;
-  border: 1px solid var(--border);
-  background: var(--panel-bg);
-  color: var(--text);
-  border-radius: 8px;
-  padding: 10px;
-  min-height: 44px;
-}
-.cal-apple button {
-  min-height: 44px;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 10px;
-  background: var(--surface-soft);
-  color: var(--text);
-  cursor: pointer;
-}
-.cal-credentials {
-  padding: 14px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  margin: 14px 0;
-}
-.cal-device {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 10px;
-  border-top: 1px solid var(--border);
-  padding: 10px 0;
-}
-.cal-device span {
-  display: grid;
-  gap: 4px;
-}
-.cal-device small {
-  color: var(--muted);
-  font-size: 11px;
-}
 .calendar-items-scope {
   padding: 10px;
   display: flex;
@@ -634,11 +572,15 @@
     object-fit: cover;
     border-radius: 50%;
   }
-  .items-compact-list .mobile-profile-shortcut {
-    margin-left: auto;
+  .mobile-items-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: none;
   }
-  .cal-apple input {
-    font-size: 16px;
+  .mobile-items-header-actions .mobile-profile-shortcut {
+    margin: 0;
+    order: 0;
   }
 }
 
@@ -662,3 +604,118 @@
 }
 
 @media(max-width:767px){.calendar-view .cal-month-head button{min-width:44px}}
+
+.cal-apple-banner {
+  --apple-title: #101d3b;
+  --apple-copy: #63779b;
+  --apple-background: #f1f7ff;
+  --apple-image: url('../assets/calendar/apple-calendar-light.png');
+  margin-top: 24px;
+  border: 1px solid #d2e3ff;
+  border-radius: 18px;
+  background-color: var(--apple-background);
+  background-image: linear-gradient(90deg, var(--apple-background) 0%, var(--apple-background) 28%, transparent 66%), var(--apple-image);
+  background-position: center, right center;
+  background-size: 100% 100%, auto 100%;
+  background-repeat: no-repeat;
+  overflow: hidden;
+}
+.cal-apple-banner-content { width: 65%; padding: clamp(24px, 3vw, 44px); }
+.cal-apple-banner-heading { display: flex; align-items: center; gap: 24px; }
+.cal-apple-banner-heading h2 { margin: 0 0 10px; color: var(--apple-title); font-size: clamp(20px, 2vw, 30px); line-height: 1.2; font-weight: 750; letter-spacing: -.5px; }
+.cal-apple-banner-heading p { margin: 0; color: var(--apple-copy); font-size: clamp(13px, 1.25vw, 17px); line-height: 1.5; }
+.cal-apple-app-icon { flex-shrink: 0; display: flex; flex-direction: column; width: 78px; height: 82px; overflow: hidden; border-radius: 18px; background: linear-gradient(#fff, #f4f4f4); box-shadow: 0 2px 3px #26364530, inset 0 -2px 2px #00000012; border: 1px solid #e2e4e7; text-align: center; }
+.cal-apple-app-icon > span { background: linear-gradient(#ff7377, #ff383f); color: #fff; font-size: 14px; line-height: 25px; }
+.cal-apple-app-icon strong { color: #303947; font-size: 45px; line-height: 53px; font-weight: 400; letter-spacing: -2px; }
+.cal-apple-benefits { display: flex; align-items: center; gap: 0; list-style: none; margin: 25px 0; padding: 0; }
+.cal-apple-benefits li { display: flex; align-items: center; gap: 12px; color: var(--apple-copy); font-size: 12px; font-weight: 550; line-height: 1.5; padding: 0 18px; border-right: 1px solid #ccdefb; }
+.cal-apple-benefits li:first-child { padding-left: 0; }
+.cal-apple-benefits li:last-child { padding-right: 0; border: 0; }
+.cal-apple-benefits li > span { display: grid; place-items: center; flex-shrink: 0; width: 42px; height: 42px; border-radius: 12px; background: #dfedffb3; color: #0874ff; }
+.cal-apple-benefits svg { width: 23px; height: 23px; stroke-width: 2; }
+.cal-apple-connect { display: inline-flex; align-items: center; justify-content: center; gap: 14px; min-height: 54px; padding: 14px 24px; border: 1px solid #2686ff; border-radius: 14px; background: #0668ff; color: #fff; font: inherit; font-size: 16px; cursor: pointer; box-shadow: 0 10px 24px #0068ff26; transition: background .15s; }
+.cal-apple-connect:hover { background: #0059df; }
+.cal-apple-connect:focus-visible { outline: 3px solid #72afff; outline-offset: 4px; }
+.cal-apple-connect svg { width: 24px; height: 24px; flex-shrink: 0; }
+:root[data-theme='dark'] .cal-apple-banner { --apple-title: #f0f6ff; --apple-copy: #b2c9e8; --apple-image: url('../assets/calendar/apple-calendar-dark.png'); --apple-background: #031329; border-color: #173966; }
+:root[data-theme='dark'] .cal-apple-benefits li { border-color: #28466a; }
+:root[data-theme='dark'] .cal-apple-benefits li > span { background: #0c3c7180; color: #58abff; }
+@media (max-width: 1100px) {
+  .cal-apple-banner-content { width: 75%; }
+  .cal-apple-banner-heading { gap: 16px; }
+  .cal-apple-benefits li { padding: 0 12px; gap: 8px; font-size: 11px; }
+}
+@media (max-width: 700px) {
+  .cal-apple-banner { background-position: center, right top; background-size: 100% 100%, auto 240px; }
+  .cal-apple-banner-content { width: 100%; padding: 24px 18px; background: linear-gradient(180deg, #f3f8ffed 0%, #f3f8fff2 65%, #f3f8ff 100%); }
+  .cal-apple-banner-heading { align-items: flex-start; gap: 14px; }
+  .cal-apple-banner-heading h2 { font-size: 21px; }
+  .cal-apple-app-icon { width: 56px; height: 61px; border-radius: 13px; }
+  .cal-apple-app-icon > span { font-size: 11px; line-height: 20px; }
+  .cal-apple-app-icon strong { font-size: 33px; line-height: 39px; }
+  .cal-apple-benefits { align-items: flex-start; gap: 14px; margin: 24px 0; }
+  .cal-apple-benefits li { flex: 1; flex-direction: column; align-items: flex-start; border: 0; padding: 0; font-size: 11px; }
+  .cal-apple-connect { width: 100%; padding: 14px 10px; font-size: 14px; gap: 8px; }
+  :root[data-theme='dark'] .cal-apple-banner-content { background: linear-gradient(180deg, #031329d9, #031329f2 65%, #031329); }
+}
+
+.cal-apple-banner-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 18px; }
+.cal-apple-manage { border: 0; background: transparent; color: var(--apple-copy); font: inherit; font-size: 12px; padding: 10px 0; cursor: pointer; text-decoration: underline; text-underline-offset: 4px; }
+.apple-setup-dialog { width: min(620px, calc(100vw - 32px)); max-height: min(90dvh, 880px); margin: auto; padding: 32px; border: 1px solid var(--border, #d9e5f5); border-radius: 24px; background: var(--panel-bg, #fff); color: var(--text, #172b4a); box-shadow: 0 24px 100px #001c4940; overflow-y: auto; font-size: 14px; line-height: 1.55; }
+.apple-setup-dialog::backdrop { background: #061a3980; backdrop-filter: blur(7px); }
+.apple-setup-dialog *, .apple-setup-dialog *::before { box-sizing: border-box; }
+.apple-setup-dialog h2 { font-size: 25px; line-height: 1.25; letter-spacing: -.5px; margin: 24px 0 12px; outline: none; padding-right: 18px; }
+.apple-setup-dialog p { color: var(--muted, #63779b); margin: 10px 0 20px; }
+.apple-setup-dialog button { cursor: pointer; font: inherit; border: 1px solid var(--border, #d5e2f5); background: var(--surface-soft, #f4f8ff); color: var(--text, #172b4a); border-radius: 12px; padding: 10px 16px; min-height: 44px; }
+.apple-setup-dialog button:disabled { opacity: .55; cursor: wait; }
+.apple-setup-dialog button:focus-visible, .apple-setup-dialog input:focus-visible, .apple-setup-platforms label:has(:focus-visible) { outline: 3px solid #70aaff; outline-offset: 3px; }
+.apple-setup-dialog .apple-setup-close { position: absolute; top: 18px; right: 18px; padding: 10px; border: none; background: transparent; }
+.apple-setup-close svg { width: 22px; height: 22px; }
+.apple-setup-eyebrow { font-size: 10px; font-weight: 700; letter-spacing: 1.3px; color: #3184f8; display: block; padding-right: 35px; }
+.apple-setup-steps { display: flex; list-style: none; margin: 26px 0 0; padding: 0; gap: 18px; }
+.apple-setup-steps li { display: flex; align-items: center; gap: 7px; color: var(--muted, #7185a0); font-size: 11px; }
+.apple-setup-steps li > span { display: grid; place-items: center; border: 1px solid var(--border, #d5e2f5); border-radius: 50%; width: 25px; height: 25px; flex-shrink: 0; }
+.apple-setup-steps svg { width: 15px; height: 15px; }
+.apple-setup-steps .is-active { color: #3184f8; }
+.apple-setup-steps .is-active > span { color: #fff; background: #1673f7; border-color: #1673f7; }
+.apple-setup-platforms { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); padding: 0; border: 0; gap: 12px; margin: 24px 0; }
+.apple-setup-platforms legend { font-size: 12px; font-weight: 600; margin-bottom: 10px; }
+.apple-setup-platforms label { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 18px 8px; border: 1px solid var(--border, #d5e2f5); border-radius: 14px; cursor: pointer; background: var(--surface-soft, #f7faff); }
+.apple-setup-platforms label.is-selected { border-color: #1673f7; color: #1673f7; box-shadow: inset 0 0 0 1px #1673f7; }
+.apple-setup-platforms input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.apple-setup-field { display: grid; gap: 7px; font-size: 12px; font-weight: 600; margin: 14px 0; }
+.apple-setup-field input { width: 100%; min-width: 0; min-height: 46px; border: 1px solid var(--border, #d5e2f5); border-radius: 10px; padding: 11px 12px; background: var(--surface-soft, #f7faff); color: var(--text, #172b4a); font: inherit; font-size: 14px; font-weight: 400; }
+.apple-setup-note { display: flex; align-items: flex-start; gap: 10px; padding: 14px 16px; background: var(--surface-soft, #f2f7ff); border: 1px solid var(--border, #dbe8fa); border-radius: 12px; color: var(--muted, #63779b); font-size: 12px; margin: 20px 0; }
+.apple-setup-note svg { width: 20px; height: 20px; flex-shrink: 0; color: #3184f8; }
+.apple-setup-dialog footer { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; padding-top: 18px; margin-top: 20px; border-top: 1px solid var(--border, #d5e2f5); }
+.apple-setup-dialog .apple-setup-primary { background: #086bfa; color: #fff; border-color: #086bfa; }
+.apple-setup-dialog .apple-setup-primary:hover { background: #0059df; }
+.apple-setup-instructions { list-style: none; margin: 22px 0 12px; padding: 0; display: grid; gap: 18px; }
+.apple-setup-instructions li { display: flex; gap: 12px; }
+.apple-setup-instructions li > span { flex-shrink: 0; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 8px; color: #3184f8; background: var(--surface-soft, #edf5ff); }
+.apple-setup-instructions p { font-size: 12px; margin: 5px 0 0; }
+.apple-setup-credentials { padding: 2px 16px 8px; border: 1px solid var(--border, #d5e2f5); border-radius: 14px; }
+.apple-setup-copy { display: flex; align-items: center; gap: 8px; }
+.apple-setup-copy input { font-family: ui-monospace, monospace; }
+.apple-setup-copy button { padding: 10px; flex-shrink: 0; }
+.apple-setup-copy svg { width: 20px; height: 20px; }
+.apple-setup-dialog .apple-setup-copy-status { font-size: 11px; margin: 10px 0; }
+.apple-setup-advanced { font-size: 12px; margin: 20px 0; }
+.apple-setup-advanced summary { cursor: pointer; color: var(--muted, #63779b); }
+.apple-setup-dialog .apple-setup-error { color: #d63549; border: 1px solid #d6354960; border-radius: 10px; padding: 12px; }
+.apple-setup-success > span { display: grid; place-items: center; width: 64px; height: 64px; color: #139e70; background: #17b78118; border-radius: 50%; margin: 24px 0; }
+.apple-setup-success > span svg { width: 34px; height: 34px; }
+.apple-setup-devices { list-style: none; margin: 20px 0; padding: 0; }
+.apple-setup-devices > li { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 14px; border: 1px solid var(--border, #d5e2f5); border-radius: 14px; padding: 16px; margin: 10px 0; }
+.apple-setup-devices small { display: block; font-size: 11px; color: var(--muted, #63779b); }
+.apple-setup-revoke { width: 100%; }
+.apple-setup-revoke button { margin-right: 8px; }
+@media(max-width: 600px) {
+  .apple-setup-dialog { padding: 24px 18px; border-radius: 20px; width: calc(100vw - 24px); max-height: 94dvh; }
+  .apple-setup-dialog h2 { font-size: 22px; }
+  .apple-setup-field input { font-size: 16px; }
+  .apple-setup-steps { gap: 10px; }
+  .apple-setup-steps li { font-size: 10px; gap: 5px; }
+  .apple-setup-dialog footer > button { flex: 1; }
+  .cal-apple-banner-actions { gap: 6px; justify-content: center; }
+}

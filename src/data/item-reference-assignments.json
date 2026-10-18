@@ -1,0 +1,2004 @@
+{
+  "schemaVersion": 1,
+  "provenance": {
+    "pageUrl": "https://nexternat.fr/externat/les-items/",
+    "dataUrl": "https://nexternat.fr/wp-content/uploads/items_et_referentiels.json",
+    "checkedAt": "2026-10-18",
+    "sourceSha256": "7c4aa3f3540973c5867280266cd904ca154a10d2061c45d8985495d89b4de4be",
+    "relation": "item_study_reference",
+    "status": "secondary_source"
+  },
+  "references": [
+    {
+      "code": "ACP",
+      "title": "Anatomie et Cytologie Pathologiques",
+      "college": "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES"
+    },
+    {
+      "code": "AR",
+      "title": "Anesthésie - Réanimation",
+      "college": "ANESTHÉSIE - RÉANIMATION"
+    },
+    {
+      "code": "Can",
+      "title": "Cancérologie",
+      "college": "CANCÉROLOGIE"
+    },
+    {
+      "code": "CVD",
+      "title": "Chirurgie Viscérale et Digestive",
+      "college": "CHIRURGIE DIGESTIVE"
+    },
+    {
+      "code": "CMF",
+      "title": "Chirurgie Maxillo-Faciale",
+      "college": "CHIRURGIE MAXILLO-FACIALE"
+    },
+    {
+      "code": "Der",
+      "title": "Dermatologie",
+      "college": "DERMATOLOGIE"
+    },
+    {
+      "code": "DSP",
+      "title": "Douleurs - Soins Palliatifs",
+      "college": "DOULEUR - SOINS PALLIATIFS"
+    },
+    {
+      "code": "ED",
+      "title": "Endocrinologie - Diabétologie",
+      "college": "ENDOCRINOLOGIE"
+    },
+    {
+      "code": "GeM",
+      "title": "Génétique Médicale",
+      "college": "GÉNÉTIQUE"
+    },
+    {
+      "code": "Ger",
+      "title": "Gériatrie",
+      "college": "GÉRIATRIE"
+    },
+    {
+      "code": "GyM",
+      "title": "Gynécologie Médicale",
+      "college": "GYNÉCOLOGIE MÉDICALE"
+    },
+    {
+      "code": "GyO",
+      "title": "Gynécologie - Obstétrique",
+      "college": "GYNÉCOLOGIE OBSTÉTRIQUE"
+    },
+    {
+      "code": "Hem",
+      "title": "Hématologie",
+      "college": "HÉMATOLOGIE"
+    },
+    {
+      "code": "HGE",
+      "title": "Hépato-Gastro-Entérologie",
+      "college": "HÉPATO-GASTRO-ENTÉROLOGIE"
+    },
+    {
+      "code": "IM",
+      "title": "Imagerie Médicale",
+      "college": "IMAGERIE MÉDICALE"
+    },
+    {
+      "code": "IP",
+      "title": "Immunopathologie",
+      "college": "IMMUNOPATHOLOGIE"
+    },
+    {
+      "code": "MIT",
+      "title": "Maladies Infectieuses et Tropicales",
+      "college": "INFECTIOLOGIE"
+    },
+    {
+      "code": "MCV",
+      "title": "Médecine Cardio-Vasculaire",
+      "college": "MÉDECINE CARDIOVASCULAIRE"
+    },
+    {
+      "code": "MG",
+      "title": "Médecine Générale",
+      "college": "MÉDECINE GÉNÉRALE"
+    },
+    {
+      "code": "MIR",
+      "title": "Médecine Intensive - Réanimation - Urgences",
+      "college": "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES"
+    },
+    {
+      "code": "MI",
+      "title": "Médecine Interne",
+      "college": "MÉDECINE INTERNE"
+    },
+    {
+      "code": "MLT",
+      "title": "Médecine Légale - Médecine du Travail",
+      "college": "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL"
+    },
+    {
+      "code": "MM",
+      "title": "Médecine Moléculaire",
+      "college": "MÉDECINE MOLÉCULAIRE"
+    },
+    {
+      "code": "MPR",
+      "title": "Médecine Physique et Réadaptation",
+      "college": "MÉDECINE PHYSIQUE ET RÉADAPTATION"
+    },
+    {
+      "code": "MV",
+      "title": "Médecine Vasculaire",
+      "college": "MÉDECINE VASCULAIRE"
+    },
+    {
+      "code": "Nep",
+      "title": "Néphrologie",
+      "college": "NÉPHROLOGIE"
+    },
+    {
+      "code": "NC",
+      "title": "Neurochirurgie",
+      "college": "NEUROCHIRURGIE"
+    },
+    {
+      "code": "NL",
+      "title": "Neurologie",
+      "college": "NEUROLOGIE"
+    },
+    {
+      "code": "Nut",
+      "title": "Nutrition",
+      "college": "NUTRITION"
+    },
+    {
+      "code": "Oph",
+      "title": "Ophtalmologie",
+      "college": "OPHTALMOLOGIE"
+    },
+    {
+      "code": "ORL",
+      "title": "Oto-Rhino-Laryngologie",
+      "college": "ORL"
+    },
+    {
+      "code": "OT",
+      "title": "Orthopédie - Traumatologie",
+      "college": "ORTHOPÉDIE - TRAUMATOLOGIE"
+    },
+    {
+      "code": "Par",
+      "title": "Parasitologie",
+      "college": "PARASITOLOGIE"
+    },
+    {
+      "code": "Ped",
+      "title": "Pédiatrie",
+      "college": "PÉDIATRIE"
+    },
+    {
+      "code": "Pne",
+      "title": "Pneumologie",
+      "college": "PNEUMOLOGIE"
+    },
+    {
+      "code": "Psy",
+      "title": "Psychiatrie - Addictologie",
+      "college": "PSYCHIATRIE - ADDICTOLOGIE"
+    },
+    {
+      "code": "Rhu",
+      "title": "Rhumatologie",
+      "college": "RHUMATOLOGIE"
+    },
+    {
+      "code": "SP",
+      "title": "Santé Publique",
+      "college": "SANTÉ PUBLIQUE"
+    },
+    {
+      "code": "The",
+      "title": "Thérapeutique",
+      "college": "THÉRAPEUTIQUE"
+    },
+    {
+      "code": "Uro",
+      "title": "Urologie",
+      "college": "UROLOGIE"
+    }
+  ],
+  "items": {
+    "1": [
+      "MÉDECINE INTERNE",
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "2": [
+      "MÉDECINE INTERNE"
+    ],
+    "3": [
+      "MÉDECINE INTERNE",
+      "SANTÉ PUBLIQUE"
+    ],
+    "4": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "INFECTIOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "SANTÉ PUBLIQUE"
+    ],
+    "5": [
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL",
+      "SANTÉ PUBLIQUE"
+    ],
+    "6": [
+      "SANTÉ PUBLIQUE"
+    ],
+    "7": [
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL"
+    ],
+    "8": [
+      "MÉDECINE GÉNÉRALE",
+      "SANTÉ PUBLIQUE"
+    ],
+    "9": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "GÉRIATRIE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL",
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION"
+    ],
+    "10": [],
+    "11": [
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL"
+    ],
+    "12": [
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL"
+    ],
+    "13": [
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL",
+      "PÉDIATRIE"
+    ],
+    "14": [
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL"
+    ],
+    "15": [
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "16": [
+      "SANTÉ PUBLIQUE"
+    ],
+    "17": [
+      "SANTÉ PUBLIQUE"
+    ],
+    "18": [
+      "SANTÉ PUBLIQUE"
+    ],
+    "19": [
+      "SANTÉ PUBLIQUE"
+    ],
+    "20": [
+      "SANTÉ PUBLIQUE"
+    ],
+    "21": [
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "SANTÉ PUBLIQUE"
+    ],
+    "22": [
+      "GÉNÉTIQUE",
+      "MÉDECINE INTERNE"
+    ],
+    "23": [
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "MÉDECINE GÉNÉRALE",
+      "NÉPHROLOGIE"
+    ],
+    "24": [
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "NÉPHROLOGIE"
+    ],
+    "25": [
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE"
+    ],
+    "26": [
+      "GYNÉCOLOGIE OBSTÉTRIQUE"
+    ],
+    "27": [
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "INFECTIOLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "PÉDIATRIE"
+    ],
+    "28": [
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "INFECTIOLOGIE"
+    ],
+    "29": [
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL"
+    ],
+    "30": [
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "PÉDIATRIE"
+    ],
+    "31": [
+      "GYNÉCOLOGIE OBSTÉTRIQUE"
+    ],
+    "32": [
+      "PÉDIATRIE"
+    ],
+    "33": [
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "MÉDECINE GÉNÉRALE",
+      "NUTRITION",
+      "PÉDIATRIE"
+    ],
+    "34": [
+      "GYNÉCOLOGIE OBSTÉTRIQUE"
+    ],
+    "35": [
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE"
+    ],
+    "36": [
+      "ENDOCRINOLOGIE",
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "MÉDECINE GÉNÉRALE",
+      "THÉRAPEUTIQUE",
+      "UROLOGIE"
+    ],
+    "37": [
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "MÉDECINE GÉNÉRALE"
+    ],
+    "38": [
+      "ENDOCRINOLOGIE",
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "UROLOGIE"
+    ],
+    "39": [
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE"
+    ],
+    "40": [
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "UROLOGIE"
+    ],
+    "41": [
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE"
+    ],
+    "42": [
+      "ENDOCRINOLOGIE",
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE"
+    ],
+    "43": [
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE"
+    ],
+    "44": [
+      "CHIRURGIE DIGESTIVE",
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "UROLOGIE"
+    ],
+    "45": [
+      "GÉNÉTIQUE",
+      "PÉDIATRIE"
+    ],
+    "46": [
+      "GÉNÉTIQUE"
+    ],
+    "47": [
+      "CHIRURGIE MAXILLO-FACIALE",
+      "MÉDECINE GÉNÉRALE",
+      "OPHTALMOLOGIE",
+      "ORL",
+      "ORTHOPÉDIE - TRAUMATOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "48": [
+      "PÉDIATRIE"
+    ],
+    "49": [
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "MÉDECINE GÉNÉRALE",
+      "PÉDIATRIE"
+    ],
+    "50": [
+      "ENDOCRINOLOGIE",
+      "PÉDIATRIE",
+      "UROLOGIE"
+    ],
+    "51": [
+      "PÉDIATRIE"
+    ],
+    "52": [
+      "OPHTALMOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "53": [
+      "PÉDIATRIE"
+    ],
+    "54": [
+      "ORTHOPÉDIE - TRAUMATOLOGIE",
+      "PÉDIATRIE",
+      "RHUMATOLOGIE"
+    ],
+    "55": [
+      "MÉDECINE GÉNÉRALE",
+      "PÉDIATRIE",
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "56": [
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "ORL",
+      "PÉDIATRIE"
+    ],
+    "57": [
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL",
+      "PÉDIATRIE"
+    ],
+    "58": [
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "PSYCHIATRIE - ADDICTOLOGIE",
+      "UROLOGIE"
+    ],
+    "59": [
+      "MÉDECINE INTERNE",
+      "PÉDIATRIE",
+      "PSYCHIATRIE - ADDICTOLOGIE",
+      "SANTÉ PUBLIQUE"
+    ],
+    "60": [
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "61": [
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "62": [
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "63": [
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "64": [
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "65": [
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "66": [
+      "MÉDECINE GÉNÉRALE",
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "67": [
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "68": [
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "69": [
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "70": [
+      "GÉRIATRIE",
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "71": [
+      "NUTRITION",
+      "PÉDIATRIE",
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "72": [
+      "DOULEUR - SOINS PALLIATIFS",
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE INTERNE",
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "73": [
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "74": [
+      "GÉRIATRIE",
+      "MÉDECINE GÉNÉRALE",
+      "PSYCHIATRIE - ADDICTOLOGIE",
+      "THÉRAPEUTIQUE"
+    ],
+    "75": [
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE VASCULAIRE",
+      "PNEUMOLOGIE",
+      "PSYCHIATRIE - ADDICTOLOGIE",
+      "SANTÉ PUBLIQUE"
+    ],
+    "76": [
+      "MÉDECINE GÉNÉRALE",
+      "NEUROLOGIE",
+      "PSYCHIATRIE - ADDICTOLOGIE",
+      "SANTÉ PUBLIQUE"
+    ],
+    "77": [
+      "PSYCHIATRIE - ADDICTOLOGIE",
+      "SANTÉ PUBLIQUE"
+    ],
+    "78": [
+      "PSYCHIATRIE - ADDICTOLOGIE",
+      "SANTÉ PUBLIQUE"
+    ],
+    "79": [
+      "MÉDECINE GÉNÉRALE",
+      "PSYCHIATRIE - ADDICTOLOGIE",
+      "SANTÉ PUBLIQUE"
+    ],
+    "80": [
+      "MÉDECINE GÉNÉRALE",
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "81": [
+      "GÉRIATRIE",
+      "OPHTALMOLOGIE"
+    ],
+    "82": [
+      "NEUROLOGIE",
+      "OPHTALMOLOGIE"
+    ],
+    "83": [
+      "OPHTALMOLOGIE"
+    ],
+    "84": [
+      "OPHTALMOLOGIE"
+    ],
+    "85": [
+      "OPHTALMOLOGIE"
+    ],
+    "86": [
+      "OPHTALMOLOGIE"
+    ],
+    "87": [
+      "ORL"
+    ],
+    "88": [
+      "NEUROLOGIE",
+      "ORL"
+    ],
+    "89": [
+      "GÉRIATRIE",
+      "ORL",
+      "PÉDIATRIE"
+    ],
+    "90": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CHIRURGIE MAXILLO-FACIALE",
+      "ORL"
+    ],
+    "91": [
+      "NEUROLOGIE"
+    ],
+    "92": [
+      "NEUROLOGIE"
+    ],
+    "93": [
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "NEUROCHIRURGIE",
+      "NEUROLOGIE",
+      "ORTHOPÉDIE - TRAUMATOLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "94": [
+      "DOULEUR - SOINS PALLIATIFS",
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "ORTHOPÉDIE - TRAUMATOLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "95": [
+      "DOULEUR - SOINS PALLIATIFS",
+      "NEUROCHIRURGIE",
+      "NEUROLOGIE",
+      "ORTHOPÉDIE - TRAUMATOLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "96": [
+      "NEUROLOGIE"
+    ],
+    "97": [
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NEUROLOGIE"
+    ],
+    "98": [
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NEUROLOGIE"
+    ],
+    "99": [
+      "CHIRURGIE MAXILLO-FACIALE",
+      "DOULEUR - SOINS PALLIATIFS",
+      "MÉDECINE GÉNÉRALE",
+      "NEUROCHIRURGIE",
+      "NEUROLOGIE",
+      "ORL"
+    ],
+    "100": [
+      "DOULEUR - SOINS PALLIATIFS",
+      "NEUROLOGIE",
+      "PÉDIATRIE"
+    ],
+    "101": [
+      "CHIRURGIE MAXILLO-FACIALE",
+      "NEUROLOGIE",
+      "ORL"
+    ],
+    "102": [
+      "NEUROLOGIE",
+      "OPHTALMOLOGIE"
+    ],
+    "103": [
+      "NEUROLOGIE",
+      "ORL"
+    ],
+    "104": [
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "NEUROLOGIE",
+      "OPHTALMOLOGIE"
+    ],
+    "105": [
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NEUROLOGIE",
+      "PÉDIATRIE"
+    ],
+    "106": [
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "NEUROLOGIE"
+    ],
+    "107": [
+      "NEUROLOGIE"
+    ],
+    "108": [
+      "GÉRIATRIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NEUROLOGIE"
+    ],
+    "109": [
+      "GÉRIATRIE",
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "NEUROLOGIE",
+      "ORL",
+      "RHUMATOLOGIE"
+    ],
+    "110": [
+      "MÉDECINE GÉNÉRALE",
+      "NEUROLOGIE",
+      "ORL",
+      "PÉDIATRIE",
+      "PNEUMOLOGIE",
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "111": [
+      "DERMATOLOGIE"
+    ],
+    "112": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "DERMATOLOGIE"
+    ],
+    "113": [
+      "CHIRURGIE MAXILLO-FACIALE",
+      "DERMATOLOGIE",
+      "MÉDECINE VASCULAIRE"
+    ],
+    "114": [
+      "DERMATOLOGIE"
+    ],
+    "115": [
+      "DERMATOLOGIE"
+    ],
+    "116": [
+      "DERMATOLOGIE"
+    ],
+    "117": [
+      "DERMATOLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "118": [
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "NEUROLOGIE",
+      "ORL"
+    ],
+    "119": [
+      "MÉDECINE GÉNÉRALE"
+    ],
+    "120": [
+      "GÉRIATRIE",
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION"
+    ],
+    "121": [
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "122": [
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "ORL"
+    ],
+    "123": [
+      "GÉRIATRIE",
+      "MÉDECINE GÉNÉRALE"
+    ],
+    "124": [
+      "ENDOCRINOLOGIE",
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "THÉRAPEUTIQUE",
+      "UROLOGIE"
+    ],
+    "125": [
+      "GÉRIATRIE",
+      "GYNÉCOLOGIE MÉDICALE",
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "UROLOGIE"
+    ],
+    "126": [
+      "ENDOCRINOLOGIE",
+      "UROLOGIE"
+    ],
+    "127": [
+      "UROLOGIE"
+    ],
+    "128": [
+      "ENDOCRINOLOGIE",
+      "GÉRIATRIE",
+      "RHUMATOLOGIE"
+    ],
+    "129": [
+      "GÉRIATRIE",
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "RHUMATOLOGIE"
+    ],
+    "130": [
+      "GÉRIATRIE"
+    ],
+    "131": [
+      "GÉRIATRIE",
+      "NEUROLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "132": [
+      "GÉRIATRIE",
+      "MÉDECINE GÉNÉRALE",
+      "NEUROLOGIE"
+    ],
+    "133": [
+      "GÉRIATRIE",
+      "MÉDECINE GÉNÉRALE"
+    ],
+    "134": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "DOULEUR - SOINS PALLIATIFS",
+      "GÉRIATRIE",
+      "NEUROCHIRURGIE",
+      "NEUROLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "135": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "DOULEUR - SOINS PALLIATIFS",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NEUROCHIRURGIE",
+      "RHUMATOLOGIE",
+      "THÉRAPEUTIQUE"
+    ],
+    "136": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "DOULEUR - SOINS PALLIATIFS"
+    ],
+    "137": [
+      "DOULEUR - SOINS PALLIATIFS",
+      "PÉDIATRIE"
+    ],
+    "138": [
+      "DOULEUR - SOINS PALLIATIFS",
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "139": [
+      "DOULEUR - SOINS PALLIATIFS",
+      "GÉRIATRIE",
+      "MÉDECINE GÉNÉRALE"
+    ],
+    "140": [
+      "DOULEUR - SOINS PALLIATIFS",
+      "GÉRIATRIE"
+    ],
+    "141": [
+      "DOULEUR - SOINS PALLIATIFS",
+      "GÉRIATRIE"
+    ],
+    "142": [
+      "DOULEUR - SOINS PALLIATIFS",
+      "PÉDIATRIE"
+    ],
+    "143": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "DOULEUR - SOINS PALLIATIFS",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES"
+    ],
+    "144": [
+      "MÉDECINE GÉNÉRALE",
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "145": [
+      "INFECTIOLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "SANTÉ PUBLIQUE"
+    ],
+    "146": [
+      "INFECTIOLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "PÉDIATRIE",
+      "SANTÉ PUBLIQUE"
+    ],
+    "147": [
+      "INFECTIOLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "PÉDIATRIE"
+    ],
+    "148": [
+      "INFECTIOLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "ORL",
+      "PÉDIATRIE"
+    ],
+    "149": [
+      "INFECTIOLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "ORL",
+      "PÉDIATRIE"
+    ],
+    "150": [
+      "INFECTIOLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "ORL",
+      "PÉDIATRIE"
+    ],
+    "151": [
+      "INFECTIOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NEUROLOGIE",
+      "PÉDIATRIE"
+    ],
+    "152": [
+      "INFECTIOLOGIE",
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "MÉDECINE INTERNE"
+    ],
+    "153": [
+      "INFECTIOLOGIE",
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE VASCULAIRE"
+    ],
+    "154": [
+      "INFECTIOLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "PÉDIATRIE",
+      "PNEUMOLOGIE"
+    ],
+    "155": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "CHIRURGIE MAXILLO-FACIALE",
+      "DERMATOLOGIE",
+      "INFECTIOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PÉDIATRIE"
+    ],
+    "156": [
+      "INFECTIOLOGIE",
+      "ORTHOPÉDIE - TRAUMATOLOGIE",
+      "PÉDIATRIE",
+      "RHUMATOLOGIE"
+    ],
+    "157": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "INFECTIOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PÉDIATRIE"
+    ],
+    "158": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES"
+    ],
+    "159": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "INFECTIOLOGIE",
+      "PÉDIATRIE",
+      "PNEUMOLOGIE"
+    ],
+    "160": [
+      "INFECTIOLOGIE"
+    ],
+    "161": [
+      "INFECTIOLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NÉPHROLOGIE",
+      "PÉDIATRIE",
+      "UROLOGIE"
+    ],
+    "162": [
+      "DERMATOLOGIE",
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "INFECTIOLOGIE",
+      "MÉDECINE GÉNÉRALE"
+    ],
+    "163": [
+      "INFECTIOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "164": [
+      "DERMATOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "165": [
+      "INFECTIOLOGIE"
+    ],
+    "166": [
+      "INFECTIOLOGIE",
+      "MÉDECINE GÉNÉRALE"
+    ],
+    "167": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "INFECTIOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES"
+    ],
+    "168": [
+      "CHIRURGIE MAXILLO-FACIALE",
+      "DERMATOLOGIE",
+      "INFECTIOLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "NEUROLOGIE",
+      "PÉDIATRIE"
+    ],
+    "169": [
+      "DERMATOLOGIE",
+      "INFECTIOLOGIE",
+      "NEUROLOGIE",
+      "PÉDIATRIE"
+    ],
+    "170": [
+      "INFECTIOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PÉDIATRIE"
+    ],
+    "171": [
+      "DERMATOLOGIE",
+      "INFECTIOLOGIE"
+    ],
+    "172": [
+      "INFECTIOLOGIE"
+    ],
+    "173": [
+      "INFECTIOLOGIE"
+    ],
+    "174": [
+      "INFECTIOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "175": [
+      "INFECTIOLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "PÉDIATRIE"
+    ],
+    "176": [
+      "INFECTIOLOGIE",
+      "PÉDIATRIE",
+      "SANTÉ PUBLIQUE"
+    ],
+    "177": [
+      "INFECTIOLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PÉDIATRIE",
+      "THÉRAPEUTIQUE"
+    ],
+    "178": [
+      "INFECTIOLOGIE"
+    ],
+    "179": [
+      "SANTÉ PUBLIQUE"
+    ],
+    "180": [
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL"
+    ],
+    "181": [
+      "SANTÉ PUBLIQUE"
+    ],
+    "182": [
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL"
+    ],
+    "183": [
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL"
+    ],
+    "184": [
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL"
+    ],
+    "185": [
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE INTERNE",
+      "RHUMATOLOGIE"
+    ],
+    "186": [
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL",
+      "PÉDIATRIE",
+      "PNEUMOLOGIE"
+    ],
+    "187": [
+      "DERMATOLOGIE",
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL",
+      "OPHTALMOLOGIE"
+    ],
+    "188": [
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL",
+      "PÉDIATRIE",
+      "PNEUMOLOGIE"
+    ],
+    "189": [
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE INTERNE",
+      "PÉDIATRIE"
+    ],
+    "190": [
+      "IMMUNOPATHOLOGIE",
+      "INFECTIOLOGIE",
+      "MÉDECINE INTERNE"
+    ],
+    "191": [
+      "IMMUNOPATHOLOGIE",
+      "INFECTIOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "MÉDECINE INTERNE"
+    ],
+    "192": [
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE INTERNE",
+      "RHUMATOLOGIE"
+    ],
+    "193": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE INTERNE",
+      "NÉPHROLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "194": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "DERMATOLOGIE",
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE INTERNE",
+      "MÉDECINE VASCULAIRE",
+      "NÉPHROLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "195": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE INTERNE",
+      "MÉDECINE VASCULAIRE",
+      "RHUMATOLOGIE"
+    ],
+    "196": [
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "RHUMATOLOGIE"
+    ],
+    "197": [
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "RHUMATOLOGIE"
+    ],
+    "198": [
+      "IMMUNOPATHOLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "199": [
+      "DOULEUR - SOINS PALLIATIFS",
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "ORTHOPÉDIE - TRAUMATOLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "200": [
+      "IMMUNOPATHOLOGIE",
+      "ORTHOPÉDIE - TRAUMATOLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "201": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "CHIRURGIE DIGESTIVE",
+      "DERMATOLOGIE",
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NÉPHROLOGIE",
+      "OPHTALMOLOGIE",
+      "UROLOGIE"
+    ],
+    "202": [
+      "HÉMATOLOGIE",
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE INTERNE",
+      "RHUMATOLOGIE"
+    ],
+    "203": [
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "ORL",
+      "PÉDIATRIE",
+      "PNEUMOLOGIE"
+    ],
+    "204": [
+      "MÉDECINE GÉNÉRALE",
+      "PÉDIATRIE",
+      "PNEUMOLOGIE"
+    ],
+    "205": [
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PNEUMOLOGIE"
+    ],
+    "206": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PNEUMOLOGIE"
+    ],
+    "207": [
+      "PÉDIATRIE",
+      "PNEUMOLOGIE"
+    ],
+    "208": [
+      "PNEUMOLOGIE"
+    ],
+    "209": [
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PNEUMOLOGIE"
+    ],
+    "210": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE INTERNE",
+      "PNEUMOLOGIE"
+    ],
+    "211": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "DERMATOLOGIE",
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE INTERNE",
+      "PNEUMOLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "212": [
+      "HÉMATOLOGIE",
+      "IMMUNOPATHOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "213": [
+      "HÉMATOLOGIE",
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE INTERNE",
+      "PÉDIATRIE"
+    ],
+    "214": [
+      "HÉMATOLOGIE",
+      "IMMUNOPATHOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "MÉDECINE INTERNE"
+    ],
+    "215": [
+      "DERMATOLOGIE",
+      "HÉMATOLOGIE",
+      "INFECTIOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "MÉDECINE INTERNE",
+      "PÉDIATRIE"
+    ],
+    "216": [
+      "HÉMATOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "217": [
+      "HÉMATOLOGIE",
+      "IMMUNOPATHOLOGIE",
+      "INFECTIOLOGIE",
+      "MÉDECINE INTERNE"
+    ],
+    "218": [
+      "HÉMATOLOGIE",
+      "IMMUNOPATHOLOGIE",
+      "INFECTIOLOGIE",
+      "MÉDECINE INTERNE"
+    ],
+    "219": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "ENDOCRINOLOGIE",
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "MÉDECINE INTERNE",
+      "PÉDIATRIE",
+      "RHUMATOLOGIE"
+    ],
+    "220": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "HÉMATOLOGIE",
+      "IMMUNOPATHOLOGIE",
+      "INFECTIOLOGIE",
+      "MÉDECINE INTERNE",
+      "ORL",
+      "PÉDIATRIE"
+    ],
+    "221": [
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE VASCULAIRE",
+      "SANTÉ PUBLIQUE"
+    ],
+    "222": [
+      "ENDOCRINOLOGIE",
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE VASCULAIRE",
+      "NUTRITION",
+      "SANTÉ PUBLIQUE"
+    ],
+    "223": [
+      "ENDOCRINOLOGIE",
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE VASCULAIRE",
+      "NUTRITION"
+    ],
+    "224": [
+      "ENDOCRINOLOGIE",
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "MÉDECINE INTERNE",
+      "MÉDECINE VASCULAIRE",
+      "NÉPHROLOGIE",
+      "OPHTALMOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "225": [
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE VASCULAIRE"
+    ],
+    "226": [
+      "HÉMATOLOGIE",
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "MÉDECINE INTERNE",
+      "MÉDECINE VASCULAIRE",
+      "PNEUMOLOGIE"
+    ],
+    "227": [
+      "MÉDECINE VASCULAIRE"
+    ],
+    "228": [
+      "DERMATOLOGIE",
+      "MÉDECINE VASCULAIRE"
+    ],
+    "229": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES"
+    ],
+    "230": [
+      "MÉDECINE CARDIOVASCULAIRE",
+      "PNEUMOLOGIE"
+    ],
+    "231": [
+      "MÉDECINE CARDIOVASCULAIRE"
+    ],
+    "232": [
+      "MÉDECINE CARDIOVASCULAIRE"
+    ],
+    "233": [
+      "MÉDECINE CARDIOVASCULAIRE"
+    ],
+    "234": [
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES"
+    ],
+    "235": [
+      "MÉDECINE CARDIOVASCULAIRE"
+    ],
+    "236": [
+      "MÉDECINE CARDIOVASCULAIRE"
+    ],
+    "237": [
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE GÉNÉRALE"
+    ],
+    "238": [
+      "MÉDECINE CARDIOVASCULAIRE",
+      "PÉDIATRIE"
+    ],
+    "239": [
+      "DERMATOLOGIE",
+      "MÉDECINE INTERNE",
+      "MÉDECINE VASCULAIRE"
+    ],
+    "240": [
+      "ENDOCRINOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "241": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CHIRURGIE DIGESTIVE",
+      "ENDOCRINOLOGIE",
+      "ORL"
+    ],
+    "242": [
+      "ENDOCRINOLOGIE",
+      "OPHTALMOLOGIE"
+    ],
+    "243": [
+      "ENDOCRINOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "244": [
+      "ENDOCRINOLOGIE",
+      "NEUROCHIRURGIE"
+    ],
+    "245": [
+      "ENDOCRINOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PÉDIATRIE"
+    ],
+    "246": [
+      "ENDOCRINOLOGIE"
+    ],
+    "247": [
+      "ENDOCRINOLOGIE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NÉPHROLOGIE",
+      "NUTRITION",
+      "OPHTALMOLOGIE",
+      "PÉDIATRIE",
+      "THÉRAPEUTIQUE"
+    ],
+    "248": [
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE VASCULAIRE",
+      "NUTRITION"
+    ],
+    "249": [
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "NUTRITION",
+      "PÉDIATRIE"
+    ],
+    "250": [
+      "MÉDECINE GÉNÉRALE",
+      "NUTRITION",
+      "PÉDIATRIE"
+    ],
+    "251": [
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE INTERNE",
+      "NUTRITION",
+      "PÉDIATRIE"
+    ],
+    "252": [
+      "GÉRIATRIE",
+      "NUTRITION"
+    ],
+    "253": [
+      "CHIRURGIE DIGESTIVE",
+      "ENDOCRINOLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "NUTRITION",
+      "PÉDIATRIE"
+    ],
+    "254": [
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "NUTRITION"
+    ],
+    "255": [
+      "ENDOCRINOLOGIE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "NUTRITION",
+      "PÉDIATRIE"
+    ],
+    "256": [
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "NUTRITION",
+      "PÉDIATRIE",
+      "RHUMATOLOGIE"
+    ],
+    "257": [
+      "MÉDECINE INTERNE",
+      "NÉPHROLOGIE"
+    ],
+    "258": [
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NÉPHROLOGIE",
+      "PÉDIATRIE"
+    ],
+    "259": [
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NÉPHROLOGIE",
+      "PÉDIATRIE"
+    ],
+    "260": [
+      "NÉPHROLOGIE",
+      "PÉDIATRIE",
+      "UROLOGIE"
+    ],
+    "261": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "NÉPHROLOGIE"
+    ],
+    "262": [
+      "NÉPHROLOGIE"
+    ],
+    "263": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "MÉDECINE VASCULAIRE",
+      "NÉPHROLOGIE"
+    ],
+    "264": [
+      "NÉPHROLOGIE",
+      "PÉDIATRIE"
+    ],
+    "265": [
+      "NÉPHROLOGIE",
+      "UROLOGIE"
+    ],
+    "266": [
+      "NÉPHROLOGIE"
+    ],
+    "267": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "ENDOCRINOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NÉPHROLOGIE"
+    ],
+    "268": [
+      "ENDOCRINOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "MÉDECINE INTERNE",
+      "NÉPHROLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "269": [
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "PÉDIATRIE"
+    ],
+    "270": [
+      "MÉDECINE GÉNÉRALE"
+    ],
+    "271": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "PÉDIATRIE"
+    ],
+    "272": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "HÉPATO-GASTRO-ENTÉROLOGIE"
+    ],
+    "273": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CHIRURGIE DIGESTIVE",
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "ORL"
+    ],
+    "274": [
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "PÉDIATRIE"
+    ],
+    "275": [
+      "HÉMATOLOGIE",
+      "MÉDECINE INTERNE"
+    ],
+    "276": [
+      "CHIRURGIE DIGESTIVE",
+      "HÉPATO-GASTRO-ENTÉROLOGIE"
+    ],
+    "277": [
+      "CHIRURGIE DIGESTIVE",
+      "HÉPATO-GASTRO-ENTÉROLOGIE"
+    ],
+    "278": [
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PÉDIATRIE"
+    ],
+    "279": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES"
+    ],
+    "280": [
+      "CHIRURGIE DIGESTIVE",
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES"
+    ],
+    "281": [
+      "HÉPATO-GASTRO-ENTÉROLOGIE"
+    ],
+    "282": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CHIRURGIE DIGESTIVE",
+      "HÉPATO-GASTRO-ENTÉROLOGIE"
+    ],
+    "283": [
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "PÉDIATRIE"
+    ],
+    "284": [
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "MÉDECINE GÉNÉRALE"
+    ],
+    "285": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "PÉDIATRIE"
+    ],
+    "286": [
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "MÉDECINE GÉNÉRALE",
+      "PÉDIATRIE"
+    ],
+    "287": [
+      "CHIRURGIE DIGESTIVE",
+      "HÉPATO-GASTRO-ENTÉROLOGIE"
+    ],
+    "288": [
+      "CHIRURGIE DIGESTIVE",
+      "HÉPATO-GASTRO-ENTÉROLOGIE"
+    ],
+    "289": [
+      "CHIRURGIE DIGESTIVE",
+      "PÉDIATRIE"
+    ],
+    "290": [
+      "CANCÉROLOGIE",
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL",
+      "SANTÉ PUBLIQUE"
+    ],
+    "291": [
+      "CANCÉROLOGIE",
+      "CHIRURGIE DIGESTIVE",
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL"
+    ],
+    "292": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "CHIRURGIE DIGESTIVE",
+      "MÉDECINE GÉNÉRALE"
+    ],
+    "293": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE"
+    ],
+    "294": [
+      "CANCÉROLOGIE",
+      "CHIRURGIE DIGESTIVE"
+    ],
+    "295": [
+      "CANCÉROLOGIE",
+      "CHIRURGIE DIGESTIVE"
+    ],
+    "296": [
+      "HÉMATOLOGIE"
+    ],
+    "297": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "NEUROCHIRURGIE",
+      "PÉDIATRIE",
+      "SANTÉ PUBLIQUE"
+    ],
+    "298": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "CHIRURGIE MAXILLO-FACIALE",
+      "ORL"
+    ],
+    "299": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "NEUROCHIRURGIE",
+      "NEUROLOGIE"
+    ],
+    "300": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "MÉDECINE GÉNÉRALE"
+    ],
+    "301": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "CHIRURGIE DIGESTIVE",
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "MÉDECINE GÉNÉRALE"
+    ],
+    "302": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "CHIRURGIE MAXILLO-FACIALE",
+      "DERMATOLOGIE"
+    ],
+    "303": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "CHIRURGIE DIGESTIVE",
+      "HÉPATO-GASTRO-ENTÉROLOGIE"
+    ],
+    "304": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "CHIRURGIE DIGESTIVE",
+      "HÉPATO-GASTRO-ENTÉROLOGIE"
+    ],
+    "305": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "CHIRURGIE DIGESTIVE",
+      "HÉPATO-GASTRO-ENTÉROLOGIE"
+    ],
+    "306": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE"
+    ],
+    "307": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "CHIRURGIE MAXILLO-FACIALE",
+      "ORTHOPÉDIE - TRAUMATOLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "308": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "CHIRURGIE DIGESTIVE",
+      "ENDOCRINOLOGIE",
+      "HÉPATO-GASTRO-ENTÉROLOGIE"
+    ],
+    "309": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "PNEUMOLOGIE"
+    ],
+    "310": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "UROLOGIE"
+    ],
+    "311": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "UROLOGIE"
+    ],
+    "312": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "GYNÉCOLOGIE MÉDICALE",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "MÉDECINE GÉNÉRALE"
+    ],
+    "313": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "UROLOGIE"
+    ],
+    "314": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "CANCÉROLOGIE",
+      "UROLOGIE"
+    ],
+    "315": [
+      "HÉMATOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "316": [
+      "HÉMATOLOGIE"
+    ],
+    "317": [
+      "HÉMATOLOGIE"
+    ],
+    "318": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "HÉMATOLOGIE"
+    ],
+    "319": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "DERMATOLOGIE",
+      "HÉMATOLOGIE"
+    ],
+    "320": [
+      "ANATOMIE ET CYTOLOGIE PATHOLOGIQUES",
+      "HÉMATOLOGIE",
+      "NÉPHROLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "321": [
+      "MÉDECINE GÉNÉRALE",
+      "THÉRAPEUTIQUE"
+    ],
+    "322": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "GÉRIATRIE",
+      "MÉDECINE GÉNÉRALE",
+      "THÉRAPEUTIQUE"
+    ],
+    "323": [
+      "SANTÉ PUBLIQUE",
+      "THÉRAPEUTIQUE"
+    ],
+    "324": [
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE INTERNE",
+      "THÉRAPEUTIQUE"
+    ],
+    "325": [
+      "GÉRIATRIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "SANTÉ PUBLIQUE",
+      "THÉRAPEUTIQUE"
+    ],
+    "326": [
+      "THÉRAPEUTIQUE"
+    ],
+    "327": [
+      "MÉDECINE GÉNÉRALE",
+      "THÉRAPEUTIQUE"
+    ],
+    "328": [
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "THÉRAPEUTIQUE"
+    ],
+    "329": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "GÉRIATRIE",
+      "HÉMATOLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PÉDIATRIE",
+      "THÉRAPEUTIQUE"
+    ],
+    "330": [
+      "DERMATOLOGIE",
+      "DOULEUR - SOINS PALLIATIFS",
+      "GÉRIATRIE",
+      "HÉMATOLOGIE",
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "MÉDECINE INTERNE",
+      "MÉDECINE VASCULAIRE",
+      "NÉPHROLOGIE",
+      "PÉDIATRIE",
+      "RHUMATOLOGIE",
+      "THÉRAPEUTIQUE"
+    ],
+    "331": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PÉDIATRIE"
+    ],
+    "332": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PÉDIATRIE"
+    ],
+    "333": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES"
+    ],
+    "334": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "CHIRURGIE DIGESTIVE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "MÉDECINE VASCULAIRE",
+      "NEUROCHIRURGIE",
+      "ORL",
+      "ORTHOPÉDIE - TRAUMATOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "335": [
+      "CHIRURGIE MAXILLO-FACIALE",
+      "NEUROCHIRURGIE",
+      "OPHTALMOLOGIE",
+      "ORL",
+      "PÉDIATRIE"
+    ],
+    "336": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NEUROLOGIE"
+    ],
+    "337": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PÉDIATRIE"
+    ],
+    "338": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PNEUMOLOGIE"
+    ],
+    "339": [
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES"
+    ],
+    "340": [
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "MÉDECINE PHYSIQUE ET RÉADAPTATION",
+      "MÉDECINE VASCULAIRE",
+      "NEUROCHIRURGIE",
+      "NEUROLOGIE"
+    ],
+    "341": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NEUROCHIRURGIE",
+      "NEUROLOGIE"
+    ],
+    "342": [
+      "MÉDECINE CARDIOVASCULAIRE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NEUROLOGIE"
+    ],
+    "343": [
+      "GÉRIATRIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NEUROLOGIE",
+      "PÉDIATRIE"
+    ],
+    "344": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "GYNÉCOLOGIE OBSTÉTRIQUE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NÉPHROLOGIE"
+    ],
+    "345": [
+      "PÉDIATRIE"
+    ],
+    "346": [
+      "PÉDIATRIE"
+    ],
+    "347": [
+      "GÉRIATRIE",
+      "UROLOGIE"
+    ],
+    "348": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "NÉPHROLOGIE",
+      "PÉDIATRIE",
+      "UROLOGIE"
+    ],
+    "349": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "ORTHOPÉDIE - TRAUMATOLOGIE"
+    ],
+    "350": [
+      "DERMATOLOGIE"
+    ],
+    "351": [
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "352": [
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "353": [
+      "CHIRURGIE DIGESTIVE",
+      "MÉDECINE GÉNÉRALE",
+      "PÉDIATRIE",
+      "PSYCHIATRIE - ADDICTOLOGIE"
+    ],
+    "354": [
+      "CHIRURGIE DIGESTIVE",
+      "PÉDIATRIE"
+    ],
+    "355": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PÉDIATRIE"
+    ],
+    "356": [
+      "CHIRURGIE DIGESTIVE",
+      "PÉDIATRIE"
+    ],
+    "357": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "CHIRURGIE DIGESTIVE",
+      "INFECTIOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "358": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "CHIRURGIE DIGESTIVE",
+      "HÉPATO-GASTRO-ENTÉROLOGIE",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES"
+    ],
+    "359": [
+      "ANESTHÉSIE - RÉANIMATION",
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "ORL",
+      "PNEUMOLOGIE"
+    ],
+    "360": [
+      "MÉDECINE INTENSIVE - RÉANIMATION - URGENCES",
+      "PNEUMOLOGIE"
+    ],
+    "361": [
+      "ORTHOPÉDIE - TRAUMATOLOGIE",
+      "RHUMATOLOGIE"
+    ],
+    "362": [
+      "INFECTIOLOGIE",
+      "ORTHOPÉDIE - TRAUMATOLOGIE"
+    ],
+    "363": [
+      "ORTHOPÉDIE - TRAUMATOLOGIE"
+    ],
+    "364": [
+      "ORTHOPÉDIE - TRAUMATOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "365": [
+      "ORTHOPÉDIE - TRAUMATOLOGIE",
+      "PÉDIATRIE"
+    ],
+    "366": [
+      "INFECTIOLOGIE"
+    ],
+    "367": [
+      "MÉDECINE GÉNÉRALE",
+      "MÉDECINE LÉGALE - MÉDECINE DU TRAVAIL",
+      "SANTÉ PUBLIQUE"
+    ]
+  },
+  "audit": {
+    "itemCount": 367,
+    "referenceCount": 40,
+    "linkCount": 1042,
+    "itemsWithoutReferences": [
+      10
+    ],
+    "duplicates": [
+      {
+        "code": "Ped",
+        "item": 259
+      }
+    ]
+  }
+}

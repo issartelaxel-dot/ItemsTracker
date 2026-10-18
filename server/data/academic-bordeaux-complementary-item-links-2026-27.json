@@ -1,0 +1,158 @@
+{
+  "associations": [
+    {
+      "facultyId": "bordeaux",
+      "yearCode": "Y5",
+      "academicTerm": "2026-2027",
+      "unitLabel": "Biologie, Médecine du Développement et de la Reproduction",
+      "unitKind": "optionnelle",
+      "sourceUrl": "https://sante.u-bordeaux.fr/download_file/view/f504504f-ed78-43ef-96ca-5ddd0f6a5f00/535",
+      "checkedAt": "2026-10-14",
+      "itemReferences": [
+        {
+          "number": 24,
+          "page": 58,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 27,
+          "page": 58,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 38,
+          "page": 58,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 39,
+          "page": 58,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 45,
+          "page": 58,
+          "evidenceKind": "programme"
+        }
+      ]
+    },
+    {
+      "facultyId": "bordeaux",
+      "yearCode": "Y5",
+      "academicTerm": "2026-2027",
+      "unitLabel": "Éthique à l’EDN",
+      "unitKind": "optionnelle",
+      "sourceUrl": "https://sante.u-bordeaux.fr/download_file/view/f504504f-ed78-43ef-96ca-5ddd0f6a5f00/535",
+      "checkedAt": "2026-10-14",
+      "itemReferences": [
+        {
+          "number": 1,
+          "page": 60,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 2,
+          "page": 60,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 3,
+          "page": 60,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 9,
+          "page": 60,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 45,
+          "page": 60,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 58,
+          "page": 60,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 133,
+          "page": 60,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 140,
+          "page": 60,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 162,
+          "page": 60,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 282,
+          "page": 60,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 295,
+          "page": 60,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 310,
+          "page": 60,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 324,
+          "page": 60,
+          "evidenceKind": "programme"
+        },
+        {
+          "number": 333,
+          "page": 60,
+          "evidenceKind": "programme"
+        }
+      ]
+    },
+    {
+      "facultyId": "bordeaux",
+      "yearCode": "Y5",
+      "academicTerm": "2026-2027",
+      "unitLabel": "Sensibilisation à l’hypnose médicale",
+      "unitKind": "optionnelle",
+      "sourceUrl": "https://sante.u-bordeaux.fr/download_file/view/f504504f-ed78-43ef-96ca-5ddd0f6a5f00/535",
+      "checkedAt": "2026-10-14",
+      "itemReferences": [
+        {
+          "number": 327,
+          "page": 62,
+          "evidenceKind": "reference"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "facultyId": "bordeaux",
+      "yearCode": "Y4",
+      "unitLabel": "Médecine légale",
+      "unitKind": "optionnelle",
+      "sourceUrl": "https://sante.u-bordeaux.fr/download_file/view/98316a97-72d8-422a-9031-4becd4b03223/535",
+      "sourcePage": 57,
+      "checkedAt": "2026-10-14",
+      "status": "numbering_conflict",
+      "declaredNumbers": [
+        5,
+        8,
+        9,
+        10,
+        12,
+        55
+      ],
+      "note": "Liste non importée : plusieurs intitulés ne correspondent pas aux numéros du référentiel actuel (ex. item 8 cité pour déontologie/certificats alors que l’item 8 national porte sur les discriminations ; item 55 cité pour maltraitance alors que l’item 55 national porte sur le développement psychomoteur). La présence de l’item 5 dans cette liste ne suffit pas à valider son ensemble. Aucun renumérotage par supposition."
+    }
+  ]
+}

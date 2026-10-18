@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
 import { StateError, persistSchema, defaultState, mergePatch, splitItem, extractMedia, bytes, imageKey, assertSafeObject } from './state-model.mjs'
 import { parseImage, readMedia } from './media-store.mjs'
+import { assertReferenceTransitionPreserved, planReferenceTransition } from './reference-transition.mjs'
 
 const DAY = 86_400_000
 const META_SQL = `SELECT tracking_state AS "trackingState", theme, focus_mode AS "focusMode",
@@ -286,6 +287,32 @@ export function createStateStore(pool, { mediaStore = null, env = process.env } 
   }
 
   let nextMaintenanceAt = 0
+  // Operator-only entry point, deliberately absent from the public HTTP API.
+  // No media processing, profile rewrite, pruning or implicit schema migration.
+  async function transitionReferences(userId, { baseVersion, source, resolveAlias, backupBeforeWrite }) {
+    if (!Number.isSafeInteger(baseVersion) || typeof backupBeforeWrite !== 'function') throw new Error('Version and durable backup callback required.')
+    const storage = (await pool.query('SELECT storage_version FROM user_state WHERE user_id=$1', [userId])).rows[0]
+    if (Number(storage?.storage_version) !== 2) throw new Error('Upgrade storage and validate its backup before migrating references.')
+    return transaction(userId, async client => {
+      const row = await load(client, userId)
+      if (Number(row.version) !== baseVersion) throw new StateError(409, 'STATE_CONFLICT', 'Compte modifié depuis la préparation.', Number(row.version))
+      const before = payload(row), now = new Date().toISOString()
+      const plan = planReferenceTransition(before.trackingState, source, resolveAlias, now)
+      if (!plan.reports.length) return { changed: false, version: Number(row.version), reports: [] }
+      const cardsBefore = (await client.query('SELECT * FROM user_quiz_cards WHERE user_id=$1 ORDER BY item_number,position,card_id', [userId])).rows
+      const mediaBefore = (await client.query('SELECT * FROM user_quiz_images WHERE user_id=$1 ORDER BY item_number,card_id,image_slot', [userId])).rows
+      await backupBeforeWrite({ userId, version: Number(row.version), state: before, media: mediaBefore, sourceSha256: source.provenance.sourceSha256 })
+      const delta = await persistItems(client, userId, before.trackingState, plan.state)
+      await client.query('UPDATE user_state SET version=version+1,updated_at=$2,data_bytes=data_bytes+$3 WHERE user_id=$1', [userId, now, delta])
+      const after = await load(client, userId)
+      if (!isDeepStrictEqual(payload(after), { ...before, trackingState: plan.state })) throw new Error('Migration verification failed: state changed unexpectedly.')
+      const cardsAfter = (await client.query('SELECT * FROM user_quiz_cards WHERE user_id=$1 ORDER BY item_number,position,card_id', [userId])).rows
+      const mediaAfter = (await client.query('SELECT * FROM user_quiz_images WHERE user_id=$1 ORDER BY item_number,card_id,image_slot', [userId])).rows
+      if (!isDeepStrictEqual(cardsBefore, cardsAfter) || !isDeepStrictEqual(mediaBefore, mediaAfter)) throw new Error('Cards/media changed unexpectedly; transaction rolled back.')
+      return { changed: true, version: Number(after.version), reports: plan.reports }
+    })
+  }
+
   async function write(userId, kind, body) {
     if (!Number.isSafeInteger(body.baseVersion) || body.baseVersion < 0 || typeof body.requestId !== 'string' || body.requestId.length < 6 || body.requestId.length > 120) {
       throw new StateError(400, 'SAVE_PROTOCOL_REQUIRED', 'Version et identifiant de sauvegarde requis. Recharge l’application.')
@@ -324,6 +351,7 @@ export function createStateStore(pool, { mediaStore = null, env = process.env } 
         const parsed = persistSchema.safeParse(merged)
         if (!parsed.success) throw new StateError(400, 'INVALID_STATE', 'État de sauvegarde invalide.')
         const { state, upsert } = extractMedia(parsed.data)
+        assertReferenceTransitionPreserved(previous.trackingState, state.trackingState)
         const removed = []
         // L'avatar est lui aussi stocké hors du gros document de profil.
         const explicitProfile = kind === 'state-patch' ? body.patch?.profile : body.profile
@@ -421,5 +449,5 @@ export function createStateStore(pool, { mediaStore = null, env = process.env } 
     finally { client.release() }
   }
 
-  return { init, read, write, cardImages, storageUsage, pruneHistory, transaction, load, mediaStore }
+  return { init, read, write, transitionReferences, cardImages, storageUsage, pruneHistory, transaction, load, mediaStore }
 }

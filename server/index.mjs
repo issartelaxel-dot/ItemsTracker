@@ -23,16 +23,21 @@ import { mountResourcePreview } from './resource-preview.mjs'
 import { createAnalyticsStore } from './analytics-store.mjs'
 import { createGeoLookup } from './analytics-geo.mjs'
 import { mountAnalytics } from './analytics.mjs'
+import { createOnboarding } from './onboarding.mjs'
+import { onboardingSources } from './onboarding-sources.mjs'
+import { academicCatalogFor, academicCoverageFor } from './academic-catalog.mjs'
 
 const { Pool } = pg
 
 const PORT = Number(process.env.PORT || 8787)
+const HOST = process.env.HOST || '0.0.0.0'
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN || 'http://localhost:5173'
 const CLIENT_ORIGINS = (process.env.CLIENT_ORIGINS || '')
   .split(',')
   .map((value) => value.trim())
   .filter(Boolean)
 const DATABASE_URL = process.env.DATABASE_URL || ''
+const ACADEMIC_ONBOARDING_ENABLED = process.env.ACADEMIC_ONBOARDING_ENABLED === 'true'
 const JWT_SECRET = process.env.JWT_SECRET || ''
 const NODE_ENV = process.env.NODE_ENV || 'development'
 const DB_SSL_REJECT_UNAUTHORIZED = process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false'
@@ -74,6 +79,7 @@ const calendarStore = createCalendarStore(pool)
 const analyticsStore = createAnalyticsStore(pool)
 const analyticsGeo = createGeoLookup()
 const stateStore = createStateStore(pool, { mediaStore: createMediaStore() })
+const onboarding = createOnboarding(pool)
 
 async function initDb() {
   await pool.query(`
@@ -665,7 +671,122 @@ app.get('/api/auth/me', enforceClientVersion, async (req, res) => {
   }
 
   const refreshedToken = refreshAuthCookie(res, auth)
-  res.json({ user, ...(refreshedToken ? { token: refreshedToken } : {}) })
+  res.json({ user, onboarding: ACADEMIC_ONBOARDING_ENABLED ? await onboarding.state(uid) : null,
+    ...(refreshedToken ? { token: refreshedToken } : {}) })
+})
+
+app.use('/api/onboarding', (_req, res, next) => ACADEMIC_ONBOARDING_ENABLED ? next() : res.status(404).json({ error: 'Parcours non activé.' }))
+
+app.get('/api/onboarding/faculties', enforceClientVersion, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
+  res.json({ faculties: await onboarding.listFaculties(String(req.query.q || '').slice(0, 120), String(req.query.year || '')) })
+})
+
+app.get('/api/onboarding/resources', enforceClientVersion, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
+  const result = await onboarding.resources(Number(auth.uid))
+  if (!result) return res.status(401).json({ error: 'Unauthorized' })
+  res.json(result)
+})
+
+app.post('/api/onboarding/availability-requests', enforceClientVersion, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
+  const result = await onboarding.requestAvailability(Number(auth.uid), req.body)
+  res.status(result.status).json(result.body)
+})
+
+app.post('/api/onboarding/faculty-change-requests', enforceClientVersion, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
+  const result = await onboarding.requestFacultyChange(Number(auth.uid), req.body)
+  res.status(result.status).json(result.body)
+})
+
+async function requireAcademicAdmin(req, res, next) {
+  const auth = authFromRequest(req)
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
+  const account = await pool.query('SELECT email FROM users WHERE id=$1', [Number(auth.uid)])
+  const admins = (process.env.ANNOUNCEMENT_ADMIN_EMAILS || 'hello@setup-hub.com').split(',').map(email => email.trim().toLowerCase())
+  if (!account.rowCount || !admins.includes(account.rows[0].email.toLowerCase())) return res.status(403).json({ error: 'Accès réservé aux administrateurs.' })
+  res.locals.academicAdminId = Number(auth.uid)
+  next()
+}
+app.get('/api/onboarding/admin/faculty-change-requests', enforceClientVersion, requireAcademicAdmin, async (_req, res) => {
+  res.json({ requests: await onboarding.facultyChangeRequests() })
+})
+app.patch('/api/onboarding/admin/faculty-change-requests/:id', enforceClientVersion, requireAcademicAdmin, async (req, res) => {
+  const result = await onboarding.reviewFacultyChange(req.params.id, res.locals.academicAdminId, req.body?.decision)
+  res.status(result.status).json(result.body)
+})
+
+app.post('/api/onboarding/complete', enforceClientVersion, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
+  const result = await onboarding.save(Number(auth.uid), req.body, { firstOnly: true })
+  res.status(result.status).json(result.body)
+})
+
+app.patch('/api/onboarding/profile', enforceClientVersion, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
+  const result = await onboarding.save(Number(auth.uid), req.body)
+  res.status(result.status).json(result.body)
+})
+
+app.get('/api/onboarding/admin/analytics', enforceClientVersion, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
+  const account = await pool.query('SELECT email FROM users WHERE id=$1', [Number(auth.uid)])
+  const adminEmails = (process.env.ANNOUNCEMENT_ADMIN_EMAILS || 'hello@setup-hub.com')
+    .split(',').map(email => email.trim().toLowerCase()).filter(Boolean)
+  if (!account.rowCount || !adminEmails.includes(account.rows[0].email.toLowerCase())) {
+    return res.status(403).json({ error: 'Accès réservé aux administrateurs.' })
+  }
+  res.json(await onboarding.analytics())
+})
+
+app.get('/api/onboarding/admin/availability-requests', enforceClientVersion, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
+  const account = await pool.query('SELECT email FROM users WHERE id=$1', [Number(auth.uid)])
+  const adminEmails = (process.env.ANNOUNCEMENT_ADMIN_EMAILS || 'hello@setup-hub.com').split(',').map(email => email.trim().toLowerCase()).filter(Boolean)
+  if (!account.rowCount || !adminEmails.includes(account.rows[0].email.toLowerCase())) return res.status(403).json({ error: 'Accès réservé aux administrateurs.' })
+  res.json({ requests: await onboarding.availabilityRequests() })
+})
+
+app.get('/api/admin/onboarding-sources', enforceClientVersion, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
+  const account = await pool.query('SELECT email FROM users WHERE id=$1', [Number(auth.uid)])
+  const adminEmails = (process.env.ANNOUNCEMENT_ADMIN_EMAILS || 'hello@setup-hub.com')
+    .split(',').map(email => email.trim().toLowerCase()).filter(Boolean)
+  if (!account.rowCount || !adminEmails.includes(account.rows[0].email.toLowerCase())) {
+    return res.status(403).json({ error: 'Accès réservé aux administrateurs.' })
+  }
+  res.json({ reviewedAt: '2026-10-13', sources: onboardingSources })
+})
+
+app.get('/api/admin/academic-catalog', enforceClientVersion, async (req, res) => {
+  const auth = authFromRequest(req)
+  if (!auth) return res.status(401).json({ error: 'Unauthorized' })
+  const account = await pool.query('SELECT email FROM users WHERE id=$1', [Number(auth.uid)])
+  const adminEmails = (process.env.ANNOUNCEMENT_ADMIN_EMAILS || 'hello@setup-hub.com')
+    .split(',').map(email => email.trim().toLowerCase()).filter(Boolean)
+  if (!account.rowCount || !adminEmails.includes(account.rows[0].email.toLowerCase())) {
+    return res.status(403).json({ error: 'Accès réservé aux administrateurs.' })
+  }
+  const yearCode = String(req.query.yearCode || 'Y4')
+  const facultyId = String(req.query.facultyId || 'bordeaux')
+  const faculties = await pool.query('SELECT id,display_name AS name FROM academic_faculties WHERE archived=FALSE ORDER BY display_name')
+  if (!faculties.rows.some(faculty => faculty.id === facultyId)) return res.status(400).json({ error: 'Faculté inconnue.' })
+  const catalog = academicCatalogFor(facultyId, yearCode)
+  if (!catalog) return res.status(400).json({ error: 'Année inconnue.' })
+  res.json({ faculties: faculties.rows.map(faculty => ({ ...faculty,
+    coverage: academicCoverageFor(faculty.id, yearCode),
+  })), catalog })
 })
 
 // Le renouvellement de session ne réveille pas PostgreSQL.
@@ -818,7 +939,7 @@ app.use((error, _req, res, next) => {
 mountRegistration(app, {
   pool, secret: JWT_SECRET, sendEmail: sendVerificationEmail,
   authLimiter, verifyLimiter, validatePassword: validatePasswordStrength,
-  signToken: signAuthToken, setCookie: setAuthCookie,
+  signToken: signAuthToken, setCookie: setAuthCookie, academicOnboardingEnabled: ACADEMIC_ONBOARDING_ENABLED,
 })
 
 app.post('/api/auth/login', authLimiter, async (req, res) => {
@@ -1012,6 +1133,10 @@ app.use((error, _req, res, next) => {
 
 async function startServer() {
   await initDb()
+  if (ACADEMIC_ONBOARDING_ENABLED) {
+    const academicAudit = await onboarding.init()
+    if (academicAudit.exceptions) console.warn(`Onboarding cutover: ${academicAudit.exceptions} historical explicit year exception(s) need review.`)
+  }
   await initAnnouncements(pool)
   await calendarStore.init()
   await ensureBootstrapUser()
@@ -1020,8 +1145,8 @@ async function startServer() {
   const analyticsCleanup = setInterval(() => void analyticsStore.purge().catch(() => console.error('Analytics retention cleanup failed.')), 24 * 60 * 60 * 1000)
   analyticsCleanup.unref()
   void analyticsGeo.start()
-  app.listen(PORT, () => {
-    console.log(`Auth server listening on http://localhost:${PORT}`)
+  app.listen(PORT, HOST, () => {
+    console.log(`Auth server listening on http://${HOST}:${PORT}`)
   })
 }
 

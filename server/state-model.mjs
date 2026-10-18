@@ -15,7 +15,11 @@ export const persistSchema = z.object({
   focusMode: z.boolean(),
   youtubeDisplayMode: z.enum(['embed', 'external']).default('embed'),
   dateFormat: z.enum(['fr-short', 'fr-long', 'iso']).default('fr-short'),
-  timeZone: z.enum(['auto', 'Europe/Paris', 'Asia/Ho_Chi_Minh']).default('auto'),
+  timeZone: z.string().min(1).max(100).refine(value => {
+    if (value === 'auto') return true
+    try { new Intl.DateTimeFormat('en', { timeZone: value }); return true }
+    catch { return false }
+  }, 'Fuseau horaire invalide.').default('auto'),
   shuffleQuizCards: z.boolean().default(false),
   profile: z.record(z.string(), z.unknown()).nullable().default(null),
 })

@@ -15,3 +15,6 @@
 @import './styles/15-mobile-dashboard.css';
 @import './styles/16-desktop-dashboard.css';
 @import './styles/17-flashcards-workspace.css';
+
+@import './styles/18-item-detail-compact.css';
+@import './styles/19-revision-journey.css';

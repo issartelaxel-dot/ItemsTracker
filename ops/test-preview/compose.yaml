@@ -1,0 +1,74 @@
+name: itemstracker-test-20261015
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: itemstracker_test
+      POSTGRES_USER: itemstracker_test
+      POSTGRES_PASSWORD: ${PREVIEW_DATABASE_PASSWORD:?required}
+    volumes: ["test-database:/var/lib/postgresql/data"]
+    networks: [private]
+    mem_limit: 256m
+    cpus: 0.35
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U itemstracker_test -d itemstracker_test"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    logging:
+      driver: json-file
+      options: {max-size: "5m", max-file: "2"}
+  app:
+    build: { context: ../.., dockerfile: ops/test-preview/Dockerfile }
+    restart: unless-stopped
+    depends_on: {db: {condition: service_healthy}}
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql://itemstracker_test:${PREVIEW_DATABASE_PASSWORD}@db:5432/itemstracker_test?sslmode=disable
+      NODE_ENV: production
+      COOKIE_SECURE: "true"
+      COOKIE_SAMESITE: strict
+      ACADEMIC_ONBOARDING_ENABLED: "true"
+      CLIENT_ORIGIN: https://${PREVIEW_HOST}
+      CLIENT_ORIGINS: https://${PREVIEW_HOST}
+      CALENDAR_PUBLIC_URL: https://${PREVIEW_HOST}
+      BOOTSTRAP_DISPLAY_NAME: Testeur ItemsTracker
+      ANNOUNCEMENT_ADMIN_EMAILS: no-administrator@preview.invalid
+      MEDIA_S3_BUCKET: ""
+      ANALYTICS_GEO_DOWNLOAD: "false"
+      EMAIL_PROVIDER: smtp
+      SMTP_HOST: 127.0.0.1
+      SMTP_PORT: "9"
+      MAIL_FROM: preview@invalid.test
+      N8N_MCQ_WEBHOOK_URL: http://127.0.0.1:9/disabled
+    networks: [private, coolify]
+    mem_limit: 512m
+    cpus: 0.6
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:8787/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: coolify
+      traefik.http.routers.itemstracker-test-http.rule: Host(`${PREVIEW_HOST}`)
+      traefik.http.routers.itemstracker-test-http.entrypoints: http
+      traefik.http.routers.itemstracker-test-http.middlewares: itemstracker-test-https
+      traefik.http.middlewares.itemstracker-test-https.redirectscheme.scheme: https
+      traefik.http.routers.itemstracker-test.rule: Host(`${PREVIEW_HOST}`)
+      traefik.http.routers.itemstracker-test.entrypoints: https
+      traefik.http.routers.itemstracker-test.tls: "true"
+      traefik.http.routers.itemstracker-test.tls.certresolver: letsencrypt
+      traefik.http.services.itemstracker-test.loadbalancer.server.port: "8080"
+    logging:
+      driver: json-file
+      options: {max-size: "5m", max-file: "2"}
+volumes:
+  test-database:
+networks:
+  private:
+    internal: true
+  coolify:
+    external: true

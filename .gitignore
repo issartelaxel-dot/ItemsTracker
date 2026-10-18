@@ -35,6 +35,9 @@ Archive.zip
 .env.backup
 .env.*.local
 .backups/
+.local-onboarding/
+/onboarding-preview.html
+/admin-app.html
 *.itbackup
 *.itbackup.ok.json
 playwright-report/
@@ -45,3 +48,8 @@ test-results/
 /server/data/*.download
 
 /server/data/*.previous
+
+# Isolated, private online test build and access details
+.test-preview-dist/
+.test-preview-release/
+ops/test-preview/.env

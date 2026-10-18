@@ -10,8 +10,9 @@ import {
   type PointerEvent,
   type SVGProps,
 } from "react";
-import { Bell, Eye, Globe, User, Clock, SunLight, HalfMoon, LogOut, NavArrowRight, SidebarCollapse } from "iconoir-react";
+import { Bell, Book, Eye, Globe, User, Clock, SunLight, HalfMoon, LogOut, NavArrowRight, SidebarCollapse } from "iconoir-react";
 import { AdminAnnouncements } from "./Announcements";
+import { AdminSources } from "./AdminSources";
 import { AdminGlobe } from "./AdminGlobe";
 import {
   adminApi,
@@ -23,7 +24,7 @@ import {
   type GeoPoint,
 } from "../lib/admin-api";
 import "./admin-dashboard.css";
-type View = "overview" | "live" | "users" | "visitors" | "announcements";
+type View = "overview" | "live" | "users" | "visitors" | "announcements" | "sources";
 const readOnlyPreview = import.meta.env.VITE_ADMIN_READ_ONLY_PREVIEW === "true";
 type Detail = {
   entity: string;
@@ -58,6 +59,7 @@ const menu = [
   { id: "users", label: "Utilisateurs", mobileLabel: "Comptes", Icon: User },
   { id: "visitors", label: "Visiteurs", mobileLabel: "Visiteurs", Icon: Eye },
   { id: "announcements", label: "Annonces", mobileLabel: "Annonces", Icon: Bell },
+  { id: "sources", label: "Ressources", mobileLabel: "Sources", Icon: Book },
 ] as const;
 type NavigationGesture = { pointerId: number; startX: number; startY: number; firstCenter: number; step: number; dragging: boolean };
 function AdminMobileNavigation({ active, onNavigate, disabled }: { active: View; onNavigate: (view: View) => void; disabled: boolean }) {
@@ -506,7 +508,7 @@ export function AdminDashboard() {
     }
   }, [params]);
   useEffect(() => {
-    if (view === "announcements" && ready) return;
+    if (view === "sources" || (view === "announcements" && ready)) return;
     const initial = setTimeout(() => void load(), 0),
       timer = setInterval(() => {
         if (!document.hidden) void load();
@@ -594,7 +596,7 @@ export function AdminDashboard() {
     URL.revokeObjectURL(url);
   };
   const metrics = data?.metrics;
-  if (deniedStatus === 401) {
+  if (deniedStatus === 401 || deniedStatus === 403) {
     return (
       <main className="admin-console admin-auth-screen" data-admin-theme={theme}>
         <div className="admin-auth-layout">
@@ -619,8 +621,8 @@ export function AdminDashboard() {
             <div className="admin-auth-form-wrap">
               <div className="admin-auth-icon" aria-hidden="true"><DashboardIcon /></div>
               <span className="admin-auth-form-eyebrow">ESPACE ADMINISTRATEUR</span>
-              <h2>Content de te revoir.</h2>
-              <p>Connecte-toi pour retrouver ton tableau de bord.</p>
+              <h2>{deniedStatus === 403 ? "Changer de compte" : "Content de te revoir."}</h2>
+              <p>{deniedStatus === 403 ? "Le compte actuellement connecté n’a pas accès à l’administration. Connecte-toi avec le compte autorisé." : "Connecte-toi pour retrouver ton tableau de bord."}</p>
               <form className="admin-auth-form" onSubmit={(event) => void login(event)}>
                 <label>Adresse e-mail<input type="email" autoComplete="username" placeholder="ton@email.com" required value={loginEmail} onChange={(event) => setLoginEmail(event.target.value)} /></label>
                 <label>Mot de passe<input type="password" autoComplete="current-password" placeholder="Ton mot de passe" required value={loginPassword} onChange={(event) => setLoginPassword(event.target.value)} /></label>
@@ -704,10 +706,10 @@ export function AdminDashboard() {
             </button>
             <div>
               <h1>{menu.find((m) => m.id === view)?.label}</h1>
-              <p>{view === "announcements" ? "Préparer et publier les nouveautés de l’application." : "Visiteurs et utilisateurs · statistiques séparées"}</p>
+              <p>{view === "announcements" ? "Préparer et publier les nouveautés de l’application." : view === "sources" ? "Collèges, items et UE par année et faculté" : "Visiteurs et utilisateurs · statistiques séparées"}</p>
             </div>
           </div>
-          {view !== "announcements" && !denied && (
+          {view !== "announcements" && view !== "sources" && !denied && (
             <div className="admin-header-actions">
               <label>
                 Période
@@ -740,7 +742,7 @@ export function AdminDashboard() {
         </header>
         {readOnlyPreview && <div className="admin-preview-banner" role="note">Source : API de production · aperçu local en lecture seule</div>}
         {logoutError && <div className="admin-status admin-error" role="alert">Déconnexion impossible : {logoutError}</div>}
-        {error && !(readOnlyPreview && deniedStatus === 401) && (
+        {error && view !== "sources" && !(readOnlyPreview && deniedStatus === 401) && (
           <div className="admin-status admin-error" role="alert">
             {error}
             {denied && !readOnlyPreview ? (
@@ -753,11 +755,13 @@ export function AdminDashboard() {
             <button onClick={() => void load()}>Réessayer</button>
           </div>
         )}
-        {!data && !denied && !error ? (
+        {!data && !denied && !error && view !== "sources" ? (
           <p role="status">Chargement de l’administration…</p>
         ) : null}
         {data && !denied && view === "announcements" ? (
           <AdminAnnouncements embedded readOnly={readOnlyPreview} />
+        ) : !denied && view === "sources" ? (
+          <AdminSources />
         ) : data && !denied && metrics ? (
           <>
             <div className="admin-data-meta">

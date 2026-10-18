@@ -6,22 +6,10 @@ import {
   type ComponentProps,
 } from "react";
 import { CalendarView } from "./CalendarView";
+import { AppleCalendarConnect } from "./AppleCalendarConnect";
 import type { CalendarEvent, CalendarEvents } from "../lib/calendar";
 type Request = (url: string, init?: RequestInit) => Promise<unknown>;
-type Device = {
-  id: string;
-  label: string;
-  created_at: string;
-  last_used_at: string | null;
-};
 type ServerEvent = CalendarEvent & { startAt: string; endAt: string };
-type Credentials = {
-  id: string;
-  password: string;
-  username: string;
-  server: string;
-  calendarUrl: string;
-};
 type Props = Omit<
   ComponentProps<typeof CalendarView>,
   "events" | "onSave" | "onDelete"
@@ -48,11 +36,7 @@ export function CalendarWorkspace({ request, focusEventId, ...props }: Props) {
     [loaded, setLoaded] = useState(false),
     [saving, setSaving] = useState(false),
     [error, setError] = useState(""),
-    [updated, setUpdated] = useState(""),
-    [devices, setDevices] = useState<Device[]>([]),
-    [credentials, setCredentials] = useState<Credentials | null>(null),
-    [label, setLabel] = useState("Mon iPhone"),
-    [connecting, setConnecting] = useState(false);
+    [updated, setUpdated] = useState("");
   useEffect(() => {
     latest.current = request;
   }, [request]);
@@ -157,29 +141,6 @@ export function CalendarWorkspace({ request, focusEventId, ...props }: Props) {
       setSaving(false);
     }
   };
-  const loadDevices = async () => {
-    const data = (await latest.current("/api/calendar/devices")) as {
-      devices: Device[];
-    };
-    setDevices(data.devices);
-  };
-  const connect = async () => {
-    setConnecting(true);
-    setError("");
-    try {
-      setCredentials(
-        (await latest.current("/api/calendar/devices", {
-          method: "POST",
-          body: JSON.stringify({ label, timeZone: props.timeZone }),
-        })) as Credentials,
-      );
-      await loadDevices();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setConnecting(false);
-    }
-  };
   return (
     <div className="calendar-workspace">
       {error ? (
@@ -219,116 +180,7 @@ export function CalendarWorkspace({ request, focusEventId, ...props }: Props) {
           busy={saving}
         />
       ) : null}
-      <details
-        className="cal-apple"
-        onToggle={(e) => {
-          if (e.currentTarget.open)
-            void loadDevices().catch((e) => setError(e.message));
-        }}
-      >
-        <summary>Connecter Apple Calendrier</summary>
-        <p>
-          Ajoute le compte ItemsTracker sur chaque appareil. Les séances créées
-          ou modifiées dans Apple et dans ItemsTracker utilisent le même
-          calendrier. Aucun accès à ton compte iCloud personnel.
-        </p>
-        <label>
-          Nom de l’appareil
-          <input
-            maxLength={80}
-            value={label}
-            onChange={(e) => setLabel(e.target.value)}
-          />
-        </label>
-        <button
-          disabled={connecting || !label.trim()}
-          onClick={() => void connect()}
-        >
-          Créer les identifiants de cet appareil
-        </button>
-        {credentials ? (
-          <section className="cal-credentials">
-            <strong>Identifiants affichés une seule fois</strong>
-            <p>
-              Dans les réglages de Calendrier sur iPhone/iPad : Comptes →
-              Ajouter un compte → Autre → Ajouter un compte CalDAV. Sur Mac :
-              Calendrier → Ajouter un compte → Autre compte CalDAV → Manuel.
-              Active SSL.
-            </p>
-            <label>
-              Serveur
-              <input readOnly value={credentials.server} />
-            </label>
-            <label>
-              Nom d’utilisateur
-              <input readOnly value={credentials.username} />
-            </label>
-            <label>
-              Mot de passe dédié
-              <input
-                readOnly
-                type="text"
-                autoComplete="off"
-                value={credentials.password}
-              />
-            </label>
-            <small>
-              Si nécessaire, utilise cette URL dans les réglages avancés :{" "}
-              {credentials.calendarUrl}
-            </small>
-            <p>
-              La fréquence de mise à jour dépend des réglages d’Apple
-              Calendrier. Les rappels Apple nécessitent ses notifications
-              activées.
-            </p>
-            <button onClick={() => setCredentials(null)}>
-              J’ai enregistré les identifiants
-            </button>
-          </section>
-        ) : null}
-        <h3>Appareils autorisés</h3>
-        {!devices.length ? (
-          <p>Aucun appareil connecté.</p>
-        ) : (
-          devices.map((d) => (
-            <div className="cal-device" key={d.id}>
-              <span>
-                <strong>{d.label}</strong>
-                <small>
-                  {d.last_used_at
-                    ? "Dernier accès : " +
-                      new Date(d.last_used_at).toLocaleString("fr-FR")
-                    : "Pas encore utilisé"}
-                </small>
-              </span>
-              <button
-                disabled={connecting}
-                onClick={() => {
-                  if (
-                    !window.confirm(
-                      "Révoquer cet appareil ? Les séances seront conservées.",
-                    )
-                  )
-                    return;
-                  setConnecting(true);
-                  void latest
-                    .current("/api/calendar/devices/" + d.id + "/revoke", {
-                      method: "POST",
-                    })
-                    .then(async () => {
-                      if (credentials?.id === d.id) setCredentials(null);
-                      await loadDevices();
-                    })
-                    .catch((e) => setError(e.message))
-                    .finally(() => setConnecting(false));
-                }}
-              >
-                Révoquer
-              </button>
-            </div>
-          ))
-        )}
-      </details>
+      <AppleCalendarConnect request={request} timeZone={props.timeZone} />
     </div>
   );
 }

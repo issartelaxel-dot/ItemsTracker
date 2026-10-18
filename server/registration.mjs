@@ -13,7 +13,7 @@ const requestSchema = z.object({
 const resendSchema = z.object({ email: emailSchema, verificationToken: tokenSchema })
 const verifySchema = resendSchema.extend({ code: z.string().regex(/^\d{6}$/) })
 
-export function mountRegistration(app, { pool, secret, sendEmail, authLimiter, verifyLimiter, validatePassword, signToken, setCookie }) {
+export function mountRegistration(app, { pool, secret, sendEmail, authLimiter, verifyLimiter, validatePassword, signToken, setCookie, academicOnboardingEnabled = false }) {
   app.get('/api/auth/register/config', (_req, res) => {
     res.json({ method: 'email', codeLength: 6 })
   })
@@ -129,8 +129,10 @@ export function mountRegistration(app, { pool, secret, sendEmail, authLimiter, v
         await db.query('UPDATE signup_requests SET attempts=$1 WHERE email=$2', [attempts, email])
         return { status: 400, body: { error: 'Code incorrect. Vérifie le dernier e-mail reçu.' } }
       }
+      if (academicOnboardingEnabled) await db.query('SELECT pg_advisory_xact_lock(472013)')
       const inserted = await db.query('INSERT INTO users(email,display_name,password_hash,created_at) VALUES($1,$2,$3,$4) RETURNING id',
         [email, row.display_name, row.password_hash, new Date().toISOString()])
+      if (academicOnboardingEnabled) await db.query('INSERT INTO academic_profiles(user_id,year_code,legacy_exempt) VALUES($1,NULL,FALSE)', [inserted.rows[0].id])
       await db.query('DELETE FROM signup_requests WHERE email=$1', [email])
       return { body: { ok: true, user: { id: Number(inserted.rows[0].id), email, displayName: row.display_name } } }
     })

@@ -1,0 +1,3070 @@
+{
+  "sourceEdition": "2026",
+  "originalUrl": "https://livret.uness.fr/lisa/2026/Item_de_connaissance_2C",
+  "mirrorUrl": "https://dashboard-de-l-externe.fr/college-references.js?v=33",
+  "mirrorVerifiedAt": "2026-09-15",
+  "claimedOriginalSha256": "8fa3e2652445b8d94701b1843442aa61a879fc501a9130febd9edfb238a7e97e",
+  "validationStatus": "secondary_copy_not_verified_against_uness",
+  "items": {
+    "1": {
+      "writers": [
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Item_de_connaissance_2C"
+    },
+    "2": {
+      "writers": [
+        "Informatique médicale - Biomathématiques - Méthodes en épidémiologie - Statistique (CIMES)",
+        "Santé Publique (CUESP)"
+      ],
+      "reviewers": [
+        "Médecine interne (CEMI)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Les_valeurs_professionnelles_du_m%C3%A9decin_et_des_autres_professions_de_sant%C3%A9"
+    },
+    "3": {
+      "writers": [
+        "Médecine générale (CNGE)",
+        "Informatique médicale - Biomathématiques - Méthodes en épidémiologie - Statistique (CIMES)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Le_raisonnement_et_la_d%C3%A9cision_en_m%C3%A9decine._La_m%C3%A9decine_fond%C3%A9e_sur_les_preuves_(Evidence_Based_Medicine,_EBM)._La_d%C3%A9cision_m%C3%A9dicale_partag%C3%A9e._La_controverse"
+    },
+    "4": {
+      "writers": [
+        "Thérapeutique (CNET)"
+      ],
+      "reviewers": [
+        "Santé Publique (CUESP)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Qualit%C3%A9_et_s%C3%A9curit%C3%A9_des_soins._La_s%C3%A9curit%C3%A9_du_patient._La_gestion_des_risques._Les_%C3%A9v%C3%A9nements_ind%C3%A9sirables_associ%C3%A9s_aux_soins_(EIAS)._D%C3%A9marche_qualit%C3%A9_et_%C3%A9valuation_des_pratiques_professionnelles"
+    },
+    "5": {
+      "writers": [
+        "Informatique médicale - Biomathématiques - Méthodes en épidémiologie - Statistique (CIMES)",
+        "Santé Publique (CUESP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Responsabilit%C3%A9s_m%C3%A9dicale_p%C3%A9nale,_civile,_administrative_et_disciplinaire._La_gestion_des_erreurs_et_des_plaintes_;_l%27al%C3%A9a_th%C3%A9rapeutique"
+    },
+    "6": {
+      "writers": [
+        "Informatique médicale - Biomathématiques - Méthodes en épidémiologie - Statistique (CIMES)",
+        "Santé Publique (CUESP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/L%27organisation_de_l%27exercice_clinique_et_les_m%C3%A9thodes_qui_permettent_de_s%C3%A9curiser_le_parcours_du_patient"
+    },
+    "7": {
+      "writers": [
+        "Médecine légale (CNEML)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Les_droits_individuels_et_collectifs_du_patient"
+    },
+    "8": {
+      "writers": [
+        "Humanités (COLHUM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Les_discriminations"
+    },
+    "9": {
+      "writers": [
+        "Humanités (COLHUM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Introduction_%C3%A0_l%27%C3%A9thique_m%C3%A9dicale"
+    },
+    "10": {
+      "writers": [
+        "Humanités (COLHUM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Approches_transversales_du_corps"
+    },
+    "11": {
+      "writers": [
+        "Humanités (COLHUM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Violences_et_sant%C3%A9"
+    },
+    "12": {
+      "writers": [
+        "Médecine légale (CNEML)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Violences_sexuelles"
+    },
+    "13": {
+      "writers": [
+        "Médecine légale (CNEML)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Certificats_m%C3%A9dicaux._D%C3%A9c%C3%A8s_et_l%C3%A9gislation"
+    },
+    "14": {
+      "writers": [
+        "Humanités (COLHUM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/La_mort"
+    },
+    "15": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Soins_psychiatriques_sans_consentement"
+    },
+    "16": {
+      "writers": [
+        "Informatique médicale - Biomathématiques - Méthodes en épidémiologie - Statistique (CIMES)",
+        "Santé Publique (CUESP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Organisation_du_syst%C3%A8me_de_soins._Sa_r%C3%A9gulation._Les_indicateurs._Parcours_de_soins"
+    },
+    "17": {
+      "writers": [
+        "Informatique médicale - Biomathématiques - Méthodes en épidémiologie - Statistique (CIMES)",
+        "Santé Publique (CUESP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/T%C3%A9l%C3%A9m%C3%A9decine,_t%C3%A9l%C3%A9sant%C3%A9_et_t%C3%A9l%C3%A9services_en_sant%C3%A9"
+    },
+    "18": {
+      "writers": [
+        "Informatique médicale - Biomathématiques - Méthodes en épidémiologie - Statistique (CIMES)",
+        "Santé Publique (CUESP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Sant%C3%A9_et_num%C3%A9rique"
+    },
+    "19": {
+      "writers": [
+        "Informatique médicale - Biomathématiques - Méthodes en épidémiologie - Statistique (CIMES)",
+        "Santé Publique (CUESP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/La_s%C3%A9curit%C3%A9_sociale._L%27assurance_maladie._Les_assurances_compl%C3%A9mentaires._La_compl%C3%A9mentaire_sant%C3%A9_solidaire_(CSS)._La_consommation_m%C3%A9dicale._Protection_sociale._Consommation_m%C3%A9dicale_et_%C3%A9conomie_de_la_sant%C3%A9"
+    },
+    "20": {
+      "writers": [
+        "Informatique médicale - Biomathématiques - Méthodes en épidémiologie - Statistique (CIMES)",
+        "Santé Publique (CUESP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/La_m%C3%A9thodologie_de_la_recherche_en_sant%C3%A9"
+    },
+    "21": {
+      "writers": [
+        "Informatique médicale - Biomathématiques - Méthodes en épidémiologie - Statistique (CIMES)",
+        "Santé Publique (CUESP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Mesure_de_l%27%C3%A9tat_de_sant%C3%A9_de_la_population"
+    },
+    "22": {
+      "writers": [
+        "Génétique médicale (CNEPGM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Maladies_rares"
+    },
+    "23": {
+      "writers": [
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Grossesse_normale"
+    },
+    "24": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Principales_complications_de_la_grossesse"
+    },
+    "25": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Grossesse_extra-ut%C3%A9rine"
+    },
+    "26": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Douleur_abdominale_aigu%C3%AB_chez_une_femme_enceinte"
+    },
+    "27": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Pr%C3%A9vention_des_risques_f%C5%93taux_:_infection,_m%C3%A9dicaments,_toxiques,_irradiation"
+    },
+    "28": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [
+        "Urologie (CFEU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Conna%C3%AEtre_les_particularit%C3%A9s_de_l%27infection_urinaire_au_cours_de_la_grossesse"
+    },
+    "29": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [
+        "Médecine du travail (CEHUMT)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Conna%C3%AEtre_les_principaux_risques_professionnels_pour_la_maternit%C3%A9,_li%C3%A9s_au_travail_de_la_m%C3%A8re"
+    },
+    "30": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)",
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Pr%C3%A9maturit%C3%A9_et_retard_de_croissance_intra-ut%C3%A9rin_:_facteurs_de_risque_et_pr%C3%A9vention"
+    },
+    "31": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Accouchement,_d%C3%A9livrance_et_suites_de_couches_normales"
+    },
+    "32": {
+      "writers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/%C3%89valuation_et_soins_du_nouveau-n%C3%A9_%C3%A0_terme"
+    },
+    "33": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Allaitement_maternel"
+    },
+    "34": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Suites_de_couches_pathologiques_:_pathologie_maternelle_dans_les_40_jours"
+    },
+    "35": {
+      "writers": [
+        "Gynécologie médicale (CNEGM)",
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Anomalies_du_cycle_menstruel._M%C3%A9trorragies"
+    },
+    "36": {
+      "writers": [
+        "Gynécologie médicale (CNEGM)"
+      ],
+      "reviewers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Contraception._(voir_item_330)"
+    },
+    "37": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [
+        "Gynécologie médicale (CNEGM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Interruption_volontaire_de_grossesse"
+    },
+    "38": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)",
+        "Médecine et Biologie du Développement et de la Reproduction (CBMDR)",
+        "Gynécologie médicale (CNEGM)"
+      ],
+      "reviewers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Infertilit%C3%A9_du_couple_:_conduite_de_la_premi%C3%A8re_consultation"
+    },
+    "39": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)",
+        "Médecine et Biologie du Développement et de la Reproduction (CBMDR)",
+        "Gynécologie médicale (CNEGM)"
+      ],
+      "reviewers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Assistance_m%C3%A9dicale_%C3%A0_la_procr%C3%A9ation_:_principaux_aspects_biologiques,_m%C3%A9dicaux_et_%C3%A9thiques"
+    },
+    "40": {
+      "writers": [
+        "Gynécologie médicale (CNEGM)",
+        "Douleur (CEMD)",
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Algies_pelviennes_chez_la_femme"
+    },
+    "41": {
+      "writers": [
+        "Gynécologie médicale (CNEGM)",
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Endom%C3%A9triose"
+    },
+    "42": {
+      "writers": [
+        "Gynécologie médicale (CNEGM)"
+      ],
+      "reviewers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Am%C3%A9norrh%C3%A9e"
+    },
+    "43": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [
+        "Gynécologie médicale (CNEGM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/H%C3%A9morragie_g%C3%A9nitale_chez_la_femme"
+    },
+    "44": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [
+        "Gynécologie médicale (CNEGM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Tum%C3%A9faction_pelvienne_chez_la_femme"
+    },
+    "45": {
+      "writers": [
+        "Génétique médicale (CNEPGM)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Sp%C3%A9cificit%C3%A9s_des_maladies_g%C3%A9n%C3%A9tiques._(voir_item_9)"
+    },
+    "46": {
+      "writers": [
+        "Génétique médicale (CNEPGM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/M%C3%A9decine_g%C3%A9nomique"
+    },
+    "47": {
+      "writers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Suivi_d%27un_nourrisson,_d%27un_enfant_et_d%27un_adolescent_normal._D%C3%A9pistage_des_anomalies_orthop%C3%A9diques,_des_troubles_visuels,_auditifs_et_dentaires._Examens_de_sant%C3%A9_obligatoires._M%C3%A9decine_scolaire._Mortalit%C3%A9_et_morbidit%C3%A9_infantiles"
+    },
+    "48": {
+      "writers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Alimentation_et_besoins_nutritionnels_du_nourrisson_et_de_l%27enfant"
+    },
+    "49": {
+      "writers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Pubert%C3%A9_normale_et_pathologique"
+    },
+    "50": {
+      "writers": [
+        "Urologie (CFEU)"
+      ],
+      "reviewers": [
+        "Chirurgie Pédiatrique (CNHUCP)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Pathologie_g%C3%A9nito-scrotale_chez_le_gar%C3%A7on_et_chez_l%27homme"
+    },
+    "51": {
+      "writers": [
+        "Chirurgie Pédiatrique (CNHUCP)"
+      ],
+      "reviewers": [
+        "Urologie (CFEU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_de_la_miction_chez_l%27enfant"
+    },
+    "52": {
+      "writers": [
+        "Ophtalmologie (COUF)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Strabisme_et_amblyopie_de_l%27enfant"
+    },
+    "53": {
+      "writers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Retard_de_croissance_staturo-pond%C3%A9rale"
+    },
+    "54": {
+      "writers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Boiterie_chez_l%27enfant"
+    },
+    "55": {
+      "writers": [
+        "Pédiatrie (CNPU)",
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Item_de_connaissance_2C"
+    },
+    "56": {
+      "writers": [
+        "Pédiatrie (CNPU)",
+        "Médecine Physique et de Réadaptation (COFEMER)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/L%27enfant_handicap%C3%A9_:_orientation_et_prise_en_charge_(voir_items_118,_121)"
+    },
+    "57": {
+      "writers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Maltraitance_et_enfants_en_danger._Protection_maternelle_et_infantile"
+    },
+    "58": {
+      "writers": [
+        "Gynécologie médicale (CNEGM)",
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [
+        "Urologie (CFEU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Sexualit%C3%A9_normale_et_ses_troubles"
+    },
+    "59": {
+      "writers": [
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Sujets_en_situation_de_pr%C3%A9carit%C3%A9"
+    },
+    "60": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Conna%C3%AEtre_les_facteurs_de_risque,_pr%C3%A9vention,_d%C3%A9pistage_des_troubles_psychiques_de_l%27enfant_%C3%A0_la_personne_%C3%A2g%C3%A9e"
+    },
+    "61": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Conna%C3%AEtre_les_bases_des_classifications_des_troubles_mentaux_de_l%27enfant_%C3%A0_la_personne_%C3%A2g%C3%A9e"
+    },
+    "62": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/D%C3%A9crire_l%27organisation_de_l%27offre_de_soins_en_psychiatrie,_de_l%27enfant_%C3%A0_la_personne_%C3%A2g%C3%A9e"
+    },
+    "63": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_schizophr%C3%A9niques_de_l%27adolescent_et_de_l%27adulte"
+    },
+    "64": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_bipolaires_de_l%27adolescent_et_de_l%27adulte"
+    },
+    "65": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Trouble_d%C3%A9lirant_persistant"
+    },
+    "66": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Diagnostiquer_:_un_trouble_d%C3%A9pressif,_un_trouble_anxieux,_un_trouble_obsessionnel_compulsif,_un_trouble_de_stress_post-traumatique,_un_trouble_de_l%27adaptation,_un_trouble_de_la_personnalit%C3%A9"
+    },
+    "67": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_du_neurod%C3%A9veloppement_(voir_items_55,_118,_121,_122,_138)"
+    },
+    "68": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_du_comportement_de_l%27enfant_et_de_l%27adolescent"
+    },
+    "69": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_psychiques_de_la_grossesse_et_du_post-partum"
+    },
+    "70": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_psychiques_du_sujet_%C3%A2g%C3%A9"
+    },
+    "71": {
+      "writers": [
+        "Psychiatrie (CNUP)",
+        "Addictologie (CUNEA)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_des_conduites_alimentaires_chez_l%27adolescent_et_l%27adulte_(voir_item_253)"
+    },
+    "72": {
+      "writers": [
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_%C3%A0_symptomatologie_somatique_et_apparent%C3%A9s_%C3%A0_tous_les_%C3%A2ges"
+    },
+    "73": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Diff%C3%A9rents_types_de_techniques_psychoth%C3%A9rapeutiques"
+    },
+    "74": {
+      "writers": [
+        "Thérapeutique (CNET)",
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [
+        "Pharmacologie (CNPM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Prescription_et_surveillance_des_psychotropes_(voir_item_330)"
+    },
+    "75": {
+      "writers": [
+        "Addictologie (CUNEA)"
+      ],
+      "reviewers": [
+        "Médecine vasculaire (CEMV)",
+        "Pneumologie (CEP)",
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Médecine générale (CNGE)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Addiction_au_tabac"
+    },
+    "76": {
+      "writers": [
+        "Addictologie (CUNEA)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Addiction_%C3%A0_l%27alcool"
+    },
+    "77": {
+      "writers": [
+        "Addictologie (CUNEA)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Addiction_aux_m%C3%A9dicaments_psychotropes_(benzodiaz%C3%A9pines_et_apparent%C3%A9s)._(voir_item_322)"
+    },
+    "78": {
+      "writers": [
+        "Addictologie (CUNEA)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Addiction_au_cannabis,_%C3%A0_la_coca%C3%AFne,_aux_amph%C3%A9tamines,_aux_opiac%C3%A9s,_aux_drogues_de_synth%C3%A8se._(voir_item_322)"
+    },
+    "79": {
+      "writers": [
+        "Addictologie (CUNEA)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Addictions_comportementales"
+    },
+    "80": {
+      "writers": [
+        "Médecine du sport (CFEMTSEP)",
+        "Addictologie (CUNEA)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Dopage_et_conduites_dopantes._(voir_item_256)"
+    },
+    "81": {
+      "writers": [
+        "Ophtalmologie (COUF)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Alt%C3%A9ration_chronique_de_la_vision"
+    },
+    "82": {
+      "writers": [
+        "Ophtalmologie (COUF)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Alt%C3%A9ration_aigu%C3%AB_de_la_vision"
+    },
+    "83": {
+      "writers": [
+        "Ophtalmologie (COUF)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Infections_et_inflammations_oculaires"
+    },
+    "84": {
+      "writers": [
+        "Ophtalmologie (COUF)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Glaucomes"
+    },
+    "85": {
+      "writers": [
+        "Ophtalmologie (COUF)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_de_la_r%C3%A9fraction"
+    },
+    "86": {
+      "writers": [
+        "Ophtalmologie (COUF)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Pathologie_des_paupi%C3%A8res"
+    },
+    "87": {
+      "writers": [
+        "ORL et Chirurgie de la Face et du Cou (ORL&CCF)"
+      ],
+      "reviewers": [
+        "Chirurgie maxillo-faciale (CNECMF)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Epistaxis"
+    },
+    "88": {
+      "writers": [
+        "ORL et Chirurgie de la Face et du Cou (ORL&CCF)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Trouble_aigu_de_la_parole._Dysphonie"
+    },
+    "89": {
+      "writers": [
+        "ORL et Chirurgie de la Face et du Cou (ORL&CCF)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Alt%C3%A9ration_de_la_fonction_auditive"
+    },
+    "90": {
+      "writers": [
+        "ORL et Chirurgie de la Face et du Cou (ORL&CCF)"
+      ],
+      "reviewers": [
+        "Chirurgie maxillo-faciale (CNECMF)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Pathologie_des_glandes_salivaires"
+    },
+    "91": {
+      "writers": [
+        "Neurologie (CENeuro)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/D%C3%A9ficit_neurologique_r%C3%A9cent._(voir_item_340)"
+    },
+    "92": {
+      "writers": [
+        "Neurologie (CENeuro)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/D%C3%A9ficit_moteur_et/ou_sensitif_des_membres"
+    },
+    "93": {
+      "writers": [
+        "Neurologie (CENeuro)",
+        "Neurochirurgie (CENC)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Compression_m%C3%A9dullaire_non_traumatique_et_syndrome_de_la_queue_de_cheval"
+    },
+    "94": {
+      "writers": [
+        "Médecine Physique et de Réadaptation (COFEMER)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Rachialgie"
+    },
+    "95": {
+      "writers": [
+        "Rhumatologie (COFER)",
+        "Neurochirurgie (CENC)",
+        "Chirurgie Orthopédique et Traumatologique (CFCOT)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Radiculalgie_et_syndrome_canalaire"
+    },
+    "96": {
+      "writers": [
+        "Neurologie (CENeuro)",
+        "Douleur (CEMD)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Neuropathies_p%C3%A9riph%C3%A9riques"
+    },
+    "97": {
+      "writers": [
+        "Neurologie (CENeuro)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Polyradiculon%C3%A9vrite_aigu%C3%AB_inflammatoire_(syndrome_de_Guillain-Barr%C3%A9)"
+    },
+    "98": {
+      "writers": [
+        "Neurologie (CENeuro)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Myasth%C3%A9nie"
+    },
+    "99": {
+      "writers": [
+        "Neurologie (CENeuro)",
+        "Douleur (CEMD)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Migraine,_n%C3%A9vralgie_du_trijumeau_et_algies_de_la_face"
+    },
+    "100": {
+      "writers": [
+        "Neurologie (CENeuro)",
+        "Douleur (CEMD)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/C%C3%A9phal%C3%A9e_inhabituelle_aigu%C3%AB_et_chronique_chez_l%27adulte_et_l%27enfant"
+    },
+    "101": {
+      "writers": [
+        "Neurologie (CENeuro)"
+      ],
+      "reviewers": [
+        "Chirurgie maxillo-faciale (CNECMF)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Paralysie_faciale"
+    },
+    "102": {
+      "writers": [
+        "Ophtalmologie (COUF)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Diplopie"
+    },
+    "103": {
+      "writers": [
+        "ORL et Chirurgie de la Face et du Cou (ORL&CCF)"
+      ],
+      "reviewers": [
+        "Neurologie (CENeuro)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Vertige"
+    },
+    "104": {
+      "writers": [
+        "Neurologie (CENeuro)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Scl%C3%A9rose_en_plaques"
+    },
+    "105": {
+      "writers": [
+        "Neurologie (CENeuro)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/%C3%89pilepsie_de_l%27enfant_et_de_l%27adulte"
+    },
+    "106": {
+      "writers": [
+        "Neurologie (CENeuro)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Maladie_de_Parkinson"
+    },
+    "107": {
+      "writers": [
+        "Neurologie (CENeuro)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Mouvements_anormaux"
+    },
+    "108": {
+      "writers": [
+        "Neurologie (CENeuro)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Confusion,_d%C3%A9mences._(voir_item_132)"
+    },
+    "109": {
+      "writers": [
+        "Neurologie (CENeuro)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_de_la_marche_et_de_l%27%C3%A9quilibre"
+    },
+    "110": {
+      "writers": [
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [
+        "Pneumologie (CEP)",
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_du_sommeil_de_l%27enfant_et_de_l%27adulte"
+    },
+    "111": {
+      "writers": [
+        "Dermatologie (CEDEF)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Dermatoses_faciales_:_acn%C3%A9,_rosac%C3%A9e,_dermatite_s%C3%A9borrh%C3%A9ique"
+    },
+    "112": {
+      "writers": [
+        "Dermatologie (CEDEF)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Dermatose_bulleuse_touchant_la_peau_et/ou_les_muqueuses_externes"
+    },
+    "113": {
+      "writers": [
+        "Dermatologie (CEDEF)"
+      ],
+      "reviewers": [
+        "Médecine vasculaire (CEMV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/H%C3%A9mangiomes_et_malformations_vasculaires_cutan%C3%A9es"
+    },
+    "114": {
+      "writers": [
+        "Dermatologie (CEDEF)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Exanth%C3%A8me_et_%C3%A9rythrodermie_de_l%27adulte_et_de_l%27enfant._(voir_item_164)"
+    },
+    "115": {
+      "writers": [
+        "Dermatologie (CEDEF)"
+      ],
+      "reviewers": [
+        "Thérapeutique (CNET)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Toxidermies"
+    },
+    "116": {
+      "writers": [
+        "Dermatologie (CEDEF)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Prurit"
+    },
+    "117": {
+      "writers": [
+        "Dermatologie (CEDEF)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Psoriasis"
+    },
+    "118": {
+      "writers": [
+        "Médecine Physique et de Réadaptation (COFEMER)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/La_personne_handicap%C3%A9e_:_bases_de_l%27%C3%A9valuation_fonctionnelle_et_th%C3%A9rapeutique._(voir_item_56)"
+    },
+    "119": {
+      "writers": [
+        "Médecine Physique et de Réadaptation (COFEMER)"
+      ],
+      "reviewers": [
+        "Humanités (COLHUM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Soins_et_accompagnement_dans_la_maladie_chronique_et_le_handicap"
+    },
+    "120": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Complications_de_l%27immobilit%C3%A9_et_du_d%C3%A9cubitus._Pr%C3%A9vention_et_prise_en_charge"
+    },
+    "121": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [
+        "Médecine Physique et de Réadaptation (COFEMER)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Le_handicap_psychique._(voir_item_56_et_118)"
+    },
+    "122": {
+      "writers": [
+        "Médecine Physique et de Réadaptation (COFEMER)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Principales_techniques_de_r%C3%A9%C3%A9ducation_et_de_r%C3%A9adaptation._(voir_item_55)"
+    },
+    "123": {
+      "writers": [
+        "Gériatrie (CNEG)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Vieillissement_normal_:_aspects_biologiques,_fonctionnels_et_relationnels._Donn%C3%A9es_%C3%A9pid%C3%A9miologiques_et_sociologiques._Pr%C3%A9vention_du_vieillissement_pathologique"
+    },
+    "124": {
+      "writers": [
+        "Gynécologie médicale (CNEGM)"
+      ],
+      "reviewers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)",
+        "Urologie (CFEU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/M%C3%A9nopause,_insuffisance_ovarienne_pr%C3%A9matur%C3%A9e,_andropause,_d%C3%A9ficit_androg%C3%A9nique_li%C3%A9_%C3%A0_l%27%C3%A2ge._(Voir_item_330)"
+    },
+    "125": {
+      "writers": [
+        "Urologie (CFEU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_de_la_miction_et_incontinence_urinaire_de_l%27adulte_et_du_sujet_%C3%A2g%C3%A9"
+    },
+    "126": {
+      "writers": [
+        "Urologie (CFEU)"
+      ],
+      "reviewers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Trouble_de_l%27%C3%A9rection"
+    },
+    "127": {
+      "writers": [
+        "Urologie (CFEU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Hypertrophie_b%C3%A9nigne_de_la_prostate"
+    },
+    "128": {
+      "writers": [
+        "Rhumatologie (COFER)"
+      ],
+      "reviewers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Ost%C3%A9opathies_fragilisantes"
+    },
+    "129": {
+      "writers": [
+        "Rhumatologie (COFER)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Arthrose"
+    },
+    "130": {
+      "writers": [
+        "Gériatrie (CNEG)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/La_personne_%C3%A2g%C3%A9e_malade_:_particularit%C3%A9s_s%C3%A9miologiques,_psychologiques_et_th%C3%A9rapeutiques._(voir_item_322)"
+    },
+    "131": {
+      "writers": [
+        "Gériatrie (CNEG)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_de_la_marche_et_de_l%27%C3%A9quilibre._(voir_item_109)"
+    },
+    "132": {
+      "writers": [
+        "Gériatrie (CNEG)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_cognitifs_du_sujet_%C3%A2g%C3%A9._(voir_item_108)"
+    },
+    "133": {
+      "writers": [
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Autonomie_et_d%C3%A9pendance_chez_le_sujet_%C3%A2g%C3%A9"
+    },
+    "134": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)",
+        "Douleur (CEMD)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Bases_neurophysiologiques,_m%C3%A9canismes_physiopathologiques_d%27une_douleur_aigu%C3%AB_et_d%27une_douleur_chronique"
+    },
+    "135": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)",
+        "Douleur (CEMD)"
+      ],
+      "reviewers": [
+        "Soins palliatifs (CNEFUSP)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Th%C3%A9rapeutiques_antalgiques,_m%C3%A9dicamenteuses_et_non_m%C3%A9dicamenteuses._(voir_item_330)"
+    },
+    "136": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Anesth%C3%A9sie_locale,_locor%C3%A9gionale_et_g%C3%A9n%C3%A9rale"
+    },
+    "137": {
+      "writers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [
+        "Douleur (CEMD)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Douleur_chez_l%27enfant_:_%C3%A9valuation_et_traitements_antalgique"
+    },
+    "138": {
+      "writers": [
+        "Douleur (CEMD)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Douleur_chez_la_personne_vuln%C3%A9rable"
+    },
+    "139": {
+      "writers": [
+        "Soins palliatifs (CNEFUSP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Item_de_connaissance_2C"
+    },
+    "140": {
+      "writers": [
+        "Soins palliatifs (CNEFUSP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Soins_palliatifs_pluridisciplinaires_chez_un_malade_en_phase_palliative_ou_terminale_d%27une_maladie_grave,_chronique_ou_l%C3%A9tale_(2)._Accompagnement_de_la_personne_malade_et_de_son_entourage._Principaux_rep%C3%A8res_%C3%A9thiques"
+    },
+    "141": {
+      "writers": [
+        "Soins palliatifs (CNEFUSP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Item_de_connaissance_2C"
+    },
+    "142": {
+      "writers": [
+        "Soins palliatifs (CNEFUSP)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Conna%C3%AEtre_les_aspects_sp%C3%A9cifiques_des_soins_palliatifs_en_p%C3%A9diatrie"
+    },
+    "143": {
+      "writers": [
+        "Soins palliatifs (CNEFUSP)"
+      ],
+      "reviewers": [
+        "Médecine Intensive Réanimation (CEMIR)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Conna%C3%AEtre_les_aspects_sp%C3%A9cifiques_des_soins_palliatifs_en_r%C3%A9animation"
+    },
+    "144": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [
+        "Soins palliatifs (CNEFUSP)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Deuil_normal_et_pathologique"
+    },
+    "145": {
+      "writers": [
+        "Bactériologie - Virologie - Hygiène Hospitalière (AZAY)"
+      ],
+      "reviewers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Surveillance_des_maladies_infectieuses_transmissibles"
+    },
+    "146": {
+      "writers": [
+        "Bactériologie - Virologie - Hygiène Hospitalière (AZAY)",
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [
+        "Maladies infectieuses et tropicales (CMIT)",
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Vaccinations"
+    },
+    "147": {
+      "writers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Fi%C3%A8vre_aigu%C3%AB_chez_l%27enfant_et_l%27adulte"
+    },
+    "148": {
+      "writers": [
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Infections_naso-sinusiennes_de_l%27adulte_et_de_l%27enfant"
+    },
+    "149": {
+      "writers": [
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Angines_de_l%27adulte_et_de_l%27enfant"
+    },
+    "150": {
+      "writers": [
+        "ORL et Chirurgie de la Face et du Cou (ORL&CCF)"
+      ],
+      "reviewers": [
+        "Maladies infectieuses et tropicales (CMIT)",
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Otites_infectieuses_de_l%27adulte_et_de_l%27enfant"
+    },
+    "151": {
+      "writers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/M%C3%A9ningites,_m%C3%A9ningoenc%C3%A9phalites,_abc%C3%A8s_c%C3%A9r%C3%A9bral_chez_l%27adulte_et_l%27enfant"
+    },
+    "152": {
+      "writers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [
+        "Cardiologie (CNECardio)",
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Endocardite_infectieuse"
+    },
+    "153": {
+      "writers": [
+        "Cardiologie (CNECardio)"
+      ],
+      "reviewers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Chirurgie vasculaire (CFCVE)",
+        "Médecine vasculaire (CEMV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Surveillance_des_porteurs_de_proth%C3%A8ses_valvulaires"
+    },
+    "154": {
+      "writers": [
+        "Pneumologie (CEP)"
+      ],
+      "reviewers": [
+        "Maladies infectieuses et tropicales (CMIT)",
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Infections_broncho_pulmonaires_communautaires_de_l%27adulte_et_de_l%27enfant"
+    },
+    "155": {
+      "writers": [
+        "Dermatologie (CEDEF)"
+      ],
+      "reviewers": [
+        "Maladies infectieuses et tropicales (CMIT)",
+        "Chirurgie plastique reconstructive et esthétique (CFCPRE)",
+        "Chirurgie maxillo-faciale (CNECMF)",
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Infections_cutan%C3%A9o-muqueuses_et_des_phan%C3%A8res,_bact%C3%A9riennes_et_mycosiques_de_l%27adulte_et_de_l%27enfant"
+    },
+    "156": {
+      "writers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Infections_ost%C3%A9o_articulaires_(IOA)_de_l%27enfant_et_de_l%27adulte"
+    },
+    "157": {
+      "writers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Bact%C3%A9ri%C3%A9mie/Fong%C3%A9mie_de_l%27adulte_et_de_l%27enfant"
+    },
+    "158": {
+      "writers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Sepsis_et_choc_septique_de_l%27enfant_et_de_l%27adulte"
+    },
+    "159": {
+      "writers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [
+        "Pneumologie (CEP)",
+        "Pédiatrie (CNPU)",
+        "Bactériologie - Virologie - Hygiène Hospitalière (AZAY)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Tuberculose_de_l%27adulte_et_de_l%27enfant"
+    },
+    "160": {
+      "writers": [
+        "Bactériologie - Virologie - Hygiène Hospitalière (AZAY)"
+      ],
+      "reviewers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/T%C3%A9tanos"
+    },
+    "161": {
+      "writers": [
+        "Urologie (CFEU)"
+      ],
+      "reviewers": [
+        "Gynécologie obstétrique (CEGO)",
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Infections_urinaires_de_l%27enfant_et_de_l%27adulte"
+    },
+    "162": {
+      "writers": [
+        "Dermatologie (CEDEF)"
+      ],
+      "reviewers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Infections_sexuellement_transmissibles_(IST)_:_gonococcies,_chlamydioses,_syphilis,_papillomavirus_humain_(HPV),_trichomonose"
+    },
+    "163": {
+      "writers": [
+        "Bactériologie - Virologie - Hygiène Hospitalière (AZAY)"
+      ],
+      "reviewers": [
+        "Maladies infectieuses et tropicales (CMIT)",
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Coqueluche"
+    },
+    "164": {
+      "writers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [
+        "Dermatologie (CEDEF)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Exanth%C3%A8mes_f%C3%A9briles_de_l%27enfant"
+    },
+    "165": {
+      "writers": [
+        "Bactériologie - Virologie - Hygiène Hospitalière (AZAY)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Oreillons"
+    },
+    "166": {
+      "writers": [
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Grippe"
+    },
+    "167": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/H%C3%A9patites_virales"
+    },
+    "168": {
+      "writers": [
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Infections_%C3%A0_herp%C3%A8s_virus_du_sujet_immunocomp%C3%A9tent"
+    },
+    "169": {
+      "writers": [
+        "Maladies infectieuses et tropicales (CMIT)",
+        "Immunologie (ASSIM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Infections_%C3%A0_VIH"
+    },
+    "170": {
+      "writers": [
+        "Parasitologie (ANOFEL)",
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Paludisme"
+    },
+    "171": {
+      "writers": [
+        "Parasitologie (ANOFEL)",
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [
+        "Dermatologie (CEDEF)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Gale_et_p%C3%A9diculose"
+    },
+    "172": {
+      "writers": [
+        "Parasitologie (ANOFEL)",
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Parasitoses_digestives_:_giardiose,_amoebose,_t%C3%A9niasis,_ascaridiose,_oxyurose,_anguillulose,_cryptosporidiose"
+    },
+    "173": {
+      "writers": [
+        "Parasitologie (ANOFEL)",
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Zoonoses"
+    },
+    "174": {
+      "writers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Pathologie_infectieuse_chez_les_migrants_adultes_et_enfants"
+    },
+    "175": {
+      "writers": [
+        "Parasitologie (ANOFEL)",
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Voyage_en_pays_tropical_de_l%27adulte_et_de_l%27enfant_:_conseils_avant_le_d%C3%A9part,_pathologies_du_retour_:_fi%C3%A8vre,_diarrh%C3%A9e,_manifestations_cutan%C3%A9es"
+    },
+    "176": {
+      "writers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Diarrh%C3%A9es_infectieuses_de_l%27adulte_et_de_l%27enfant"
+    },
+    "177": {
+      "writers": [
+        "Bactériologie - Virologie - Hygiène Hospitalière (AZAY)"
+      ],
+      "reviewers": [
+        "Parasitologie (ANOFEL)",
+        "Maladies infectieuses et tropicales (CMIT)",
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Prescription_et_surveillance_des_anti-infectieux_chez_l%27adulte_et_l%27enfant_(voir_item_330)"
+    },
+    "178": {
+      "writers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [
+        "Bactériologie - Virologie - Hygiène Hospitalière (AZAY)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Risques_%C3%A9mergents,_bioterrorisme,_maladies_hautement_transmissibles"
+    },
+    "179": {
+      "writers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Risques_sanitaires_li%C3%A9s_%C3%A0_l%27eau_et_%C3%A0_l%27alimentation._Toxi-infections_alimentaires"
+    },
+    "180": {
+      "writers": [
+        "Informatique médicale - Biomathématiques - Méthodes en épidémiologie - Statistique (CIMES)",
+        "Santé Publique (CUESP)"
+      ],
+      "reviewers": [
+        "Radiologie (CERF)",
+        "Médecine nucléaire (CNEBMN)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Risques_sanitaires_li%C3%A9s_aux_irradiations._Radioprotection"
+    },
+    "181": {
+      "writers": [
+        "Santé Publique (CUESP)",
+        "Médecine du travail (CEHUMT)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/La_s%C3%A9curit%C3%A9_sanitaire_des_produits_destin%C3%A9s_%C3%A0_l%27homme._La_veille_sanitaire_(voir_item_325)"
+    },
+    "182": {
+      "writers": [
+        "Médecine du travail (CEHUMT)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Environnement_professionnel_et_sant%C3%A9_au_travail"
+    },
+    "183": {
+      "writers": [
+        "Médecine du travail (CEHUMT)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Organisation_de_la_m%C3%A9decine_du_travail._Pr%C3%A9vention_des_risques_professionnels"
+    },
+    "184": {
+      "writers": [
+        "Médecine du travail (CEHUMT)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Accidents_du_travail_et_maladies_professionnelles_:_d%C3%A9finition_et_enjeux"
+    },
+    "185": {
+      "writers": [
+        "Immunologie (ASSIM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/R%C3%A9action_inflammatoire_:_aspects_biologiques_et_cliniques._Conduite_%C3%A0_tenir"
+    },
+    "186": {
+      "writers": [
+        "Allergologie (CEA)"
+      ],
+      "reviewers": [
+        "Pneumologie (CEP)",
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Hypersensibilit%C3%A9s_et_allergies_chez_l%27enfant_et_l%27adulte_:_aspects_physiopathologiques,_%C3%A9pid%C3%A9miologiques,_diagnostiques_et_principes_de_traitement"
+    },
+    "187": {
+      "writers": [
+        "Allergologie (CEA)",
+        "Dermatologie (CEDEF)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Hypersensibilit%C3%A9s_et_allergies_cutan%C3%A9omuqueuses_chez_l%27enfant_et_l%27adulte._Urticaire,_dermatites_atopique_et_de_contact"
+    },
+    "188": {
+      "writers": [
+        "Pneumologie (CEP)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Hypersensibilit%C3%A9_et_allergies_respiratoires_chez_l%27enfant_et_chez_l%27adulte._Asthme,_rhinite"
+    },
+    "189": {
+      "writers": [
+        "Immunologie (ASSIM)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/D%C3%A9ficit_immunitaire"
+    },
+    "190": {
+      "writers": [
+        "Médecine interne (CEMI)",
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Fi%C3%A8vre_prolong%C3%A9e"
+    },
+    "191": {
+      "writers": [
+        "Immunologie (ASSIM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Fi%C3%A8vre_chez_un_patient_immunod%C3%A9prim%C3%A9"
+    },
+    "192": {
+      "writers": [
+        "Immunologie (ASSIM)"
+      ],
+      "reviewers": [
+        "Biologie Cellulaire (ANEBC)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Pathologies_auto-immunes_:_aspects_%C3%A9pid%C3%A9miologiques,_diagnostiques_et_principes_de_traitement"
+    },
+    "193": {
+      "writers": [
+        "Médecine interne (CEMI)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Conna%C3%AEtre_les_principaux_types_de_vascularite_syst%C3%A9mique,_les_organes_cibles,_les_outils_diagnostiques_et_les_moyens_th%C3%A9rapeutiques"
+    },
+    "194": {
+      "writers": [
+        "Médecine interne (CEMI)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Lupus_syst%C3%A9mique_(LS)._Syndrome_des_anti-phospholipides_(SAPL)"
+    },
+    "195": {
+      "writers": [
+        "Médecine interne (CEMI)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Art%C3%A9rite_%C3%A0_cellules_g%C3%A9antes"
+    },
+    "196": {
+      "writers": [
+        "Rhumatologie (COFER)"
+      ],
+      "reviewers": [
+        "Biologie Cellulaire (ANEBC)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Polyarthrite_rhumato%C3%AFde"
+    },
+    "197": {
+      "writers": [
+        "Rhumatologie (COFER)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Spondyloarthrite"
+    },
+    "198": {
+      "writers": [
+        "Allergologie (CEA)",
+        "Rhumatologie (COFER)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Arthropathies_microcristallines"
+    },
+    "199": {
+      "writers": [
+        "Douleur (CEMD)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Syndrome_douloureux_r%C3%A9gional_complexe_(ex_algodystrophie)"
+    },
+    "200": {
+      "writers": [
+        "Rhumatologie (COFER)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Douleur_et_%C3%A9panchement_articulaire._Arthrite_d%27%C3%A9volution_r%C3%A9cente"
+    },
+    "201": {
+      "writers": [
+        "Néphrologie (CUEN)",
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Transplantation_d%27organes_:_aspects_%C3%A9pid%C3%A9miologiques_et_immunologiques_;_principes_de_traitement_et_surveillance_;_complications_et_pronostic_;_aspects_%C3%A9thiques_et_l%C3%A9gaux._Pr%C3%A9l%C3%A8vements_d%27organes_et_l%C3%A9gislation"
+    },
+    "202": {
+      "writers": [
+        "Immunologie (ASSIM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Bioth%C3%A9rapies_et_th%C3%A9rapies_cibl%C3%A9es"
+    },
+    "203": {
+      "writers": [
+        "Pneumologie (CEP)"
+      ],
+      "reviewers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Dyspn%C3%A9e_aigu%C3%AB_et_chronique"
+    },
+    "204": {
+      "writers": [
+        "Pneumologie (CEP)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Toux_chez_l%27enfant_et_chez_l%27adulte_(avec_le_traitement)"
+    },
+    "205": {
+      "writers": [
+        "Pneumologie (CEP)"
+      ],
+      "reviewers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/H%C3%A9moptysie"
+    },
+    "206": {
+      "writers": [
+        "Pneumologie (CEP)"
+      ],
+      "reviewers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/%C3%89panchement_pleural_liquidien"
+    },
+    "207": {
+      "writers": [
+        "Radiologie (CERF)",
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Opacit%C3%A9s_et_masses_intra-thoraciques_chez_l%27enfant_et_chez_l%27adulte"
+    },
+    "208": {
+      "writers": [
+        "Pneumologie (CEP)",
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Insuffisance_respiratoire_chronique"
+    },
+    "209": {
+      "writers": [
+        "Pneumologie (CEP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Bronchopneumopathie_chronique_obstructive_chez_l%27adulte"
+    },
+    "210": {
+      "writers": [
+        "Pneumologie (CEP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Pneumopathie_interstitielle_diffuse"
+    },
+    "211": {
+      "writers": [
+        "Médecine interne (CEMI)"
+      ],
+      "reviewers": [
+        "Pneumologie (CEP)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Sarco%C3%AFdose"
+    },
+    "212": {
+      "writers": [
+        "Hématologie (CEH)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/H%C3%A9mogramme_chez_l%27adulte_et_l%27enfant_:_indications_et_interpr%C3%A9tation"
+    },
+    "213": {
+      "writers": [
+        "Médecine interne (CEMI)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/An%C3%A9mie_chez_l%27adulte_et_l%27enfant"
+    },
+    "214": {
+      "writers": [
+        "Médecine interne (CEMI)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Thrombop%C3%A9nie_chez_l%27adulte_et_l%27enfant"
+    },
+    "215": {
+      "writers": [
+        "Médecine interne (CEMI)"
+      ],
+      "reviewers": [
+        "Dermatologie (CEDEF)",
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Purpuras_chez_l%27adulte_et_l%27enfant"
+    },
+    "216": {
+      "writers": [
+        "Hématologie (CEH)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Syndrome_h%C3%A9morragique_d%27origine_h%C3%A9matologique"
+    },
+    "217": {
+      "writers": [
+        "Médecine interne (CEMI)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Syndrome_mononucl%C3%A9osique"
+    },
+    "218": {
+      "writers": [
+        "Médecine interne (CEMI)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/%C3%89osinophilie"
+    },
+    "219": {
+      "writers": [
+        "Biochimie et Biologie Moléculaire (CNBBMM)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Pathologie_du_fer_chez_l%27adulte_et_l%27enfant"
+    },
+    "220": {
+      "writers": [
+        "Hématologie (CEH)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Ad%C3%A9nopathie_superficielle_de_l%27adulte_et_de_l%27enfant"
+    },
+    "221": {
+      "writers": [
+        "Médecine vasculaire (CEMV)",
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Ath%C3%A9rome_:_%C3%A9pid%C3%A9miologie_et_physiopathologie._Le_malade_poly-ath%C3%A9romateux"
+    },
+    "222": {
+      "writers": [
+        "Médecine vasculaire (CEMV)",
+        "Cardiologie (CNECardio)",
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Facteurs_de_risque_cardio-vasculaire_et_pr%C3%A9vention"
+    },
+    "223": {
+      "writers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)",
+        "Biochimie et Biologie Moléculaire (CNBBMM)"
+      ],
+      "reviewers": [
+        "Médecine vasculaire (CEMV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Dyslipid%C3%A9mies"
+    },
+    "224": {
+      "writers": [
+        "Médecine vasculaire (CEMV)",
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)",
+        "Néphrologie (CUEN)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Hypertension_art%C3%A9rielle_de_l%27adulte_et_de_l%27enfant"
+    },
+    "225": {
+      "writers": [
+        "Médecine vasculaire (CEMV)",
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Chirurgie vasculaire (CFCVE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Art%C3%A9riopathie_de_l%27aorte,_des_art%C3%A8res_visc%C3%A9rales_et_des_membres_inf%C3%A9rieurs_;_an%C3%A9vrysmes"
+    },
+    "226": {
+      "writers": [
+        "Médecine vasculaire (CEMV)",
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "reviewers": [
+        "Pneumologie (CEP)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Thrombose_veineuse_profonde_et_embolie_pulmonaire_(voir_item_330)"
+    },
+    "227": {
+      "writers": [
+        "Médecine vasculaire (CEMV)"
+      ],
+      "reviewers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Insuffisance_veineuse_chronique._Varices"
+    },
+    "228": {
+      "writers": [
+        "Médecine vasculaire (CEMV)"
+      ],
+      "reviewers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Ulc%C3%A8re_de_jambe"
+    },
+    "229": {
+      "writers": [
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)"
+      ],
+      "reviewers": [
+        "Médecine vasculaire (CEMV)",
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Surveillance_et_complications_des_abords_veineux"
+    },
+    "230": {
+      "writers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Cardiologie (CNECardio)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Douleur_thoracique_aigu%C3%AB"
+    },
+    "231": {
+      "writers": [
+        "Cardiologie (CNECardio)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/%C3%89lectrocardiogramme_:_indications_et_interpr%C3%A9tations"
+    },
+    "232": {
+      "writers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Cardiologie (CNECardio)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Fibrillation_atriale"
+    },
+    "233": {
+      "writers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Cardiologie (CNECardio)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Valvulopathies"
+    },
+    "234": {
+      "writers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Cardiologie (CNECardio)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Insuffisance_cardiaque_de_l%27adulte"
+    },
+    "235": {
+      "writers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Cardiologie (CNECardio)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/P%C3%A9ricardite_aigu%C3%AB"
+    },
+    "236": {
+      "writers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Cardiologie (CNECardio)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_de_la_conduction_intracardiaque"
+    },
+    "237": {
+      "writers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Cardiologie (CNECardio)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Palpitations"
+    },
+    "238": {
+      "writers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Souffle_cardiaque_chez_l%27enfant"
+    },
+    "239": {
+      "writers": [
+        "Médecine vasculaire (CEMV)"
+      ],
+      "reviewers": [
+        "Médecine interne (CEMI)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Acrosyndromes_(ph%C3%A9nom%C3%A8ne_de_Raynaud,_%C3%A9rythermalgie,_acrocyanose,_engelures,_isch%C3%A9mie_digitale)"
+    },
+    "240": {
+      "writers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Hypoglyc%C3%A9mie_chez_l%27adulte_et_l%27enfant"
+    },
+    "241": {
+      "writers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)",
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Goitre,_nodules_thyro%C3%AFdiens_et_cancers_thyro%C3%AFdiens"
+    },
+    "242": {
+      "writers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Hyperthyro%C3%AFdie"
+    },
+    "243": {
+      "writers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Hypothyro%C3%AFdie"
+    },
+    "244": {
+      "writers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Ad%C3%A9nome_hypophysaire"
+    },
+    "245": {
+      "writers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Insuffisance_surr%C3%A9nale_chez_l%27adulte_et_l%27enfant"
+    },
+    "246": {
+      "writers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Gyn%C3%A9comastie"
+    },
+    "247": {
+      "writers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Diab%C3%A8te_sucr%C3%A9_de_type_1_et_2_de_l%27enfant_et_de_l%27adulte._Complications"
+    },
+    "248": {
+      "writers": [
+        "Médecine vasculaire (CEMV)",
+        "Nutrition (CENutri)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Pr%C3%A9vention_primaire_par_la_nutrition_chez_l%27adulte_et_l%27enfant"
+    },
+    "249": {
+      "writers": [
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Modifications_th%C3%A9rapeutiques_du_mode_de_vie_(alimentation_et_activit%C3%A9_physique)_chez_l%27adulte_et_l%27enfant"
+    },
+    "250": {
+      "writers": [
+        "Nutrition (CENutri)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/D%C3%A9nutrition_chez_l%27adulte_et_l%27enfant"
+    },
+    "251": {
+      "writers": [
+        "Nutrition (CENutri)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Amaigrissement_%C3%A0_tous_les_%C3%A2ges"
+    },
+    "252": {
+      "writers": [
+        "Gériatrie (CNEG)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_nutritionnels_chez_le_sujet_%C3%A2g%C3%A9"
+    },
+    "253": {
+      "writers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)",
+        "Nutrition (CENutri)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Ob%C3%A9sit%C3%A9_de_l%27enfant_et_de_l%27adulte_(voir_item_71)"
+    },
+    "254": {
+      "writers": [
+        "Nutrition (CENutri)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Besoins_nutritionnels_de_la_femme_enceinte"
+    },
+    "255": {
+      "writers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)",
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Diab%C3%A8te_gestationnel"
+    },
+    "256": {
+      "writers": [
+        "Médecine du sport (CFEMTSEP)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Aptitude_au_sport_chez_l%27adulte_et_l%27enfant_;_besoins_nutritionnels_chez_le_sportif_(voir_item_80)"
+    },
+    "257": {
+      "writers": [
+        "Néphrologie (CUEN)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/%C5%92d%C3%A8mes_des_membres_inf%C3%A9rieurs_localis%C3%A9s_ou_g%C3%A9n%C3%A9ralis%C3%A9s"
+    },
+    "258": {
+      "writers": [
+        "Néphrologie (CUEN)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/%C3%89l%C3%A9vation_de_la_cr%C3%A9atinin%C3%A9mie"
+    },
+    "259": {
+      "writers": [
+        "Néphrologie (CUEN)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Prot%C3%A9inurie_et_syndrome_n%C3%A9phrotique_chez_l%27adulte_et_de_l%27enfant"
+    },
+    "260": {
+      "writers": [
+        "Urologie (CFEU)",
+        "Néphrologie (CUEN)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/H%C3%A9maturie"
+    },
+    "261": {
+      "writers": [
+        "Néphrologie (CUEN)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/N%C3%A9phropathie_glom%C3%A9rulaire"
+    },
+    "262": {
+      "writers": [
+        "Néphrologie (CUEN)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/N%C3%A9phropathies_interstitielles"
+    },
+    "263": {
+      "writers": [
+        "Néphrologie (CUEN)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/N%C3%A9phropathies_vasculaires"
+    },
+    "264": {
+      "writers": [
+        "Néphrologie (CUEN)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Insuffisance_r%C3%A9nale_chronique_chez_l%27adulte_et_l%27enfant"
+    },
+    "265": {
+      "writers": [
+        "Urologie (CFEU)"
+      ],
+      "reviewers": [
+        "Néphrologie (CUEN)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Lithiase_urinaire"
+    },
+    "266": {
+      "writers": [
+        "Néphrologie (CUEN)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Polykystose_r%C3%A9nale"
+    },
+    "267": {
+      "writers": [
+        "Biochimie et Biologie Moléculaire (CNBBMM)",
+        "Néphrologie (CUEN)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Troubles_de_l%27%C3%A9quilibre_acido-basique_et_d%C3%A9sordres_hydro-%C3%A9lectrolytiques"
+    },
+    "268": {
+      "writers": [
+        "Rhumatologie (COFER)",
+        "Néphrologie (CUEN)"
+      ],
+      "reviewers": [
+        "Endocrinologie, Diabète et Maladies Métabolique (CEEDMM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Hypercalc%C3%A9mie"
+    },
+    "269": {
+      "writers": [
+        "Chirurgie viscérale et digestive (CCVD)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Douleurs_abdominales_aigu%C3%ABs_chez_l%27enfant_et_chez_l%27adulte"
+    },
+    "270": {
+      "writers": [
+        "Rhumatologie (COFER)",
+        "Urologie (CFEU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Douleurs_lombaires_aigu%C3%ABs"
+    },
+    "271": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Reflux_gastro-%C5%93sophagien_chez_le_nourrisson,_chez_l%27enfant_et_chez_l%27adulte._Hernie_hiatale"
+    },
+    "272": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Ulc%C3%A8re_gastrique_et_duod%C3%A9nal._Gastrite"
+    },
+    "273": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Dysphagie"
+    },
+    "274": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Vomissements_du_nourrisson,_de_l%27enfant_et_de_l%27adulte"
+    },
+    "275": {
+      "writers": [
+        "Médecine interne (CEMI)",
+        "Hématologie (CEH)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Spl%C3%A9nom%C3%A9galie"
+    },
+    "276": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/H%C3%A9patom%C3%A9galie_et_masse_abdominale"
+    },
+    "277": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Lithiase_biliaire_et_complications"
+    },
+    "278": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Ict%C3%A8re_de_l%27adulte_et_de_l%27enfant"
+    },
+    "279": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Cirrhose_et_complications"
+    },
+    "280": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Ascite"
+    },
+    "281": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Pancr%C3%A9atite_chronique"
+    },
+    "282": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Maladies_inflammatoires_chroniques_de_l%27intestin_(MICI)_chez_l%27adulte"
+    },
+    "283": {
+      "writers": [
+        "Médecine générale (CNGE)",
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Constipation_chez_l%27enfant_et_l%27adulte"
+    },
+    "284": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Colopathie_fonctionnelle"
+    },
+    "285": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Diarrh%C3%A9e_chronique_chez_l%27adulte_et_l%27enfant"
+    },
+    "286": {
+      "writers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Diarrh%C3%A9e_aigu%C3%AB_et_d%C3%A9shydratation_chez_le_nourrisson,_l%27enfant_et_l%27adulte"
+    },
+    "287": {
+      "writers": [
+        "Chirurgie viscérale et digestive (CCVD)"
+      ],
+      "reviewers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Diverticulose_colique_et_diverticulite_aigu%C3%AB_du_sigmo%C3%AFde"
+    },
+    "288": {
+      "writers": [
+        "Chirurgie viscérale et digestive (CCVD)"
+      ],
+      "reviewers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Pathologie_h%C3%A9morro%C3%AFdaire"
+    },
+    "289": {
+      "writers": [
+        "Chirurgie viscérale et digestive (CCVD)",
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Hernie_pari%C3%A9tale_chez_l%27enfant_et_l%27adulte"
+    },
+    "290": {
+      "writers": [
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/%C3%89pid%C3%A9miologie,_facteurs_de_risque,_pr%C3%A9vention_et_d%C3%A9pistage_des_cancers"
+    },
+    "291": {
+      "writers": [
+        "Biochimie et Biologie Moléculaire (CNBBMM)"
+      ],
+      "reviewers": [
+        "Biologie Cellulaire (ANEBC)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Cancer_:_canc%C3%A9rog%C3%A9n%C3%A8se,_oncog%C3%A9n%C3%A9tique"
+    },
+    "292": {
+      "writers": [
+        "Cancérologie (CNECancer)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Diagnostic_des_cancers_:_signes_d%27appel_et_investigations_para-cliniques_;_caract%C3%A9risation_du_stade_;_pronostic"
+    },
+    "293": {
+      "writers": [
+        "Pathologique (CoPath)"
+      ],
+      "reviewers": [
+        "Biologie Cellulaire (ANEBC)",
+        "Cancérologie (CNECancer)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Le_m%C3%A9decin_pr%C3%A9leveur_de_cellules_et/ou_de_tissus_pour_des_examens_d%27Anatomie_et_Cytologie_Pathologiques_:_conna%C3%AEtre_les_principes_de_r%C3%A9alisation,_transmission_et_utilisation_des_pr%C3%A9l%C3%A8vements_%C3%A0_vis%C3%A9e_sanitaire_et_de_recherche"
+    },
+    "294": {
+      "writers": [
+        "Cancérologie (CNECancer)"
+      ],
+      "reviewers": [
+        "Biologie Cellulaire (ANEBC)",
+        "Soins palliatifs (CNEFUSP)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Traitement_des_cancers_:_principales_modalit%C3%A9s,_classes_th%C3%A9rapeutiques_et_leurs_complications_majeures._La_d%C3%A9cision_th%C3%A9rapeutique_pluridisciplinaire_et_l%27information_du_malade"
+    },
+    "295": {
+      "writers": [
+        "Cancérologie (CNECancer)"
+      ],
+      "reviewers": [
+        "Soins palliatifs (CNEFUSP)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Prise_en_charge_et_accompagnement_d%27un_malade_atteint_de_cancer_%C3%A0_tous_les_stades_de_la_maladie_dont_le_stade_de_soins_palliatifs_en_abordant_les_probl%C3%A9matiques_techniques,_relationnelles,_sociales_et_%C3%A9thiques"
+    },
+    "296": {
+      "writers": [
+        "Hématologie (CEH)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Agranulocytose_m%C3%A9dicamenteuse_:_conduite_%C3%A0_tenir"
+    },
+    "297": {
+      "writers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [
+        "Neurochirurgie (CENC)",
+        "Cancérologie (CNECancer)",
+        "Soins palliatifs (CNEFUSP)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Cancer_de_l%27enfant_:_particularit%C3%A9s_%C3%A9pid%C3%A9miologiques,_diagnostiques_et_th%C3%A9rapeutiques"
+    },
+    "298": {
+      "writers": [
+        "ORL et Chirurgie de la Face et du Cou (ORL&CCF)"
+      ],
+      "reviewers": [
+        "Chirurgie maxillo-faciale (CNECMF)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_de_la_cavit%C3%A9_buccale,_naso-sinusiennes_et_du_cavum,_et_des_voies_a%C3%A9rodigestives_sup%C3%A9rieures"
+    },
+    "299": {
+      "writers": [
+        "Neurochirurgie (CENC)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_intracr%C3%A2niennes"
+    },
+    "300": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [
+        "Gynécologie médicale (CNEGM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_du_col_ut%C3%A9rin,_tumeur_du_corps_ut%C3%A9rin"
+    },
+    "301": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_du_colon_et_du_rectum"
+    },
+    "302": {
+      "writers": [
+        "Dermatologie (CEDEF)"
+      ],
+      "reviewers": [
+        "Chirurgie plastique reconstructive et esthétique (CFCPRE)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_cutan%C3%A9es,_%C3%A9pith%C3%A9liales_et_m%C3%A9laniques"
+    },
+    "303": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_de_l%27estomac"
+    },
+    "304": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_du_foie,_primitives_et_secondaires"
+    },
+    "305": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_de_l%27%C5%93sophage"
+    },
+    "306": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [
+        "Biologie Cellulaire (ANEBC)",
+        "Gynécologie médicale (CNEGM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_de_l%27ovaire"
+    },
+    "307": {
+      "writers": [
+        "Rhumatologie (COFER)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_des_os_primitives_et_secondaires"
+    },
+    "308": {
+      "writers": [
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_du_pancr%C3%A9as"
+    },
+    "309": {
+      "writers": [
+        "Pneumologie (CEP)"
+      ],
+      "reviewers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_du_poumon,_primitives_et_secondaires"
+    },
+    "310": {
+      "writers": [
+        "Urologie (CFEU)"
+      ],
+      "reviewers": [
+        "Biologie Cellulaire (ANEBC)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_de_la_prostate"
+    },
+    "311": {
+      "writers": [
+        "Urologie (CFEU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_du_rein_de_l%27adulte"
+    },
+    "312": {
+      "writers": [
+        "Gynécologie obstétrique (CEGO)",
+        "Cancérologie (CNECancer)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_du_sein"
+    },
+    "313": {
+      "writers": [
+        "Urologie (CFEU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_du_testicule"
+    },
+    "314": {
+      "writers": [
+        "Urologie (CFEU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Tumeurs_v%C3%A9sicales"
+    },
+    "315": {
+      "writers": [
+        "Hématologie (CEH)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Leuc%C3%A9mies_aigu%C3%ABs"
+    },
+    "316": {
+      "writers": [
+        "Hématologie (CEH)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Syndromes_my%C3%A9lodysplasiques"
+    },
+    "317": {
+      "writers": [
+        "Hématologie (CEH)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Syndromes_my%C3%A9loprolif%C3%A9ratifs"
+    },
+    "318": {
+      "writers": [
+        "Hématologie (CEH)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Leuc%C3%A9mies_lympho%C3%AFdes_chroniques"
+    },
+    "319": {
+      "writers": [
+        "Hématologie (CEH)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Lymphomes_malins"
+    },
+    "320": {
+      "writers": [
+        "Hématologie (CEH)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/My%C3%A9lome_multiple_des_os"
+    },
+    "321": {
+      "writers": [
+        "Thérapeutique (CNET)",
+        "Pharmacologie (CNPM)"
+      ],
+      "reviewers": [
+        "Radiologie (CERF)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Principe_du_bon_usage_du_m%C3%A9dicament_et_des_th%C3%A9rapeutiques_non_m%C3%A9dicamenteuses"
+    },
+    "322": {
+      "writers": [
+        "Médecine générale (CNGE)",
+        "Pharmacologie (CNPM)"
+      ],
+      "reviewers": [
+        "Thérapeutique (CNET)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/La_d%C3%A9cision_th%C3%A9rapeutique_personnalis%C3%A9e_:_bon_usage_dans_des_situations_%C3%A0_risque"
+    },
+    "323": {
+      "writers": [
+        "Thérapeutique (CNET)",
+        "Pharmacologie (CNPM)"
+      ],
+      "reviewers": [
+        "Informatique médicale - Biomathématiques - Méthodes en épidémiologie - Statistique (CIMES)",
+        "Santé Publique (CUESP)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Analyser_et_utiliser_les_r%C3%A9sultats_des_%C3%A9tudes_cliniques_dans_la_perspective_du_bon_usage_-_analyse_critique,_recherche_clinique_et_niveaux_de_preuve_(voir_item_3)"
+    },
+    "324": {
+      "writers": [
+        "Thérapeutique (CNET)",
+        "Pharmacologie (CNPM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/%C3%89ducation_th%C3%A9rapeutique,_observance_et_autom%C3%A9dication"
+    },
+    "325": {
+      "writers": [
+        "Thérapeutique (CNET)",
+        "Pharmacologie (CNPM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Identification_et_gestion_des_risques_li%C3%A9s_aux_m%C3%A9dicaments_et_aux_biomat%C3%A9riaux,_risque_iatrog%C3%A8ne,_erreur_m%C3%A9dicamenteuse_(voir_items_4_et_5)"
+    },
+    "326": {
+      "writers": [
+        "Thérapeutique (CNET)",
+        "Pharmacologie (CNPM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Cadre_r%C3%A9glementaire_de_la_prescription_th%C3%A9rapeutique_et_recommandations_pour_le_bon_usage"
+    },
+    "327": {
+      "writers": [
+        "Médecines Intégratives et Complémentaires (CUMIC)"
+      ],
+      "reviewers": [
+        "Thérapeutique (CNET)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Principes_de_la_m%C3%A9decine_int%C3%A9grative,_utilit%C3%A9_et_risques_des_interventions_non_m%C3%A9dicamenteuses_et_des_th%C3%A9rapies_compl%C3%A9mentaires"
+    },
+    "328": {
+      "writers": [
+        "Médecine Physique et de Réadaptation (COFEMER)"
+      ],
+      "reviewers": [
+        "Thérapeutique (CNET)",
+        "Chirurgie vasculaire (CFCVE)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Th%C3%A9rapeutiques_non_m%C3%A9dicamenteuses_et_dispositifs_m%C3%A9dicaux"
+    },
+    "329": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)",
+        "Hématologie (CEH)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Conna%C3%AEtre_les_caract%C3%A9ristiques_des_produits_sanguins_labiles_(PSL)_et_leur_sp%C3%A9cificit%C3%A9"
+    },
+    "330": {
+      "writers": [
+        "Thérapeutique (CNET)",
+        "Pharmacologie (CNPM)"
+      ],
+      "reviewers": [
+        "Médecine vasculaire (CEMV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Prescription_et_surveillance_des_classes_de_m%C3%A9dicaments_les_plus_courantes_chez_l%27adulte_et_chez_l%27enfant,_hors_anti-infectieux_(voir_item_177)._Conna%C3%AEtre_le_bon_usage_des_principales_classes_th%C3%A9rapeutiques"
+    },
+    "331": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)",
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Arr%C3%AAt_cardio-circulatoire"
+    },
+    "332": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/%C3%89tat_de_choc._Principales_%C3%A9tiologies_:_hypovol%C3%A9mique,_septique_(voir_item_158),_cardio-g%C3%A9nique,_anaphylactique"
+    },
+    "333": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)"
+      ],
+      "reviewers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Situations_exceptionnelles"
+    },
+    "334": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)",
+        "Neurochirurgie (CENC)",
+        "Chirurgie Orthopédique et Traumatologique (CFCOT)"
+      ],
+      "reviewers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Chirurgie de la Main (CFECM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Item_de_connaissance_2C"
+    },
+    "335": {
+      "writers": [
+        "Chirurgie maxillo-faciale (CNECMF)"
+      ],
+      "reviewers": [
+        "Médecine vasculaire (CEMV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Orientation_diagnostique_et_conduite_%C3%A0_tenir_devant_un_traumatisme_cr%C3%A2nio-facial_et_oculaire"
+    },
+    "336": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Coma_non_traumatique_chez_l%27adulte_et_chez_l%27enfant"
+    },
+    "337": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Principales_intoxications_aigu%C3%ABs"
+    },
+    "338": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/%C5%92d%C3%A8me_de_Quincke_et_anaphylaxie"
+    },
+    "339": {
+      "writers": [
+        "Cardiologie (CNECardio)"
+      ],
+      "reviewers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Syndromes_coronariens_aigus"
+    },
+    "340": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)"
+      ],
+      "reviewers": [
+        "Neurologie (CENeuro)",
+        "Médecine vasculaire (CEMV)",
+        "Chirurgie vasculaire (CFCVE)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Accidents_vasculaires_c%C3%A9r%C3%A9braux"
+    },
+    "341": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)"
+      ],
+      "reviewers": [
+        "Neurochirurgie (CENC)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/H%C3%A9morragie_m%C3%A9ning%C3%A9e"
+    },
+    "342": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Malaise,_perte_de_connaissance,_crise_comitiale_chez_l%27adulte_(voir_item_105)"
+    },
+    "343": {
+      "writers": [
+        "Neurologie (CENeuro)"
+      ],
+      "reviewers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/%C3%89tat_confusionnel_et_trouble_de_conscience_chez_l%27adulte_et_chez_l%27enfant"
+    },
+    "344": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)",
+        "Gynécologie obstétrique (CEGO)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Prise_en_charge_d%27une_patiente_atteinte_de_pr%C3%A9-%C3%A9clampsie"
+    },
+    "345": {
+      "writers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Malaise_grave_du_nourrisson_et_mort_inattendue_du_nourrisson"
+    },
+    "346": {
+      "writers": [
+        "Pédiatrie (CNPU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Convulsions_chez_le_nourrisson_et_chez_l%27enfant"
+    },
+    "347": {
+      "writers": [
+        "Urologie (CFEU)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/R%C3%A9tention_aigu%C3%AB_d%27urine"
+    },
+    "348": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)",
+        "Néphrologie (CUEN)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Insuffisance_r%C3%A9nale_aigu%C3%AB_-_Anurie"
+    },
+    "349": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)",
+        "Chirurgie Orthopédique et Traumatologique (CFCOT)"
+      ],
+      "reviewers": [
+        "Chirurgie de la Main (CFECM)",
+        "Bactériologie - Virologie - Hygiène Hospitalière (AZAY)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Infection_aigu%C3%AB_des_parties_molles_(abc%C3%A8s,_panaris,_phlegmon_des_gaines)"
+    },
+    "350": {
+      "writers": [
+        "Médecine générale (CNGE)"
+      ],
+      "reviewers": [
+        "Dermatologie (CEDEF)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Grosse_jambe_rouge_aigu%C3%AB"
+    },
+    "351": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Agitation_et_d%C3%A9lire_aigu"
+    },
+    "352": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Crise_d%27angoisse_aigu%C3%AB_et_attaque_de_panique"
+    },
+    "353": {
+      "writers": [
+        "Psychiatrie (CNUP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Risque_et_conduite_suicidaires_chez_l%27enfant,_l%27adolescent_et_l%27adulte_:_identification_et_prise_en_charge"
+    },
+    "354": {
+      "writers": [
+        "Chirurgie viscérale et digestive (CCVD)"
+      ],
+      "reviewers": [
+        "Chirurgie Pédiatrique (CNHUCP)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Syndrome_occlusif_de_l%27enfant_et_de_l%27adulte"
+    },
+    "355": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)",
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/H%C3%A9morragie_digestive"
+    },
+    "356": {
+      "writers": [
+        "Chirurgie viscérale et digestive (CCVD)"
+      ],
+      "reviewers": [
+        "Chirurgie Pédiatrique (CNHUCP)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Appendicite_de_l%27enfant_et_de_l%27adulte"
+    },
+    "357": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)",
+        "Chirurgie viscérale et digestive (CCVD)"
+      ],
+      "reviewers": [
+        "Chirurgie Pédiatrique (CNHUCP)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/P%C3%A9ritonite_aigu%C3%AB_chez_l%27enfant_et_chez_l%27adulte"
+    },
+    "358": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)",
+        "Gastroentérologie (CDUHGE)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Pancr%C3%A9atite_aigu%C3%AB"
+    },
+    "359": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)"
+      ],
+      "reviewers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Pédiatrie (CNPU)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/D%C3%A9tresse_et_insuffisance_respiratoire_aig%C3%BCe_du_nourrisson,_de_l%27enfant_et_de_l%27adulte"
+    },
+    "360": {
+      "writers": [
+        "Médecine Intensive Réanimation (CEMIR)",
+        "Médecine d'urgence (CNUMU)",
+        "Anesthésie Réanimation Médecine Péri Opératoire (CNEAR)"
+      ],
+      "reviewers": [
+        "Chirurgie thoracique et Cardio-Vasculaire (CFCTCV)",
+        "Pneumologie (CEP)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Pneumothorax"
+    },
+    "361": {
+      "writers": [
+        "Chirurgie Orthopédique et Traumatologique (CFCOT)"
+      ],
+      "reviewers": [
+        "Chirurgie de la Main (CFECM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/L%C3%A9sions_p%C3%A9ri-articulaires_et_ligamentaires_du_genou,_de_la_cheville_et_de_l%27%C3%A9paule"
+    },
+    "362": {
+      "writers": [
+        "Chirurgie Orthopédique et Traumatologique (CFCOT)"
+      ],
+      "reviewers": [
+        "Chirurgie de la Main (CFECM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Proth%C3%A8ses_et_ost%C3%A9osynth%C3%A8ses"
+    },
+    "363": {
+      "writers": [
+        "Chirurgie Orthopédique et Traumatologique (CFCOT)"
+      ],
+      "reviewers": [
+        "Chirurgie de la Main (CFECM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Fractures_fr%C3%A9quentes_de_l%27adulte_et_du_sujet_%C3%A2g%C3%A9"
+    },
+    "364": {
+      "writers": [
+        "Chirurgie Pédiatrique (CNHUCP)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Fractures_chez_l%27enfant_:_particularit%C3%A9s_%C3%A9pid%C3%A9miologiques,_diagnostiques_et_th%C3%A9rapeutiques"
+    },
+    "365": {
+      "writers": [
+        "Chirurgie Orthopédique et Traumatologique (CFCOT)"
+      ],
+      "reviewers": [
+        "Chirurgie de la Main (CFECM)"
+      ],
+      "url": "https://livret.uness.fr/lisa/2026/Surveillance_d%27un_malade_sous_pl%C3%A2tre/r%C3%A9sine"
+    },
+    "366": {
+      "writers": [
+        "Maladies infectieuses et tropicales (CMIT)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Exposition_accidentelle_aux_liquides_biologiques_:_conduite_%C3%A0_tenir"
+    },
+    "367": {
+      "writers": [
+        "Biochimie et Biologie Moléculaire (CNBBMM)"
+      ],
+      "reviewers": [],
+      "url": "https://livret.uness.fr/lisa/2026/Impact_de_l%27environnement_sur_la_sant%C3%A9"
+    }
+  }
+}

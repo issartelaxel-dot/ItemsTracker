@@ -1,0 +1,65 @@
+import assert from 'node:assert/strict'
+import { chromium, expect } from '@playwright/test'
+import pg from 'pg'
+import argon2 from 'argon2'
+const pool = new pg.Pool({ connectionString: 'postgresql://postgres:local-preview-only@127.0.0.1:55432/postgres' })
+const browser = await chromium.launch({ executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome', headless: true })
+let userId
+try {
+  const email = `time-zones-${Date.now()}@local.test`
+  userId = (await pool.query('INSERT INTO users(email,display_name,password_hash,created_at) VALUES($1,$2,$3,$4) RETURNING id', [email, 'Fuseaux locaux', await argon2.hash('Zones-Local-2026!'), new Date().toISOString()])).rows[0].id
+  await pool.query("INSERT INTO academic_profiles(user_id,year_code,faculty_id,legacy_exempt,completed_at) VALUES($1,'Y4','bordeaux',FALSE,NOW())", [userId])
+  const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } })
+  const errors = []
+  page.on('pageerror', error => errors.push(error.message))
+  await page.goto('http://127.0.0.1:5173/itemstracker/onboarding-preview.html')
+  await page.getByRole('textbox', { name: 'Adresse e-mail' }).fill(email)
+  await page.getByRole('textbox', { name: 'Mot de passe' }).fill('Zones-Local-2026!')
+  await page.getByRole('button', { name: 'Se connecter', exact: true }).click()
+  await page.locator('.sidebar-profile-trigger').click()
+  const trigger = page.getByRole('button', { name: /^Fuseau horaire :/ })
+  await expect(trigger).toContainText('Automatique')
+  await trigger.click()
+  await expect(page.getByRole('listbox', { name: 'Fuseaux horaires' }).getByRole('option')).toHaveCount(13)
+  await page.getByRole('combobox', { name: 'Rechercher un fuseau horaire' }).fill('Bangkok')
+  await expect(page.getByRole('listbox', { name: 'Fuseaux horaires' }).getByRole('option')).toHaveCount(1)
+  await page.keyboard.press('Enter')
+  await expect(trigger).toContainText('Bangkok')
+  const persisted = async () => (await pool.query('SELECT preferences FROM user_state WHERE user_id=$1', [userId])).rows[0]?.preferences?.timeZone
+  await expect.poll(persisted, { timeout: 20000 }).toBe('Asia/Bangkok')
+  await page.reload()
+  await page.locator('.sidebar-profile-trigger').click()
+  await expect(trigger).toContainText('Bangkok')
+  await trigger.click()
+  const zoneSearch = page.getByRole('combobox', { name: 'Rechercher un fuseau horaire' })
+  await zoneSearch.fill('asie')
+  await expect(page.getByRole('listbox', { name: 'Fuseaux horaires' })).toContainText('Asie')
+  await zoneSearch.fill('Kaboul')
+  await expect(page.getByRole('listbox', { name: 'Fuseaux horaires' }).getByRole('option')).toHaveCount(1)
+  await expect(page.getByRole('listbox', { name: 'Fuseaux horaires' })).toContainText('Asie · Kaboul')
+  await zoneSearch.fill('Honolulu')
+  await page.getByRole('listbox', { name: 'Fuseaux horaires' }).getByRole('option').click()
+  await expect.poll(persisted, { timeout: 20000 }).toBe('Pacific/Honolulu')
+  await trigger.click()
+  await expect(page.getByRole('listbox', { name: 'Fuseaux horaires' }).getByRole('option')).toHaveCount(14)
+  await page.getByRole('combobox', { name: 'Rechercher un fuseau horaire' }).fill('not-a-real-city-zzzz')
+  await expect(page.getByRole('status')).toContainText('Aucun fuseau trouvé')
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('listbox', { name: 'Fuseaux horaires' })).toHaveCount(0)
+  await trigger.click()
+  await page.getByRole('listbox', { name: 'Fuseaux horaires' }).getByRole('option', { name: /Automatique/ }).click()
+  await expect.poll(persisted, { timeout: 20000 }).toBe('auto')
+  await page.setViewportSize({ width: 390, height: 844 })
+  await trigger.click()
+  await expect(page.getByRole('listbox', { name: 'Fuseaux horaires' }).getByRole('option')).toHaveCount(13)
+  assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false)
+  await page.evaluate(() => { document.documentElement.dataset.theme = 'dark' })
+  assert.notEqual(await page.locator('.time-zone-dropdown').evaluate(el => getComputedStyle(el).backgroundColor), 'rgba(0, 0, 0, 0)')
+  await page.keyboard.press('Escape')
+  assert.deepEqual(errors, [])
+  console.log('Time zone picker: 13 common choices, worldwide search, keyboard, real persistence/reload, rare zone retained, auto, empty results and mobile dark mode passed.')
+} finally {
+  await browser.close()
+  if (userId) await pool.query('DELETE FROM users WHERE id=$1', [userId])
+  await pool.end()
+}
