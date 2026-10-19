@@ -7,6 +7,7 @@ export type ReferenceTransition = {
   preservedColleges: string[]
   pendingColleges: string[]
   renamedColleges: Record<string, string>
+  recoveredMissingAssignment?: boolean
 }
 
 type Tracking = { assignedColleges: string[]; referenceTransition?: ReferenceTransition }

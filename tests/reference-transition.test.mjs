@@ -71,3 +71,22 @@ test('Obsolete saves cannot strip historical metadata or delete previous tracker
   const lost=structuredClone(previous);delete lost.items[99].byCollege.PÉDIATRIE
   assert.throws(()=>assertReferenceTransitionPreserved(previous,lost),error=>error.code==='CLIENT_STALE')
 })
+
+test('Sparse historical saves recover associations from stored work, while explicit empty selections remain distinct', () => {
+  const stored=tracker({reviews:5,mastery:'Bon',comments:'Keep existing work',reviewHistory:[{date:now,delta:5}]})
+  const sparse={byCollege:{'MÉDECINE INTERNE':stored},quiz:{cards:[{id:'original',answer:'Keep'}]},itemComment:'Original item note'}
+  const result=planReferenceTransition({items:{1:sparse}},source,aliases,now).state.items[1]
+  assert.ok(result.assignedColleges.includes('MÉDECINE INTERNE'))
+  assert.deepEqual(result.byCollege['MÉDECINE INTERNE'],stored)
+  assert.equal(result.referenceTransition.recoveredMissingAssignment,true)
+  assert.ok(!result.referenceTransition.pendingColleges.includes('MÉDECINE INTERNE'))
+  assert.deepEqual(result.quiz,sparse.quiz)
+  assert.equal(result.itemComment,sparse.itemComment)
+  const empty=planReferenceTransition({items:{7:{assignedColleges:[],byCollege:{PERSONAL:stored}}}},source,aliases,now).state.items[7]
+  assert.ok(!empty.assignedColleges.includes('PERSONAL'),'An explicit empty selection must not reactivate unrelated dormant trackers')
+  assert.deepEqual(empty.byCollege.PERSONAL,stored)
+  const missing=planReferenceTransition({items:{7:{quiz:{cards:[{id:'keep'}]}}}},source,aliases,now).state.items[7]
+  assert.deepEqual(missing.assignedColleges,source.items[7])
+  assert.deepEqual(missing.quiz.cards,[{id:'keep'}])
+  assert.throws(()=>planReferenceTransition({items:{7:{assignedColleges:'NOT AN ARRAY',byCollege:{}}}},source,aliases,now),/Invalid saved item/)
+})

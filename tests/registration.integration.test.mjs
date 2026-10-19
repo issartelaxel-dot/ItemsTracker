@@ -165,7 +165,9 @@ test('SMTP failures roll back pending requests and failed resends preserve the p
 test('existing accounts cannot be overwritten; password reset still uses its existing eight-digit flow', async () => {
   assert.equal((await request('register/request', { email: 'new.user@example.test', password })).status, 409)
   assert.equal((await request('password/request', { email: 'new.user@example.test' })).status, 200)
-  const code = messages.at(-1).body.match(/\b\d{8}\b/)[0]
+  // A Message-ID header can also contain an eight-digit UUID segment.
+  const code = messages.at(-1).body.match(/^Code temporaire \(8 chiffres\): (\d{8})$/m)?.[1]
+  assert.match(code, /^\d{8}$/)
   assert.equal((await request('password/confirm', { email: 'new.user@example.test', code, newPassword: 'New-valid-password-321!' })).status, 200)
   assert.equal((await request('login', { email: 'new.user@example.test', password: 'New-valid-password-321!' })).status, 200)
 })

@@ -39,8 +39,14 @@ export function planReferenceTransition(state, source, resolveAlias, migratedAt)
       if (old.referenceTransition.schemaVersion !== TRANSITION_VERSION) throw new Error(`Unknown migration version: ${number}`)
       continue // Once only: later manual selections always take precedence.
     }
-    if (old && (!Array.isArray(old.assignedColleges) || old.assignedColleges.some(name => typeof name !== 'string') || !old.byCollege || typeof old.byCollege !== 'object' || Array.isArray(old.byCollege))) throw new Error(`Invalid saved item: ${number}`)
-    const previous = old || { assignedColleges: [], byCollege: {} }
+    if (old && ((old.assignedColleges != null && (!Array.isArray(old.assignedColleges) || old.assignedColleges.some(name => typeof name !== 'string'))) ||
+      (old.byCollege != null && (typeof old.byCollege !== 'object' || Array.isArray(old.byCollege))))) throw new Error(`Invalid saved item: ${number}`)
+    // Some historical first saves contained only a changed field and omitted
+    // assignedColleges. Recover those associations from their stored trackers;
+    // an explicitly saved [] is a distinct case and must not be inferred.
+    const recoveredMissingAssignment = Boolean(old && old.assignedColleges == null)
+    const previous = old ? { ...old, assignedColleges: old.assignedColleges ?? Object.keys(old.byCollege || {}), byCollege: old.byCollege ?? {} }
+      : { assignedColleges: [], byCollege: {} }
     if (Object.values(previous.byCollege).some(value => !value || typeof value !== 'object' || Array.isArray(value))) throw new Error(`Invalid tracker: ${number}`)
     const byCollege = { ...previous.byCollege }, renamedColleges = {}
     for (const name of previous.assignedColleges) {
@@ -67,6 +73,7 @@ export function planReferenceTransition(state, source, resolveAlias, migratedAt)
       schemaVersion: TRANSITION_VERSION, policy: 'preserve-existing', sourceSha256: source.provenance.sourceSha256,
       migratedAt, previousAssignments: [...previous.assignedColleges],
       preservedColleges, pendingColleges, renamedColleges,
+      ...(recoveredMissingAssignment ? { recoveredMissingAssignment: true } : {}),
     } }
     // Every old tracker, including unassigned/dormant trackers, must survive
     // byte-for-byte structurally. A name conflict keeps both independent data.
@@ -78,7 +85,7 @@ export function planReferenceTransition(state, source, resolveAlias, migratedAt)
     if (!isDeepStrictEqual(oldRest, newRest)) throw new Error(`Item data changed: ${number}`)
     items[number] = next
     reports.push({ item: number, assignmentsChanged: !sameSet(a, c), added: target.filter(name => !previousKeys.includes(name)),
-      preserved: preservedColleges, renamed: renamedColleges, pending: pendingColleges })
+      preserved: preservedColleges, renamed: renamedColleges, pending: pendingColleges, recoveredMissingAssignment })
   }
   return { state: reports.length ? { ...state, items } : state, reports }
 }
