@@ -463,6 +463,9 @@
 
 .quiz-card-list {
   display: grid;
+  /* Overflow belongs to the list; cards keep enough height for their content. */
+  grid-auto-rows: max-content;
+  align-content: start;
   gap: 0.38rem;
   margin-top: 0.2rem;
 }
