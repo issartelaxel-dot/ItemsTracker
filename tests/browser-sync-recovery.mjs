@@ -27,9 +27,9 @@ try {
     : { trackingState: { items: { 1: { itemComment: 'Local note', quiz: { cards: [] } } } },
       theme: 'light', focusMode: false, dateFormat: 'fr-short', timeZone: 'auto', youtubeDisplayMode: 'embed', shuffleQuizCards: false, profile: {} }
   browser = await webkit.launch({ headless: true })
-  for (const scenario of ['missing-baseline', 'read-failure']) {
+  for (const scenario of ['missing-baseline', 'read-failure', 'rejected-protocol', 'client-stale']) {
     const context = await browser.newContext({ acceptDownloads: true })
-    await context.addInitScript(async ({ local, base }) => {
+    await context.addInitScript(async ({ local, base, scenario }) => {
       if (location.origin !== base) return
       const db = await new Promise((resolve, reject) => {
         const req = indexedDB.open('itemstracker-save-recovery', 1)
@@ -37,14 +37,16 @@ try {
         req.onsuccess = () => resolve(req.result)
         req.onerror = () => reject(req.error)
       })
+      const baseline = structuredClone(local)
+      baseline.trackingState.items[1].itemComment = 'Cloud note'
       await new Promise((resolve, reject) => {
         const tx = db.transaction('drafts', 'readwrite')
-        tx.objectStore('drafts').put({ key: '123:recovery-test', userId: 123, body: JSON.stringify(local), baseBody: '', baseVersion: 1,
-          imageBaseline: {}, imageVersions: {}, operation: null, savedAtMs: Date.now() })
+        tx.objectStore('drafts').put({ key: '123:recovery-test', userId: 123, body: JSON.stringify(local), baseBody: ['rejected-protocol', 'client-stale'].includes(scenario) ? JSON.stringify(baseline) : '', baseVersion: 1,
+          imageBaseline: {}, imageVersions: {}, operation: ['rejected-protocol', 'client-stale'].includes(scenario) ? { id: 'old-request', path: '/api/state', method: 'PATCH', body: JSON.stringify({ patch: {} }) } : null, savedAtMs: Date.now() })
         tx.oncomplete = resolve; tx.onerror = reject
       })
       db.close()
-    }, { local, base })
+    }, { local, base, scenario })
     let state = structuredClone(local), version = 2, reads = 0, writes = 0
     state.trackingState.items[1].itemComment = 'Cloud note'
     const headers = { 'content-type': 'application/json', 'x-app-version': '0.1.1' }
@@ -58,6 +60,8 @@ try {
       }
       if (path === '/api/state' && ['PUT', 'PATCH'].includes(req.method())) {
         const body = req.postDataJSON()
+        if (body.baseVersion === undefined && scenario === 'client-stale') return route.fulfill({ status: 426, headers, body: JSON.stringify({ code: 'CLIENT_STALE', error: 'Client obsolète. Recharge la page.', minClientVersion: '99.0.0' }) })
+        if (body.baseVersion === undefined) return route.fulfill({ status: 400, headers, body: JSON.stringify({ code: 'SAVE_PROTOCOL_REQUIRED', error: 'Sauvegarde invalide : version et identifiant requis.' }) })
         assert.equal(body.baseVersion, version)
         state = req.method() === 'PATCH' ? mergePatch(state, body.patch) : body
         writes++
@@ -71,10 +75,22 @@ try {
     await page.goto(`${base}/itemstracker/${staticDir ? 'app.html' : 'index.dev.html'}`)
     const banner = page.locator('.save-lock-banner')
     await expect(banner).toBeVisible({ timeout: 20000 })
+    if (scenario === 'client-stale') {
+      await expect(banner.getByRole('button', { name: 'Recharger la page', exact: true })).toBeVisible()
+      assert.equal(writes, 0)
+      assert.deepEqual(errors, [])
+      console.log('WebKit recovery passed: real outdated clients remain blocked')
+      await context.close()
+      continue
+    }
     await banner.getByRole('button', { name: 'Synchroniser', exact: true }).click()
     if (scenario === 'read-failure') {
       await expect(banner).toContainText('Serveur temporairement indisponible.')
       assert.equal(writes, 0)
+    } else if (scenario === 'rejected-protocol') {
+      await expect(banner).toHaveCount(0)
+      await expect.poll(() => writes, { timeout: 10000 }).toBe(1)
+      assert.deepEqual(state.trackingState, local.trackingState)
     } else {
       const keepLocal = banner.getByRole('button', { name: 'Conserver mes changements locaux' })
       await expect(keepLocal).toBeVisible()

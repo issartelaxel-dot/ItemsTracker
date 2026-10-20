@@ -2572,21 +2572,13 @@ class ApiRequestError extends Error {
 
 function getSaveLockReason(error: unknown): SaveLockReason | null {
   if (error instanceof ApiRequestError) {
-    if (error.status === 401 || error.status === 403) {
-      return 'session-expired'
-    }
-    if (error.status === 409 && ['STATE_CONFLICT', 'IDEMPOTENCY_MISMATCH'].includes(error.code)) return 'state-conflict'
-    if (error.status === 409 || error.status === 412 || error.status === 426) {
-      return 'client-stale'
-    }
-
-    const lowerCode = error.code.toLowerCase()
-    if (lowerCode.includes('auth') || lowerCode.includes('session') || lowerCode.includes('token')) {
-      return 'session-expired'
-    }
-    if (lowerCode.includes('version') || lowerCode.includes('stale') || lowerCode.includes('upgrade')) {
-      return 'client-stale'
-    }
+    if (error.status === 401 || error.status === 403) return 'session-expired'
+    if (error.status === 426 || error.code === 'CLIENT_STALE') return 'client-stale'
+    // A rejected save protocol or state version needs recovery, not a reload.
+    // Structured API errors must never fall through to matching words such as
+    // "version" in an otherwise unrelated validation message.
+    if (error.status === 409 || error.status === 412 || error.code === 'SAVE_PROTOCOL_REQUIRED') return 'state-conflict'
+    return null
   }
 
   const message = error instanceof Error ? error.message : String(error ?? '')
@@ -2598,22 +2590,9 @@ function getSaveLockReason(error: unknown): SaveLockReason | null {
     lower.includes('authentification') ||
     lower.includes('erreur api (401)') ||
     lower.includes('erreur api (403)')
-  ) {
-    return 'session-expired'
-  }
-  if (
-    lower.includes('version') ||
-    lower.includes('obsolete') ||
-    lower.includes('obsol') ||
-    lower.includes('client') ||
-    lower.includes('upgrade') ||
-    lower.includes('erreur api (409)') ||
-    lower.includes('erreur api (412)') ||
-    lower.includes('erreur api (426)')
-  ) {
-    return 'client-stale'
-  }
-
+  ) return 'session-expired'
+  if (lower.includes('erreur api (409)') || lower.includes('erreur api (412)')) return 'state-conflict'
+  if (lower.includes('obsolete') || lower.includes('obsol') || lower.includes('erreur api (426)')) return 'client-stale'
   return null
 }
 
