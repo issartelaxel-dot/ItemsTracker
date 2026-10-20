@@ -3406,6 +3406,7 @@ function App() {
       authStatus !== 'authed' ||
       !authUser ||
       !hasLoadedRemoteState ||
+      isSaveLocked ||
       (!hasPendingChangesRef.current && !hasPendingImageChangesRef.current)
     ) {
       return
@@ -3422,6 +3423,7 @@ function App() {
     authStatus,
     authUser?.id,
     hasLoadedRemoteState,
+    isSaveLocked,
 	    trackingState,
 	    theme,
 	    focusMode,
@@ -3904,7 +3906,17 @@ function App() {
         const remote = parsePersistStatePayloadBody(JSON.stringify(response.state), authUser)
         const local = parsePersistStatePayloadBody(remotePayloadRef.current?.body || '', authUser)
         const base = parsePersistStatePayloadBody(lastSavedStatePayloadRef.current, authUser)
-        if (!remote || !local || !base) throw new Error('Synchronisation impossible. Exporte tes modifications locales avant de reprendre.')
+        if (!remote || !local) throw new Error('Synchronisation impossible. Exporte tes modifications locales avant de reprendre.')
+        // Older recovery copies may have no common ancestor. Never guess a
+        // merge or leave the user locked out: offer an explicit version choice.
+        if (!base) {
+          conflictStateRef.current = remote
+          conflictVersionRef.current = Number(response.version)
+          conflictImageVersionsRef.current = (response.imageVersions || {}) as Record<string, string>
+          setMergeConflictCount(1)
+          setSaveErrorMessage('L’historique de comparaison est indisponible. Exporte les changements locaux, puis choisis la version à conserver.')
+          return
+        }
         const merged = mergeStates(base, local, remote)
         const versions = (response.imageVersions || {}) as Record<string, string>
         const localImages = collectQuizImageMap(trackingStateRef.current)
@@ -7926,13 +7938,14 @@ function getPasswordStrengthMeta(password: string) {
       {isSaveLocked ? (
         <div className="save-lock-banner" role="alert" aria-live="assertive">
           <p>{saveLockReason ? getSaveLockMessage(saveLockReason) : 'Sauvegarde bloquée.'}</p>
+          {saveErrorMessage && saveLockReason && saveErrorMessage !== getSaveLockMessage(saveLockReason)
+            ? <p>{saveErrorMessage}</p> : null}
           <div className="save-lock-actions">
             <button type="button" className="ghost-btn" onClick={() => void handleRecoveryAction()}>
               {saveLockReason === 'client-stale' ? 'Recharger la page' : saveLockReason === 'state-conflict' ? 'Synchroniser' : 'Se reconnecter'}
             </button>
             <button type="button" className="ghost-btn" onClick={exportLocalRecovery}>Exporter les changements locaux</button>
             {saveLockReason === 'state-conflict' && mergeConflictCount > 0 ? <>
-              <p>{saveErrorMessage}</p>
               <button type="button" className="ghost-btn" onClick={() => void chooseConflictVersion(true)}>Conserver mes changements locaux</button>
               <button type="button" className="ghost-btn" onClick={() => void chooseConflictVersion(false)}>Charger la version cloud</button>
             </> : null}
