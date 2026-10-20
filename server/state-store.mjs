@@ -449,5 +449,37 @@ export function createStateStore(pool, { mediaStore = null, env = process.env } 
     finally { client.release() }
   }
 
-  return { init, read, write, transitionReferences, cardImages, storageUsage, pruneHistory, transaction, load, mediaStore }
+  // Called inside the same user transaction as operation deduplication/history.
+  // Existing normalized storage and immutable media remain the source of truth.
+  async function commitOperations(client, userId, row, next, version, now, operations = []) {
+    const previous = payload(row)
+    const parsed = persistSchema.safeParse(next)
+    if (!parsed.success) throw new StateError(400, 'INVALID_STATE', 'Modification invalide.')
+    const { state, upsert } = extractMedia(parsed.data)
+    assertReferenceTransitionPreserved(previous.trackingState, state.trackingState)
+    if (!row) await persistHead(client, userId, defaultState(), 0, now, bytes(header(defaultState())), null)
+    const delta = await persistItems(client, userId, previous.trackingState, state.trackingState)
+    const dataBytes = Number(row?.dataBytes || bytes(header(defaultState()))) + delta + bytes(header(state)) - bytes(header(previous))
+    const orphaned = await client.query(`DELETE FROM user_quiz_images i WHERE i.user_id=$1 AND i.item_number<>0
+      AND NOT EXISTS (SELECT 1 FROM user_quiz_cards c WHERE c.user_id=i.user_id AND c.item_number=i.item_number AND c.card_id=i.card_id)
+      RETURNING image_bytes,object_key`, [userId])
+    for (const image of orphaned.rows) await retireObject(client, image.object_key)
+    if (orphaned.rowCount) await client.query('UPDATE user_state SET media_bytes=media_bytes-$2,media_count=media_count-$3 WHERE user_id=$1',
+      [userId, orphaned.rows.reduce((sum, r) => sum + Number(r.image_bytes), 0), orphaned.rowCount])
+    const removed = []
+    for (const op of operations) {
+      if (op.path[0] === 'profile' && op.path[1] === 'photoUrl' && op.value === '' && state.profile) state.profile.hasPhoto = false
+      const field = op.path.at(-1), entity = op.path.find(key => key.startsWith('@'))?.slice(1)
+      const slot = field === 'frontImageDataUrl' ? 'front' : field === 'backImageDataUrl' ? 'back' : null
+      if (slot && entity && op.value === '') removed.push({ itemNumber: Number(op.path[2]), cardId: entity, imageSlot: slot })
+    }
+    if (row?.profile?.hasPhoto && !state.profile?.photoUrl && !state.profile?.hasPhoto) removed.push({ itemNumber: 0, cardId: '__profile__', imageSlot: 'back' })
+    await client.query('UPDATE user_state SET data_bytes=$2 WHERE user_id=$1', [userId, dataBytes])
+    await syncMedia(client, userId, upsert, removed)
+    const head = (await client.query(META_SQL, [userId])).rows[0]
+    if (dataBytes + Number(head.mediaBytes) > limit && dataBytes + Number(head.mediaBytes) > Number(row?.dataBytes || 0) + Number(row?.mediaBytes || 0)) throw new StateError(413, 'STORAGE_QUOTA', 'Quota de stockage dépassé.')
+    await persistHead(client, userId, state, version, now, dataBytes, row?.lastSnapshotAt || null)
+  }
+
+  return { init, read, write, transitionReferences, cardImages, storageUsage, pruneHistory, transaction, load, mediaStore, payload, commitOperations }
 }

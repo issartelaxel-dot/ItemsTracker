@@ -18,3 +18,8 @@
 
 @import './styles/18-item-detail-compact.css';
 @import './styles/19-revision-journey.css';
+
+.automatic-sync-history ul { list-style: none; padding: 0; display: grid; gap: 16px; }
+.automatic-sync-history li { padding: 14px 0; border-top: 1px solid var(--border-color, #d9e2f1); overflow-wrap: anywhere; }
+.automatic-sync-history time { font-size: .82rem; opacity: .75; }
+.automatic-sync-history li p { white-space: pre-wrap; }

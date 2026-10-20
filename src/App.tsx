@@ -1,3 +1,7 @@
+import type { Dispatch, SetStateAction } from 'react'
+import { AutomaticSyncHistory } from './components/AutomaticSyncHistory'
+import { AutomaticSync } from './lib/automatic-sync'
+import { diffOperations } from '../shared/sync-protocol.mjs'
 import { GlobalSearch } from './components/GlobalSearch'
 import { createGlobalSearchEntry, type GlobalSearchEntry, type GlobalSearchResult } from './lib/global-search'
 import { EmptyReferenceSheets } from './components/EmptyReferenceSheets'
@@ -423,6 +427,7 @@ type LocalShadowNotice = {
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').trim().replace(/\/+$/, '')
 const APP_BASE_URL = (import.meta.env.BASE_URL ?? '/').replace(/\/+$/, '')
+const AUTOMATIC_SYNC_ENABLED = import.meta.env.VITE_AUTOMATIC_SYNC === 'true'
 const CLIENT_APP_VERSION = (import.meta.env.VITE_APP_VERSION ?? '0.1.1').trim()
 const AUTH_TOKEN_STORAGE_KEY = 'med_auth_token'
 const LOCAL_CLOUD_SHADOW_PREFIX = 'med_cloud_shadow_v1'
@@ -673,7 +678,28 @@ function hasQuizPlainHighlightText(element: HTMLElement) {
   return element.classList.contains('quiz-rich-plain-highlight-text')
 }
 
-function sanitizeQuizRichTextHtml(input: string) {
+// Large accounts reuse thousands of unchanged rich-text values after every
+// operation. Avoid creating fresh HTML documents for all of them on each edit.
+const quizHtmlCache = { values: new Map<string, string>(), characters: 0 }
+const quizPlainTextCache = { values: new Map<string, string>(), characters: 0 }
+function cachedQuizText(cache: typeof quizHtmlCache, input: string, compute: () => string) {
+  if (!AUTOMATIC_SYNC_ENABLED || typeof document === 'undefined') return compute()
+  const cached = cache.values.get(input)
+  if (cached !== undefined) return cached
+  const value = compute(), size = input.length + value.length
+  if (size > 16_000_000) return value
+  while (cache.values.size >= 30000 || cache.characters + size > 16_000_000) {
+    const oldest = cache.values.keys().next().value!
+    cache.characters -= oldest.length + cache.values.get(oldest)!.length
+    cache.values.delete(oldest)
+  }
+  cache.values.set(input, value); cache.characters += size
+  return value
+}
+function sanitizeQuizRichTextHtml(input: string): string {
+  return cachedQuizText(quizHtmlCache, input, () => sanitizeQuizRichTextHtmlUncached(input))
+}
+function sanitizeQuizRichTextHtmlUncached(input: string) {
   const html = typeof input === 'string' ? input : ''
   if (!html) {
     return ''
@@ -829,7 +855,10 @@ function sanitizeQuizRichTextHtml(input: string) {
   return targetRoot.innerHTML.trim()
 }
 
-function getQuizRichTextPlainText(value: string) {
+function getQuizRichTextPlainText(value: string): string {
+  return cachedQuizText(quizPlainTextCache, value, () => getQuizRichTextPlainTextUncached(value))
+}
+function getQuizRichTextPlainTextUncached(value: string) {
   const sanitized = sanitizeQuizRichTextHtml(value)
   if (!sanitized) {
     return ''
@@ -978,14 +1007,27 @@ function QuizLexicalOnChangePlugin({ onChange }: { onChange: (value: string) => 
   // the existing cloud autosave already batches network writes separately.
   useLayoutEffect(() => {
     let lastValue = editor.getEditorState().read(() => sanitizeQuizRichTextHtml($generateHtmlFromNodes(editor, null)))
-    return editor.registerUpdateListener(({ editorState, dirtyElements, dirtyLeaves }) => {
+    return editor.registerUpdateListener(({ editorState, dirtyElements, dirtyLeaves, tags }) => {
       if (dirtyElements.size === 0 && dirtyLeaves.size === 0) return
       const nextValue = editorState.read(() => sanitizeQuizRichTextHtml($generateHtmlFromNodes(editor, null)))
       if (nextValue === lastValue) return
       lastValue = nextValue
+      if (tags.has('sync-remote')) return
       onChangeRef.current(nextValue)
     })
   }, [editor])
+  return null
+}
+
+function QuizLexicalRemoteValuePlugin({ value }: { value: string }) {
+  const [editor] = useLexicalComposerContext()
+  useLayoutEffect(() => {
+    const current = editor.getEditorState().read(() => sanitizeQuizRichTextHtml($generateHtmlFromNodes(editor, null)))
+    if (current === sanitizeQuizRichTextHtml(value)) return
+    // Remote accepted content updates an already-open editor without generating
+    // another local edit or stealing focus from a different input.
+    editor.update(() => initializeQuizLexicalEditor(editor, value), { tag: ['sync-remote', 'skip-dom-selection'] })
+  }, [editor, value])
   return null
 }
 
@@ -1357,6 +1399,7 @@ function QuizRichTextEditor({ value, placeholder, onChange, maxLength }: QuizRic
         <QuizLexicalShortcutsPlugin />
         <QuizLexicalMaxLengthPlugin maxLength={maxLength} />
         <QuizLexicalOnChangePlugin onChange={onChange} />
+        {AUTOMATIC_SYNC_ENABLED ? <QuizLexicalRemoteValuePlugin value={value} /> : null}
       </LexicalComposer>
     </div>
   )
@@ -2636,13 +2679,13 @@ function parseStorageUsagePayload(rawStorage: unknown): StorageUsage | null {
 }
 
 function App() {
-  const [trackingState, setTrackingState] = useState<TrackerState>(getInitialTrackingState())
-  const [theme, setTheme] = useState<Theme>('light')
-  const [youtubeDisplayMode, setYoutubeDisplayMode] = useState<YouTubeDisplayMode>('embed')
-  const [shuffleQuizCards, setShuffleQuizCards] = useState<boolean>(false)
-  const [focusMode, setFocusMode] = useState<boolean>(false)
-  const [dateFormat, setDateFormat] = useState<DateFormatPreference>(DEFAULT_DATE_FORMAT)
-  const [timeZone, setTimeZone] = useState<TimeZonePreference>(DEFAULT_TIME_ZONE)
+  const [trackingState, setTrackingStateRaw] = useState<TrackerState>(getInitialTrackingState())
+  const [theme, setThemeRaw] = useState<Theme>('light')
+  const [youtubeDisplayMode, setYoutubeDisplayModeRaw] = useState<YouTubeDisplayMode>('embed')
+  const [shuffleQuizCards, setShuffleQuizCardsRaw] = useState<boolean>(false)
+  const [focusMode, setFocusModeRaw] = useState<boolean>(false)
+  const [dateFormat, setDateFormatRaw] = useState<DateFormatPreference>(DEFAULT_DATE_FORMAT)
+  const [timeZone, setTimeZoneRaw] = useState<TimeZonePreference>(DEFAULT_TIME_ZONE)
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null)
   const [collegeAssignmentsUnlockedFor, setCollegeAssignmentsUnlockedFor] = useState<number | null>(null)
   const [search, setSearch] = useState('')
@@ -2759,7 +2802,7 @@ function App() {
   const [resetMode, setResetMode] = useState(false)
   const [resetCodeInput, setResetCodeInput] = useState('')
   const [resetPasswordInput, setResetPasswordInput] = useState('')
-  const [profile, setProfile] = useState<ProfileState>(getDefaultProfile())
+  const [profile, setProfileRaw] = useState<ProfileState>(getDefaultProfile())
   const [historyItemId, setHistoryItemId] = useState<number | null>(null)
   const [quizItemId, setQuizItemId] = useState<number | null>(null)
   const [quizSide, setQuizSide] = useState<'front' | 'back'>('front')
@@ -2837,7 +2880,9 @@ function App() {
   const sidebarNavButtonRefs = useRef<Partial<Record<SidebarNavBubbleKey, HTMLButtonElement | null>>>({})
   const sidebarLogoRef = useRef<HTMLSpanElement | null>(null)
   const sidebarLogoOffsetRef = useRef({ x: 0, y: 0 })
-  const isSaveLocked = saveLockReason !== null
+  const automaticSyncRef = useRef<AutomaticSync | null>(null)
+  const [automaticSyncStatus, setAutomaticSyncStatus] = useState('connecting')
+  const isSaveLocked = !AUTOMATIC_SYNC_ENABLED && saveLockReason !== null
   const saveLockedRef = useRef(isSaveLocked)
   saveLockedRef.current = isSaveLocked
   const isImageLightboxOpen = imageLightboxSrc !== null
@@ -2891,8 +2936,38 @@ function App() {
     youtubeDisplayMode, shuffleQuizCards, profile: { ...profile, password: '' } }),
     [trackingState, theme, focusMode, dateFormat, timeZone, youtubeDisplayMode, shuffleQuizCards, profile])
   const fullPayloadRef = useRef(fullPayload)
-  fullPayloadRef.current = fullPayload
+  if (!AUTOMATIC_SYNC_ENABLED) fullPayloadRef.current = fullPayload
   const remotePayloadRef = useRef(remotePayload)
+  const persistedStateRef = useRef<PersistStatePayload | null>(null)
+  if (!persistedStateRef.current) persistedStateRef.current = JSON.parse(fullPayload) as PersistStatePayload
+  const rawPersistedSetters: { [K in keyof PersistStatePayload]: Dispatch<SetStateAction<PersistStatePayload[K]>> } = {
+    trackingState: setTrackingStateRaw, theme: setThemeRaw, focusMode: setFocusModeRaw,
+    dateFormat: setDateFormatRaw, timeZone: setTimeZoneRaw, youtubeDisplayMode: setYoutubeDisplayModeRaw,
+    shuffleQuizCards: setShuffleQuizCardsRaw, profile: setProfileRaw,
+  }
+  function updatePersistedField<K extends keyof PersistStatePayload>(key: K, action: SetStateAction<PersistStatePayload[K]>) {
+    if (!AUTOMATIC_SYNC_ENABLED) { rawPersistedSetters[key](action); return }
+    const previous = persistedStateRef.current!
+    const value = typeof action === 'function' ? (action as (current: PersistStatePayload[K]) => PersistStatePayload[K])(previous[key]) : action
+    if (Object.is(value, previous[key])) return
+    const next = { ...previous, [key]: value }
+    persistedStateRef.current = next
+    fullPayloadRef.current = JSON.stringify({ ...next, profile: { ...next.profile, password: '' } })
+    if (key === 'trackingState') trackingStateRef.current = next.trackingState
+    // Capture intent before React can batch or interrupt a render. Incoming
+    // snapshots use raw setters below and never generate a new local action.
+    automaticSyncRef.current?.observe(JSON.parse(fullPayloadRef.current))
+    rawPersistedSetters[key](value)
+  }
+  function setTrackingState(action: SetStateAction<TrackerState>) { updatePersistedField('trackingState', action) }
+  function setTheme(action: SetStateAction<Theme>) { updatePersistedField('theme', action) }
+  function setFocusMode(action: SetStateAction<boolean>) { updatePersistedField('focusMode', action) }
+  function setDateFormat(action: SetStateAction<DateFormatPreference>) { updatePersistedField('dateFormat', action) }
+  function setTimeZone(action: SetStateAction<TimeZonePreference>) { updatePersistedField('timeZone', action) }
+  function setYoutubeDisplayMode(action: SetStateAction<YouTubeDisplayMode>) { updatePersistedField('youtubeDisplayMode', action) }
+  function setShuffleQuizCards(action: SetStateAction<boolean>) { updatePersistedField('shuffleQuizCards', action) }
+  function setProfile(action: SetStateAction<ProfileState>) { updatePersistedField('profile', action) }
+
 
   async function preserveDraft() {
     if (!authUser) return
@@ -2903,6 +2978,22 @@ function App() {
   }
 
   function applyRecoveredState(state: PersistStatePayload) {
+    if (AUTOMATIC_SYNC_ENABLED) {
+      persistedStateRef.current = state
+      fullPayloadRef.current = JSON.stringify({ ...state, profile: { ...state.profile, password: '' } })
+      trackingStateRef.current = state.trackingState
+      setTrackingStateRaw(state.trackingState)
+      setThemeRaw(state.theme)
+      setFocusModeRaw(state.focusMode)
+      setDateFormatRaw(state.dateFormat)
+      setTimeZoneRaw(state.timeZone)
+      setYoutubeDisplayModeRaw(state.youtubeDisplayMode)
+      setShuffleQuizCardsRaw(state.shuffleQuizCards)
+      setProfileRaw(state.profile)
+      remotePayloadRef.current = buildRemotePersistPayload(state)
+      latestStatePayloadRef.current = remotePayloadRef.current?.body || ''
+      return
+    }
     setTrackingState(state.trackingState)
     setTheme(state.theme)
     setFocusMode(state.focusMode)
@@ -3160,6 +3251,78 @@ function App() {
   }, [isMobile, quizItemId, historyItemId, isImageLightboxOpen, flashCreateModalOpen, flashGeneratorModalOpen, flashCardsListCollege, flashCardsListItem, mobilePanel])
 
   useEffect(() => {
+    if (!AUTOMATIC_SYNC_ENABLED || authStatus !== 'authed' || !authUser) return
+    let cancelled = false
+    let retry: ReturnType<typeof setTimeout> | undefined
+    let previousStatus = ''
+    try { localStorage.setItem('itemstracker-last-sync-user', JSON.stringify(authUser)) } catch { /* Identity cache is optional. */ }
+    const normalize = (raw: unknown) => {
+      const parsed = parsePersistStatePayloadBody(JSON.stringify(raw), authUser) || {
+        trackingState: getInitialTrackingState(academicProfile?.yearCode ?? null), theme: 'light' as Theme,
+        focusMode: false, dateFormat: DEFAULT_DATE_FORMAT, timeZone: DEFAULT_TIME_ZONE,
+        youtubeDisplayMode: 'embed' as YouTubeDisplayMode, shuffleQuizCards: false, profile: getProfileFromAuthUser(authUser),
+      }
+      return { ...parsed, trackingState: hydrateReferenceDefaults(parsed.trackingState, usesReferenceDefaults(academicProfile), getDefaultCollegeTracking, getDefaultItemTracking) }
+    }
+    const start = () => {
+      if (cancelled) return
+      const controller = new AutomaticSync({
+        userId: authUser.id, request: (path, init) => apiRequest(path, init), normalize,
+        current: () => JSON.parse(fullPayloadRef.current),
+        legacy: async () => {
+          const draft = await findDraft(authUser.id).catch(() => null)
+          if (!draft) return null
+          const local = parsePersistStatePayloadBody(draft.body, authUser)
+          if (!local) return null
+          let base = parsePersistStatePayloadBody(draft.baseBody, authUser) || normalize(null)
+          if (draft.operation) {
+            try {
+              await apiRequest(draft.operation.path, { method: draft.operation.method, body: draft.operation.body })
+              if (draft.operation.targetBody) base = parsePersistStatePayloadBody(draft.operation.targetBody, authUser) || base
+              for (const [key, bytes] of Object.entries(draft.operation.upsert || {})) {
+                const [n, ...tail] = key.split(':'); const slot = tail.pop(); const id = tail.join(':')
+                const card = base.trackingState.items[Number(n)]?.quiz.cards.find(c => c.id === id)
+                if (card && (slot === 'front' || slot === 'back')) card[`${slot}ImageDataUrl`] = bytes
+              }
+            } catch (error) {
+              // Never turn an ambiguous, possibly committed request into a new
+              // review increment. Replay its ID until its outcome is known.
+              if (!(error instanceof ApiRequestError && [400, 409, 412, 413].includes(error.status))) throw error
+            }
+          }
+          return { base, operations: diffOperations(normalize(base), normalize(local)), cleanup: () => removeDraft(draft.key) }
+        },
+        onState: state => {
+          if (cancelled) return
+          applyRecoveredState(state as PersistStatePayload)
+          setHasLoadedRemoteState(true)
+          setSaveLockReason(null)
+          setLocalShadowNotice(null)
+        },
+        onStatus: (status, message) => {
+          if (cancelled) return
+          setAutomaticSyncStatus(status)
+          setSaveErrorMessage(message || '')
+          hasPendingChangesRef.current = status === 'saving' || status === 'offline'
+          if (status === 'saved' && previousStatus !== 'saved') setLastSavedAt(new Date().toLocaleTimeString('fr-FR'))
+          previousStatus = status
+        },
+      })
+      automaticSyncRef.current = controller
+      void controller.start().catch(error => {
+        controller.stop()
+        if (cancelled) return
+        setAutomaticSyncStatus('offline')
+        setSaveErrorMessage(error instanceof Error ? error.message : 'Connexion indisponible.')
+        retry = setTimeout(start, 3000)
+      })
+    }
+    start()
+    return () => { cancelled = true; clearTimeout(retry); automaticSyncRef.current?.stop(); automaticSyncRef.current = null }
+  }, [authStatus, authUser?.id])
+
+  useEffect(() => {
+    if (AUTOMATIC_SYNC_ENABLED) return
     if (authStatus !== 'authed' || !authUser) {
       if (idleLogoutTimerRef.current !== null) {
         window.clearTimeout(idleLogoutTimerRef.current)
@@ -3339,6 +3502,7 @@ function App() {
   }, [authStatus, authUser?.id])
 
   useEffect(() => {
+    if (AUTOMATIC_SYNC_ENABLED) return
     if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
       return
     }
@@ -3371,6 +3535,7 @@ function App() {
   }, [authStatus, authUser?.id, hasLoadedRemoteState, remotePayload])
 
   useEffect(() => {
+    if (AUTOMATIC_SYNC_ENABLED) return
     if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
       return
     }
@@ -3381,6 +3546,7 @@ function App() {
   }, [authStatus, authUser?.id, hasLoadedRemoteState, fullPayload])
 
   useEffect(() => {
+    if (AUTOMATIC_SYNC_ENABLED) return
     if (
       authStatus !== 'authed' ||
       !authUser ||
@@ -3422,6 +3588,7 @@ function App() {
   }, [authStatus, dashboardIntroPhase])
 
   useEffect(() => {
+    if (AUTOMATIC_SYNC_ENABLED) return
     if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
       return
     }
@@ -3560,6 +3727,7 @@ function App() {
   }, [authStatus, authUser?.id, hasLoadedRemoteState, idleLogoutPending])
 
   useEffect(() => {
+    if (AUTOMATIC_SYNC_ENABLED) return
     if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState) {
       return
     }
@@ -3697,6 +3865,7 @@ function App() {
   }
 
   async function persistUserState(options?: { silent?: boolean; force?: boolean }): Promise<boolean> {
+    if (AUTOMATIC_SYNC_ENABLED) return automaticSyncRef.current?.flush() ?? false
     if (authStatus !== 'authed' || !authUser || !hasLoadedRemoteState || isSaveLocked) return false
     if (saveInFlightRef.current) return saveInFlightRef.current
     const silent = Boolean(options?.silent)
@@ -3785,6 +3954,11 @@ function App() {
   }
 
   function resetSessionToGuest(authMessage?: string) {
+    if (AUTOMATIC_SYNC_ENABLED) {
+      try { localStorage.removeItem('itemstracker-last-sync-user') } catch { /* Offline identity is optional. */ }
+      automaticSyncRef.current?.stop()
+      automaticSyncRef.current = null
+    }
     setSearch('')
     setCollegeFilter('ALL')
     setMasteryFilter('ALL')
@@ -3846,6 +4020,12 @@ function App() {
       setAuthStatus('authed')
       clearSaveProtection()
     } catch (error) {
+      if (AUTOMATIC_SYNC_ENABLED && !(error instanceof ApiRequestError && [401, 403, 426].includes(error.status))) {
+        try {
+          const cached = JSON.parse(localStorage.getItem('itemstracker-last-sync-user') || 'null') as AuthUser | null
+          if (cached?.id) { setAuthUser(cached); setAuthStatus('authed'); return }
+        } catch { /* No offline account cache. */ }
+      }
       const hadActiveSession = authStatus === 'authed'
       const lockReason = getSaveLockReason(error)
       if (lockReason === 'session-expired') {
@@ -4290,6 +4470,7 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   async function handleLogout() {
+    if (AUTOMATIC_SYNC_ENABLED) { await automaticSyncRef.current?.flush(); await disconnectToAuth(); return }
     const saved = await persistUserState({ force: true, silent: false })
     if (!saved) {
       const continueWithoutSave = window.confirm(
@@ -4307,6 +4488,7 @@ function getPasswordStrengthMeta(password: string) {
   }
 
   useEffect(() => {
+    if (AUTOMATIC_SYNC_ENABLED) return
     if (authStatus !== 'authed' || !authUser || isSaveLocked) return
     let checking = false
     const verifySession = async () => {
@@ -6177,6 +6359,8 @@ function getPasswordStrengthMeta(password: string) {
     window.dispatchEvent(new Event('itemstracker-review'))
     const meta = QUIZ_RESULT_META[result]
     const reviewedAt = new Date().toISOString()
+    const reviewedCard = targetCardId || trackingStateRef.current.items[itemNumber]?.quiz.cards[0]?.id
+    if (AUTOMATIC_SYNC_ENABLED && reviewedCard) automaticSyncRef.current?.recordReview(itemNumber, reviewedCard, result, reviewedAt)
 
     setTrackingState((current) => {
       const itemTracking = normalizeItemTracking(current.items[itemNumber] ?? getDefaultItemTracking())
@@ -6197,7 +6381,7 @@ function getPasswordStrengthMeta(password: string) {
         {
           ...itemTracking,
           lastQuizResult: result,
-          quizCount: totalCardQuizCount,
+          quizCount: AUTOMATIC_SYNC_ENABLED ? itemTracking.quizCount + 1 : totalCardQuizCount,
           lastReviewDate: reviewedAt,
           quiz: {
             ...itemTracking.quiz,
@@ -7181,6 +7365,7 @@ function getPasswordStrengthMeta(password: string) {
     }
 
     lazyImageLoadInFlightRef.current.add(key)
+    const imageVersionsBeforeLoad = { front: automaticSyncRef.current?.imageVersion(itemNumber, card.id, 'front'), back: automaticSyncRef.current?.imageVersion(itemNumber, card.id, 'back') }
     try {
       const payload = await apiRequest(`/api/state/images/${itemNumber}/${encodeURIComponent(card.id)}`, undefined, {
         requireServerAppHeader: true,
@@ -7196,6 +7381,10 @@ function getPasswordStrengthMeta(password: string) {
           nextSyncedImages[getQuizImageKey(itemNumber, card.id, 'back')] = backImageDataUrl
         }
         lastSyncedQuizImagesRef.current = nextSyncedImages
+        if (AUTOMATIC_SYNC_ENABLED) {
+          if (frontImageDataUrl && !automaticSyncRef.current?.acceptRemoteImage(itemNumber, card.id, 'front', frontImageDataUrl, imageVersionsBeforeLoad.front)) return
+          if (backImageDataUrl && !automaticSyncRef.current?.acceptRemoteImage(itemNumber, card.id, 'back', backImageDataUrl, imageVersionsBeforeLoad.back)) return
+        }
         applyLazyLoadedQuizImages(itemNumber, card.id, {
           front: frontImageDataUrl,
           back: backImageDataUrl,
@@ -8113,7 +8302,7 @@ function getPasswordStrengthMeta(password: string) {
                 <SidebarCollapse className="ui-icon" aria-hidden="true" />
               )}
             </button>
-            {saveErrorMessage ? (
+            {AUTOMATIC_SYNC_ENABLED ? <span role="status" aria-live="polite">{automaticSyncStatus === 'saving' ? 'Enregistrement…' : automaticSyncStatus === 'offline' ? 'Hors connexion · enregistré sur cet appareil' : automaticSyncStatus === 'error' ? saveErrorMessage : automaticSyncStatus === 'saved' ? 'Enregistré' : 'Connexion…'}</span> : saveErrorMessage ? (
               <span className="topbar-save-warning">{saveErrorMessage}</span>
             ) : lastSavedAt ? (
               <span>Dernière sauvegarde : {lastSavedAt}</span>
@@ -8133,7 +8322,7 @@ function getPasswordStrengthMeta(password: string) {
             <AnnouncementBell request={apiRequest} onCalendar={id=>{setCalendarFocusId(id);setActiveView('calendar')}} />
           </div>
         </header>
-        {saveStatus !== 'idle' ? (
+        {!AUTOMATIC_SYNC_ENABLED && saveStatus !== 'idle' ? (
           <div className={`save-popup ${saveStatus}`}>
             {saveStatus === 'saving'
               ? 'Sauvegarde en cours...'
@@ -11199,6 +11388,11 @@ function getPasswordStrengthMeta(password: string) {
 
 
 
+
+            {AUTOMATIC_SYNC_ENABLED ? <AutomaticSyncHistory request={path => apiRequest(path)} restore={async id => {
+              if (!automaticSyncRef.current) throw new Error('Connexion indisponible.')
+              await automaticSyncRef.current.restore(id)
+            }} /> : null}
 
             <article className="settings-card settings-card-wide">
               <div className="settings-card-head">

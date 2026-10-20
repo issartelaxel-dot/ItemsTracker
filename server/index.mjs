@@ -14,6 +14,7 @@ import { z } from 'zod'
 import { createCalendarStore } from './calendar-store.mjs'
 import { mountCalendar } from './calendar.mjs'
 import { createStateStore } from './state-store.mjs'
+import { createAutomaticSync, mountAutomaticSync } from './automatic-sync.mjs'
 import { createMediaStore } from './media-store.mjs'
 import { persistSchema, StateError } from './state-model.mjs'
 import { mountRegistration } from './registration.mjs'
@@ -79,6 +80,7 @@ const calendarStore = createCalendarStore(pool)
 const analyticsStore = createAnalyticsStore(pool)
 const analyticsGeo = createGeoLookup()
 const stateStore = createStateStore(pool, { mediaStore: createMediaStore() })
+const automaticSync = createAutomaticSync(pool, stateStore)
 const onboarding = createOnboarding(pool)
 
 async function initDb() {
@@ -640,8 +642,9 @@ async function sendPasswordResetEmail({ userEmail, displayName, code }) {
   })
 }
 
+const AUTOMATIC_SYNC_ENABLED = process.env.AUTOMATIC_SYNC_ENABLED !== 'false'
 app.get('/api/health', (_req, res) => {
-  res.json({ ok: true, stateMigration: 'sql-media-v1' })
+  res.json({ ok: true, stateMigration: 'sql-media-v1', automaticSync: AUTOMATIC_SYNC_ENABLED })
 })
 
 app.get('/api/auth/me', enforceClientVersion, async (req, res) => {
@@ -805,6 +808,11 @@ app.get('/api/state', enforceClientVersion, async (req, res) => {
   if (state) state.trackingState = applyQuizImagesToTrackingState(state.trackingState, images, { metadataOnly })
   const token = refreshAuthCookie(res, auth)
   res.json({ state, version, imageVersions: Object.fromEntries((images || []).map(row => [`${row.item_number}:${row.card_id}:${row.image_slot}`, row.content_hash || row.updated_at || 'legacy'])), ...(token ? { token } : {}) })
+})
+
+if (AUTOMATIC_SYNC_ENABLED) mountAutomaticSync(app, {
+  sync: automaticSync, authenticate: authFromRequest, enforceClientVersion,
+  limiter: stateWriteLimiter, decorate: applyQuizImagesToTrackingState, refresh: refreshAuthCookie,
 })
 
 mountCalendar(app, { store: calendarStore, authenticate: authFromRequest, limiter: rateLimit({windowMs: 60_000, limit: 300, standardHeaders: true, legacyHeaders: false}) })
@@ -1133,6 +1141,7 @@ app.use((error, _req, res, next) => {
 
 async function startServer() {
   await initDb()
+  if (AUTOMATIC_SYNC_ENABLED) await automaticSync.init()
   if (ACADEMIC_ONBOARDING_ENABLED) {
     const academicAudit = await onboarding.init()
     if (academicAudit.exceptions) console.warn(`Onboarding cutover: ${academicAudit.exceptions} historical explicit year exception(s) need review.`)
